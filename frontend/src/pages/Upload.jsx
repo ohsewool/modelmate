@@ -4,6 +4,12 @@ import api from '../api'
 import KPICard from '../components/KPICard'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 
+const ttStyle = {
+  background: '#0d1427', border: '1px solid rgba(99,102,241,0.2)',
+  borderRadius: 12, fontSize: 11, color: '#f1f5f9',
+  boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+}
+
 export default function Upload() {
   const [dragging,    setDragging]    = useState(false)
   const [uploadInfo,  setUploadInfo]  = useState(null)
@@ -39,64 +45,73 @@ export default function Upload() {
   const drop = e => { e.preventDefault(); setDragging(false); handleFile(e.dataTransfer.files[0]) }
   const TABS = [['preview','미리보기'],['dist','분포'],['corr','상관관계'],['stats','통계']]
 
-  const ttStyle = { background:'#ffffff', border:'1px solid #e2e8f0', borderRadius:10, fontSize:11, color:'#0f172a', boxShadow:'0 4px 12px rgba(0,0,0,0.08)' }
-
   return (
-    <div className="p-8 animate-fade-in max-w-6xl">
+    <div className="animate-fade-in" style={{ padding:32, maxWidth:960 }}>
 
       {!uploadInfo ? (
         <div
-          className={`relative border-2 border-dashed rounded-2xl p-20 text-center cursor-pointer
-            transition-all duration-250 group
-            ${dragging
-              ? 'border-primary bg-primary-light scale-[1.01]'
-              : 'border-bg-border hover:border-primary/40 hover:bg-bg-card'}`}
+          style={{
+            position: 'relative',
+            border: `2px dashed ${dragging ? '#6366f1' : 'rgba(99,102,241,0.2)'}`,
+            borderRadius: 20,
+            padding: '80px 40px',
+            textAlign: 'center',
+            cursor: 'pointer',
+            transition: 'all 0.25s',
+            background: dragging ? 'rgba(99,102,241,0.06)' : 'rgba(13,20,39,0.5)',
+            transform: dragging ? 'scale(1.01)' : 'scale(1)',
+          }}
           onDragOver={e => { e.preventDefault(); setDragging(true) }}
           onDragLeave={() => setDragging(false)}
           onDrop={drop}
           onClick={() => fileRef.current.click()}
+          onMouseEnter={e => { if(!dragging) e.currentTarget.style.borderColor = 'rgba(99,102,241,0.4)' }}
+          onMouseLeave={e => { if(!dragging) e.currentTarget.style.borderColor = 'rgba(99,102,241,0.2)' }}
         >
-          <input ref={fileRef} type="file" accept=".csv,.txt" className="hidden"
+          <input ref={fileRef} type="file" accept=".csv,.txt" style={{ display:'none' }}
             onChange={e => handleFile(e.target.files[0])} />
           {loading ? (
-            <div className="flex flex-col items-center gap-4">
+            <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:16 }}>
               <div className="spinner-lg" />
-              <p className="text-slate-400 text-sm">파일 분석 중…</p>
+              <p style={{ color:'#475569', fontSize:13 }}>파일 분석 중…</p>
             </div>
           ) : (
             <>
-              <div className="w-16 h-16 rounded-2xl mx-auto mb-5 flex items-center justify-center
-                group-hover:scale-110 transition-transform duration-200"
-                style={{ background: 'linear-gradient(135deg, rgba(79,126,248,0.2), rgba(34,211,238,0.1))', border: '1px solid rgba(79,126,248,0.3)' }}>
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4f7ef8" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <div style={{
+                width:64, height:64, borderRadius:18, margin:'0 auto 20px',
+                display:'flex', alignItems:'center', justifyContent:'center',
+                background: 'linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.1))',
+                border: '1px solid rgba(99,102,241,0.3)',
+                transition: 'transform 0.2s',
+              }}>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#818cf8" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17,8 12,3 7,8"/><line x1="12" y1="3" x2="12" y2="15"/>
                 </svg>
               </div>
-              <p className="text-white font-semibold text-base mb-2">파일을 드래그하거나 클릭해서 업로드</p>
-              <p className="text-slate-600 text-sm">CSV, TXT 지원 · TXT는 구분자 자동 감지</p>
+              <p style={{ color:'#f1f5f9', fontWeight:600, fontSize:15, marginBottom:8 }}>파일을 드래그하거나 클릭해서 업로드</p>
+              <p style={{ color:'#334155', fontSize:13 }}>CSV, TXT 지원 · TXT는 구분자 자동 감지</p>
             </>
           )}
         </div>
       ) : (
-        <div className="space-y-5 animate-slide-up">
-          {/* 변환 배너 */}
+        <div className="animate-slide-up" style={{ display:'flex', flexDirection:'column', gap:16 }}>
           {uploadInfo.converted && (
             <div className="banner-info">
-              <span className="text-lg">🤖</span>
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-white">파일 변환 완료</p>
-                <p className="text-xs mt-0.5 text-slate-400">구분자 자동 감지 ({uploadInfo.separator}) → CSV 변환</p>
+              <span style={{ fontSize:20 }}>🤖</span>
+              <div style={{ flex:1 }}>
+                <p style={{ fontSize:13, fontWeight:600, color:'#f1f5f9', margin:0 }}>파일 변환 완료</p>
+                <p style={{ fontSize:11, marginTop:2, color:'#64748b', margin:'2px 0 0' }}>구분자 자동 감지 ({uploadInfo.separator}) → CSV 변환</p>
               </div>
-              <span className="badge badge-blue">변환됨</span>
+              <span className="badge badge-cyan">변환됨</span>
             </div>
           )}
 
           {/* 타깃 선택 */}
           <div className="card">
-            <div className="flex items-end gap-4">
-              <div className="flex-1">
-                <label className="block text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider">타깃 컬럼 선택</label>
-                <select value={target} onChange={e => setTarget(e.target.value)} className="input w-full">
+            <div style={{ display:'flex', alignItems:'flex-end', gap:16 }}>
+              <div style={{ flex:1 }}>
+                <label style={{ display:'block', fontSize:10, fontWeight:600, color:'#334155', marginBottom:8, textTransform:'uppercase', letterSpacing:'0.1em' }}>타깃 컬럼 선택</label>
+                <select value={target} onChange={e => setTarget(e.target.value)} className="input">
                   {uploadInfo.columns.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
@@ -113,7 +128,7 @@ export default function Upload() {
           </div>
 
           {/* KPI */}
-          <div className="grid grid-cols-4 gap-4">
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:16 }}>
             <KPICard label="전체 행" value={uploadInfo.shape[0].toLocaleString()} icon="📋" color="blue" />
             <KPICard label="전체 열" value={uploadInfo.shape[1]} icon="📊" color="cyan" />
             <KPICard label="결측치" value={uploadInfo.missing_total}
@@ -124,17 +139,17 @@ export default function Upload() {
           {/* EDA 탭 */}
           {edaInfo && (
             <div className="card animate-fade-in">
-              <div className="tab-bar w-fit mb-6">
+              <div className="tab-bar" style={{ width:'fit-content', marginBottom:24 }}>
                 {TABS.map(([k, v]) => (
                   <button key={k} onClick={() => setTab(k)}
-                    className={tab === k ? 'tab-item-active' : 'tab-item-inactive'}>
+                    className={tab === k ? 'tab-item tab-item-active' : 'tab-item tab-item-inactive'}>
                     {v}
                   </button>
                 ))}
               </div>
 
               {tab === 'preview' && (
-                <div className="overflow-x-auto">
+                <div style={{ overflowX:'auto' }}>
                   <table className="data-table">
                     <thead>
                       <tr>{uploadInfo.columns.map(c => <th key={c}>{c}</th>)}</tr>
@@ -143,7 +158,7 @@ export default function Upload() {
                       {uploadInfo.preview.map((row, i) => (
                         <tr key={i}>
                           {uploadInfo.columns.map(c => (
-                            <td key={c} className="text-slate-300 text-xs">{String(row[c])}</td>
+                            <td key={c} style={{ color:'#64748b', fontSize:11 }}>{String(row[c])}</td>
                           ))}
                         </tr>
                       ))}
@@ -153,25 +168,25 @@ export default function Upload() {
               )}
 
               {tab === 'dist' && (
-                <div className="grid grid-cols-2 gap-4">
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:16 }}>
                   {Object.entries(edaInfo.distributions).map(([col, d]) => (
                     <div key={col} className="card-elevated">
-                      <p className="text-xs font-semibold text-slate-400 mb-3">{col}</p>
+                      <p style={{ fontSize:11, fontWeight:600, color:'#475569', marginBottom:12 }}>{col}</p>
                       <ResponsiveContainer width="100%" height={110}>
                         <BarChart data={d.bins.map((b,i) => ({ bin: b, normal: d.normal[i], failure: d.failure[i] }))} barSize={7}>
                           <XAxis dataKey="bin" tick={false} axisLine={false} />
                           <YAxis hide />
                           <Tooltip contentStyle={ttStyle} labelFormatter={v=>`값: ${v}`} />
-                          <Bar dataKey="normal"  stackId="a" fill="#4f7ef8" opacity={0.75} radius={[2,2,0,0]} />
+                          <Bar dataKey="normal"  stackId="a" fill="#6366f1" opacity={0.75} radius={[2,2,0,0]} />
                           <Bar dataKey="failure" stackId="a" fill="#f43f5e" opacity={0.85} radius={[2,2,0,0]} />
                         </BarChart>
                       </ResponsiveContainer>
-                      <div className="flex gap-4 mt-2">
-                        <span className="flex items-center gap-1.5 text-xs text-slate-600">
-                          <span className="w-2 h-2 rounded-sm bg-primary inline-block" />정상
+                      <div style={{ display:'flex', gap:16, marginTop:8 }}>
+                        <span style={{ display:'flex', alignItems:'center', gap:6, fontSize:11, color:'#475569' }}>
+                          <span style={{ width:8, height:8, borderRadius:2, background:'#6366f1', display:'inline-block' }} />정상
                         </span>
-                        <span className="flex items-center gap-1.5 text-xs text-slate-600">
-                          <span className="w-2 h-2 rounded-sm bg-rose inline-block" />고장
+                        <span style={{ display:'flex', alignItems:'center', gap:6, fontSize:11, color:'#475569' }}>
+                          <span style={{ width:8, height:8, borderRadius:2, background:'#f43f5e', display:'inline-block' }} />고장
                         </span>
                       </div>
                     </div>
@@ -181,28 +196,27 @@ export default function Upload() {
 
               {tab === 'corr' && (
                 <div>
-                  <p className="text-xs text-slate-500 mb-4">피처 간 상관관계 — 값이 클수록 강한 양의 상관</p>
-                  <div className="overflow-x-auto">
-                    <table className="text-xs border-collapse">
+                  <p style={{ fontSize:11, color:'#334155', marginBottom:16 }}>피처 간 상관관계 — 값이 클수록 강한 양의 상관</p>
+                  <div style={{ overflowX:'auto' }}>
+                    <table style={{ fontSize:10, borderCollapse:'collapse' }}>
                       <thead>
                         <tr>
-                          <th className="w-24" />
+                          <th style={{ width:96 }} />
                           {edaInfo.corr_cols.map(c => (
-                            <th key={c} className="px-1 py-1 text-slate-600 font-normal text-center w-16" style={{fontSize:9}}>{c.slice(0,8)}</th>
+                            <th key={c} style={{ padding:'2px 4px', color:'#475569', fontWeight:'normal', textAlign:'center', width:60, fontSize:9 }}>{c.slice(0,8)}</th>
                           ))}
                         </tr>
                       </thead>
                       <tbody>
                         {edaInfo.corr_cols.map(r => (
                           <tr key={r}>
-                            <td className="pr-2 text-slate-600 text-right" style={{fontSize:9}}>{r.slice(0,10)}</td>
+                            <td style={{ paddingRight:8, color:'#475569', textAlign:'right', fontSize:9 }}>{r.slice(0,10)}</td>
                             {edaInfo.corr_cols.map(c => {
                               const v = edaInfo.corr_data.find(d=>d.x===r&&d.y===c)?.v ?? 0
                               const a = Math.abs(v)
-                              const bg = v > 0 ? `rgba(79,126,248,${a})` : `rgba(244,63,94,${a})`
+                              const bg = v > 0 ? `rgba(99,102,241,${a*0.8})` : `rgba(244,63,94,${a*0.8})`
                               return (
-                                <td key={c} className="w-14 h-8 text-center rounded font-mono"
-                                  style={{ background: bg, color: a > 0.5 ? 'white' : '#64748b', fontSize:10 }}>
+                                <td key={c} style={{ width:56, height:32, textAlign:'center', borderRadius:4, background:bg, color:a>0.5?'white':'#64748b', fontSize:10, fontFamily:'monospace' }}>
                                   {v.toFixed(2)}
                                 </td>
                               )
@@ -216,7 +230,7 @@ export default function Upload() {
               )}
 
               {tab === 'stats' && (
-                <div className="grid grid-cols-3 gap-4">
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:16 }}>
                   <KPICard label="샘플 수" value={edaInfo.n_samples.toLocaleString()} color="blue" />
                   <KPICard label="피처 수" value={edaInfo.n_features} color="cyan" />
                   <KPICard label="고장률" value={`${edaInfo.failure_rate}%`}
@@ -227,7 +241,8 @@ export default function Upload() {
           )}
 
           {edaInfo && (
-            <button onClick={() => nav('/model-lab')} className="btn-primary w-full justify-center py-3.5 text-sm">
+            <button onClick={() => nav('/model-lab')} className="btn-primary"
+              style={{ width:'100%', justifyContent:'center', padding:'14px 20px', fontSize:14 }}>
               Model Lab으로 이동
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
             </button>

@@ -2,7 +2,11 @@ import { useState, useEffect } from 'react'
 import api from '../api'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 
-const ttStyle = { background:'#ffffff', border:'1px solid #e2e8f0', borderRadius:10, fontSize:11, color:'#0f172a', boxShadow:'0 4px 12px rgba(0,0,0,0.08)' }
+const ttStyle = {
+  background: '#0d1427', border: '1px solid rgba(99,102,241,0.2)',
+  borderRadius: 12, fontSize: 11, color: '#f1f5f9',
+  boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+}
 
 export default function History() {
   const [history, setHistory] = useState([])
@@ -38,51 +42,47 @@ export default function History() {
     : 0
 
   return (
-    <div className="p-8 animate-fade-in max-w-6xl">
-      <div className="flex items-center justify-between mb-6">
-        <div /> {/* title is in header */}
-        <div className="flex gap-2">
-          {state?.has_data && (
-            <button onClick={rerun} disabled={loading} className="btn-primary">
-              {loading ? <span className="spinner" /> : (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polygon points="5,3 19,12 5,21"/></svg>
-              )}
-              재실행
-            </button>
-          )}
-          {history.length > 0 && (
-            <button onClick={clearAll} className="btn-secondary text-rose-400 hover:text-rose-300 border-rose/20 hover:border-rose/30">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="3,6 5,6 21,6"/><path d="M19,6v14a2,2,0,0,1-2,2H7a2,2,0,0,1-2-2V6m3,0V4a2,2,0,0,1,2-2h4a2,2,0,0,1,2,2v2"/></svg>
-              전체 삭제
-            </button>
-          )}
-        </div>
+    <div className="animate-fade-in" style={{ padding:32, maxWidth:960 }}>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'flex-end', marginBottom:24, gap:8 }}>
+        {state?.has_data && (
+          <button onClick={rerun} disabled={loading} className="btn-primary">
+            {loading ? <span className="spinner" /> : (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polygon points="5,3 19,12 5,21"/></svg>
+            )}
+            재실행
+          </button>
+        )}
+        {history.length > 0 && (
+          <button onClick={clearAll} className="btn-secondary" style={{ color:'#fda4af', borderColor:'rgba(244,63,94,0.2)' }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="3,6 5,6 21,6"/><path d="M19,6v14a2,2,0,0,1-2,2H7a2,2,0,0,1-2-2V6m3,0V4a2,2,0,0,1,2-2h4a2,2,0,0,1,2,2v2"/></svg>
+            전체 삭제
+          </button>
+        )}
       </div>
 
       {history.length === 0 ? (
-        <div className="empty-state">
-          <div className="w-20 h-20 rounded-3xl mx-auto mb-5 flex items-center justify-center"
-            style={{ background: 'rgba(79,126,248,0.08)', border: '1px solid rgba(79,126,248,0.15)' }}>
-            <span className="text-4xl">📭</span>
+        <div className="card empty-state">
+          <div style={{ width:80, height:80, borderRadius:24, margin:'0 auto 20px', display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(99,102,241,0.08)', border:'1px solid rgba(99,102,241,0.15)' }}>
+            <span style={{ fontSize:40 }}>📭</span>
           </div>
           <p className="empty-title">저장된 실험 기록이 없습니다</p>
           <p className="empty-desc">Model Lab에서 모델을 실행하면 자동으로 저장됩니다.</p>
         </div>
       ) : (
-        <div className="space-y-5">
+        <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
           {/* KPI */}
-          <div className="grid grid-cols-3 gap-4">
-            <div className="card text-center">
-              <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color:'#94a3b8' }}>총 실험 수</p>
-              <p className="text-3xl font-bold text-slate-900">{history.length}</p>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:16 }}>
+            <div className="card" style={{ textAlign:'center' }}>
+              <p style={{ fontSize:10, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.1em', color:'#334155', marginBottom:8, margin:'0 0 8px' }}>총 실험 수</p>
+              <p style={{ fontSize:32, fontWeight:700, color:'#f1f5f9', margin:0 }}>{history.length}</p>
             </div>
-            <div className="card text-center">
-              <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color:'#94a3b8' }}>Optuna 적용</p>
-              <p className="text-3xl font-bold text-amber">{history.filter(h=>h.optuna_applied).length}</p>
+            <div className="card" style={{ textAlign:'center' }}>
+              <p style={{ fontSize:10, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.1em', color:'#334155', marginBottom:8, margin:'0 0 8px' }}>Optuna 적용</p>
+              <p style={{ fontSize:32, fontWeight:700, color:'#fcd34d', margin:0 }}>{history.filter(h=>h.optuna_applied).length}</p>
             </div>
-            <div className="card text-center">
-              <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color:'#94a3b8' }}>최고 ROC-AUC</p>
-              <p className="text-3xl font-bold text-emerald">{bestROC.toFixed(4)}</p>
+            <div className="card" style={{ textAlign:'center' }}>
+              <p style={{ fontSize:10, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.1em', color:'#334155', marginBottom:8, margin:'0 0 8px' }}>최고 ROC-AUC</p>
+              <p style={{ fontSize:32, fontWeight:700, color:'#6ee7b7', margin:0 }}>{bestROC.toFixed(4)}</p>
             </div>
           </div>
 
@@ -92,30 +92,30 @@ export default function History() {
               <p className="section-title">ROC-AUC 성능 추이</p>
               <ResponsiveContainer width="100%" height={200}>
                 <LineChart data={trend}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis dataKey="name" tick={{ fill:'#64748b', fontSize:11 }} axisLine={false} tickLine={false} />
-                  <YAxis domain={['auto','auto']} tick={{ fill:'#64748b', fontSize:10 }} axisLine={false} tickLine={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(99,102,241,0.08)" />
+                  <XAxis dataKey="name" tick={{ fill:'#334155', fontSize:11 }} axisLine={false} tickLine={false} />
+                  <YAxis domain={['auto','auto']} tick={{ fill:'#334155', fontSize:10 }} axisLine={false} tickLine={false} />
                   <Tooltip contentStyle={ttStyle} />
-                  <Line type="monotone" dataKey="roc" stroke="#4f7ef8" strokeWidth={2.5}
-                    dot={{ fill:'#4f7ef8', r:4, strokeWidth:2, stroke:'#ffffff' }} name="ROC-AUC" />
+                  <Line type="monotone" dataKey="roc" stroke="#6366f1" strokeWidth={2.5}
+                    dot={{ fill:'#6366f1', r:4, strokeWidth:2, stroke:'#07091a' }} name="ROC-AUC" />
                   <Line type="monotone" dataKey="optuna" stroke="#f59e0b" strokeWidth={2}
-                    dot={{ fill:'#f59e0b', r:4, strokeWidth:2, stroke:'#ffffff' }} name="Optuna"
+                    dot={{ fill:'#f59e0b', r:4, strokeWidth:2, stroke:'#07091a' }} name="Optuna"
                     connectNulls={false} strokeDasharray="5 3" />
                 </LineChart>
               </ResponsiveContainer>
-              <div className="flex gap-6 mt-3 justify-end">
-                <span className="flex items-center gap-2 text-xs text-slate-500">
-                  <span className="w-5 h-0.5 rounded bg-primary inline-block" />ROC-AUC
+              <div style={{ display:'flex', gap:24, marginTop:12, justifyContent:'flex-end' }}>
+                <span style={{ display:'flex', alignItems:'center', gap:8, fontSize:11, color:'#475569' }}>
+                  <span style={{ width:20, height:2, borderRadius:99, background:'#6366f1', display:'inline-block' }} />ROC-AUC
                 </span>
-                <span className="flex items-center gap-2 text-xs text-slate-500">
-                  <span className="w-5 h-0.5 rounded bg-amber inline-block" style={{ borderTop:'2px dashed #f59e0b', height:0 }} />Optuna
+                <span style={{ display:'flex', alignItems:'center', gap:8, fontSize:11, color:'#475569' }}>
+                  <span style={{ width:20, height:0, display:'inline-block', borderTop:'2px dashed #f59e0b' }} />Optuna
                 </span>
               </div>
             </div>
           )}
 
           {/* 이력 테이블 */}
-          <div className="card overflow-x-auto">
+          <div className="card" style={{ overflowX:'auto' }}>
             <p className="section-title">전체 실험 이력</p>
             <table className="data-table">
               <thead>
@@ -130,18 +130,18 @@ export default function History() {
                   const br = h.results?.find(r => r.model === h.best_model) || {}
                   return (
                     <tr key={i}>
-                      <td className="text-slate-600 text-xs">#{history.length-i}</td>
-                      <td className="text-slate-400 text-xs whitespace-nowrap">{h.timestamp}</td>
-                      <td className="text-slate-300 text-xs">{h.data_shape?.join('×')}</td>
-                      <td className="text-slate-300 text-xs">{h.target || '—'}</td>
-                      <td className="text-white font-medium text-xs">{h.best_model}</td>
-                      <td className="text-slate-300 text-xs tabular-nums">{br.accuracy || '—'}</td>
-                      <td className="text-slate-300 text-xs tabular-nums">{br.f1 || '—'}</td>
-                      <td className="text-primary font-semibold text-xs tabular-nums">{br.roc_auc || '—'}</td>
+                      <td style={{ color:'#334155', fontSize:11 }}>#{history.length-i}</td>
+                      <td style={{ color:'#334155', fontSize:11, whiteSpace:'nowrap' }}>{h.timestamp}</td>
+                      <td style={{ color:'#475569', fontSize:11 }}>{h.data_shape?.join('×')}</td>
+                      <td style={{ color:'#475569', fontSize:11 }}>{h.target || '—'}</td>
+                      <td style={{ color:'#f1f5f9', fontWeight:500, fontSize:11 }}>{h.best_model}</td>
+                      <td style={{ color:'#64748b', fontSize:11, fontVariantNumeric:'tabular-nums' }}>{br.accuracy || '—'}</td>
+                      <td style={{ color:'#64748b', fontSize:11, fontVariantNumeric:'tabular-nums' }}>{br.f1 || '—'}</td>
+                      <td style={{ color:'#818cf8', fontWeight:600, fontSize:11, fontVariantNumeric:'tabular-nums' }}>{br.roc_auc || '—'}</td>
                       <td>
                         {h.optuna_applied
                           ? <span className="badge badge-green">✓ 적용</span>
-                          : <span className="text-xs text-slate-700">—</span>
+                          : <span style={{ fontSize:11, color:'#1e293b' }}>—</span>
                         }
                       </td>
                     </tr>

@@ -1,24 +1,53 @@
 const PALETTE = {
-  blue:   { bg: 'bg-indigo-50',  border: 'border-indigo-100',  icon: 'bg-indigo-100 text-indigo-600',  val: 'text-indigo-700',  sub: 'text-indigo-500'  },
-  green:  { bg: 'bg-emerald-50', border: 'border-emerald-100', icon: 'bg-emerald-100 text-emerald-600',val: 'text-emerald-700', sub: 'text-emerald-500' },
-  red:    { bg: 'bg-rose-50',    border: 'border-rose-100',    icon: 'bg-rose-100 text-rose-600',      val: 'text-rose-700',    sub: 'text-rose-500'    },
-  amber:  { bg: 'bg-amber-50',   border: 'border-amber-100',   icon: 'bg-amber-100 text-amber-600',    val: 'text-amber-700',   sub: 'text-amber-500'   },
-  cyan:   { bg: 'bg-cyan-50',    border: 'border-cyan-100',    icon: 'bg-cyan-100 text-cyan-600',      val: 'text-cyan-700',    sub: 'text-cyan-500'    },
-  violet: { bg: 'bg-violet-50',  border: 'border-violet-100',  icon: 'bg-violet-100 text-violet-600',  val: 'text-violet-700',  sub: 'text-violet-500'  },
+  blue:   { top: '#6366f1', glow: 'rgba(99,102,241,0.2)',   icon: 'rgba(99,102,241,0.15)',  iconText: '#818cf8', val: '#a5b4fc', sub: '#6366f1' },
+  green:  { top: '#10b981', glow: 'rgba(16,185,129,0.2)',   icon: 'rgba(16,185,129,0.15)',  iconText: '#34d399', val: '#6ee7b7', sub: '#10b981' },
+  red:    { top: '#f43f5e', glow: 'rgba(244,63,94,0.2)',    icon: 'rgba(244,63,94,0.15)',   iconText: '#fb7185', val: '#fda4af', sub: '#f43f5e' },
+  amber:  { top: '#f59e0b', glow: 'rgba(245,158,11,0.2)',   icon: 'rgba(245,158,11,0.15)',  iconText: '#fbbf24', val: '#fcd34d', sub: '#f59e0b' },
+  cyan:   { top: '#22d3ee', glow: 'rgba(34,211,238,0.2)',   icon: 'rgba(34,211,238,0.15)',  iconText: '#67e8f9', val: '#a5f3fc', sub: '#22d3ee' },
+  violet: { top: '#8b5cf6', glow: 'rgba(139,92,246,0.2)',   icon: 'rgba(139,92,246,0.15)',  iconText: '#a78bfa', val: '#c4b5fd', sub: '#8b5cf6' },
 }
 
 export default function KPICard({ label, value, sub, color = 'blue', icon }) {
   const p = PALETTE[color] || PALETTE.blue
   return (
-    <div className={`${p.bg} border ${p.border} rounded-2xl p-5 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md`}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">{label}</p>
-          <p className={`text-2xl font-bold tabular-nums leading-none ${p.val}`}>{value ?? '—'}</p>
-          {sub && <p className={`text-xs mt-2 font-medium ${p.sub}`}>{sub}</p>}
+    <div
+      style={{
+        background: 'rgba(13,20,39,0.9)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        border: '1px solid rgba(255,255,255,0.06)',
+        borderTop: `2px solid ${p.top}`,
+        borderRadius: 16,
+        padding: 20,
+        transition: 'all 0.2s',
+        cursor: 'default',
+      }}
+      onMouseEnter={e => {
+        e.currentTarget.style.transform = 'translateY(-2px)'
+        e.currentTarget.style.boxShadow = `0 8px 32px rgba(0,0,0,0.4), 0 0 24px ${p.glow}`
+        e.currentTarget.style.borderColor = `rgba(255,255,255,0.1)`
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.transform = ''
+        e.currentTarget.style.boxShadow = ''
+        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'
+      }}
+    >
+      <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:12 }}>
+        <div style={{ minWidth:0 }}>
+          <p style={{ fontSize:10, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.1em', color:'#334155', marginBottom:8, margin:'0 0 8px' }}>{label}</p>
+          <p style={{ fontSize:24, fontWeight:700, fontVariantNumeric:'tabular-nums', lineHeight:1, color:p.val, margin:0 }}>{value ?? '—'}</p>
+          {sub && <p style={{ fontSize:11, marginTop:8, fontWeight:500, color:p.sub, margin:'8px 0 0' }}>{sub}</p>}
         </div>
         {icon && (
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-xl ${p.icon}`}>
+          <div style={{
+            width:40, height:40, borderRadius:12,
+            display:'flex', alignItems:'center', justifyContent:'center',
+            flexShrink:0, fontSize:20,
+            background: p.icon,
+            color: p.iconText,
+            border: `1px solid ${p.glow}`,
+          }}>
             {icon}
           </div>
         )}

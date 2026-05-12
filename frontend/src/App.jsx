@@ -20,20 +20,37 @@ function Header() {
   const { pathname } = useLocation()
   const meta = PAGE_META[pathname] || {}
   return (
-    <header className="flex-shrink-0 flex items-center justify-between px-8 h-14 border-b border-bg-border bg-white">
-      <div className="flex items-center gap-3">
+    <header style={{
+      flexShrink: 0,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: '0 32px',
+      height: 56,
+      background: 'rgba(7,9,26,0.85)',
+      backdropFilter: 'blur(20px)',
+      WebkitBackdropFilter: 'blur(20px)',
+      borderBottom: '1px solid rgba(99,102,241,0.1)',
+    }}>
+      <div style={{ display:'flex', alignItems:'center', gap:12 }}>
         <div>
-          <h1 className="text-base font-bold text-slate-900 leading-tight">{meta.title}</h1>
+          <h1 style={{ fontSize:15, fontWeight:700, color:'#f1f5f9', lineHeight:1.2, margin:0 }}>{meta.title}</h1>
         </div>
         {meta.desc && (
           <>
-            <span className="text-slate-200">·</span>
-            <p className="text-sm text-slate-400 hidden md:block">{meta.desc}</p>
+            <span style={{ color:'rgba(99,102,241,0.3)', fontWeight:300 }}>·</span>
+            <p style={{ fontSize:12, color:'#334155', margin:0 }}>{meta.desc}</p>
           </>
         )}
       </div>
-      <div className="flex items-center gap-2 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full">
-        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+      <div style={{
+        display:'flex', alignItems:'center', gap:6,
+        fontSize:11, fontWeight:600, color:'#10b981',
+        background:'rgba(16,185,129,0.08)',
+        border:'1px solid rgba(16,185,129,0.2)',
+        padding:'5px 12px', borderRadius:99,
+      }}>
+        <span style={{ width:6, height:6, borderRadius:'50%', background:'#10b981', display:'inline-block', animation:'pulse 2s infinite' }} />
         시스템 정상
       </div>
     </header>
@@ -42,11 +59,11 @@ function Header() {
 
 function Layout() {
   return (
-    <div className="flex h-screen overflow-hidden bg-bg">
+    <div style={{ display:'flex', height:'100vh', overflow:'hidden', background:'#07091a' }}>
       <Sidebar />
-      <div className="flex flex-col flex-1 overflow-hidden">
+      <div style={{ display:'flex', flexDirection:'column', flex:1, overflow:'hidden' }}>
         <Header />
-        <main className="flex-1 overflow-y-auto bg-bg">
+        <main style={{ flex:1, overflowY:'auto', background:'#07091a' }}>
           <Routes>
             <Route path="/" element={<Navigate to="/upload" replace />} />
             <Route path="/upload"      element={<Upload />} />

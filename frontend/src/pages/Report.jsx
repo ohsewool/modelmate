@@ -30,39 +30,41 @@ export default function Report() {
   const ready = state?.has_model
 
   return (
-    <div className="p-8 animate-fade-in max-w-6xl">
+    <div className="animate-fade-in" style={{ padding:32, maxWidth:960 }}>
       {!ready ? (
-        <div className="empty-state">
-          <div className="w-20 h-20 rounded-3xl mx-auto mb-5 flex items-center justify-center"
-            style={{ background: 'rgba(79,126,248,0.08)', border: '1px solid rgba(79,126,248,0.15)' }}>
-            <span className="text-4xl">📋</span>
+        <div className="card empty-state">
+          <div style={{ width:80, height:80, borderRadius:24, margin:'0 auto 20px', display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(99,102,241,0.08)', border:'1px solid rgba(99,102,241,0.15)' }}>
+            <span style={{ fontSize:40 }}>📋</span>
           </div>
           <p className="empty-title">보고서를 생성하려면 모델 학습이 필요합니다</p>
           <p className="empty-desc">Model Lab에서 CV 실행 후 다시 오세요.</p>
         </div>
       ) : (
-        <div className="space-y-5 animate-slide-up">
+        <div className="animate-slide-up" style={{ display:'flex', flexDirection:'column', gap:20 }}>
           {/* Hero card */}
-          <div className="card relative overflow-hidden"
-            style={{
-              background: 'linear-gradient(135deg, rgba(79,126,248,0.1) 0%, rgba(34,211,238,0.05) 100%)',
-              borderColor: 'rgba(79,126,248,0.25)',
-              boxShadow: '0 0 40px rgba(79,126,248,0.08)',
-            }}>
-            <div className="absolute top-0 right-0 w-64 h-64 opacity-5 pointer-events-none"
-              style={{ background: 'radial-gradient(circle, #4f7ef8 0%, transparent 70%)' }} />
-            <div className="relative flex items-start gap-5">
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
-                style={{ background: 'linear-gradient(135deg, #4f7ef8 0%, #22d3ee 100%)', boxShadow: '0 4px 16px rgba(79,126,248,0.4)' }}>
-                <span className="text-2xl">📊</span>
+          <div className="card" style={{
+            position:'relative', overflow:'hidden',
+            background: 'linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(139,92,246,0.04) 100%)',
+            borderColor: 'rgba(99,102,241,0.2)',
+            boxShadow: '0 0 40px rgba(99,102,241,0.08), 0 4px 24px rgba(0,0,0,0.4)',
+          }}>
+            {/* Glow orb */}
+            <div style={{ position:'absolute', top:-40, right:-40, width:200, height:200, borderRadius:'50%', background:'radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%)', pointerEvents:'none' }} />
+            <div style={{ position:'relative', display:'flex', alignItems:'flex-start', gap:20 }}>
+              <div style={{
+                width:56, height:56, borderRadius:18, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
+                background:'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                boxShadow:'0 4px 20px rgba(99,102,241,0.5)',
+              }}>
+                <span style={{ fontSize:24 }}>📊</span>
               </div>
-              <div className="flex-1">
-                <p className="font-bold text-white text-lg mb-1">분석 보고서 준비 완료</p>
-                <p className="text-slate-400 text-sm mb-5">
-                  최고 모델 <span className="text-white font-semibold">{state.best_model}</span>의
+              <div style={{ flex:1 }}>
+                <p style={{ fontWeight:700, color:'#f1f5f9', fontSize:18, margin:'0 0 4px' }}>분석 보고서 준비 완료</p>
+                <p style={{ color:'#475569', fontSize:13, margin:'0 0 20px' }}>
+                  최고 모델 <span style={{ color:'#f1f5f9', fontWeight:600 }}>{state.best_model}</span>의
                   학습 결과와 설비 예측 분석이 포함됩니다.
                 </p>
-                <div className="flex gap-3">
+                <div style={{ display:'flex', gap:12 }}>
                   <button onClick={() => window.open('/api/report/html', '_blank')} className="btn-primary">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15,3 21,3 21,9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                     브라우저에서 열기
@@ -81,14 +83,22 @@ export default function Report() {
           {/* 포함 항목 */}
           <div className="card">
             <p className="section-title">보고서 포함 항목</p>
-            <div className="grid grid-cols-2 gap-3">
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:12 }}>
               {ITEMS.map(([icon, title, desc]) => (
-                <div key={title} className="flex items-start gap-3 rounded-xl p-4 border border-bg-border"
-                  style={{ background: '#0f1826' }}>
-                  <span className="text-lg flex-shrink-0">{icon}</span>
+                <div key={title} style={{
+                  display:'flex', alignItems:'flex-start', gap:12,
+                  borderRadius:12, padding:16,
+                  border:'1px solid rgba(99,102,241,0.08)',
+                  background:'rgba(99,102,241,0.03)',
+                  transition:'all 0.15s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor='rgba(99,102,241,0.18)'; e.currentTarget.style.background='rgba(99,102,241,0.06)' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor='rgba(99,102,241,0.08)'; e.currentTarget.style.background='rgba(99,102,241,0.03)' }}
+                >
+                  <span style={{ fontSize:20, flexShrink:0 }}>{icon}</span>
                   <div>
-                    <p className="text-sm font-semibold text-white">{title}</p>
-                    <p className="text-xs text-slate-500 mt-0.5">{desc}</p>
+                    <p style={{ fontSize:13, fontWeight:600, color:'#f1f5f9', margin:'0 0 2px' }}>{title}</p>
+                    <p style={{ fontSize:11, color:'#334155', margin:0 }}>{desc}</p>
                   </div>
                 </div>
               ))}
@@ -98,19 +108,18 @@ export default function Report() {
           {/* 현재 결과 요약 */}
           <div className="card">
             <p className="section-title">현재 분석 결과</p>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="rounded-xl p-4 text-center border border-bg-border" style={{ background: '#0f1826' }}>
-                <p className="text-xs text-slate-500 mb-1.5 font-semibold uppercase tracking-wider">최고 모델</p>
-                <p className="text-white font-bold">{state.best_model?.split(' ')[0]}</p>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:16 }}>
+              <div style={{ borderRadius:12, padding:16, textAlign:'center', border:'1px solid rgba(255,255,255,0.05)', background:'rgba(255,255,255,0.02)' }}>
+                <p style={{ fontSize:10, color:'#334155', marginBottom:8, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.1em', margin:'0 0 8px' }}>최고 모델</p>
+                <p style={{ color:'#f1f5f9', fontWeight:700, margin:0 }}>{state.best_model?.split(' ')[0]}</p>
               </div>
-              <div className="rounded-xl p-4 text-center border border-primary/20" style={{ background: 'rgba(79,126,248,0.06)' }}>
-                <p className="text-xs text-slate-500 mb-1.5 font-semibold uppercase tracking-wider">ROC-AUC</p>
-                <p className="text-primary font-bold text-xl tabular-nums">{state.cv_results?.[0]?.roc_auc ?? '—'}</p>
+              <div style={{ borderRadius:12, padding:16, textAlign:'center', border:'1px solid rgba(99,102,241,0.2)', background:'rgba(99,102,241,0.06)' }}>
+                <p style={{ fontSize:10, color:'#334155', marginBottom:8, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.1em', margin:'0 0 8px' }}>ROC-AUC</p>
+                <p style={{ color:'#818cf8', fontWeight:700, fontSize:22, fontVariantNumeric:'tabular-nums', margin:0 }}>{state.cv_results?.[0]?.roc_auc ?? '—'}</p>
               </div>
-              <div className="rounded-xl p-4 text-center border border-bg-border"
-                style={{ background: state.optuna_result ? 'rgba(16,185,129,0.06)' : '#0f1826', borderColor: state.optuna_result ? 'rgba(16,185,129,0.2)' : undefined }}>
-                <p className="text-xs text-slate-500 mb-1.5 font-semibold uppercase tracking-wider">Optuna</p>
-                <p className={`font-bold ${state.optuna_result ? 'text-emerald' : 'text-slate-600'}`}>
+              <div style={{ borderRadius:12, padding:16, textAlign:'center', border:`1px solid ${state.optuna_result ? 'rgba(16,185,129,0.2)' : 'rgba(255,255,255,0.05)'}`, background: state.optuna_result ? 'rgba(16,185,129,0.06)' : 'rgba(255,255,255,0.02)' }}>
+                <p style={{ fontSize:10, color:'#334155', marginBottom:8, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.1em', margin:'0 0 8px' }}>Optuna</p>
+                <p style={{ fontWeight:700, color: state.optuna_result ? '#6ee7b7' : '#1e293b', margin:0 }}>
                   {state.optuna_result ? `+${state.optuna_result.improvement}% 개선` : '미실행'}
                 </p>
               </div>
