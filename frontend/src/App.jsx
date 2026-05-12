@@ -25,14 +25,14 @@ function Header() {
     <header style={{
       flexShrink:0, display:'flex', alignItems:'center', justifyContent:'space-between',
       padding:'0 32px', height:56,
-      background:'#ffffff', borderBottom:'1px solid #e2e8f0',
+      background:'var(--surface)', borderBottom:'1px solid var(--border)',
     }}>
       <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-        <h1 style={{ fontSize:15, fontWeight:700, color:'#0f172a', lineHeight:1.2, margin:0 }}>{meta.title}</h1>
+        <h1 style={{ fontSize:15, fontWeight:700, color:'var(--text)', lineHeight:1.2, margin:0 }}>{meta.title}</h1>
         {meta.desc && (
           <>
-            <span style={{ color:'#e2e8f0' }}>·</span>
-            <p style={{ fontSize:12, color:'#94a3b8', margin:0 }}>{meta.desc}</p>
+            <span style={{ color:'var(--border)' }}>·</span>
+            <p style={{ fontSize:12, color:'var(--text-label)', margin:0 }}>{meta.desc}</p>
           </>
         )}
       </div>
@@ -55,11 +55,11 @@ function Layout({ children }) {
   if (isHome) return <>{children}</>
 
   return (
-    <div style={{ display:'flex', height:'100vh', overflow:'hidden', background:'#f8fafc' }}>
+    <div style={{ display:'flex', height:'100vh', overflow:'hidden', background:'var(--bg)' }}>
       <Sidebar />
       <div style={{ display:'flex', flexDirection:'column', flex:1, overflow:'hidden' }}>
         <Header />
-        <main style={{ flex:1, overflowY:'auto', background:'#f8fafc' }}>
+        <main style={{ flex:1, overflowY:'auto', background:'var(--bg)' }}>
           {children}
         </main>
       </div>

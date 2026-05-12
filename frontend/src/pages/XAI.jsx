@@ -3,8 +3,8 @@ import api from '../api'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 
 const ttStyle = {
-  background: '#ffffff', border: '1px solid #e2e8f0',
-  borderRadius: 12, fontSize: 11, color: '#0f172a',
+  background: '#ffffff', border: '1px solid var(--border)',
+  borderRadius: 12, fontSize: 11, color: 'var(--text)',
   boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
 }
 
@@ -78,8 +78,8 @@ export default function XAI() {
               <p className="section-title">전역 피처 중요도 (SHAP 평균 절댓값)</p>
               <ResponsiveContainer width="100%" height={Math.max(300, global.length * 38)}>
                 <BarChart data={[...global].reverse()} layout="vertical" barSize={14}>
-                  <XAxis type="number" tick={{ fill:'#334155', fontSize:10 }} axisLine={false} tickLine={false} />
-                  <YAxis dataKey="feature" type="category" tick={{ fill:'#475569', fontSize:11 }} width={140} axisLine={false} tickLine={false} />
+                  <XAxis type="number" tick={{ fill:'var(--text-2)', fontSize:10 }} axisLine={false} tickLine={false} />
+                  <YAxis dataKey="feature" type="category" tick={{ fill:'var(--text-2)', fontSize:11 }} width={140} axisLine={false} tickLine={false} />
                   <Tooltip contentStyle={ttStyle} />
                   <Bar dataKey="shap_value" radius={[0,6,6,0]}>
                     {global.map((_, i) => (
@@ -99,7 +99,7 @@ export default function XAI() {
           <div className="card">
             <div style={{ display:'flex', alignItems:'flex-end', gap:16 }}>
               <div>
-                <label style={{ display:'block', fontSize:10, fontWeight:600, color:'#334155', marginBottom:8, textTransform:'uppercase', letterSpacing:'0.1em' }}>샘플 인덱스</label>
+                <label style={{ display:'block', fontSize:10, fontWeight:600, color:'var(--text-2)', marginBottom:8, textTransform:'uppercase', letterSpacing:'0.1em' }}>샘플 인덱스</label>
                 <input type="number" value={idx} min={0} onChange={e => setIdx(+e.target.value)}
                   className="input" style={{ width:128 }} />
               </div>
@@ -116,30 +116,30 @@ export default function XAI() {
             <div className="animate-slide-up" style={{ display:'flex', flexDirection:'column', gap:16 }}>
               <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:16 }}>
                 <div className="card" style={{ textAlign:'center' }}>
-                  <p style={{ fontSize:10, color:'#334155', marginBottom:8, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.1em' }}>예측 결과</p>
+                  <p style={{ fontSize:10, color:'var(--text-2)', marginBottom:8, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.1em' }}>예측 결과</p>
                   <p style={{ fontSize:24, fontWeight:700, color: local.prediction===1 ? '#f43f5e' : '#10b981', margin:0 }}>
                     {local.prediction === 1 ? '🔴 고장' : '🟢 정상'}
                   </p>
                 </div>
                 <div className="card" style={{ textAlign:'center' }}>
-                  <p style={{ fontSize:10, color:'#334155', marginBottom:8, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.1em' }}>정상 확률</p>
+                  <p style={{ fontSize:10, color:'var(--text-2)', marginBottom:8, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.1em' }}>정상 확률</p>
                   <p style={{ fontSize:24, fontWeight:700, color:'#10b981', margin:0 }}>{(local.probability[0]*100).toFixed(1)}%</p>
                 </div>
                 <div className="card" style={{ textAlign:'center' }}>
-                  <p style={{ fontSize:10, color:'#334155', marginBottom:8, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.1em' }}>고장 확률</p>
+                  <p style={{ fontSize:10, color:'var(--text-2)', marginBottom:8, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.1em' }}>고장 확률</p>
                   <p style={{ fontSize:24, fontWeight:700, color:'#f43f5e', margin:0 }}>{(local.probability[1]*100).toFixed(1)}%</p>
                 </div>
               </div>
               <div className="card">
                 <p className="section-title">SHAP 기여도</p>
-                <div style={{ display:'flex', gap:16, marginBottom:16, fontSize:11, color:'#475569' }}>
+                <div style={{ display:'flex', gap:16, marginBottom:16, fontSize:11, color:'var(--text-2)' }}>
                   <span style={{ display:'flex', alignItems:'center', gap:6 }}><span style={{ width:12, height:12, borderRadius:3, background:'#f43f5e', display:'inline-block' }} />고장 방향 (+)</span>
                   <span style={{ display:'flex', alignItems:'center', gap:6 }}><span style={{ width:12, height:12, borderRadius:3, background:'#6366f1', display:'inline-block' }} />정상 방향 (−)</span>
                 </div>
                 <ResponsiveContainer width="100%" height={Math.max(200, local.local.length * 34)}>
                   <BarChart data={[...local.local].reverse()} layout="vertical" barSize={14}>
-                    <XAxis type="number" tick={{ fill:'#334155', fontSize:10 }} axisLine={false} tickLine={false} />
-                    <YAxis dataKey="feature" type="category" tick={{ fill:'#475569', fontSize:11 }} width={140} axisLine={false} tickLine={false} />
+                    <XAxis type="number" tick={{ fill:'var(--text-2)', fontSize:10 }} axisLine={false} tickLine={false} />
+                    <YAxis dataKey="feature" type="category" tick={{ fill:'var(--text-2)', fontSize:11 }} width={140} axisLine={false} tickLine={false} />
                     <Tooltip contentStyle={ttStyle} />
                     <Bar dataKey="shap_value" radius={[0,6,6,0]}>
                       {[...local.local].reverse().map((d,i) => (
@@ -174,13 +174,13 @@ export default function XAI() {
             <div className="card" style={{ textAlign:'center', padding:'64px 20px' }}>
               <span style={{ fontSize:40, display:'block', marginBottom:12 }}>🎉</span>
               <p style={{ color:'#10b981', fontWeight:600, fontSize:18, margin:'0 0 4px' }}>오분류 샘플이 없습니다!</p>
-              <p style={{ color:'#334155', fontSize:13 }}>모든 샘플이 올바르게 분류되었습니다.</p>
+              <p style={{ color:'var(--text-2)', fontSize:13 }}>모든 샘플이 올바르게 분류되었습니다.</p>
             </div>
           ) : (
             <>
               <div className="banner-danger">
                 <span style={{ fontSize:18 }}>⚠️</span>
-                <p style={{ color:'#1e293b', fontSize:13, margin:0 }}>
+                <p style={{ color:'var(--text)', fontSize:13, margin:0 }}>
                   전체 <b>{preds.total.toLocaleString()}</b>건 중 오분류 상위 <b style={{ color:'#fda4af' }}>3건</b>을 표시합니다.
                 </p>
               </div>
@@ -188,16 +188,16 @@ export default function XAI() {
                 <div key={i} className="card animate-slide-up" style={{ borderColor:'rgba(244,63,94,0.2)' }}>
                   <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:16 }}>
                     <span className="badge badge-red">오분류 #{i+1}</span>
-                    <span style={{ fontSize:11, color:'#334155' }}>샘플 #{w.idx}</span>
-                    <span style={{ fontSize:11, color:'#334155', marginLeft:'auto' }}>
+                    <span style={{ fontSize:11, color:'var(--text-2)' }}>샘플 #{w.idx}</span>
+                    <span style={{ fontSize:11, color:'var(--text-2)', marginLeft:'auto' }}>
                       실제 {w.actual} → 예측 {w.predicted} | 확률 {(w.probability*100).toFixed(1)}%
                     </span>
                   </div>
                   <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8 }}>
                     {Object.entries(w.features).slice(0,8).map(([k,v]) => (
                       <div key={k} className="card-elevated" style={{ textAlign:'center', borderRadius:12, padding:12 }}>
-                        <p style={{ fontSize:10, color:'#334155', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', margin:'0 0 4px' }}>{k}</p>
-                        <p style={{ fontSize:13, fontWeight:600, color:'#1e293b', margin:0 }}>{typeof v === 'number' ? v.toFixed(3) : v}</p>
+                        <p style={{ fontSize:10, color:'var(--text-2)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', margin:'0 0 4px' }}>{k}</p>
+                        <p style={{ fontSize:13, fontWeight:600, color:'var(--text)', margin:0 }}>{typeof v === 'number' ? v.toFixed(3) : v}</p>
                       </div>
                     ))}
                   </div>

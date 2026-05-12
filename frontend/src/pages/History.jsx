@@ -3,8 +3,8 @@ import api from '../api'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 
 const ttStyle = {
-  background: '#ffffff', border: '1px solid #e2e8f0',
-  borderRadius: 12, fontSize: 11, color: '#0f172a',
+  background: '#ffffff', border: '1px solid var(--border)',
+  borderRadius: 12, fontSize: 11, color: 'var(--text)',
   boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
 }
 
@@ -73,15 +73,15 @@ export default function History() {
           {/* KPI */}
           <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:16 }}>
             <div className="card" style={{ textAlign:'center' }}>
-              <p style={{ fontSize:10, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.1em', color:'#64748b', marginBottom:8, margin:'0 0 8px' }}>총 실험 수</p>
-              <p style={{ fontSize:32, fontWeight:700, color:'#1e293b', margin:0 }}>{history.length}</p>
+              <p style={{ fontSize:10, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.1em', color:'var(--text-3)', marginBottom:8, margin:'0 0 8px' }}>총 실험 수</p>
+              <p style={{ fontSize:32, fontWeight:700, color:'var(--text)', margin:0 }}>{history.length}</p>
             </div>
             <div className="card" style={{ textAlign:'center' }}>
-              <p style={{ fontSize:10, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.1em', color:'#64748b', marginBottom:8, margin:'0 0 8px' }}>Optuna 적용</p>
+              <p style={{ fontSize:10, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.1em', color:'var(--text-3)', marginBottom:8, margin:'0 0 8px' }}>Optuna 적용</p>
               <p style={{ fontSize:32, fontWeight:700, color:'#d97706', margin:0 }}>{history.filter(h=>h.optuna_applied).length}</p>
             </div>
             <div className="card" style={{ textAlign:'center' }}>
-              <p style={{ fontSize:10, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.1em', color:'#64748b', marginBottom:8, margin:'0 0 8px' }}>최고 ROC-AUC</p>
+              <p style={{ fontSize:10, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.1em', color:'var(--text-3)', marginBottom:8, margin:'0 0 8px' }}>최고 ROC-AUC</p>
               <p style={{ fontSize:32, fontWeight:700, color:'#059669', margin:0 }}>{bestROC.toFixed(4)}</p>
             </div>
           </div>
@@ -93,8 +93,8 @@ export default function History() {
               <ResponsiveContainer width="100%" height={200}>
                 <LineChart data={trend}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(99,102,241,0.08)" />
-                  <XAxis dataKey="name" tick={{ fill:'#334155', fontSize:11 }} axisLine={false} tickLine={false} />
-                  <YAxis domain={['auto','auto']} tick={{ fill:'#334155', fontSize:10 }} axisLine={false} tickLine={false} />
+                  <XAxis dataKey="name" tick={{ fill:'var(--text-2)', fontSize:11 }} axisLine={false} tickLine={false} />
+                  <YAxis domain={['auto','auto']} tick={{ fill:'var(--text-2)', fontSize:10 }} axisLine={false} tickLine={false} />
                   <Tooltip contentStyle={ttStyle} />
                   <Line type="monotone" dataKey="roc" stroke="#6366f1" strokeWidth={2.5}
                     dot={{ fill:'#6366f1', r:4, strokeWidth:2, stroke:'#ffffff' }} name="ROC-AUC" />
@@ -104,10 +104,10 @@ export default function History() {
                 </LineChart>
               </ResponsiveContainer>
               <div style={{ display:'flex', gap:24, marginTop:12, justifyContent:'flex-end' }}>
-                <span style={{ display:'flex', alignItems:'center', gap:8, fontSize:11, color:'#475569' }}>
+                <span style={{ display:'flex', alignItems:'center', gap:8, fontSize:11, color:'var(--text-2)' }}>
                   <span style={{ width:20, height:2, borderRadius:99, background:'#6366f1', display:'inline-block' }} />ROC-AUC
                 </span>
-                <span style={{ display:'flex', alignItems:'center', gap:8, fontSize:11, color:'#475569' }}>
+                <span style={{ display:'flex', alignItems:'center', gap:8, fontSize:11, color:'var(--text-2)' }}>
                   <span style={{ width:20, height:0, display:'inline-block', borderTop:'2px dashed #f59e0b' }} />Optuna
                 </span>
               </div>
@@ -130,18 +130,18 @@ export default function History() {
                   const br = h.results?.find(r => r.model === h.best_model) || {}
                   return (
                     <tr key={i}>
-                      <td style={{ color:'#334155', fontSize:11 }}>#{history.length-i}</td>
-                      <td style={{ color:'#334155', fontSize:11, whiteSpace:'nowrap' }}>{h.timestamp}</td>
-                      <td style={{ color:'#475569', fontSize:11 }}>{h.data_shape?.join('×')}</td>
-                      <td style={{ color:'#475569', fontSize:11 }}>{h.target || '—'}</td>
-                      <td style={{ color:'#1e293b', fontWeight:500, fontSize:11 }}>{h.best_model}</td>
-                      <td style={{ color:'#64748b', fontSize:11, fontVariantNumeric:'tabular-nums' }}>{br.accuracy || '—'}</td>
-                      <td style={{ color:'#64748b', fontSize:11, fontVariantNumeric:'tabular-nums' }}>{br.f1 || '—'}</td>
+                      <td style={{ color:'var(--text-2)', fontSize:11 }}>#{history.length-i}</td>
+                      <td style={{ color:'var(--text-2)', fontSize:11, whiteSpace:'nowrap' }}>{h.timestamp}</td>
+                      <td style={{ color:'var(--text-2)', fontSize:11 }}>{h.data_shape?.join('×')}</td>
+                      <td style={{ color:'var(--text-2)', fontSize:11 }}>{h.target || '—'}</td>
+                      <td style={{ color:'var(--text)', fontWeight:500, fontSize:11 }}>{h.best_model}</td>
+                      <td style={{ color:'var(--text-3)', fontSize:11, fontVariantNumeric:'tabular-nums' }}>{br.accuracy || '—'}</td>
+                      <td style={{ color:'var(--text-3)', fontSize:11, fontVariantNumeric:'tabular-nums' }}>{br.f1 || '—'}</td>
                       <td style={{ color:'#4f46e5', fontWeight:600, fontSize:11, fontVariantNumeric:'tabular-nums' }}>{br.roc_auc || '—'}</td>
                       <td>
                         {h.optuna_applied
                           ? <span className="badge badge-green">✓ 적용</span>
-                          : <span style={{ fontSize:11, color:'#1e293b' }}>—</span>
+                          : <span style={{ fontSize:11, color:'var(--text)' }}>—</span>
                         }
                       </td>
                     </tr>

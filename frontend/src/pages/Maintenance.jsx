@@ -4,8 +4,8 @@ import KPICard from '../components/KPICard'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts'
 
 const ttStyle = {
-  background: '#ffffff', border: '1px solid #e2e8f0',
-  borderRadius: 12, fontSize: 11, color: '#0f172a',
+  background: '#ffffff', border: '1px solid var(--border)',
+  borderRadius: 12, fontSize: 11, color: 'var(--text)',
   boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
 }
 const riskColor = p => p >= 0.8 ? '#f43f5e' : p >= 0.5 ? '#f59e0b' : '#10b981'
@@ -32,8 +32,8 @@ export default function Maintenance() {
         <div style={{ width:80, height:80, borderRadius:24, margin:'0 auto 20px', display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(245,158,11,0.1)', border:'1px solid rgba(245,158,11,0.2)' }}>
           <span style={{ fontSize:40 }}>🔧</span>
         </div>
-        <p style={{ color:'#94a3b8', fontWeight:600, marginBottom:8 }}>모델 없음</p>
-        <p style={{ color:'#334155', fontSize:13 }}>먼저 Model Lab에서 모델을 학습해주세요.</p>
+        <p style={{ color:'var(--text-label)', fontWeight:600, marginBottom:8 }}>모델 없음</p>
+        <p style={{ color:'var(--text-2)', fontSize:13 }}>먼저 Model Lab에서 모델을 학습해주세요.</p>
       </div>
     </div>
   )
@@ -71,11 +71,11 @@ export default function Maintenance() {
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
                 <p className="section-title" style={{ margin:0 }}>위험 설비 Top {topN}</p>
                 <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                  <span style={{ fontSize:11, color:'#334155' }}>{Math.min(5, data.risk_items.length)}</span>
+                  <span style={{ fontSize:11, color:'var(--text-2)' }}>{Math.min(5, data.risk_items.length)}</span>
                   <input type="range" min={5} max={Math.min(50, data.risk_items.length)} value={topN}
                     onChange={e => setTopN(+e.target.value)}
                     style={{ width:80, accentColor:'#6366f1', cursor:'pointer' }} />
-                  <span style={{ fontSize:11, color:'#334155' }}>{Math.min(50, data.risk_items.length)}</span>
+                  <span style={{ fontSize:11, color:'var(--text-2)' }}>{Math.min(50, data.risk_items.length)}</span>
                 </div>
               </div>
               {risk.length === 0 ? (
@@ -86,9 +86,9 @@ export default function Maintenance() {
               ) : (
                 <ResponsiveContainer width="100%" height={260}>
                   <BarChart data={risk} barSize={18}>
-                    <XAxis dataKey="id" tick={{ fill:'#334155', fontSize:10 }} axisLine={false} tickLine={false}
-                      label={{ value:'설비 ID', position:'insideBottom', fill:'#334155', fontSize:10 }} />
-                    <YAxis domain={[0,1]} tick={{ fill:'#334155', fontSize:10 }} axisLine={false} tickLine={false} />
+                    <XAxis dataKey="id" tick={{ fill:'var(--text-2)', fontSize:10 }} axisLine={false} tickLine={false}
+                      label={{ value:'설비 ID', position:'insideBottom', fill:'var(--text-2)', fontSize:10 }} />
+                    <YAxis domain={[0,1]} tick={{ fill:'var(--text-2)', fontSize:10 }} axisLine={false} tickLine={false} />
                     <Tooltip contentStyle={ttStyle} formatter={v => [`${(v*100).toFixed(1)}%`, '고장 확률']} />
                     <Bar dataKey="probability" radius={[5,5,0,0]}>
                       {risk.map((r,i) => <Cell key={i} fill={riskColor(r.probability)} />)}
@@ -116,16 +116,16 @@ export default function Maintenance() {
                   <div style={{ textAlign:'center' }}>
                     <div style={{ display:'flex', alignItems:'center', gap:6, justifyContent:'center', marginBottom:4 }}>
                       <span style={{ width:8, height:8, borderRadius:'50%', background:'#6366f1', display:'inline-block' }} />
-                      <span style={{ fontSize:11, color:'#475569' }}>정상</span>
+                      <span style={{ fontSize:11, color:'var(--text-2)' }}>정상</span>
                     </div>
-                    <p style={{ fontSize:13, fontWeight:700, color:'#1e293b', margin:0 }}>{(data.total - data.failure_count).toLocaleString()}</p>
+                    <p style={{ fontSize:13, fontWeight:700, color:'var(--text)', margin:0 }}>{(data.total - data.failure_count).toLocaleString()}</p>
                   </div>
                   <div style={{ textAlign:'center' }}>
                     <div style={{ display:'flex', alignItems:'center', gap:6, justifyContent:'center', marginBottom:4 }}>
                       <span style={{ width:8, height:8, borderRadius:'50%', background:'#f43f5e', display:'inline-block' }} />
-                      <span style={{ fontSize:11, color:'#475569' }}>고장</span>
+                      <span style={{ fontSize:11, color:'var(--text-2)' }}>고장</span>
                     </div>
-                    <p style={{ fontSize:13, fontWeight:700, color:'#1e293b', margin:0 }}>{data.failure_count.toLocaleString()}</p>
+                    <p style={{ fontSize:13, fontWeight:700, color:'var(--text)', margin:0 }}>{data.failure_count.toLocaleString()}</p>
                   </div>
                 </div>
               </div>
@@ -156,7 +156,7 @@ export default function Maintenance() {
                       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
                         <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                           <span style={{ width:8, height:8, borderRadius:'50%', background:cfg.dot, boxShadow:`0 0 8px ${cfg.dot}`, display:'inline-block' }} />
-                          <span style={{ fontWeight:700, color:'#1e293b', fontSize:14 }}>설비 #{r.id}</span>
+                          <span style={{ fontWeight:700, color:'var(--text)', fontSize:14 }}>설비 #{r.id}</span>
                         </div>
                         <span className={`badge ${cfg.badge}`}>{cfg.label}</span>
                       </div>
@@ -164,9 +164,9 @@ export default function Maintenance() {
                         <div style={{ flex:1, height:6, borderRadius:99, overflow:'hidden', background:'rgba(255,255,255,0.07)' }}>
                           <div style={{ height:'100%', borderRadius:99, width:`${p*100}%`, background:riskColor(p), boxShadow:`0 0 8px ${riskColor(p)}`, transition:'width 0.5s' }} />
                         </div>
-                        <span style={{ fontSize:13, fontWeight:700, color:'#1e293b', fontVariantNumeric:'tabular-nums', width:40, textAlign:'right', flexShrink:0 }}>{(p*100).toFixed(1)}%</span>
+                        <span style={{ fontSize:13, fontWeight:700, color:'var(--text)', fontVariantNumeric:'tabular-nums', width:40, textAlign:'right', flexShrink:0 }}>{(p*100).toFixed(1)}%</span>
                       </div>
-                      <p style={{ fontSize:11, color:'#475569', margin:0 }}>📌 {cfg.action}</p>
+                      <p style={{ fontSize:11, color:'var(--text-2)', margin:0 }}>📌 {cfg.action}</p>
                     </div>
                   )
                 })}
@@ -184,9 +184,9 @@ export default function Maintenance() {
                 <span style={{ fontSize:18 }}>🤖</span>
               </div>
               <div style={{ flex:1 }}>
-                <p style={{ fontWeight:600, color:'#1e293b', margin:'0 0 4px' }}>에이전트 실험 가이드</p>
-                <p style={{ fontSize:13, color:'#334155', margin:'0 0 12px' }}>
-                  현재 모델: <span style={{ color:'#1e293b', fontWeight:500 }}>{state?.best_model}</span>
+                <p style={{ fontWeight:600, color:'var(--text)', margin:'0 0 4px' }}>에이전트 실험 가이드</p>
+                <p style={{ fontSize:13, color:'var(--text-2)', margin:'0 0 12px' }}>
+                  현재 모델: <span style={{ color:'var(--text)', fontWeight:500 }}>{state?.best_model}</span>
                   {state?.cv_results && (
                     <span className="badge badge-blue" style={{ marginLeft:8 }}>ROC-AUC {state.cv_results[0]?.roc_auc}</span>
                   )}
@@ -200,7 +200,7 @@ export default function Maintenance() {
                   ].map((tip, i) => (
                     <div key={i} style={{ display:'flex', alignItems:'flex-start', gap:8, borderRadius:10, padding:12, background:'rgba(34,211,238,0.04)', border:'1px solid rgba(34,211,238,0.08)' }}>
                       <span style={{ color:'#22d3ee', fontSize:11, marginTop:1, flexShrink:0 }}>→</span>
-                      <p style={{ fontSize:11, color:'#475569', margin:0 }}>{tip}</p>
+                      <p style={{ fontSize:11, color:'var(--text-2)', margin:0 }}>{tip}</p>
                     </div>
                   ))}
                 </div>

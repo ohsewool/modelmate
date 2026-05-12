@@ -44,7 +44,7 @@ export default function Home() {
   const nav = useNavigate()
 
   return (
-    <div style={{ minHeight:'100vh', background:'#f8fafc' }}>
+    <div style={{ minHeight:'100vh', background:'var(--bg)' }}>
 
       {/* Hero */}
       <div style={{
@@ -113,18 +113,18 @@ export default function Home() {
       {/* Stats */}
       <div style={{ maxWidth:900, margin:'-32px auto 0', padding:'0 40px', position:'relative', zIndex:10 }}>
         <div style={{
-          background:'#ffffff', borderRadius:20, padding:'24px 32px',
+          background:'var(--surface)', borderRadius:20, padding:'24px 32px',
           boxShadow:'0 8px 32px rgba(0,0,0,0.1)',
           display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:0,
-          border:'1px solid #e2e8f0',
+          border:'1px solid var(--border)',
         }}>
           {STATS.map((s, i) => (
             <div key={i} style={{
               textAlign:'center', padding:'8px 0',
-              borderRight: i < STATS.length-1 ? '1px solid #f1f5f9' : 'none',
+              borderRight: i < STATS.length-1 ? '1px solid var(--border-sub)' : 'none',
             }}>
               <p style={{ fontSize:28, fontWeight:800, color:'#6366f1', margin:'0 0 4px', letterSpacing:'-0.02em' }}>{s.value}</p>
-              <p style={{ fontSize:12, color:'#94a3b8', margin:0, fontWeight:500 }}>{s.label}</p>
+              <p style={{ fontSize:12, color:'var(--text-label)', margin:0, fontWeight:500 }}>{s.label}</p>
             </div>
           ))}
         </div>
@@ -134,19 +134,19 @@ export default function Home() {
       <div style={{ maxWidth:900, margin:'60px auto', padding:'0 40px' }}>
         <div style={{ textAlign:'center', marginBottom:40 }}>
           <p style={{ fontSize:12, fontWeight:600, color:'#6366f1', textTransform:'uppercase', letterSpacing:'0.1em', margin:'0 0 8px' }}>Features</p>
-          <h2 style={{ fontSize:30, fontWeight:800, color:'#0f172a', margin:0, letterSpacing:'-0.02em' }}>주요 기능</h2>
+          <h2 style={{ fontSize:30, fontWeight:800, color:'var(--text)', margin:0, letterSpacing:'-0.02em' }}>주요 기능</h2>
         </div>
 
         <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:16 }}>
           {FEATURES.map((f, i) => (
             <div key={i} style={{
-              background:'#ffffff', border:`1px solid #e2e8f0`,
+              background:'var(--surface)', border:`1px solid var(--border)`,
               borderRadius:16, padding:24,
               boxShadow:'0 1px 3px rgba(0,0,0,0.05)',
               transition:'all 0.2s', cursor:'default',
             }}
             onMouseEnter={e => { e.currentTarget.style.transform='translateY(-4px)'; e.currentTarget.style.boxShadow='0 12px 32px rgba(0,0,0,0.08)'; e.currentTarget.style.borderColor=f.border }}
-            onMouseLeave={e => { e.currentTarget.style.transform=''; e.currentTarget.style.boxShadow='0 1px 3px rgba(0,0,0,0.05)'; e.currentTarget.style.borderColor='#e2e8f0' }}
+            onMouseLeave={e => { e.currentTarget.style.transform=''; e.currentTarget.style.boxShadow='0 1px 3px rgba(0,0,0,0.05)'; e.currentTarget.style.borderColor='var(--border)' }}
             >
               <div style={{
                 width:44, height:44, borderRadius:12, marginBottom:16,
@@ -155,8 +155,8 @@ export default function Home() {
               }}>
                 {f.icon}
               </div>
-              <h3 style={{ fontSize:15, fontWeight:700, color:'#0f172a', margin:'0 0 8px' }}>{f.title}</h3>
-              <p style={{ fontSize:13, color:'#64748b', margin:0, lineHeight:1.6 }}>{f.desc}</p>
+              <h3 style={{ fontSize:15, fontWeight:700, color:'var(--text)', margin:'0 0 8px' }}>{f.title}</h3>
+              <p style={{ fontSize:13, color:'var(--text-3)', margin:0, lineHeight:1.6 }}>{f.desc}</p>
             </div>
           ))}
         </div>

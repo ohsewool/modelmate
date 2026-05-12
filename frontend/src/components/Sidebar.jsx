@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import api from '../api'
+import { useTheme } from '../ThemeContext'
 
 const NAV = [
   { to: '/upload',      icon: UploadIcon,  label: '데이터 업로드', step: 1 },
@@ -13,6 +14,7 @@ const NAV = [
 
 export default function Sidebar() {
   const [state, setState] = useState({})
+  const { dark, toggle } = useTheme()
 
   useEffect(() => {
     const fetch = () => api.get('/state').then(r => setState(r.data)).catch(() => {})
@@ -26,11 +28,12 @@ export default function Sidebar() {
   return (
     <aside style={{
       width: 236, flexShrink: 0, display: 'flex', flexDirection: 'column',
-      background: '#ffffff', borderRight: '1px solid #e2e8f0',
+      background: 'var(--surface)', borderRight: '1px solid var(--border)',
+      transition: 'background 0.2s, border-color 0.2s',
     }}>
       {/* Logo */}
-      <div style={{ padding:'20px 20px 16px', borderBottom:'1px solid #f1f5f9' }}>
-        <NavLink to="/" style={{ textDecoration:'none', display:'flex', alignItems:'center', gap:12 }}>
+      <div style={{ padding:'20px 20px 16px', borderBottom:'1px solid var(--border-sub)', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+        <NavLink to="/" style={{ textDecoration:'none', display:'flex', alignItems:'center', gap:12, flex:1, minWidth:0 }}>
           <div style={{
             width:36, height:36, borderRadius:12, flexShrink:0,
             background: 'linear-gradient(135deg, #6366f1 0%, #7c3aed 100%)',
@@ -41,16 +44,22 @@ export default function Sidebar() {
               <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
             </svg>
           </div>
-          <div>
-            <div style={{ fontWeight:700, fontSize:14, color:'#0f172a', lineHeight:1.2 }}>FailureAI</div>
-            <div style={{ fontSize:11, color:'#94a3b8', marginTop:2 }}>설비 고장 예측 시스템</div>
+          <div style={{ minWidth:0 }}>
+            <div style={{ fontWeight:700, fontSize:14, color:'var(--text)', lineHeight:1.2 }}>FailureAI</div>
+            <div style={{ fontSize:11, color:'var(--text-label)', marginTop:2 }}>설비 고장 예측 시스템</div>
           </div>
         </NavLink>
+        <button onClick={toggle} className="theme-toggle" title={dark ? '라이트 모드' : '다크 모드'}>
+          {dark
+            ? <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+            : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z"/></svg>
+          }
+        </button>
       </div>
 
       {/* Nav */}
       <nav style={{ flex:1, padding:'12px 10px', overflowY:'auto' }}>
-        <p style={{ padding:'0 10px', marginBottom:8, fontSize:10, fontWeight:600, color:'#cbd5e1', textTransform:'uppercase', letterSpacing:'0.12em' }}>워크플로우</p>
+        <p style={{ padding:'0 10px', marginBottom:8, fontSize:10, fontWeight:600, color:'var(--text-label)', textTransform:'uppercase', letterSpacing:'0.12em' }}>워크플로우</p>
         {NAV.map(({ to, icon: Icon, label, step: s }) => {
           const done   = s < step
           const locked = s > step + 1
@@ -62,14 +71,14 @@ export default function Sidebar() {
                   padding:'9px 10px', borderRadius:10, marginBottom:2,
                   fontSize:13, fontWeight:500, cursor:locked?'not-allowed':'pointer',
                   transition:'all 0.15s',
-                  color: isActive ? '#6366f1' : done ? '#64748b' : '#64748b',
+                  color: isActive ? '#6366f1' : 'var(--text-3)',
                   background: isActive ? 'rgba(99,102,241,0.08)' : 'transparent',
                   boxShadow: isActive ? '0 0 0 1px rgba(99,102,241,0.15)' : 'none',
                 }}
-                onMouseEnter={e => { if(!isActive && !locked) e.currentTarget.style.background='#f8fafc' }}
+                onMouseEnter={e => { if(!isActive && !locked) e.currentTarget.style.background='var(--surface-alt)' }}
                 onMouseLeave={e => { if(!isActive) e.currentTarget.style.background='transparent' }}
                 >
-                  <span style={{ width:16, height:16, flexShrink:0, color: isActive ? '#6366f1' : done ? '#10b981' : '#cbd5e1' }}>
+                  <span style={{ width:16, height:16, flexShrink:0, color: isActive ? '#6366f1' : done ? '#10b981' : 'var(--border)' }}>
                     {done && !isActive ? <CheckIcon /> : <Icon />}
                   </span>
                   <span style={{ flex:1 }}>{label}</span>
@@ -84,9 +93,9 @@ export default function Sidebar() {
       </nav>
 
       {/* Status */}
-      <div style={{ margin:'0 10px 10px', borderRadius:12, border:'1px solid #e2e8f0', overflow:'hidden', background:'#f8fafc' }}>
-        <div style={{ padding:'10px 14px', borderBottom:'1px solid #f1f5f9' }}>
-          <p style={{ fontSize:10, fontWeight:600, color:'#94a3b8', textTransform:'uppercase', letterSpacing:'0.1em', margin:0 }}>시스템 상태</p>
+      <div style={{ margin:'0 10px 10px', borderRadius:12, border:'1px solid var(--border)', overflow:'hidden', background:'var(--surface-alt)', transition:'background 0.2s, border-color 0.2s' }}>
+        <div style={{ padding:'10px 14px', borderBottom:'1px solid var(--border-sub)' }}>
+          <p style={{ fontSize:10, fontWeight:600, color:'var(--text-label)', textTransform:'uppercase', letterSpacing:'0.1em', margin:0 }}>시스템 상태</p>
         </div>
         <div style={{ padding:'12px 14px', display:'flex', flexDirection:'column', gap:10 }}>
           <StatusRow label="데이터셋"  active={state.has_data}
@@ -106,10 +115,10 @@ function StatusRow({ label, active, value, accent }) {
   return (
     <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8 }}>
       <div style={{ display:'flex', alignItems:'center', gap:8, minWidth:0 }}>
-        <span style={{ width:6, height:6, borderRadius:'50%', flexShrink:0, background: active ? '#10b981' : '#e2e8f0' }} />
-        <span style={{ fontSize:11, color:'#94a3b8', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{label}</span>
+        <span style={{ width:6, height:6, borderRadius:'50%', flexShrink:0, background: active ? '#10b981' : 'var(--border)' }} />
+        <span style={{ fontSize:11, color:'var(--text-label)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{label}</span>
       </div>
-      <span style={{ fontSize:11, fontWeight:600, flexShrink:0, color: accent ? '#6366f1' : active ? '#334155' : '#cbd5e1' }}>{value}</span>
+      <span style={{ fontSize:11, fontWeight:600, flexShrink:0, color: accent ? '#6366f1' : active ? 'var(--text-2)' : 'var(--text-label)' }}>{value}</span>
     </div>
   )
 }

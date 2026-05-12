@@ -7,8 +7,8 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } fro
 const MEDALS = ['🥇','🥈','🥉','']
 const COLORS  = ['#818cf8','#34d399','#fbbf24','#a78bfa']
 const ttStyle = {
-  background: '#ffffff', border: '1px solid #e2e8f0',
-  borderRadius: 12, fontSize: 11, color: '#0f172a',
+  background: '#ffffff', border: '1px solid var(--border)',
+  borderRadius: 12, fontSize: 11, color: 'var(--text)',
   boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
 }
 
@@ -53,8 +53,8 @@ export default function ModelLab() {
         <div style={{ width:80, height:80, borderRadius:24, margin:'0 auto 20px', display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(99,102,241,0.1)', border:'1px solid rgba(99,102,241,0.2)' }}>
           <span style={{ fontSize:40 }}>📂</span>
         </div>
-        <p style={{ color:'#94a3b8', fontWeight:600, marginBottom:8 }}>데이터가 없습니다</p>
-        <p style={{ color:'#334155', fontSize:13, marginBottom:20 }}>먼저 데이터를 업로드해주세요.</p>
+        <p style={{ color:'var(--text-label)', fontWeight:600, marginBottom:8 }}>데이터가 없습니다</p>
+        <p style={{ color:'var(--text-2)', fontSize:13, marginBottom:20 }}>먼저 데이터를 업로드해주세요.</p>
         <button onClick={() => nav('/upload')} className="btn-primary">업로드 하러 가기</button>
       </div>
     </div>
@@ -71,8 +71,8 @@ export default function ModelLab() {
       <div className="card" style={{ marginBottom:20 }}>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
           <div>
-            <p style={{ fontWeight:600, color:'#1e293b', fontSize:15, margin:'0 0 4px' }}>3-fold Stratified CV</p>
-            <p style={{ fontSize:11, color:'#334155', margin:0 }}>Random Forest · Gradient Boosting · Logistic Regression · Decision Tree</p>
+            <p style={{ fontWeight:600, color:'var(--text)', fontSize:15, margin:'0 0 4px' }}>3-fold Stratified CV</p>
+            <p style={{ fontSize:11, color:'var(--text-2)', margin:0 }}>Random Forest · Gradient Boosting · Logistic Regression · Decision Tree</p>
           </div>
           <button onClick={runCV} disabled={!!loading} className="btn-primary">
             {loading === 'cv' ? <span className="spinner" /> : (
@@ -86,7 +86,7 @@ export default function ModelLab() {
           <div style={{ marginTop:20, display:'flex', flexDirection:'column', gap:10 }}>
             {['Random Forest','Gradient Boosting','Logistic Regression','Decision Tree'].map((m, i) => (
               <div key={m} style={{ display:'flex', alignItems:'center', gap:12 }}>
-                <div style={{ fontSize:11, color:'#334155', width:144, flexShrink:0 }}>{m}</div>
+                <div style={{ fontSize:11, color:'var(--text-2)', width:144, flexShrink:0 }}>{m}</div>
                 <div className="progress-bar" style={{ flex:1 }}>
                   <div className="progress-fill" style={{ width:`${25*(i+1)}%`, animation:'pulse 2s infinite' }} />
                 </div>
@@ -114,19 +114,19 @@ export default function ModelLab() {
                 <div key={r.model} style={{
                   display:'flex', alignItems:'center', gap:16,
                   padding:'14px 16px', borderRadius:12, border:'1px solid',
-                  borderColor: i === 0 ? 'rgba(99,102,241,0.3)' : '#e2e8f0',
+                  borderColor: i === 0 ? 'rgba(99,102,241,0.3)' : 'var(--border)',
                   background: i === 0
                     ? 'linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(139,92,246,0.04) 100%)'
-                    : 'rgba(248,250,252,0.5)',
+                    : 'var(--surface-alt)',
                   transition: 'all 0.15s',
                   boxShadow: i === 0 ? '0 0 20px rgba(99,102,241,0.1), inset 0 1px 0 rgba(255,255,255,0.04)' : 'none',
                 }}>
                   <span style={{ fontSize:20, width:32, textAlign:'center', flexShrink:0 }}>{MEDALS[Math.min(i,3)]}</span>
-                  <span style={{ flex:1, fontWeight:500, fontSize:13, color: i === 0 ? '#1e293b' : '#64748b' }}>{r.model}</span>
+                  <span style={{ flex:1, fontWeight:500, fontSize:13, color: i === 0 ? 'var(--text)' : 'var(--text-3)' }}>{r.model}</span>
                   {[['Accuracy', r.accuracy],['F1', r.f1],['ROC-AUC', r.roc_auc]].map(([k,v]) => (
                     <div key={k} style={{ textAlign:'center', width:80 }}>
-                      <p style={{ fontSize:10, color:'#334155', marginBottom:2, margin:'0 0 2px' }}>{k}</p>
-                      <p style={{ fontWeight:700, fontSize:13, color: i===0 && k==='ROC-AUC' ? '#4f46e5' : i===0 ? '#1e293b' : '#475569', margin:0 }}>{v}</p>
+                      <p style={{ fontSize:10, color:'var(--text-2)', marginBottom:2, margin:'0 0 2px' }}>{k}</p>
+                      <p style={{ fontWeight:700, fontSize:13, color: i===0 && k==='ROC-AUC' ? '#4f46e5' : i===0 ? 'var(--text)' : 'var(--text-2)', margin:0 }}>{v}</p>
                     </div>
                   ))}
                 </div>
@@ -140,10 +140,10 @@ export default function ModelLab() {
               <p className="section-title">성능 비교</p>
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={chartData} barSize={14} barGap={4}>
-                  <XAxis dataKey="name" tick={{ fill:'#334155', fontSize:11 }} axisLine={false} tickLine={false} />
-                  <YAxis domain={[0,1]} tick={{ fill:'#334155', fontSize:10 }} axisLine={false} tickLine={false} />
+                  <XAxis dataKey="name" tick={{ fill:'var(--text-2)', fontSize:11 }} axisLine={false} tickLine={false} />
+                  <YAxis domain={[0,1]} tick={{ fill:'var(--text-2)', fontSize:10 }} axisLine={false} tickLine={false} />
                   <Tooltip contentStyle={ttStyle} cursor={{ fill:'rgba(99,102,241,0.04)' }} />
-                  <Legend wrapperStyle={{ fontSize:11, color:'#475569' }} />
+                  <Legend wrapperStyle={{ fontSize:11, color:'var(--text-2)' }} />
                   {['Accuracy','F1','ROC-AUC'].map((k,i) => (
                     <Bar key={k} dataKey={k} fill={COLORS[i]} radius={[4,4,0,0]} opacity={0.9} />
                   ))}
@@ -157,11 +157,11 @@ export default function ModelLab() {
                 <div style={{ display:'flex', flexDirection:'column', gap:10, marginTop:4 }}>
                   {result.feature_importance.slice(0,8).map((f) => (
                     <div key={f.feature} style={{ display:'flex', alignItems:'center', gap:12 }}>
-                      <span style={{ fontSize:11, color:'#475569', width:112, flexShrink:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{f.feature}</span>
+                      <span style={{ fontSize:11, color:'var(--text-2)', width:112, flexShrink:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{f.feature}</span>
                       <div className="progress-bar" style={{ flex:1 }}>
                         <div className="progress-fill" style={{ width:`${f.importance*100}%` }} />
                       </div>
-                      <span style={{ fontSize:11, color:'#334155', width:36, textAlign:'right', flexShrink:0 }}>
+                      <span style={{ fontSize:11, color:'var(--text-2)', width:36, textAlign:'right', flexShrink:0 }}>
                         {(f.importance*100).toFixed(1)}%
                       </span>
                     </div>
@@ -175,12 +175,12 @@ export default function ModelLab() {
           <div className="card" style={{ borderColor:'rgba(245,158,11,0.3)', background:'linear-gradient(135deg, rgba(255,251,235,0.8), rgba(245,158,11,0.04))' }}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
               <div>
-                <p style={{ fontWeight:600, color:'#1e293b', margin:'0 0 4px' }}>⚡ Optuna 하이퍼파라미터 튜닝</p>
-                <p style={{ fontSize:11, color:'#334155', margin:0 }}>최고 모델 ({result.best_model}) 자동 최적화</p>
+                <p style={{ fontWeight:600, color:'var(--text)', margin:'0 0 4px' }}>⚡ Optuna 하이퍼파라미터 튜닝</p>
+                <p style={{ fontSize:11, color:'var(--text-2)', margin:0 }}>최고 모델 ({result.best_model}) 자동 최적화</p>
               </div>
               <div style={{ display:'flex', alignItems:'center', gap:12 }}>
                 <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                  <span style={{ fontSize:11, color:'#334155' }}>trials</span>
+                  <span style={{ fontSize:11, color:'var(--text-2)' }}>trials</span>
                   <input type="number" value={nTrials} min={10} max={100}
                     onChange={e => setNTrials(+e.target.value)}
                     className="input" style={{ width:64, textAlign:'center' }} />
@@ -200,7 +200,7 @@ export default function ModelLab() {
                   sub={`+${optRes.improvement}% 개선`} color="green" icon="✨" />
                 <KPICard label="최적 파라미터" value={Object.keys(optRes.best_params).length + '개'} color="amber" />
                 <div style={{ gridColumn:'1/-1', borderRadius:12, padding:16, border:'1px solid rgba(245,158,11,0.15)', background:'rgba(255,251,235,0.5)' }}>
-                  <p style={{ fontSize:10, color:'#334155', marginBottom:10, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.1em', margin:'0 0 10px' }}>최적 파라미터</p>
+                  <p style={{ fontSize:10, color:'var(--text-2)', marginBottom:10, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.1em', margin:'0 0 10px' }}>최적 파라미터</p>
                   <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
                     {Object.entries(optRes.best_params).map(([k,v]) => (
                       <span key={k} className="badge badge-amber" style={{ fontSize:11 }}>{k}: {String(v)}</span>
