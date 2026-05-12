@@ -59,9 +59,9 @@ export default function Report() {
                 <span style={{ fontSize:24 }}>📊</span>
               </div>
               <div style={{ flex:1 }}>
-                <p style={{ fontWeight:700, color:'#f1f5f9', fontSize:18, margin:'0 0 4px' }}>분석 보고서 준비 완료</p>
+                <p style={{ fontWeight:700, color:'#1e293b', fontSize:18, margin:'0 0 4px' }}>분석 보고서 준비 완료</p>
                 <p style={{ color:'#475569', fontSize:13, margin:'0 0 20px' }}>
-                  최고 모델 <span style={{ color:'#f1f5f9', fontWeight:600 }}>{state.best_model}</span>의
+                  최고 모델 <span style={{ color:'#1e293b', fontWeight:600 }}>{state.best_model}</span>의
                   학습 결과와 설비 예측 분석이 포함됩니다.
                 </p>
                 <div style={{ display:'flex', gap:12 }}>
@@ -97,7 +97,7 @@ export default function Report() {
                 >
                   <span style={{ fontSize:20, flexShrink:0 }}>{icon}</span>
                   <div>
-                    <p style={{ fontSize:13, fontWeight:600, color:'#f1f5f9', margin:'0 0 2px' }}>{title}</p>
+                    <p style={{ fontSize:13, fontWeight:600, color:'#1e293b', margin:'0 0 2px' }}>{title}</p>
                     <p style={{ fontSize:11, color:'#334155', margin:0 }}>{desc}</p>
                   </div>
                 </div>
@@ -109,17 +109,17 @@ export default function Report() {
           <div className="card">
             <p className="section-title">현재 분석 결과</p>
             <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:16 }}>
-              <div style={{ borderRadius:12, padding:16, textAlign:'center', border:'1px solid rgba(255,255,255,0.05)', background:'rgba(255,255,255,0.02)' }}>
+              <div style={{ borderRadius:12, padding:16, textAlign:'center', border:'1px solid #e2e8f0', background:'#f8fafc' }}>
                 <p style={{ fontSize:10, color:'#334155', marginBottom:8, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.1em', margin:'0 0 8px' }}>최고 모델</p>
-                <p style={{ color:'#f1f5f9', fontWeight:700, margin:0 }}>{state.best_model?.split(' ')[0]}</p>
+                <p style={{ color:'#1e293b', fontWeight:700, margin:0 }}>{state.best_model?.split(' ')[0]}</p>
               </div>
               <div style={{ borderRadius:12, padding:16, textAlign:'center', border:'1px solid rgba(99,102,241,0.2)', background:'rgba(99,102,241,0.06)' }}>
                 <p style={{ fontSize:10, color:'#334155', marginBottom:8, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.1em', margin:'0 0 8px' }}>ROC-AUC</p>
-                <p style={{ color:'#818cf8', fontWeight:700, fontSize:22, fontVariantNumeric:'tabular-nums', margin:0 }}>{state.cv_results?.[0]?.roc_auc ?? '—'}</p>
+                <p style={{ color:'#4f46e5', fontWeight:700, fontSize:22, fontVariantNumeric:'tabular-nums', margin:0 }}>{state.cv_results?.[0]?.roc_auc ?? '—'}</p>
               </div>
-              <div style={{ borderRadius:12, padding:16, textAlign:'center', border:`1px solid ${state.optuna_result ? 'rgba(16,185,129,0.2)' : 'rgba(255,255,255,0.05)'}`, background: state.optuna_result ? 'rgba(16,185,129,0.06)' : 'rgba(255,255,255,0.02)' }}>
+              <div style={{ borderRadius:12, padding:16, textAlign:'center', border:`1px solid ${state.optuna_result ? 'rgba(16,185,129,0.3)' : '#e2e8f0'}`, background: state.optuna_result ? 'rgba(16,185,129,0.06)' : '#f8fafc' }}>
                 <p style={{ fontSize:10, color:'#334155', marginBottom:8, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.1em', margin:'0 0 8px' }}>Optuna</p>
-                <p style={{ fontWeight:700, color: state.optuna_result ? '#6ee7b7' : '#1e293b', margin:0 }}>
+                <p style={{ fontWeight:700, color: state.optuna_result ? '#059669' : '#1e293b', margin:0 }}>
                   {state.optuna_result ? `+${state.optuna_result.improvement}% 개선` : '미실행'}
                 </p>
               </div>

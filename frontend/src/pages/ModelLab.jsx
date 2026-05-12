@@ -7,9 +7,9 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } fro
 const MEDALS = ['🥇','🥈','🥉','']
 const COLORS  = ['#818cf8','#34d399','#fbbf24','#a78bfa']
 const ttStyle = {
-  background: '#0d1427', border: '1px solid rgba(99,102,241,0.2)',
-  borderRadius: 12, fontSize: 11, color: '#f1f5f9',
-  boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+  background: '#ffffff', border: '1px solid #e2e8f0',
+  borderRadius: 12, fontSize: 11, color: '#0f172a',
+  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
 }
 
 export default function ModelLab() {
@@ -71,7 +71,7 @@ export default function ModelLab() {
       <div className="card" style={{ marginBottom:20 }}>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
           <div>
-            <p style={{ fontWeight:600, color:'#f1f5f9', fontSize:15, margin:'0 0 4px' }}>3-fold Stratified CV</p>
+            <p style={{ fontWeight:600, color:'#1e293b', fontSize:15, margin:'0 0 4px' }}>3-fold Stratified CV</p>
             <p style={{ fontSize:11, color:'#334155', margin:0 }}>Random Forest · Gradient Boosting · Logistic Regression · Decision Tree</p>
           </div>
           <button onClick={runCV} disabled={!!loading} className="btn-primary">
@@ -114,19 +114,19 @@ export default function ModelLab() {
                 <div key={r.model} style={{
                   display:'flex', alignItems:'center', gap:16,
                   padding:'14px 16px', borderRadius:12, border:'1px solid',
-                  borderColor: i === 0 ? 'rgba(99,102,241,0.3)' : 'rgba(255,255,255,0.05)',
+                  borderColor: i === 0 ? 'rgba(99,102,241,0.3)' : '#e2e8f0',
                   background: i === 0
-                    ? 'linear-gradient(135deg, rgba(99,70,229,0.1) 0%, rgba(139,92,246,0.06) 100%)'
-                    : 'rgba(255,255,255,0.02)',
+                    ? 'linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(139,92,246,0.04) 100%)'
+                    : 'rgba(248,250,252,0.5)',
                   transition: 'all 0.15s',
                   boxShadow: i === 0 ? '0 0 20px rgba(99,102,241,0.1), inset 0 1px 0 rgba(255,255,255,0.04)' : 'none',
                 }}>
                   <span style={{ fontSize:20, width:32, textAlign:'center', flexShrink:0 }}>{MEDALS[Math.min(i,3)]}</span>
-                  <span style={{ flex:1, fontWeight:500, fontSize:13, color: i === 0 ? '#f1f5f9' : '#64748b' }}>{r.model}</span>
+                  <span style={{ flex:1, fontWeight:500, fontSize:13, color: i === 0 ? '#1e293b' : '#64748b' }}>{r.model}</span>
                   {[['Accuracy', r.accuracy],['F1', r.f1],['ROC-AUC', r.roc_auc]].map(([k,v]) => (
                     <div key={k} style={{ textAlign:'center', width:80 }}>
                       <p style={{ fontSize:10, color:'#334155', marginBottom:2, margin:'0 0 2px' }}>{k}</p>
-                      <p style={{ fontWeight:700, fontSize:13, color: i===0 && k==='ROC-AUC' ? '#818cf8' : i===0 ? '#f1f5f9' : '#475569', margin:0 }}>{v}</p>
+                      <p style={{ fontWeight:700, fontSize:13, color: i===0 && k==='ROC-AUC' ? '#4f46e5' : i===0 ? '#1e293b' : '#475569', margin:0 }}>{v}</p>
                     </div>
                   ))}
                 </div>
@@ -142,7 +142,7 @@ export default function ModelLab() {
                 <BarChart data={chartData} barSize={14} barGap={4}>
                   <XAxis dataKey="name" tick={{ fill:'#334155', fontSize:11 }} axisLine={false} tickLine={false} />
                   <YAxis domain={[0,1]} tick={{ fill:'#334155', fontSize:10 }} axisLine={false} tickLine={false} />
-                  <Tooltip contentStyle={ttStyle} cursor={{ fill:'rgba(255,255,255,0.02)' }} />
+                  <Tooltip contentStyle={ttStyle} cursor={{ fill:'rgba(99,102,241,0.04)' }} />
                   <Legend wrapperStyle={{ fontSize:11, color:'#475569' }} />
                   {['Accuracy','F1','ROC-AUC'].map((k,i) => (
                     <Bar key={k} dataKey={k} fill={COLORS[i]} radius={[4,4,0,0]} opacity={0.9} />
@@ -172,10 +172,10 @@ export default function ModelLab() {
           </div>
 
           {/* Optuna */}
-          <div className="card" style={{ borderColor:'rgba(245,158,11,0.2)', background:'linear-gradient(135deg, rgba(13,20,39,0.9), rgba(245,158,11,0.03))' }}>
+          <div className="card" style={{ borderColor:'rgba(245,158,11,0.3)', background:'linear-gradient(135deg, rgba(255,251,235,0.8), rgba(245,158,11,0.04))' }}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
               <div>
-                <p style={{ fontWeight:600, color:'#f1f5f9', margin:'0 0 4px' }}>⚡ Optuna 하이퍼파라미터 튜닝</p>
+                <p style={{ fontWeight:600, color:'#1e293b', margin:'0 0 4px' }}>⚡ Optuna 하이퍼파라미터 튜닝</p>
                 <p style={{ fontSize:11, color:'#334155', margin:0 }}>최고 모델 ({result.best_model}) 자동 최적화</p>
               </div>
               <div style={{ display:'flex', alignItems:'center', gap:12 }}>
@@ -199,7 +199,7 @@ export default function ModelLab() {
                 <KPICard label="튜닝 후 ROC-AUC" value={optRes.after_roc}
                   sub={`+${optRes.improvement}% 개선`} color="green" icon="✨" />
                 <KPICard label="최적 파라미터" value={Object.keys(optRes.best_params).length + '개'} color="amber" />
-                <div style={{ gridColumn:'1/-1', borderRadius:12, padding:16, border:'1px solid rgba(255,255,255,0.05)', background:'rgba(0,0,0,0.2)' }}>
+                <div style={{ gridColumn:'1/-1', borderRadius:12, padding:16, border:'1px solid rgba(245,158,11,0.15)', background:'rgba(255,251,235,0.5)' }}>
                   <p style={{ fontSize:10, color:'#334155', marginBottom:10, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.1em', margin:'0 0 10px' }}>최적 파라미터</p>
                   <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
                     {Object.entries(optRes.best_params).map(([k,v]) => (

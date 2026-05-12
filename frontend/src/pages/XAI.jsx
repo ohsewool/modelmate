@@ -3,9 +3,9 @@ import api from '../api'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 
 const ttStyle = {
-  background: '#0d1427', border: '1px solid rgba(99,102,241,0.2)',
-  borderRadius: 12, fontSize: 11, color: '#f1f5f9',
-  boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+  background: '#ffffff', border: '1px solid #e2e8f0',
+  borderRadius: 12, fontSize: 11, color: '#0f172a',
+  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
 }
 
 export default function XAI() {
@@ -180,7 +180,7 @@ export default function XAI() {
             <>
               <div className="banner-danger">
                 <span style={{ fontSize:18 }}>⚠️</span>
-                <p style={{ color:'#f1f5f9', fontSize:13, margin:0 }}>
+                <p style={{ color:'#1e293b', fontSize:13, margin:0 }}>
                   전체 <b>{preds.total.toLocaleString()}</b>건 중 오분류 상위 <b style={{ color:'#fda4af' }}>3건</b>을 표시합니다.
                 </p>
               </div>
@@ -197,7 +197,7 @@ export default function XAI() {
                     {Object.entries(w.features).slice(0,8).map(([k,v]) => (
                       <div key={k} className="card-elevated" style={{ textAlign:'center', borderRadius:12, padding:12 }}>
                         <p style={{ fontSize:10, color:'#334155', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', margin:'0 0 4px' }}>{k}</p>
-                        <p style={{ fontSize:13, fontWeight:600, color:'#f1f5f9', margin:0 }}>{typeof v === 'number' ? v.toFixed(3) : v}</p>
+                        <p style={{ fontSize:13, fontWeight:600, color:'#1e293b', margin:0 }}>{typeof v === 'number' ? v.toFixed(3) : v}</p>
                       </div>
                     ))}
                   </div>

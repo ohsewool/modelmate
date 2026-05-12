@@ -5,9 +5,9 @@ import KPICard from '../components/KPICard'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 
 const ttStyle = {
-  background: '#0d1427', border: '1px solid rgba(99,102,241,0.2)',
-  borderRadius: 12, fontSize: 11, color: '#f1f5f9',
-  boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+  background: '#ffffff', border: '1px solid #e2e8f0',
+  borderRadius: 12, fontSize: 11, color: '#0f172a',
+  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
 }
 
 export default function Upload() {
@@ -58,7 +58,7 @@ export default function Upload() {
             textAlign: 'center',
             cursor: 'pointer',
             transition: 'all 0.25s',
-            background: dragging ? 'rgba(99,102,241,0.06)' : 'rgba(13,20,39,0.5)',
+            background: dragging ? 'rgba(99,102,241,0.06)' : '#f8fafc',
             transform: dragging ? 'scale(1.01)' : 'scale(1)',
           }}
           onDragOver={e => { e.preventDefault(); setDragging(true) }}
@@ -88,7 +88,7 @@ export default function Upload() {
                   <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17,8 12,3 7,8"/><line x1="12" y1="3" x2="12" y2="15"/>
                 </svg>
               </div>
-              <p style={{ color:'#f1f5f9', fontWeight:600, fontSize:15, marginBottom:8 }}>파일을 드래그하거나 클릭해서 업로드</p>
+              <p style={{ color:'#1e293b', fontWeight:600, fontSize:15, marginBottom:8 }}>파일을 드래그하거나 클릭해서 업로드</p>
               <p style={{ color:'#334155', fontSize:13 }}>CSV, TXT 지원 · TXT는 구분자 자동 감지</p>
             </>
           )}
@@ -99,7 +99,7 @@ export default function Upload() {
             <div className="banner-info">
               <span style={{ fontSize:20 }}>🤖</span>
               <div style={{ flex:1 }}>
-                <p style={{ fontSize:13, fontWeight:600, color:'#f1f5f9', margin:0 }}>파일 변환 완료</p>
+                <p style={{ fontSize:13, fontWeight:600, color:'#1e293b', margin:0 }}>파일 변환 완료</p>
                 <p style={{ fontSize:11, marginTop:2, color:'#64748b', margin:'2px 0 0' }}>구분자 자동 감지 ({uploadInfo.separator}) → CSV 변환</p>
               </div>
               <span className="badge badge-cyan">변환됨</span>

@@ -4,9 +4,9 @@ import KPICard from '../components/KPICard'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts'
 
 const ttStyle = {
-  background: '#0d1427', border: '1px solid rgba(99,102,241,0.2)',
-  borderRadius: 12, fontSize: 11, color: '#f1f5f9',
-  boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+  background: '#ffffff', border: '1px solid #e2e8f0',
+  borderRadius: 12, fontSize: 11, color: '#0f172a',
+  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
 }
 const riskColor = p => p >= 0.8 ? '#f43f5e' : p >= 0.5 ? '#f59e0b' : '#10b981'
 const riskGlow  = p => p >= 0.8 ? 'rgba(244,63,94,0.3)' : p >= 0.5 ? 'rgba(245,158,11,0.3)' : 'rgba(16,185,129,0.3)'
@@ -118,14 +118,14 @@ export default function Maintenance() {
                       <span style={{ width:8, height:8, borderRadius:'50%', background:'#6366f1', display:'inline-block' }} />
                       <span style={{ fontSize:11, color:'#475569' }}>정상</span>
                     </div>
-                    <p style={{ fontSize:13, fontWeight:700, color:'#f1f5f9', margin:0 }}>{(data.total - data.failure_count).toLocaleString()}</p>
+                    <p style={{ fontSize:13, fontWeight:700, color:'#1e293b', margin:0 }}>{(data.total - data.failure_count).toLocaleString()}</p>
                   </div>
                   <div style={{ textAlign:'center' }}>
                     <div style={{ display:'flex', alignItems:'center', gap:6, justifyContent:'center', marginBottom:4 }}>
                       <span style={{ width:8, height:8, borderRadius:'50%', background:'#f43f5e', display:'inline-block' }} />
                       <span style={{ fontSize:11, color:'#475569' }}>고장</span>
                     </div>
-                    <p style={{ fontSize:13, fontWeight:700, color:'#f1f5f9', margin:0 }}>{data.failure_count.toLocaleString()}</p>
+                    <p style={{ fontSize:13, fontWeight:700, color:'#1e293b', margin:0 }}>{data.failure_count.toLocaleString()}</p>
                   </div>
                 </div>
               </div>
@@ -156,7 +156,7 @@ export default function Maintenance() {
                       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
                         <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                           <span style={{ width:8, height:8, borderRadius:'50%', background:cfg.dot, boxShadow:`0 0 8px ${cfg.dot}`, display:'inline-block' }} />
-                          <span style={{ fontWeight:700, color:'#f1f5f9', fontSize:14 }}>설비 #{r.id}</span>
+                          <span style={{ fontWeight:700, color:'#1e293b', fontSize:14 }}>설비 #{r.id}</span>
                         </div>
                         <span className={`badge ${cfg.badge}`}>{cfg.label}</span>
                       </div>
@@ -164,7 +164,7 @@ export default function Maintenance() {
                         <div style={{ flex:1, height:6, borderRadius:99, overflow:'hidden', background:'rgba(255,255,255,0.07)' }}>
                           <div style={{ height:'100%', borderRadius:99, width:`${p*100}%`, background:riskColor(p), boxShadow:`0 0 8px ${riskColor(p)}`, transition:'width 0.5s' }} />
                         </div>
-                        <span style={{ fontSize:13, fontWeight:700, color:'#f1f5f9', fontVariantNumeric:'tabular-nums', width:40, textAlign:'right', flexShrink:0 }}>{(p*100).toFixed(1)}%</span>
+                        <span style={{ fontSize:13, fontWeight:700, color:'#1e293b', fontVariantNumeric:'tabular-nums', width:40, textAlign:'right', flexShrink:0 }}>{(p*100).toFixed(1)}%</span>
                       </div>
                       <p style={{ fontSize:11, color:'#475569', margin:0 }}>📌 {cfg.action}</p>
                     </div>
@@ -175,7 +175,7 @@ export default function Maintenance() {
           )}
 
           {/* 에이전트 가이드 */}
-          <div className="card" style={{ borderColor:'rgba(34,211,238,0.15)', background:'linear-gradient(135deg, rgba(13,20,39,0.9), rgba(34,211,238,0.03))' }}>
+          <div className="card" style={{ borderColor:'rgba(34,211,238,0.3)', background:'linear-gradient(135deg, rgba(236,254,255,0.8), rgba(34,211,238,0.04))' }}>
             <div style={{ display:'flex', alignItems:'flex-start', gap:16 }}>
               <div style={{
                 width:40, height:40, borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
@@ -184,9 +184,9 @@ export default function Maintenance() {
                 <span style={{ fontSize:18 }}>🤖</span>
               </div>
               <div style={{ flex:1 }}>
-                <p style={{ fontWeight:600, color:'#f1f5f9', margin:'0 0 4px' }}>에이전트 실험 가이드</p>
+                <p style={{ fontWeight:600, color:'#1e293b', margin:'0 0 4px' }}>에이전트 실험 가이드</p>
                 <p style={{ fontSize:13, color:'#334155', margin:'0 0 12px' }}>
-                  현재 모델: <span style={{ color:'#f1f5f9', fontWeight:500 }}>{state?.best_model}</span>
+                  현재 모델: <span style={{ color:'#1e293b', fontWeight:500 }}>{state?.best_model}</span>
                   {state?.cv_results && (
                     <span className="badge badge-blue" style={{ marginLeft:8 }}>ROC-AUC {state.cv_results[0]?.roc_auc}</span>
                   )}

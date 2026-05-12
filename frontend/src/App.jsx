@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import Sidebar from './components/Sidebar'
+import Home from './pages/Home'
 import Upload from './pages/Upload'
 import ModelLab from './pages/ModelLab'
 import XAI from './pages/XAI'
@@ -19,35 +20,25 @@ const PAGE_META = {
 function Header() {
   const { pathname } = useLocation()
   const meta = PAGE_META[pathname] || {}
+  if (!meta.title) return null
   return (
     <header style={{
-      flexShrink: 0,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: '0 32px',
-      height: 56,
-      background: 'rgba(7,9,26,0.85)',
-      backdropFilter: 'blur(20px)',
-      WebkitBackdropFilter: 'blur(20px)',
-      borderBottom: '1px solid rgba(99,102,241,0.1)',
+      flexShrink:0, display:'flex', alignItems:'center', justifyContent:'space-between',
+      padding:'0 32px', height:56,
+      background:'#ffffff', borderBottom:'1px solid #e2e8f0',
     }}>
       <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-        <div>
-          <h1 style={{ fontSize:15, fontWeight:700, color:'#f1f5f9', lineHeight:1.2, margin:0 }}>{meta.title}</h1>
-        </div>
+        <h1 style={{ fontSize:15, fontWeight:700, color:'#0f172a', lineHeight:1.2, margin:0 }}>{meta.title}</h1>
         {meta.desc && (
           <>
-            <span style={{ color:'rgba(99,102,241,0.3)', fontWeight:300 }}>·</span>
-            <p style={{ fontSize:12, color:'#334155', margin:0 }}>{meta.desc}</p>
+            <span style={{ color:'#e2e8f0' }}>·</span>
+            <p style={{ fontSize:12, color:'#94a3b8', margin:0 }}>{meta.desc}</p>
           </>
         )}
       </div>
       <div style={{
-        display:'flex', alignItems:'center', gap:6,
-        fontSize:11, fontWeight:600, color:'#10b981',
-        background:'rgba(16,185,129,0.08)',
-        border:'1px solid rgba(16,185,129,0.2)',
+        display:'flex', alignItems:'center', gap:6, fontSize:11, fontWeight:600,
+        color:'#059669', background:'#f0fdf4', border:'1px solid #bbf7d0',
         padding:'5px 12px', borderRadius:99,
       }}>
         <span style={{ width:6, height:6, borderRadius:'50%', background:'#10b981', display:'inline-block', animation:'pulse 2s infinite' }} />
@@ -57,22 +48,19 @@ function Header() {
   )
 }
 
-function Layout() {
+function Layout({ children }) {
+  const { pathname } = useLocation()
+  const isHome = pathname === '/'
+
+  if (isHome) return <>{children}</>
+
   return (
-    <div style={{ display:'flex', height:'100vh', overflow:'hidden', background:'#07091a' }}>
+    <div style={{ display:'flex', height:'100vh', overflow:'hidden', background:'#f8fafc' }}>
       <Sidebar />
       <div style={{ display:'flex', flexDirection:'column', flex:1, overflow:'hidden' }}>
         <Header />
-        <main style={{ flex:1, overflowY:'auto', background:'#07091a' }}>
-          <Routes>
-            <Route path="/" element={<Navigate to="/upload" replace />} />
-            <Route path="/upload"      element={<Upload />} />
-            <Route path="/model-lab"   element={<ModelLab />} />
-            <Route path="/xai"         element={<XAI />} />
-            <Route path="/maintenance" element={<Maintenance />} />
-            <Route path="/history"     element={<History />} />
-            <Route path="/report"      element={<Report />} />
-          </Routes>
+        <main style={{ flex:1, overflowY:'auto', background:'#f8fafc' }}>
+          {children}
         </main>
       </div>
     </div>
@@ -82,7 +70,22 @@ function Layout() {
 export default function App() {
   return (
     <BrowserRouter>
-      <Layout />
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/*" element={
+          <Layout>
+            <Routes>
+              <Route path="/upload"      element={<Upload />} />
+              <Route path="/model-lab"   element={<ModelLab />} />
+              <Route path="/xai"         element={<XAI />} />
+              <Route path="/maintenance" element={<Maintenance />} />
+              <Route path="/history"     element={<History />} />
+              <Route path="/report"      element={<Report />} />
+              <Route path="*"            element={<Navigate to="/" replace />} />
+            </Routes>
+          </Layout>
+        } />
+      </Routes>
     </BrowserRouter>
   )
 }
