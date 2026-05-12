@@ -1,7 +1,8 @@
-streamlit
+fastapi
+uvicorn[standard]
 pandas
 numpy
 scikit-learn
-plotly
 shap
 optuna
+python-multipart
