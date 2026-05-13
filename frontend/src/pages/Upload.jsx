@@ -18,9 +18,22 @@ export default function Upload() {
   const [edaInfo,     setEdaInfo]     = useState(null)
   const [target,      setTarget]      = useState('')
   const [dropCols,    setDropCols]    = useState([])
+  const [colLabels,   setColLabels]   = useState({})
   const [loading,     setLoading]     = useState(false)
   const [tab,         setTab]         = useState('preview')
   const fileRef = useRef()
+
+  // 컬럼 표시 헬퍼: 한국어 이름이 있으면 우선 표시
+  const ColTag = ({ col }) => {
+    const ko = colLabels[col]
+    if (!ko) return <span>{col}</span>
+    return (
+      <span style={{ display:'flex', flexDirection:'column', gap:1, textAlign:'left', lineHeight:1.2 }}>
+        <span>{ko}</span>
+        <span style={{ fontSize:9, opacity:0.55 }}>{col}</span>
+      </span>
+    )
+  }
   const nav = useNavigate()
 
   async function handleFile(file) {
@@ -38,6 +51,7 @@ export default function Upload() {
       try {
         const { data: ai } = await api.post('/analyze-columns')
         setAiAnalysis(ai)
+        if (ai.col_labels) setColLabels(ai.col_labels)
         if (ai.target_suggestion && data.columns.includes(ai.target_suggestion))
           setTarget(ai.target_suggestion)
         if (ai.drop_suggestions?.length > 0)
@@ -51,7 +65,7 @@ export default function Upload() {
   async function handleSetTarget() {
     setLoading(true)
     try {
-      const { data } = await api.post('/set-target', { target_col: target, drop_cols: dropCols })
+      const { data } = await api.post('/set-target', { target_col: target, drop_cols: dropCols, col_labels: colLabels })
       setEdaInfo(data)
       setTab('dist')
     } catch(e) { alert(e.response?.data?.detail || e.message) }
@@ -249,8 +263,8 @@ export default function Upload() {
                     <p style={{ fontSize:11, color:'var(--text-2)', margin:0 }}>AI가 맞춰야 할 정답값입니다. 예: 고장 여부, 가격, 종류</p>
                   </div>
                 </div>
-                <select value={target} onChange={e => { setTarget(e.target.value); setDropCols(prev => prev.filter(c => c !== e.target.value)) }} className="input" style={{ maxWidth:260 }}>
-                  {uploadInfo.columns.map(c => <option key={c} value={c}>{c}</option>)}
+                <select value={target} onChange={e => { setTarget(e.target.value); setDropCols(prev => prev.filter(c => c !== e.target.value)) }} className="input" style={{ maxWidth:320 }}>
+                  {uploadInfo.columns.map(c => <option key={c} value={c}>{colLabels[c] ? `${colLabels[c]} (${c})` : c}</option>)}
                 </select>
               </div>
 
@@ -276,7 +290,7 @@ export default function Upload() {
                       onMouseEnter={e => { e.currentTarget.style.background='rgba(244,63,94,0.08)'; e.currentTarget.style.borderColor='rgba(244,63,94,0.3)'; e.currentTarget.style.color='#f43f5e' }}
                       onMouseLeave={e => { e.currentTarget.style.background='rgba(16,185,129,0.08)'; e.currentTarget.style.borderColor='rgba(16,185,129,0.3)'; e.currentTarget.style.color='#059669' }}
                       >
-                        {col}
+                        <ColTag col={col} />
                       </button>
                     ))
                   }
@@ -305,7 +319,7 @@ export default function Upload() {
                       onMouseEnter={e => { e.currentTarget.style.background='rgba(16,185,129,0.08)'; e.currentTarget.style.borderColor='rgba(16,185,129,0.3)'; e.currentTarget.style.color='#059669' }}
                       onMouseLeave={e => { e.currentTarget.style.background='rgba(244,63,94,0.08)'; e.currentTarget.style.borderColor='rgba(244,63,94,0.3)'; e.currentTarget.style.color='#f43f5e' }}
                       >
-                        ✕ {col}
+                        ✕ <ColTag col={col} />
                       </button>
                     ))
                   }
@@ -366,7 +380,9 @@ export default function Upload() {
                 <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:16 }}>
                   {Object.entries(edaInfo.distributions).map(([col, d]) => (
                     <div key={col} className="card-elevated">
-                      <p style={{ fontSize:11, fontWeight:600, color:'var(--text-2)', marginBottom:12 }}>{col}</p>
+                      <p style={{ fontSize:11, fontWeight:600, color:'var(--text-2)', marginBottom:12 }}>
+                        {colLabels[col] ? <>{colLabels[col]} <span style={{fontWeight:400,opacity:0.5,fontSize:10}}>({col})</span></> : col}
+                      </p>
                       <ResponsiveContainer width="100%" height={110}>
                         <BarChart data={d.bins.map((b,i) => ({ bin: b, normal: d.normal[i], failure: d.failure[i] }))} barSize={7}>
                           <XAxis dataKey="bin" tick={false} axisLine={false} />

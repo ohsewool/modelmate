@@ -210,7 +210,8 @@ async def analyze_columns():
         '{"target_suggestion":"타깃으로 가장 적합한 컬럼명",'
         '"drop_suggestions":[{"col":"컬럼명","reason":"제외 이유(한국어 1문장)"}],'
         '"dataset_summary":"데이터셋 특성 요약(한국어 2문장)",'
-        '"task_type":"classification 또는 regression"}\n\n'
+        '"task_type":"classification 또는 regression",'
+        '"col_labels":{"영문컬럼명":"한국어이름(비전공자가 바로 이해할 수 있도록, 3~8글자)"}}\n\n'
         "판단 기준:\n"
         "1. unique_ratio > 0.8 이거나 이름이 ID/번호/코드/serial → 제외 (식별자)\n"
         "2. 타깃 후보와 corr_with_last_col > 0.8 이면서 타깃의 세부 원인으로 보이는 컬럼 → 제외 (데이터 누수)\n"
@@ -228,6 +229,7 @@ async def analyze_columns():
             "drop_suggestions": [{"col": c, "reason": "ID성 컬럼으로 자동 감지됨"} for c in suggested],
             "dataset_summary": f"{n}행 {len(df.columns)}열 데이터입니다. Gemini API 키가 없어 규칙 기반으로 분석했습니다.",
             "task_type": "classification",
+            "col_labels": {},
             "gemini_used": False,
         }
 
@@ -237,11 +239,14 @@ async def analyze_columns():
         m = re.search(r'\{.*\}', raw, re.DOTALL)
         result = json.loads(m.group()) if m else {}
         result["gemini_used"] = True
+        if "col_labels" not in result:
+            result["col_labels"] = {}
+        STATE["col_labels"] = result["col_labels"]
         return result
     except:
         return {"target_suggestion": df.columns[-1], "drop_suggestions": [],
                 "dataset_summary": raw[:300] if raw else "", "task_type": "classification",
-                "gemini_used": True}
+                "col_labels": {}, "gemini_used": True}
 
 # ── 타깃 확정 & EDA ───────────────────────────────────────
 @app.post("/api/set-target")
@@ -255,6 +260,8 @@ async def set_target(body: dict):
     drop_cols = [c for c in body.get("drop_cols", []) if c in df.columns and c != tgt]
     df_use = df.drop(columns=drop_cols) if drop_cols else df
     STATE["drop_cols"] = drop_cols
+    if body.get("col_labels"):
+        STATE["col_labels"] = body["col_labels"]
 
     # 피처 인코딩
     X, cat_cols, encoders = encode_features(df_use, tgt)
@@ -819,6 +826,7 @@ async def get_state():
         "data_shape":    list(STATE["X"].shape) if STATE.get("X") is not None else None,
         "shap_ok":       SHAP_OK,
         "optuna_ok":     OPTUNA_OK,
+        "col_labels":    STATE.get("col_labels", {}),
     }
 
 # ── HTML 리포트 (PDF 인쇄 지원) ──────────────────────────

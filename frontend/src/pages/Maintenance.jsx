@@ -27,12 +27,18 @@ const FEAT_LEVEL_LABEL = { high:'평균보다 높음', low:'평균보다 낮음'
 const FEAT_LEVEL_COLOR = { high:'#f43f5e', low:'#6366f1', normal:'#10b981' }
 
 export default function Maintenance() {
-  const [data,    setData]    = useState(null)
-  const [state,   setState]   = useState(null)
-  const [topN,    setTopN]    = useState(10)
-  const [loading, setLoading] = useState(false)
+  const [data,      setData]      = useState(null)
+  const [state,     setState]     = useState(null)
+  const [topN,      setTopN]      = useState(10)
+  const [loading,   setLoading]   = useState(false)
+  const [colLabels, setColLabels] = useState({})
 
-  useEffect(() => { api.get('/state').then(r => setState(r.data)) }, [])
+  useEffect(() => {
+    api.get('/state').then(r => {
+      setState(r.data)
+      if (r.data.col_labels) setColLabels(r.data.col_labels)
+    })
+  }, [])
 
   async function load() {
     setLoading(true)
@@ -229,7 +235,10 @@ export default function Maintenance() {
                           <div style={{ display:'flex', flexDirection:'column', gap:4 }}>
                             {r.top_features.map((f, fi) => (
                               <div key={fi} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'5px 8px', borderRadius:7, background:'rgba(0,0,0,0.03)' }}>
-                                <span style={{ fontSize:11, color:'var(--text-2)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:110 }}>{f.feature}</span>
+                                <div style={{ maxWidth:120, overflow:'hidden' }}>
+                                  <div style={{ fontSize:11, color:'var(--text-2)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{colLabels[f.feature] || f.feature}</div>
+                                  {colLabels[f.feature] && <div style={{ fontSize:9, color:'var(--text-label)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{f.feature}</div>}
+                                </div>
                                 <div style={{ display:'flex', alignItems:'center', gap:6, flexShrink:0 }}>
                                   <span style={{ fontSize:11, fontWeight:600, color:'var(--text)' }}>{f.value}</span>
                                   {f.level !== 'normal' && (

@@ -8,27 +8,34 @@ const ttStyle = {
   boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
 }
 
-function localSummary(localData, prediction) {
+function localSummary(localData, prediction, labels = {}) {
   if (!localData?.length) return null
   const sorted = [...localData].sort((a, b) => Math.abs(b.shap_value) - Math.abs(a.shap_value))
   const top = sorted[0]
   const second = sorted[1]
+  const topName = labels[top.feature] || top.feature
+  const secondName = second ? (labels[second.feature] || second.feature) : null
   const isFailure = prediction === 1
   const dir = top.shap_value > 0 ? (isFailure ? '고장 가능성을 높였습니다' : '양성 가능성을 높였습니다') : (isFailure ? '고장 가능성을 낮췄지만 다른 요인이 더 컸습니다' : '양성 가능성을 낮췄습니다')
-  let text = `가장 큰 영향을 준 항목은 "${top.feature}"으로, ${dir}.`
-  if (second) text += ` "${second.feature}"도 주요 판단 근거입니다.`
+  let text = `가장 큰 영향을 준 항목은 "${topName}"으로, ${dir}.`
+  if (secondName) text += ` "${secondName}"도 주요 판단 근거입니다.`
   return text
 }
 
 export default function XAI() {
-  const [tab,     setTab]     = useState('global')
-  const [global,  setGlobal]  = useState(null)
-  const [local,   setLocal]   = useState(null)
-  const [preds,   setPreds]   = useState(null)
-  const [idx,     setIdx]     = useState(0)
-  const [loading, setLoading] = useState('')
+  const [tab,       setTab]       = useState('global')
+  const [global,    setGlobal]    = useState(null)
+  const [local,     setLocal]     = useState(null)
+  const [preds,     setPreds]     = useState(null)
+  const [idx,       setIdx]       = useState(0)
+  const [loading,   setLoading]   = useState('')
+  const [colLabels, setColLabels] = useState({})
 
-  useEffect(() => { api.get('/state').then(r => { if(!r.data.has_model) return }) }, [])
+  useEffect(() => {
+    api.get('/state').then(r => {
+      if (r.data.col_labels) setColLabels(r.data.col_labels)
+    })
+  }, [])
 
   async function runShap() {
     setLoading('shap')
@@ -110,7 +117,10 @@ export default function XAI() {
                     return (
                       <div key={f.feature} style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 14px', borderRadius:10, background: i === 0 ? 'rgba(99,102,241,0.07)' : 'var(--surface-alt)', border:'1px solid var(--border-sub)' }}>
                         <span style={{ fontSize:16, flexShrink:0 }}>{icons[i]}</span>
-                        <span style={{ fontSize:13, fontWeight: i === 0 ? 700 : 500, color: i === 0 ? 'var(--text)' : 'var(--text-2)', flex:1 }}>{f.feature}</span>
+                        <div style={{ flex:1, lineHeight:1.2 }}>
+                          <div style={{ fontSize:13, fontWeight: i === 0 ? 700 : 500, color: i === 0 ? 'var(--text)' : 'var(--text-2)' }}>{colLabels[f.feature] || f.feature}</div>
+                          {colLabels[f.feature] && <div style={{ fontSize:10, color:'var(--text-label)', marginTop:1 }}>{f.feature}</div>}
+                        </div>
                         <div style={{ width:80, height:6, borderRadius:3, background:'var(--border)', overflow:'hidden' }}>
                           <div style={{ width:`${pct}%`, height:'100%', borderRadius:3, background: i === 0 ? '#6366f1' : '#a5b4fc' }} />
                         </div>
@@ -127,8 +137,10 @@ export default function XAI() {
                 <ResponsiveContainer width="100%" height={Math.max(300, global.length * 38)}>
                   <BarChart data={[...global].reverse()} layout="vertical" barSize={14}>
                     <XAxis type="number" tick={{ fill:'var(--text-2)', fontSize:10 }} axisLine={false} tickLine={false} />
-                    <YAxis dataKey="feature" type="category" tick={{ fill:'var(--text-2)', fontSize:11 }} width={140} axisLine={false} tickLine={false} />
-                    <Tooltip contentStyle={ttStyle} formatter={v => [v.toFixed(4), 'SHAP 값']} />
+                    <YAxis dataKey="feature" type="category" tick={{ fill:'var(--text-2)', fontSize:11 }} width={150} axisLine={false} tickLine={false}
+                      tickFormatter={col => colLabels[col] || col} />
+                    <Tooltip contentStyle={ttStyle} formatter={v => [v.toFixed(4), 'SHAP 값']}
+                      labelFormatter={col => colLabels[col] ? `${colLabels[col]} (${col})` : col} />
                     <Bar dataKey="shap_value" radius={[0,6,6,0]}>
                       {global.map((_, i) => (
                         <Cell key={i} fill={`hsl(${240 + i*15}, 70%, ${65 - i*2}%)`} />
@@ -193,7 +205,7 @@ export default function XAI() {
 
               {/* AI 판단 근거 요약 */}
               {(() => {
-                const summary = localSummary(local.local, local.prediction)
+                const summary = localSummary(local.local, local.prediction, colLabels)
                 if (!summary) return null
                 return (
                   <div style={{ display:'flex', alignItems:'flex-start', gap:10, padding:'12px 14px', borderRadius:12, background:'rgba(99,102,241,0.05)', border:'1px solid rgba(99,102,241,0.14)' }}>
@@ -216,8 +228,10 @@ export default function XAI() {
                 <ResponsiveContainer width="100%" height={Math.max(200, local.local.length * 34)}>
                   <BarChart data={[...local.local].reverse()} layout="vertical" barSize={14}>
                     <XAxis type="number" tick={{ fill:'var(--text-2)', fontSize:10 }} axisLine={false} tickLine={false} />
-                    <YAxis dataKey="feature" type="category" tick={{ fill:'var(--text-2)', fontSize:11 }} width={140} axisLine={false} tickLine={false} />
-                    <Tooltip contentStyle={ttStyle} formatter={v => [v.toFixed(4), '기여도']} />
+                    <YAxis dataKey="feature" type="category" tick={{ fill:'var(--text-2)', fontSize:11 }} width={150} axisLine={false} tickLine={false}
+                      tickFormatter={col => colLabels[col] || col} />
+                    <Tooltip contentStyle={ttStyle} formatter={v => [v.toFixed(4), '기여도']}
+                      labelFormatter={col => colLabels[col] ? `${colLabels[col]} (${col})` : col} />
                     <Bar dataKey="shap_value" radius={[0,6,6,0]}>
                       {[...local.local].reverse().map((d,i) => (
                         <Cell key={i} fill={d.shap_value > 0 ? '#f43f5e' : '#6366f1'} />
@@ -291,7 +305,10 @@ export default function XAI() {
                     <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8 }}>
                       {Object.entries(w.features).slice(0,8).map(([k,v]) => (
                         <div key={k} className="card-elevated" style={{ textAlign:'center', borderRadius:12, padding:12 }}>
-                          <p style={{ fontSize:10, color:'var(--text-2)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', margin:'0 0 4px' }}>{k}</p>
+                          <p style={{ fontSize:10, color:'var(--text-2)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', margin:'0 0 2px' }}>
+                            {colLabels[k] || k}
+                          </p>
+                          {colLabels[k] && <p style={{ fontSize:8, color:'var(--text-label)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', margin:'0 0 4px' }}>{k}</p>}
                           <p style={{ fontSize:13, fontWeight:600, color:'var(--text)', margin:0 }}>{typeof v === 'number' ? v.toFixed(3) : v}</p>
                         </div>
                       ))}

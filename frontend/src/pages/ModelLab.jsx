@@ -31,6 +31,7 @@ const ttStyle = {
 
 export default function ModelLab() {
   const [state,       setState]       = useState(null)
+  const [colLabels,   setColLabels]   = useState({})
   const [result,      setResult]      = useState(null)
   const [optRes,      setOptRes]      = useState(null)
   const [nTrials,     setNTrials]     = useState(30)
@@ -46,6 +47,7 @@ export default function ModelLab() {
       setState(r.data)
       if (r.data.cv_results) setResult({ results: r.data.cv_results, best_model: r.data.best_model })
       if (r.data.optuna_result) setOptRes(r.data.optuna_result)
+      if (r.data.col_labels) setColLabels(r.data.col_labels)
     })
   }, [])
 
@@ -329,9 +331,12 @@ export default function ModelLab() {
                 <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
                   {result.feature_importance.slice(0,8).map((f, fi) => (
                     <div key={f.feature} style={{ display:'flex', alignItems:'center', gap:12 }}>
-                      <span style={{ fontSize:11, color: fi === 0 ? 'var(--text)' : 'var(--text-2)', width:112, flexShrink:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', fontWeight: fi === 0 ? 600 : 400 }}>
-                        {fi === 0 ? '⭐ ' : ''}{f.feature}
-                      </span>
+                      <div style={{ fontSize:11, color: fi === 0 ? 'var(--text)' : 'var(--text-2)', width:130, flexShrink:0, fontWeight: fi === 0 ? 600 : 400, lineHeight:1.2 }}>
+                        <div style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                          {fi === 0 ? '⭐ ' : ''}{colLabels[f.feature] || f.feature}
+                        </div>
+                        {colLabels[f.feature] && <div style={{ fontSize:9, opacity:0.45, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{f.feature}</div>}
+                      </div>
                       <div className="progress-bar" style={{ flex:1 }}>
                         <div className="progress-fill" style={{ width:`${f.importance*100}%`, opacity: fi === 0 ? 1 : 0.7 }} />
                       </div>
