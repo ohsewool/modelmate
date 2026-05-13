@@ -169,58 +169,101 @@ export default function Upload() {
             </div>
           )}
 
-          {/* 타깃 선택 */}
+          {/* 컬럼 구성 설정 */}
           <div className="card">
-            <div style={{ display:'flex', alignItems:'flex-end', gap:16, marginBottom: uploadInfo.columns.length > 2 ? 20 : 0 }}>
-              <div style={{ flex:1 }}>
-                <label style={{ display:'block', fontSize:10, fontWeight:600, color:'var(--text-2)', marginBottom:8, textTransform:'uppercase', letterSpacing:'0.1em' }}>타깃 컬럼 선택</label>
-                <select value={target} onChange={e => setTarget(e.target.value)} className="input">
+            {/* 헤더 */}
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
+              <div>
+                <p style={{ fontSize:15, fontWeight:700, color:'var(--text)', margin:'0 0 4px' }}>컬럼 구성 설정</p>
+                <p style={{ fontSize:12, color:'var(--text-2)', margin:0 }}>AI가 자동으로 분류했습니다. 클릭해서 조정할 수 있습니다.</p>
+              </div>
+              <div style={{ display:'flex', gap:8 }}>
+                <button onClick={handleSetTarget} className="btn-primary" disabled={loading}>
+                  {loading ? <span className="spinner" /> : (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="20,6 9,17 4,12"/></svg>
+                  )}
+                  분석 시작
+                </button>
+                <button onClick={() => { setUploadInfo(null); setEdaInfo(null); setDropCols([]); setAiAnalysis(null) }} className="btn-secondary">
+                  ↩ 다시
+                </button>
+              </div>
+            </div>
+
+            <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+
+              {/* 🎯 타깃 */}
+              <div style={{ borderRadius:12, padding:16, border:'1px solid rgba(99,102,241,0.25)', background:'rgba(99,102,241,0.05)' }}>
+                <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:10 }}>
+                  <span style={{ fontSize:16 }}>🎯</span>
+                  <div>
+                    <p style={{ fontSize:13, fontWeight:700, color:'#4f46e5', margin:0 }}>예측 대상 (타깃)</p>
+                    <p style={{ fontSize:11, color:'var(--text-2)', margin:0 }}>AI가 맞춰야 할 정답값입니다. 예: 고장 여부, 가격, 종류</p>
+                  </div>
+                </div>
+                <select value={target} onChange={e => { setTarget(e.target.value); setDropCols(prev => prev.filter(c => c !== e.target.value)) }} className="input" style={{ maxWidth:260 }}>
                   {uploadInfo.columns.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
-              <button onClick={handleSetTarget} className="btn-primary" disabled={loading}>
-                {loading ? <span className="spinner" /> : (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="20,6 9,17 4,12"/></svg>
-                )}
-                데이터 확정
-              </button>
-              <button onClick={() => { setUploadInfo(null); setEdaInfo(null); setDropCols([]) }} className="btn-secondary">
-                ↩ 다시
-              </button>
-            </div>
 
-            {/* 제외 컬럼 선택 */}
-            <div>
-              <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:10 }}>
-                <label style={{ fontSize:10, fontWeight:600, color:'var(--text-2)', textTransform:'uppercase', letterSpacing:'0.1em' }}>분석 제외 컬럼</label>
-                {dropCols.length > 0 && (
-                  <span className="badge badge-amber" style={{ fontSize:10 }}>{dropCols.length}개 제외</span>
-                )}
-                {uploadInfo.suggested_drop?.length > 0 && (
-                  <span style={{ fontSize:10, color:'var(--text-label)' }}>· AI가 ID성 컬럼을 자동 감지했습니다</span>
-                )}
+              {/* ✅ 학습 피처 */}
+              <div style={{ borderRadius:12, padding:16, border:'1px solid rgba(16,185,129,0.2)', background:'rgba(16,185,129,0.04)' }}>
+                <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:10 }}>
+                  <span style={{ fontSize:16 }}>✅</span>
+                  <div>
+                    <p style={{ fontSize:13, fontWeight:700, color:'#059669', margin:0 }}>학습에 사용할 데이터 ({uploadInfo.columns.filter(c => c !== target && !dropCols.includes(c)).length}개)</p>
+                    <p style={{ fontSize:11, color:'var(--text-2)', margin:0 }}>AI가 패턴을 학습할 때 참고하는 항목입니다. 클릭하면 제외됩니다.</p>
+                  </div>
+                </div>
+                <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
+                  {uploadInfo.columns.filter(c => c !== target && !dropCols.includes(c)).length === 0
+                    ? <p style={{ fontSize:12, color:'var(--text-label)', margin:0 }}>포함된 컬럼이 없습니다</p>
+                    : uploadInfo.columns.filter(c => c !== target && !dropCols.includes(c)).map(col => (
+                      <button key={col} onClick={() => toggleDrop(col)} style={{
+                        padding:'5px 12px', borderRadius:8, fontSize:12, cursor:'pointer',
+                        border:'1px solid rgba(16,185,129,0.3)',
+                        background:'rgba(16,185,129,0.08)', color:'#059669',
+                        transition:'all 0.15s',
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.background='rgba(244,63,94,0.08)'; e.currentTarget.style.borderColor='rgba(244,63,94,0.3)'; e.currentTarget.style.color='#f43f5e' }}
+                      onMouseLeave={e => { e.currentTarget.style.background='rgba(16,185,129,0.08)'; e.currentTarget.style.borderColor='rgba(16,185,129,0.3)'; e.currentTarget.style.color='#059669' }}
+                      >
+                        {col}
+                      </button>
+                    ))
+                  }
+                </div>
               </div>
-              <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
-                {uploadInfo.columns.filter(c => c !== target).map(col => {
-                  const isSuggested = uploadInfo.suggested_drop?.includes(col)
-                  const isDropped   = dropCols.includes(col)
-                  return (
-                    <button key={col} onClick={() => toggleDrop(col)} style={{
-                      padding:'5px 12px', borderRadius:8, fontSize:12, cursor:'pointer',
-                      border: `1px solid ${isDropped ? 'rgba(244,63,94,0.4)' : isSuggested ? 'rgba(245,158,11,0.4)' : 'var(--border)'}`,
-                      background: isDropped ? 'rgba(244,63,94,0.08)' : isSuggested ? 'rgba(245,158,11,0.08)' : 'var(--surface-alt)',
-                      color: isDropped ? '#f43f5e' : isSuggested ? '#d97706' : 'var(--text-2)',
-                      fontWeight: isSuggested ? 600 : 400,
-                      transition:'all 0.15s',
-                    }}>
-                      {isDropped ? '✕ ' : isSuggested ? '⚠ ' : ''}{col}
-                    </button>
-                  )
-                })}
+
+              {/* ❌ 제외 */}
+              <div style={{ borderRadius:12, padding:16, border:'1px solid rgba(244,63,94,0.2)', background:'rgba(244,63,94,0.04)' }}>
+                <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:10 }}>
+                  <span style={{ fontSize:16 }}>❌</span>
+                  <div>
+                    <p style={{ fontSize:13, fontWeight:700, color:'#e11d48', margin:0 }}>제외할 컬럼 ({dropCols.length}개)</p>
+                    <p style={{ fontSize:11, color:'var(--text-2)', margin:0 }}>일련번호·ID처럼 예측에 불필요하거나, 정답을 미리 알려주는 항목입니다. 클릭하면 다시 포함됩니다.</p>
+                  </div>
+                </div>
+                <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
+                  {dropCols.length === 0
+                    ? <p style={{ fontSize:12, color:'var(--text-label)', margin:0 }}>제외된 컬럼이 없습니다</p>
+                    : dropCols.map(col => (
+                      <button key={col} onClick={() => toggleDrop(col)} style={{
+                        padding:'5px 12px', borderRadius:8, fontSize:12, cursor:'pointer',
+                        border:'1px solid rgba(244,63,94,0.3)',
+                        background:'rgba(244,63,94,0.08)', color:'#f43f5e',
+                        transition:'all 0.15s',
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.background='rgba(16,185,129,0.08)'; e.currentTarget.style.borderColor='rgba(16,185,129,0.3)'; e.currentTarget.style.color='#059669' }}
+                      onMouseLeave={e => { e.currentTarget.style.background='rgba(244,63,94,0.08)'; e.currentTarget.style.borderColor='rgba(244,63,94,0.3)'; e.currentTarget.style.color='#f43f5e' }}
+                      >
+                        ✕ {col}
+                      </button>
+                    ))
+                  }
+                </div>
               </div>
-              <p style={{ fontSize:11, color:'var(--text-label)', margin:'8px 0 0' }}>
-                클릭하면 제외 / 다시 클릭하면 포함 · <span style={{ color:'#d97706' }}>노란색</span>은 AI 추천 제외 컬럼
-              </p>
+
             </div>
           </div>
 
