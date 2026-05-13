@@ -573,9 +573,37 @@ async def get_predictions():
         probs = model.predict_proba(X).max(axis=1).tolist()
     else:
         probs = [float(p) for p in preds]
-    risk = sorted([{"id": i, "probability": round(float(pr), 4)}
-                   for i, (p, pr) in enumerate(zip(preds, probs)) if p == 1],
-                  key=lambda x: x["probability"], reverse=True)
+    risk_raw = sorted([{"id": i, "probability": round(float(pr), 4)}
+                       for i, (p, pr) in enumerate(zip(preds, probs)) if p == 1],
+                      key=lambda x: x["probability"], reverse=True)
+
+    # 상위 피처별 이상 여부 추가 (top 10만)
+    top_feat_names = []
+    feat_stats = {}
+    if hasattr(model, "feature_importances_"):
+        top_feat_names = [c for c, _ in sorted(
+            zip(X.columns, model.feature_importances_),
+            key=lambda x: x[1], reverse=True)][:3]
+        for col in top_feat_names:
+            feat_stats[col] = {"mean": float(X[col].mean()), "std": float(X[col].std())}
+
+    def feat_level(val, col):
+        if col not in feat_stats: return "normal"
+        m, s = feat_stats[col]["mean"], feat_stats[col]["std"]
+        if s == 0: return "normal"
+        if val > m + s: return "high"
+        if val < m - s: return "low"
+        return "normal"
+
+    risk = []
+    for item in risk_raw[:50]:
+        i = item["id"]
+        feat_info = []
+        for col in top_feat_names:
+            val = float(X.iloc[i][col])
+            feat_info.append({"feature": col, "value": round(val, 3),
+                              "level": feat_level(val, col)})
+        risk.append({**item, "top_features": feat_info})
     actual = y.values.tolist()
     wrong = [{"idx": i, "actual": int(actual[i]), "predicted": int(preds[i]),
                "probability": round(float(probs[i]), 4),
