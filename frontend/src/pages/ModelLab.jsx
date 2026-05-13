@@ -7,9 +7,16 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } fro
 const MEDALS = ['🥇','🥈','🥉','']
 const COLORS  = ['#818cf8','#34d399','#fbbf24','#a78bfa']
 
-function getScoreLabel(score) {
+function getScoreLabel(score, isR2 = false) {
   const v = parseFloat(score)
   if (isNaN(v)) return null
+  if (isR2) {
+    if (v >= 0.90) return { label:'매우 우수', color:'#059669', bg:'rgba(16,185,129,0.1)', border:'rgba(16,185,129,0.25)', icon:'🏆', desc:'예측값이 실제값과 매우 잘 일치합니다.' }
+    if (v >= 0.80) return { label:'우수',     color:'#2563eb', bg:'rgba(37,99,235,0.08)', border:'rgba(37,99,235,0.2)',  icon:'✅', desc:'신뢰도 높은 수치 예측이 가능합니다.' }
+    if (v >= 0.65) return { label:'양호',     color:'#7c3aed', bg:'rgba(124,58,237,0.08)',border:'rgba(124,58,237,0.2)', icon:'👍', desc:'괜찮은 성능이지만 Optuna 튜닝으로 더 높일 수 있습니다.' }
+    if (v >= 0.50) return { label:'보통',     color:'#d97706', bg:'rgba(217,119,6,0.08)', border:'rgba(217,119,6,0.2)',  icon:'⚠️', desc:'아래 Optuna 튜닝으로 성능을 개선해 보세요.' }
+    return           { label:'개선 필요', color:'#dc2626', bg:'rgba(220,38,38,0.08)',  border:'rgba(220,38,38,0.2)',  icon:'❗', desc:'데이터 품질이나 피처 구성을 다시 확인해 보세요.' }
+  }
   if (v >= 0.95) return { label:'매우 우수', color:'#059669', bg:'rgba(16,185,129,0.1)', border:'rgba(16,185,129,0.25)', icon:'🏆', desc:'실제 현장에서도 즉시 활용할 수 있는 수준입니다.' }
   if (v >= 0.85) return { label:'우수',     color:'#2563eb', bg:'rgba(37,99,235,0.08)', border:'rgba(37,99,235,0.2)',  icon:'✅', desc:'신뢰도 높은 예측이 가능합니다.' }
   if (v >= 0.75) return { label:'양호',     color:'#7c3aed', bg:'rgba(124,58,237,0.08)',border:'rgba(124,58,237,0.2)', icon:'👍', desc:'괜찮은 성능이지만 Optuna 튜닝으로 더 높일 수 있습니다.' }
@@ -70,9 +77,11 @@ export default function ModelLab() {
     </div>
   )
 
-  const chartData = result?.results?.map(r => ({
-    name: r.model.split(' ')[0], Accuracy: r.accuracy, F1: r.f1, 'ROC-AUC': r.roc_auc
-  }))
+  const isRegression = state?.task_type === 'regression' || result?.task_type === 'regression'
+
+  const chartData = isRegression
+    ? result?.results?.map(r => ({ name: r.model.split(' ')[0], 'R²': r.r2 }))
+    : result?.results?.map(r => ({ name: r.model.split(' ')[0], Accuracy: r.accuracy, F1: r.f1, 'ROC-AUC': r.roc_auc }))
 
   return (
     <div className="animate-fade-in" style={{ padding:32, maxWidth:960 }}>
@@ -111,17 +120,27 @@ export default function ModelLab() {
           {/* KPI */}
           <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:16 }}>
             <KPICard label="최고 모델" value={result.best_model?.split(' ')[0]} icon="🏆" color="blue" />
-            <KPICard label="ROC-AUC"  value={result.results?.[0]?.roc_auc}     icon="📈" color="green" />
-            <KPICard label="Accuracy" value={result.results?.[0]?.accuracy}     icon="✅" color="cyan" />
-            <KPICard label="F1 Score" value={result.results?.[0]?.f1}           icon="⚡" color="amber" />
+            {isRegression ? (
+              <>
+                <KPICard label="R² Score" value={result.results?.[0]?.r2}   icon="📈" color="green" />
+                <KPICard label="RMSE"     value={result.results?.[0]?.rmse} icon="📉" color="amber" />
+                <KPICard label="MAE"      value={result.results?.[0]?.mae}  icon="📊" color="cyan" />
+              </>
+            ) : (
+              <>
+                <KPICard label="ROC-AUC"  value={result.results?.[0]?.roc_auc} icon="📈" color="green" />
+                <KPICard label="Accuracy" value={result.results?.[0]?.accuracy} icon="✅" color="cyan" />
+                <KPICard label="F1 Score" value={result.results?.[0]?.f1}       icon="⚡" color="amber" />
+              </>
+            )}
           </div>
 
           {/* 종합 평가 배너 */}
           {(() => {
-            const lbl = getScoreLabel(result.results?.[0]?.roc_auc)
+            const primaryScore = isRegression ? result.results?.[0]?.r2 : result.results?.[0]?.roc_auc
+            const lbl = getScoreLabel(primaryScore, isRegression)
             if (!lbl) return null
             const bestModel = result.best_model?.split(' ')[0]
-            const acc = result.results?.[0]?.accuracy
             return (
               <div style={{ display:'flex', alignItems:'flex-start', gap:14, padding:'14px 18px', borderRadius:14, background:lbl.bg, border:`1px solid ${lbl.border}` }}>
                 <span style={{ fontSize:22, flexShrink:0 }}>{lbl.icon}</span>
@@ -129,11 +148,14 @@ export default function ModelLab() {
                   <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4 }}>
                     <span style={{ fontSize:14, fontWeight:700, color:lbl.color }}>{lbl.label}</span>
                     <span style={{ fontSize:11, color:'var(--text-label)', background:'var(--surface)', border:'1px solid var(--border)', padding:'1px 8px', borderRadius:6 }}>
-                      ROC-AUC {result.results?.[0]?.roc_auc}
+                      {isRegression ? `R² ${primaryScore}` : `ROC-AUC ${primaryScore}`}
                     </span>
                   </div>
                   <p style={{ fontSize:12, color:'var(--text-2)', margin:'0 0 4px', lineHeight:1.65 }}>
-                    <strong>{bestModel}</strong>이 가장 좋은 성능을 기록했습니다. 정확도 <strong>{acc}</strong>로, 100개 중 약 {Math.round(parseFloat(acc)*100)}개를 올바르게 예측합니다.
+                    {isRegression
+                      ? <><strong>{bestModel}</strong>이 가장 좋은 성능을 기록했습니다. R²는 예측값이 실제값을 얼마나 잘 설명하는지를 나타냅니다 (1.0이 최고).</>
+                      : (() => { const acc = result.results?.[0]?.accuracy; return <><strong>{bestModel}</strong>이 가장 좋은 성능을 기록했습니다. 정확도 <strong>{acc}</strong>로, 100개 중 약 {Math.round(parseFloat(acc)*100)}개를 올바르게 예측합니다.</>})()
+                    }
                   </p>
                   <p style={{ fontSize:12, color:lbl.color, margin:0, fontWeight:500 }}>{lbl.desc}</p>
                 </div>
@@ -158,12 +180,16 @@ export default function ModelLab() {
                 }}>
                   <span style={{ fontSize:20, width:32, textAlign:'center', flexShrink:0 }}>{MEDALS[Math.min(i,3)]}</span>
                   <span style={{ flex:1, fontWeight:500, fontSize:13, color: i === 0 ? 'var(--text)' : 'var(--text-3)' }}>{r.model}</span>
-                  {[['Accuracy', r.accuracy],['F1', r.f1],['ROC-AUC', r.roc_auc]].map(([k,v]) => {
-                    const lbl = k === 'ROC-AUC' ? getScoreLabel(v) : null
+                  {(isRegression
+                    ? [['R²', r.r2], ['RMSE', r.rmse], ['MAE', r.mae]]
+                    : [['Accuracy', r.accuracy], ['F1', r.f1], ['ROC-AUC', r.roc_auc]]
+                  ).map(([k, v]) => {
+                    const isPrimary = isRegression ? k === 'R²' : k === 'ROC-AUC'
+                    const lbl = isPrimary ? getScoreLabel(v, isRegression) : null
                     return (
                       <div key={k} style={{ textAlign:'center', width:80 }}>
                         <p style={{ fontSize:10, color:'var(--text-2)', margin:'0 0 2px' }}>{k}</p>
-                        <p style={{ fontWeight:700, fontSize:13, color: i===0 && k==='ROC-AUC' ? '#4f46e5' : i===0 ? 'var(--text)' : 'var(--text-2)', margin:0 }}>{v}</p>
+                        <p style={{ fontWeight:700, fontSize:13, color: i===0 && isPrimary ? '#4f46e5' : i===0 ? 'var(--text)' : 'var(--text-2)', margin:0 }}>{v}</p>
                         {lbl && i === 0 && (
                           <span style={{ fontSize:9, fontWeight:600, color:lbl.color, background:lbl.bg, padding:'1px 6px', borderRadius:4, display:'inline-block', marginTop:3 }}>{lbl.label}</span>
                         )}
@@ -185,7 +211,7 @@ export default function ModelLab() {
                   <YAxis domain={[0,1]} tick={{ fill:'var(--text-2)', fontSize:10 }} axisLine={false} tickLine={false} />
                   <Tooltip contentStyle={ttStyle} cursor={{ fill:'rgba(99,102,241,0.04)' }} />
                   <Legend wrapperStyle={{ fontSize:11, color:'var(--text-2)' }} />
-                  {['Accuracy','F1','ROC-AUC'].map((k,i) => (
+                  {(isRegression ? ['R²'] : ['Accuracy','F1','ROC-AUC']).map((k,i) => (
                     <Bar key={k} dataKey={k} fill={COLORS[i]} radius={[4,4,0,0]} opacity={0.9} />
                   ))}
                 </BarChart>
@@ -222,7 +248,7 @@ export default function ModelLab() {
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
               <div>
                 <p style={{ fontWeight:600, color:'var(--text)', margin:'0 0 4px' }}>⚡ Optuna 하이퍼파라미터 튜닝</p>
-                <p style={{ fontSize:11, color:'var(--text-2)', margin:0 }}>최고 모델 ({result.best_model}) 자동 최적화</p>
+                <p style={{ fontSize:11, color:'var(--text-2)', margin:0 }}>최고 모델 ({result.best_model?.split(' ')[0]}) 자동 최적화 · {isRegression ? 'R² 기준' : 'ROC-AUC 기준'}</p>
               </div>
               <div style={{ display:'flex', alignItems:'center', gap:12 }}>
                 <div style={{ display:'flex', alignItems:'center', gap:8 }}>
@@ -241,8 +267,8 @@ export default function ModelLab() {
 
             {optRes && (
               <div className="animate-slide-up" style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:16, paddingTop:16, borderTop:'1px solid rgba(255,255,255,0.05)' }}>
-                <KPICard label="튜닝 전 ROC-AUC" value={optRes.before_roc} color="cyan" />
-                <KPICard label="튜닝 후 ROC-AUC" value={optRes.after_roc}
+                <KPICard label={`튜닝 전 ${optRes.metric_name || 'ROC-AUC'}`} value={optRes.before_roc} color="cyan" />
+                <KPICard label={`튜닝 후 ${optRes.metric_name || 'ROC-AUC'}`} value={optRes.after_roc}
                   sub={`+${optRes.improvement}% 개선`} color="green" icon="✨" />
                 <KPICard label="최적 파라미터" value={Object.keys(optRes.best_params).length + '개'} color="amber" />
 

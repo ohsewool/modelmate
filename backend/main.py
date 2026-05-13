@@ -5,10 +5,11 @@ from fastapi.staticfiles import StaticFiles
 import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
-from sklearn.linear_model import LogisticRegression
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.model_selection import cross_val_score, StratifiedKFold
-from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
+from sklearn.linear_model import LogisticRegression, Ridge
+from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
+from sklearn.model_selection import cross_val_score, StratifiedKFold, KFold
+from sklearn.metrics import accuracy_score, f1_score, roc_auc_score, r2_score, mean_squared_error, mean_absolute_error
 from sklearn.preprocessing import LabelEncoder
 from pydantic import BaseModel
 import json, os, io, asyncio
@@ -58,6 +59,13 @@ MODELS = {
     "Gradient Boosting":   lambda: GradientBoostingClassifier(random_state=42),
     "Logistic Regression": lambda: LogisticRegression(max_iter=1000, random_state=42),
     "Decision Tree":       lambda: DecisionTreeClassifier(random_state=42),
+}
+
+REGRESSION_MODELS = {
+    "Random Forest":    lambda: RandomForestRegressor(n_estimators=100, random_state=42),
+    "Gradient Boosting":lambda: GradientBoostingRegressor(random_state=42),
+    "Ridge Regression": lambda: Ridge(),
+    "Decision Tree":    lambda: DecisionTreeRegressor(random_state=42),
 }
 
 def load_history():
@@ -319,6 +327,42 @@ async def set_target(body: dict):
 async def run_cv():
     X, y = STATE.get("X"), STATE.get("y")
     if X is None: raise HTTPException(400, "데이터 없음")
+    task_type = STATE.get("task_type", "classification")
+
+    if task_type == "regression":
+        kf = KFold(n_splits=3, shuffle=True, random_state=42)
+        results = []
+        for name, fn in REGRESSION_MODELS.items():
+            m = fn()
+            try:
+                r2   = float(cross_val_score(m, X, y, cv=kf, scoring="r2").mean())
+                rmse = float(-cross_val_score(m, X, y, cv=kf, scoring="neg_root_mean_squared_error").mean())
+                mae  = float(-cross_val_score(m, X, y, cv=kf, scoring="neg_mean_absolute_error").mean())
+            except:
+                r2, rmse, mae = 0.0, 0.0, 0.0
+            results.append({"model": name, "r2": round(r2, 4), "rmse": round(rmse, 4), "mae": round(mae, 4)})
+        results.sort(key=lambda x: x["r2"], reverse=True)
+        best_name = results[0]["model"]
+        bm = REGRESSION_MODELS[best_name](); bm.fit(X, y)
+        preds = bm.predict(X).tolist()
+        STATE.update({"cv_results": results, "best_model_name": best_name,
+                      "best_model": bm, "predictions": preds,
+                      "optuna_result": None, "shap_values": None})
+        fi = []
+        if hasattr(bm, "feature_importances_"):
+            fi = sorted([{"feature": c, "importance": round(float(v), 4)}
+                         for c, v in zip(X.columns, bm.feature_importances_)],
+                        key=lambda x: x["importance"], reverse=True)
+        save_history({"timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                      "data_shape": list(X.shape), "target": STATE["target_col"],
+                      "best_model": best_name, "results": results, "optuna_applied": False,
+                      "task_type": "regression"})
+        return {"results": results, "best_model": best_name,
+                "feature_importance": fi, "task_type": "regression",
+                "final_r2":   round(float(r2_score(y, preds)), 4),
+                "final_rmse": round(float(np.sqrt(mean_squared_error(y, preds))), 4)}
+
+    # ── 분류 ───────────────────────────────────────────────
     n_unique = STATE.get("n_unique_target", 2)
     is_binary = n_unique == 2
     cv = StratifiedKFold(n_splits=3, shuffle=True, random_state=42)
@@ -349,9 +393,9 @@ async def run_cv():
     save_history({"timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                   "data_shape": list(X.shape), "target": STATE["target_col"],
                   "best_model": best_name, "results": results, "optuna_applied": False,
-                  "task_type": STATE.get("task_type", "classification")})
+                  "task_type": "classification"})
     return {"results": results, "best_model": best_name,
-            "feature_importance": fi,
+            "feature_importance": fi, "task_type": "classification",
             "final_accuracy": round(float(accuracy_score(y, preds)), 4),
             "final_f1": round(float(f1_score(y, preds, average="weighted")), 4)}
 
@@ -364,45 +408,79 @@ async def run_optuna(req: OptunaReq):
     if not OPTUNA_OK: raise HTTPException(400, "optuna 미설치")
     X, y = STATE.get("X"), STATE.get("y")
     best_name = STATE.get("best_model_name")
+    task_type = STATE.get("task_type", "classification")
     if X is None: raise HTTPException(400, "CV 먼저 실행")
-    n_unique = STATE.get("n_unique_target", 2)
-    is_binary = n_unique == 2
-    scoring = "roc_auc" if is_binary else "roc_auc_ovr_weighted"
-    before = STATE["cv_results"][0]["roc_auc"]
 
-    def obj(trial):
-        if best_name == "Random Forest":
-            m = RandomForestClassifier(
-                n_estimators=trial.suggest_int("n_estimators", 50, 300),
-                max_depth=trial.suggest_int("max_depth", 3, 15),
-                min_samples_split=trial.suggest_int("min_samples_split", 2, 10),
-                random_state=42)
-        elif best_name == "Gradient Boosting":
-            m = GradientBoostingClassifier(
-                n_estimators=trial.suggest_int("n_estimators", 50, 300),
-                learning_rate=trial.suggest_float("learning_rate", 0.01, 0.3),
-                max_depth=trial.suggest_int("max_depth", 2, 8), random_state=42)
-        else: return before
+    if task_type == "regression":
+        before = STATE["cv_results"][0]["r2"]
+        def obj(trial):
+            if best_name == "Random Forest":
+                m = RandomForestRegressor(
+                    n_estimators=trial.suggest_int("n_estimators", 50, 300),
+                    max_depth=trial.suggest_int("max_depth", 3, 15),
+                    min_samples_split=trial.suggest_int("min_samples_split", 2, 10),
+                    random_state=42)
+            elif best_name == "Gradient Boosting":
+                m = GradientBoostingRegressor(
+                    n_estimators=trial.suggest_int("n_estimators", 50, 300),
+                    learning_rate=trial.suggest_float("learning_rate", 0.01, 0.3),
+                    max_depth=trial.suggest_int("max_depth", 2, 8), random_state=42)
+            else: return before
+            try:
+                return cross_val_score(m, X, y,
+                    cv=KFold(3, shuffle=True, random_state=42), scoring="r2").mean()
+            except: return before
+        study = optuna.create_study(direction="maximize")
+        study.optimize(obj, n_trials=req.n_trials, show_progress_bar=False)
+        bp = {**study.best_params, "random_state": 42}
+        tuned = (RandomForestRegressor(**bp) if best_name == "Random Forest"
+                 else GradientBoostingRegressor(**bp) if best_name == "Gradient Boosting"
+                 else STATE["best_model"])
+        tuned.fit(X, y)
         try:
-            return cross_val_score(m, X, y,
+            after = round(float(cross_val_score(tuned, X, y,
+                cv=KFold(3, shuffle=True, random_state=42), scoring="r2").mean()), 4)
+        except: after = before
+        result = {"best_params": bp, "before_roc": before, "after_roc": after,
+                  "improvement": round((after - before) * 100, 2), "metric_name": "R²"}
+    else:
+        n_unique = STATE.get("n_unique_target", 2)
+        is_binary = n_unique == 2
+        scoring = "roc_auc" if is_binary else "roc_auc_ovr_weighted"
+        before = STATE["cv_results"][0]["roc_auc"]
+        def obj(trial):
+            if best_name == "Random Forest":
+                m = RandomForestClassifier(
+                    n_estimators=trial.suggest_int("n_estimators", 50, 300),
+                    max_depth=trial.suggest_int("max_depth", 3, 15),
+                    min_samples_split=trial.suggest_int("min_samples_split", 2, 10),
+                    random_state=42)
+            elif best_name == "Gradient Boosting":
+                m = GradientBoostingClassifier(
+                    n_estimators=trial.suggest_int("n_estimators", 50, 300),
+                    learning_rate=trial.suggest_float("learning_rate", 0.01, 0.3),
+                    max_depth=trial.suggest_int("max_depth", 2, 8), random_state=42)
+            else: return before
+            try:
+                return cross_val_score(m, X, y,
+                    cv=StratifiedKFold(3, shuffle=True, random_state=42),
+                    scoring=scoring).mean()
+            except: return before
+        study = optuna.create_study(direction="maximize")
+        study.optimize(obj, n_trials=req.n_trials, show_progress_bar=False)
+        bp = {**study.best_params, "random_state": 42}
+        tuned = (RandomForestClassifier(**bp) if best_name == "Random Forest"
+                 else GradientBoostingClassifier(**bp) if best_name == "Gradient Boosting"
+                 else STATE["best_model"])
+        tuned.fit(X, y)
+        try:
+            after = round(float(cross_val_score(tuned, X, y,
                 cv=StratifiedKFold(3, shuffle=True, random_state=42),
-                scoring=scoring).mean()
-        except: return before
+                scoring=scoring).mean()), 4)
+        except: after = before
+        result = {"best_params": bp, "before_roc": before,
+                  "after_roc": after, "improvement": round((after - before) * 100, 2)}
 
-    study = optuna.create_study(direction="maximize")
-    study.optimize(obj, n_trials=req.n_trials, show_progress_bar=False)
-    bp = {**study.best_params, "random_state": 42}
-    tuned = (RandomForestClassifier(**bp) if best_name == "Random Forest"
-             else GradientBoostingClassifier(**bp) if best_name == "Gradient Boosting"
-             else STATE["best_model"])
-    tuned.fit(X, y)
-    try:
-        after = round(float(cross_val_score(tuned, X, y,
-            cv=StratifiedKFold(3, shuffle=True, random_state=42),
-            scoring=scoring).mean()), 4)
-    except: after = before
-    result = {"best_params": bp, "before_roc": before,
-              "after_roc": after, "improvement": round((after - before) * 100, 2)}
     STATE.update({"best_model": tuned,
                   "predictions": tuned.predict(X).tolist(),
                   "optuna_result": result, "shap_values": None})
@@ -447,19 +525,45 @@ async def shap_local(idx: int):
     if idx >= len(s_idx): raise HTTPException(400, "범위 초과")
     ai = s_idx[idx]; row = X.iloc[ai]
     model = STATE["best_model"]
-    pred = int(model.predict(X.iloc[[ai]])[0])
-    prob = model.predict_proba(X.iloc[[ai]])[0].tolist() if hasattr(model, "predict_proba") else [0, 0]
+    task_type = STATE.get("task_type", "classification")
+    if task_type == "regression":
+        pred_val = float(model.predict(X.iloc[[ai]])[0])
+        pred = round(pred_val, 4)
+        prob = [pred_val]
+    else:
+        pred = int(model.predict(X.iloc[[ai]])[0])
+        prob = model.predict_proba(X.iloc[[ai]])[0].tolist() if hasattr(model, "predict_proba") else [0, 0]
     local = sorted([{"feature": c, "shap_value": round(float(v), 4), "value": round(float(row[c]), 4)}
                     for c, v in zip(X.columns, sv[idx])],
                    key=lambda x: abs(x["shap_value"]), reverse=True)
-    return {"local": local, "prediction": pred, "probability": prob, "sample_index": ai}
+    return {"local": local, "prediction": pred, "probability": prob,
+            "sample_index": ai, "task_type": task_type}
 
 # ── 예측 ─────────────────────────────────────────────────
 @app.get("/api/predictions")
 async def get_predictions():
     preds = STATE.get("predictions"); X = STATE.get("X"); y = STATE.get("y")
     model = STATE.get("best_model")
+    task_type = STATE.get("task_type", "classification")
     if preds is None: raise HTTPException(400, "예측 없음")
+
+    if task_type == "regression":
+        preds_arr = np.array(preds); y_arr = y.values
+        r2   = round(float(r2_score(y_arr, preds_arr)), 4)
+        rmse = round(float(np.sqrt(mean_squared_error(y_arr, preds_arr))), 4)
+        mae  = round(float(mean_absolute_error(y_arr, preds_arr)), 4)
+        residuals = [{"idx": i, "actual": round(float(y_arr[i]), 4),
+                      "predicted": round(float(preds[i]), 4),
+                      "error": round(float(abs(preds[i] - y_arr[i])), 4)}
+                     for i in range(len(preds))]
+        residuals.sort(key=lambda x: x["error"], reverse=True)
+        return {"total": len(preds), "task_type": "regression",
+                "r2": r2, "rmse": rmse, "mae": mae,
+                "misclassified": [],
+                "risk_items": [], "failure_count": 0,
+                "high_risk": 0, "failure_rate": 0,
+                "worst_residuals": residuals[:3]}
+
     has_proba = hasattr(model, "predict_proba")
     n_unique = STATE.get("n_unique_target", 2)
     is_binary = n_unique == 2
@@ -479,7 +583,7 @@ async def get_predictions():
              for i in range(len(preds)) if preds[i] != actual[i]][:3]
     fc = sum(1 for p in preds if p == 1)
     return {
-        "total": len(preds), "failure_count": fc,
+        "total": len(preds), "failure_count": fc, "task_type": "classification",
         "failure_rate": round(fc / len(preds) * 100, 2),
         "high_risk": sum(1 for p in probs if p >= 0.8),
         "risk_items": risk[:50], "misclassified": wrong,
