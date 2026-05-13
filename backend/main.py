@@ -11,7 +11,7 @@ from sklearn.model_selection import cross_val_score, StratifiedKFold
 from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
 from sklearn.preprocessing import LabelEncoder
 from pydantic import BaseModel
-import json, os, io
+import json, os, io, asyncio
 from datetime import datetime
 
 try:
@@ -21,6 +21,29 @@ except: SHAP_OK = False
 try:
     import optuna; optuna.logging.set_verbosity(optuna.logging.WARNING); OPTUNA_OK = True
 except: OPTUNA_OK = False
+
+try:
+    import google.generativeai as genai
+    _GEMINI_KEY = os.getenv("GEMINI_API_KEY", "")
+    if _GEMINI_KEY:
+        genai.configure(api_key=_GEMINI_KEY)
+        _GEMINI_MODEL = genai.GenerativeModel("gemini-2.0-flash")
+        GEMINI_OK = True
+    else:
+        GEMINI_OK = False
+except:
+    GEMINI_OK = False
+
+def _call_gemini_sync(prompt: str) -> str:
+    try:
+        r = _GEMINI_MODEL.generate_content(prompt)
+        return r.text.strip()
+    except:
+        return ""
+
+async def ask_gemini(prompt: str) -> str:
+    if not GEMINI_OK: return ""
+    return await asyncio.to_thread(_call_gemini_sync, prompt)
 
 app = FastAPI(title="ModelMate API")
 app.add_middleware(CORSMiddleware, allow_origins=["*"],
@@ -362,6 +385,171 @@ async def get_predictions():
         "accuracy": round(float(accuracy_score(y, preds)), 4),
         "f1": round(float(f1_score(y, preds, average="weighted")), 4),
     }
+
+# ── Agentic 자동 분석 ────────────────────────────────────
+@app.post("/api/run-agent")
+async def run_agent():
+    X, y = STATE.get("X"), STATE.get("y")
+    if X is None: raise HTTPException(400, "데이터 없음. 먼저 업로드 후 타깃을 선택하세요.")
+
+    steps = []
+    step_num = 0
+    n_unique = STATE.get("n_unique_target", 2)
+    is_binary = n_unique == 2
+    scoring  = "roc_auc" if is_binary else "roc_auc_ovr_weighted"
+    cv = StratifiedKFold(n_splits=3, shuffle=True, random_state=42)
+
+    # ── Step 1: CV ────────────────────────────────────────
+    step_num += 1
+    results = []
+    for name, fn in MODELS.items():
+        m = fn()
+        acc = float(cross_val_score(m, X, y, cv=cv, scoring="accuracy").mean())
+        f1  = float(cross_val_score(m, X, y, cv=cv, scoring="f1_weighted").mean())
+        try:   roc = float(cross_val_score(m, X, y, cv=cv, scoring=scoring).mean())
+        except: roc = acc
+        results.append({"model": name, "accuracy": round(acc,4), "f1": round(f1,4), "roc_auc": round(roc,4)})
+    results.sort(key=lambda x: x["roc_auc"], reverse=True)
+    best_name = results[0]["model"]
+    bm = MODELS[best_name](); bm.fit(X, y)
+    preds = bm.predict(X).tolist()
+    fi = sorted([{"feature": c, "importance": round(float(v),4)}
+                 for c, v in zip(X.columns, bm.feature_importances_)],
+                key=lambda x: x["importance"], reverse=True) if hasattr(bm,"feature_importances_") else []
+    STATE.update({"cv_results": results, "best_model_name": best_name,
+                  "best_model": bm, "predictions": preds,
+                  "optuna_result": None, "shap_values": None})
+
+    cv_comment = await ask_gemini(
+        f"당신은 AutoML 시스템의 에이전트입니다. 다음 교차검증 결과를 분석하고 한국어로 2~3문장으로 설명하세요.\n"
+        f"최고 모델: {best_name}, ROC-AUC: {results[0]['roc_auc']}\n"
+        f"전체 결과: {json.dumps(results, ensure_ascii=False)}\n"
+        f"타깃 컬럼: {STATE.get('target_col')}, 데이터: {X.shape[0]}행×{X.shape[1]}열\n"
+        f"간결하고 전문적으로 해석하세요."
+    ) or f"{best_name}이(가) ROC-AUC {results[0]['roc_auc']}로 4개 모델 중 최고 성능을 기록했습니다."
+
+    steps.append({"step": step_num, "name": "모델 비교 (3-fold CV)", "status": "done",
+                  "data": {"results": results, "feature_importance": fi[:5]},
+                  "comment": cv_comment})
+
+    # ── Step 2: 전략 결정 ─────────────────────────────────
+    step_num += 1
+    best_roc = results[0]["roc_auc"]
+    run_optuna = best_roc < 0.85 and OPTUNA_OK
+
+    decision_comment = await ask_gemini(
+        f"AutoML 에이전트입니다. {best_name} 모델의 ROC-AUC {best_roc}를 평가하여 "
+        f"Optuna 튜닝 {'진행' if run_optuna else '생략'} 결정을 내렸습니다. "
+        f"이 결정 이유를 한국어 1~2문장으로 설명하세요."
+    ) or (f"ROC-AUC {best_roc}가 기준치(0.85) 미만이므로 Optuna 튜닝을 진행합니다." if run_optuna
+          else f"ROC-AUC {best_roc}가 충분히 높아 추가 튜닝 없이 다음 단계로 진행합니다.")
+
+    steps.append({"step": step_num, "name": "성능 평가 및 전략 결정", "status": "done",
+                  "decision": "optuna_run" if run_optuna else "optuna_skip",
+                  "comment": decision_comment})
+
+    # ── Step 3: Optuna (조건부) ───────────────────────────
+    optuna_result = None
+    if run_optuna:
+        step_num += 1
+        before = best_roc
+        def obj(trial):
+            if best_name == "Random Forest":
+                m = RandomForestClassifier(
+                    n_estimators=trial.suggest_int("n_estimators",50,300),
+                    max_depth=trial.suggest_int("max_depth",3,15),
+                    min_samples_split=trial.suggest_int("min_samples_split",2,10),
+                    random_state=42)
+            elif best_name == "Gradient Boosting":
+                m = GradientBoostingClassifier(
+                    n_estimators=trial.suggest_int("n_estimators",50,300),
+                    learning_rate=trial.suggest_float("learning_rate",0.01,0.3),
+                    max_depth=trial.suggest_int("max_depth",2,8), random_state=42)
+            else: return before
+            try: return cross_val_score(m, X, y,
+                    cv=StratifiedKFold(3,shuffle=True,random_state=42),scoring=scoring).mean()
+            except: return before
+
+        study = optuna.create_study(direction="maximize")
+        await asyncio.to_thread(study.optimize, obj, n_trials=20, show_progress_bar=False)
+        bp = {**study.best_params, "random_state": 42}
+        tuned = (RandomForestClassifier(**bp) if best_name=="Random Forest"
+                 else GradientBoostingClassifier(**bp) if best_name=="Gradient Boosting"
+                 else bm)
+        tuned.fit(X, y)
+        try:
+            after = round(float(cross_val_score(tuned, X, y,
+                cv=StratifiedKFold(3,shuffle=True,random_state=42),scoring=scoring).mean()),4)
+        except: after = before
+        optuna_result = {"best_params": bp, "before_roc": before,
+                         "after_roc": after, "improvement": round((after-before)*100,2)}
+        STATE.update({"best_model": tuned, "predictions": tuned.predict(X).tolist(),
+                      "optuna_result": optuna_result, "shap_values": None})
+
+        opt_comment = await ask_gemini(
+            f"Optuna 튜닝 결과: ROC-AUC {before} → {after} ({optuna_result['improvement']:+.2f}% 변화)\n"
+            f"최적 파라미터: {json.dumps(bp, ensure_ascii=False)}\n"
+            f"이 결과를 한국어 2문장으로 해석하세요."
+        ) or f"튜닝 결과 ROC-AUC가 {before} → {after}로 {optuna_result['improvement']:+.2f}% 변화했습니다."
+
+        steps.append({"step": step_num, "name": "Optuna 하이퍼파라미터 튜닝", "status": "done",
+                      "data": optuna_result, "comment": opt_comment})
+
+    # ── Step 4: SHAP ──────────────────────────────────────
+    step_num += 1
+    shap_global = []
+    model = STATE["best_model"]
+    if SHAP_OK:
+        try:
+            exp = shap.TreeExplainer(model)
+            samp = X.sample(min(200, len(X)), random_state=42)
+            sv = exp.shap_values(samp)
+            if isinstance(sv, list): sv = sv[1]
+            mean_sv = np.abs(sv).mean(axis=0)
+            shap_global = sorted([{"feature": c, "shap_value": round(float(v),4)}
+                                   for c, v in zip(X.columns, mean_sv)],
+                                  key=lambda x: x["shap_value"], reverse=True)
+            STATE["shap_values"] = sv.tolist()
+            STATE["shap_sample_idx"] = samp.index.tolist()
+        except: pass
+    if not shap_global and hasattr(model, "feature_importances_"):
+        shap_global = sorted([{"feature": c, "shap_value": round(float(v),4)}
+                               for c, v in zip(X.columns, model.feature_importances_)],
+                              key=lambda x: x["shap_value"], reverse=True)
+
+    shap_comment = await ask_gemini(
+        f"SHAP 분석 상위 피처: {json.dumps(shap_global[:5], ensure_ascii=False)}\n"
+        f"타깃: {STATE.get('target_col')}\n"
+        f"이 피처들이 예측에 미치는 영향을 한국어 2~3문장으로 해석하세요."
+    ) or f"'{shap_global[0]['feature']}' 피처가 예측에 가장 큰 영향을 미치는 것으로 분석되었습니다." if shap_global else "SHAP 분석이 완료되었습니다."
+
+    steps.append({"step": step_num, "name": "SHAP 설명 분석", "status": "done",
+                  "data": {"global": shap_global[:6]}, "comment": shap_comment})
+
+    # ── Step 5: 최종 요약 ─────────────────────────────────
+    step_num += 1
+    final_roc = optuna_result["after_roc"] if optuna_result else best_roc
+    final_comment = await ask_gemini(
+        f"ModelMate AutoML 분석 완료. 최종 결과를 요약해주세요.\n"
+        f"- 데이터: {X.shape[0]}행×{X.shape[1]}열, 타깃: {STATE.get('target_col')}\n"
+        f"- 최고 모델: {best_name}, 최종 ROC-AUC: {final_roc}\n"
+        f"- Optuna: {'적용 (' + str(optuna_result['improvement']) + '% 개선)' if optuna_result else '생략'}\n"
+        f"- 주요 피처: {', '.join(f['feature'] for f in shap_global[:3])}\n"
+        f"사용자에게 전달할 최종 분석 요약을 한국어 3~4문장으로 작성하세요."
+    ) or f"분석이 완료되었습니다. {best_name} 모델로 ROC-AUC {final_roc}를 달성했습니다."
+
+    steps.append({"step": step_num, "name": "분석 완료", "status": "done",
+                  "comment": final_comment})
+
+    save_history({"timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                  "data_shape": list(X.shape), "target": STATE["target_col"],
+                  "best_model": best_name, "results": results,
+                  "optuna_applied": bool(optuna_result), "agent_run": True,
+                  "task_type": STATE.get("task_type", "classification")})
+
+    return {"steps": steps, "cv_results": results, "best_model": best_name,
+            "optuna_result": optuna_result, "shap_global": shap_global[:8],
+            "gemini_used": GEMINI_OK}
 
 # ── 기록 ─────────────────────────────────────────────────
 @app.get("/api/history")

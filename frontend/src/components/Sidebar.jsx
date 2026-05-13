@@ -5,11 +5,12 @@ import { useTheme } from '../ThemeContext'
 
 const NAV = [
   { to: '/upload',      icon: UploadIcon,  label: '데이터 업로드', step: 1 },
-  { to: '/model-lab',   icon: FlaskIcon,   label: 'Model Lab',     step: 2 },
-  { to: '/xai',         icon: EyeIcon,     label: 'XAI 설명',      step: 3 },
-  { to: '/maintenance', icon: WrenchIcon,  label: 'Maintenance',   step: 4 },
-  { to: '/history',     icon: ChartIcon,   label: '실험 기록',      step: 5 },
-  { to: '/report',      icon: DocIcon,     label: '보고서',         step: 6 },
+  { to: '/agent',       icon: AgentIcon,   label: 'AI 자동 분석',  step: 2, highlight: true },
+  { to: '/model-lab',   icon: FlaskIcon,   label: 'Model Lab',     step: 3 },
+  { to: '/xai',         icon: EyeIcon,     label: 'XAI 설명',      step: 4 },
+  { to: '/maintenance', icon: WrenchIcon,  label: 'Maintenance',   step: 5 },
+  { to: '/history',     icon: ChartIcon,   label: '실험 기록',      step: 6 },
+  { to: '/report',      icon: DocIcon,     label: '보고서',         step: 7 },
 ]
 
 export default function Sidebar() {
@@ -60,7 +61,7 @@ export default function Sidebar() {
       {/* Nav */}
       <nav style={{ flex:1, padding:'12px 10px', overflowY:'auto' }}>
         <p style={{ padding:'0 10px', marginBottom:8, fontSize:10, fontWeight:600, color:'var(--text-label)', textTransform:'uppercase', letterSpacing:'0.12em' }}>워크플로우</p>
-        {NAV.map(({ to, icon: Icon, label, step: s }) => {
+        {NAV.map(({ to, icon: Icon, label, step: s, highlight }) => {
           const done   = s < step
           const locked = s > step + 1
           return (
@@ -69,20 +70,21 @@ export default function Sidebar() {
                 <div style={{
                   display:'flex', alignItems:'center', gap:10,
                   padding:'9px 10px', borderRadius:10, marginBottom:2,
-                  fontSize:13, fontWeight:500, cursor:locked?'not-allowed':'pointer',
+                  fontSize:13, fontWeight: highlight ? 600 : 500, cursor:locked?'not-allowed':'pointer',
                   transition:'all 0.15s',
-                  color: isActive ? '#6366f1' : 'var(--text-3)',
-                  background: isActive ? 'rgba(99,102,241,0.08)' : 'transparent',
-                  boxShadow: isActive ? '0 0 0 1px rgba(99,102,241,0.15)' : 'none',
+                  color: isActive ? '#6366f1' : highlight ? '#7c3aed' : 'var(--text-3)',
+                  background: isActive ? 'rgba(99,102,241,0.08)' : highlight ? 'rgba(124,58,237,0.06)' : 'transparent',
+                  boxShadow: isActive ? '0 0 0 1px rgba(99,102,241,0.15)' : highlight ? '0 0 0 1px rgba(124,58,237,0.15)' : 'none',
                 }}
-                onMouseEnter={e => { if(!isActive && !locked) e.currentTarget.style.background='var(--surface-alt)' }}
-                onMouseLeave={e => { if(!isActive) e.currentTarget.style.background='transparent' }}
+                onMouseEnter={e => { if(!isActive && !locked) e.currentTarget.style.background= highlight ? 'rgba(124,58,237,0.1)' : 'var(--surface-alt)' }}
+                onMouseLeave={e => { if(!isActive) e.currentTarget.style.background= highlight ? 'rgba(124,58,237,0.06)' : 'transparent' }}
                 >
-                  <span style={{ width:16, height:16, flexShrink:0, color: isActive ? '#6366f1' : done ? '#10b981' : 'var(--border)' }}>
+                  <span style={{ width:16, height:16, flexShrink:0, color: isActive ? '#6366f1' : done ? '#10b981' : highlight ? '#7c3aed' : 'var(--border)' }}>
                     {done && !isActive ? <CheckIcon /> : <Icon />}
                   </span>
                   <span style={{ flex:1 }}>{label}</span>
-                  {done && !isActive && (
+                  {highlight && !isActive && <span style={{ fontSize:9, fontWeight:700, color:'#7c3aed', background:'rgba(124,58,237,0.12)', padding:'2px 6px', borderRadius:4 }}>AI</span>}
+                  {done && !isActive && !highlight && (
                     <span style={{ width:6, height:6, borderRadius:'50%', background:'#10b981', flexShrink:0 }} />
                   )}
                 </div>
@@ -130,3 +132,4 @@ function WrenchIcon() { return <svg viewBox="0 0 24 24" fill="none" stroke="curr
 function ChartIcon() { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{width:'100%',height:'100%'}}><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg> }
 function DocIcon() { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{width:'100%',height:'100%'}}><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> }
 function CheckIcon() { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{width:'100%',height:'100%'}}><polyline points="20,6 9,17 4,12"/></svg> }
+function AgentIcon() { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{width:'100%',height:'100%'}}><circle cx="12" cy="8" r="4"/><path d="M8 8H4a2 2 0 00-2 2v2a2 2 0 002 2h1"/><path d="M16 8h4a2 2 0 012 2v2a2 2 0 01-2 2h-1"/><path d="M9 20h6"/><path d="M12 14v6"/></svg> }

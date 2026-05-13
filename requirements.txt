@@ -6,3 +6,4 @@ scikit-learn
 shap
 optuna
 python-multipart
+google-generativeai
