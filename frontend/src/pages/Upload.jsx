@@ -134,36 +134,84 @@ export default function Upload() {
                 ? 'linear-gradient(135deg,rgba(99,102,241,0.06),rgba(139,92,246,0.03))'
                 : 'var(--surface)',
             }}>
-              <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom: aiLoading ? 0 : 12 }}>
-                <span style={{ fontSize:18 }}>🤖</span>
-                <span style={{ fontSize:13, fontWeight:600, color:'var(--text)' }}>Gemini 데이터 분석</span>
-                {aiLoading && <span className="spinner" style={{ marginLeft:4 }} />}
-                {aiAnalysis && !aiLoading && <span className="badge badge-green" style={{ fontSize:10 }}>완료</span>}
+              {/* 헤더 */}
+              <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom: aiLoading ? 8 : 16 }}>
+                <div style={{
+                  width:40, height:40, borderRadius:12, flexShrink:0,
+                  background:'linear-gradient(135deg,#6366f1,#7c3aed)',
+                  display:'flex', alignItems:'center', justifyContent:'center',
+                  boxShadow:'0 4px 12px rgba(99,102,241,0.25)',
+                }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="8" r="4"/><path d="M8 8H4a2 2 0 00-2 2v2a2 2 0 002 2h1"/><path d="M16 8h4a2 2 0 012 2v2a2 2 0 01-2 2h-1"/><path d="M9 20h6"/><path d="M12 14v6"/>
+                  </svg>
+                </div>
+                <div style={{ flex:1 }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                    <span style={{ fontSize:14, fontWeight:700, color:'var(--text)' }}>AI 데이터 진단</span>
+                    {aiLoading && <span className="spinner" />}
+                    {aiAnalysis && !aiLoading && (
+                      <span className="badge badge-green" style={{ fontSize:10 }}>
+                        {aiAnalysis.gemini_used ? 'Gemini 분석 완료' : '통계 분석 완료'}
+                      </span>
+                    )}
+                  </div>
+                  <p style={{ fontSize:11, color:'var(--text-label)', margin:'2px 0 0' }}>
+                    {aiLoading ? '컬럼의 의미와 역할을 파악하는 중입니다…' : 'AI가 데이터 구조를 파악하고 최적 설정을 추천했습니다'}
+                  </p>
+                </div>
               </div>
 
-              {aiLoading && (
-                <p style={{ fontSize:12, color:'var(--text-2)', margin:0 }}>컬럼 의미를 분석하고 있습니다...</p>
-              )}
-
               {aiAnalysis && !aiLoading && (
-                <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-                  {/* 데이터셋 요약 */}
-                  <p style={{ fontSize:13, color:'var(--text-2)', margin:0, lineHeight:1.7 }}>
-                    {aiAnalysis.dataset_summary}
-                  </p>
+                <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
 
-                  {/* 제외 추천 이유 */}
-                  {aiAnalysis.drop_suggestions?.length > 0 && (
-                    <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
-                      <p style={{ fontSize:11, fontWeight:600, color:'var(--text-label)', textTransform:'uppercase', letterSpacing:'0.08em', margin:0 }}>제외 추천</p>
-                      {aiAnalysis.drop_suggestions.map((d, i) => (
-                        <div key={i} style={{ display:'flex', alignItems:'flex-start', gap:8, padding:'7px 10px', borderRadius:8, background:'rgba(244,63,94,0.06)', border:'1px solid rgba(244,63,94,0.15)' }}>
-                          <span style={{ fontSize:11, fontWeight:700, color:'#f43f5e', flexShrink:0 }}>{d.col}</span>
-                          <span style={{ fontSize:11, color:'var(--text-2)' }}>— {d.reason}</span>
-                        </div>
-                      ))}
+                  {/* 데이터셋 요약 */}
+                  <div style={{ padding:'12px 14px', borderRadius:10, background:'rgba(99,102,241,0.06)', border:'1px solid rgba(99,102,241,0.14)' }}>
+                    <p style={{ fontSize:11, fontWeight:600, color:'#6366f1', margin:'0 0 6px', display:'flex', alignItems:'center', gap:5 }}>
+                      <span>💡</span> 이 데이터는 무엇인가요?
+                    </p>
+                    <p style={{ fontSize:13, color:'var(--text-2)', margin:0, lineHeight:1.75 }}>
+                      {aiAnalysis.dataset_summary}
+                    </p>
+                  </div>
+
+                  {/* 제외 추천 */}
+                  {aiAnalysis.drop_suggestions?.length > 0 ? (
+                    <div>
+                      <p style={{ fontSize:11, fontWeight:600, color:'var(--text-label)', textTransform:'uppercase', letterSpacing:'0.08em', margin:'0 0 8px' }}>
+                        제외 추천 · {aiAnalysis.drop_suggestions.length}개 항목
+                      </p>
+                      <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+                        {aiAnalysis.drop_suggestions.map((d, i) => {
+                          const r = d.reason || ''
+                          const isLeakage = r.includes('누수') || r.includes('leakage') || r.includes('타깃') || r.includes('결과') || r.includes('sub') || r.includes('하위')
+                          const isId = r.includes('ID') || r.includes('일련') || r.includes('고유') || r.includes('식별') || r.includes('순번')
+                          const icon = isLeakage ? '⚠️' : isId ? '🔢' : '❌'
+                          const tagLabel = isLeakage ? '데이터 누수 위험' : isId ? '식별자/일련번호' : '불필요 항목'
+                          const tagColor = isLeakage ? '#d97706' : '#e11d48'
+                          const tagBg = isLeakage ? 'rgba(217,119,6,0.1)' : 'rgba(225,29,72,0.08)'
+                          return (
+                            <div key={i} style={{ display:'flex', alignItems:'flex-start', gap:10, padding:'10px 14px', borderRadius:10, background:'rgba(244,63,94,0.04)', border:'1px solid rgba(244,63,94,0.15)' }}>
+                              <span style={{ fontSize:15, flexShrink:0, marginTop:1 }}>{icon}</span>
+                              <div style={{ flex:1, minWidth:0 }}>
+                                <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4 }}>
+                                  <span style={{ fontSize:12, fontWeight:700, color:'#e11d48' }}>{d.col}</span>
+                                  <span style={{ fontSize:10, fontWeight:600, color:tagColor, background:tagBg, padding:'1px 7px', borderRadius:5 }}>{tagLabel}</span>
+                                </div>
+                                <p style={{ fontSize:11, color:'var(--text-2)', margin:0, lineHeight:1.55 }}>{d.reason}</p>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 14px', borderRadius:10, background:'rgba(16,185,129,0.06)', border:'1px solid rgba(16,185,129,0.18)' }}>
+                      <span style={{ fontSize:16 }}>✅</span>
+                      <p style={{ fontSize:12, color:'#059669', margin:0 }}>모든 컬럼이 학습에 유효합니다. 제외 추천 항목이 없습니다.</p>
                     </div>
                   )}
+
                 </div>
               )}
             </div>
@@ -308,6 +356,13 @@ export default function Upload() {
               )}
 
               {tab === 'dist' && (
+                <div>
+                  <div style={{ display:'flex', alignItems:'flex-start', gap:10, padding:'10px 14px', borderRadius:10, background:'rgba(99,102,241,0.05)', border:'1px solid rgba(99,102,241,0.12)', marginBottom:16 }}>
+                    <span style={{ fontSize:15, flexShrink:0 }}>📊</span>
+                    <p style={{ fontSize:12, color:'var(--text-2)', margin:0, lineHeight:1.6 }}>
+                      각 항목의 값이 어떻게 퍼져 있는지 보여줍니다. <span style={{ color:'#6366f1', fontWeight:600 }}>보라색은 정상</span>, <span style={{ color:'#f43f5e', fontWeight:600 }}>빨간색은 고장</span> 데이터입니다. 두 색이 뚜렷이 나뉠수록 예측에 유용한 항목입니다.
+                    </p>
+                  </div>
                 <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:16 }}>
                   {Object.entries(edaInfo.distributions).map(([col, d]) => (
                     <div key={col} className="card-elevated">
@@ -332,11 +387,17 @@ export default function Upload() {
                     </div>
                   ))}
                 </div>
+                </div>
               )}
 
               {tab === 'corr' && (
                 <div>
-                  <p style={{ fontSize:11, color:'var(--text-2)', marginBottom:16 }}>피처 간 상관관계 — 값이 클수록 강한 양의 상관</p>
+                  <div style={{ display:'flex', alignItems:'flex-start', gap:10, padding:'10px 14px', borderRadius:10, background:'rgba(99,102,241,0.05)', border:'1px solid rgba(99,102,241,0.12)', marginBottom:16 }}>
+                    <span style={{ fontSize:15, flexShrink:0 }}>🔗</span>
+                    <p style={{ fontSize:12, color:'var(--text-2)', margin:0, lineHeight:1.6 }}>
+                      두 항목이 얼마나 함께 변하는지 보여줍니다. <span style={{ color:'#6366f1', fontWeight:600 }}>1.0에 가까울수록 강한 양의 관계</span>, <span style={{ color:'#f43f5e', fontWeight:600 }}>-1.0에 가까울수록 반대 방향 관계</span>입니다. 타깃 컬럼과 상관이 높은 항목일수록 예측에 중요합니다.
+                    </p>
+                  </div>
                   <div style={{ overflowX:'auto' }}>
                     <table style={{ fontSize:10, borderCollapse:'collapse' }}>
                       <thead>
@@ -370,11 +431,22 @@ export default function Upload() {
               )}
 
               {tab === 'stats' && (
-                <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:16 }}>
-                  <KPICard label="샘플 수" value={edaInfo.n_samples.toLocaleString()} color="blue" />
-                  <KPICard label="피처 수" value={edaInfo.n_features} color="cyan" />
-                  <KPICard label="타깃 비율" value={`${edaInfo.failure_rate}%`}
-                    color={edaInfo.failure_rate > 30 ? 'red' : 'green'} />
+                <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
+                  <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:16 }}>
+                    <KPICard label="샘플 수" value={edaInfo.n_samples.toLocaleString()} color="blue" />
+                    <KPICard label="피처 수" value={edaInfo.n_features} color="cyan" />
+                    <KPICard label="타깃 비율" value={`${edaInfo.failure_rate}%`}
+                      color={edaInfo.failure_rate > 30 ? 'red' : 'green'} />
+                  </div>
+                  <div style={{ display:'flex', alignItems:'flex-start', gap:10, padding:'10px 14px', borderRadius:10, background:'rgba(99,102,241,0.05)', border:'1px solid rgba(99,102,241,0.12)' }}>
+                    <span style={{ fontSize:15, flexShrink:0 }}>📋</span>
+                    <p style={{ fontSize:12, color:'var(--text-2)', margin:0, lineHeight:1.6 }}>
+                      <strong>샘플 수</strong>는 총 데이터 행 수, <strong>피처 수</strong>는 학습에 사용되는 항목 수입니다.
+                      {edaInfo.failure_rate > 30
+                        ? ` 타깃 비율이 ${edaInfo.failure_rate}%로 높아 데이터가 균형 잡혀 있습니다.`
+                        : ` 타깃 비율이 ${edaInfo.failure_rate}%로 낮아 데이터 불균형이 있을 수 있습니다. AI가 자동으로 보정합니다.`}
+                    </p>
+                  </div>
                 </div>
               )}
             </div>
