@@ -821,56 +821,157 @@ async def get_state():
         "optuna_ok":     OPTUNA_OK,
     }
 
-# ── HTML 리포트 ───────────────────────────────────────────
+# ── HTML 리포트 (PDF 인쇄 지원) ──────────────────────────
 @app.get("/api/report/html", response_class=HTMLResponse)
-async def html_report():
+async def html_report(autoprint: bool = False):
     cv = STATE.get("cv_results"); name = STATE.get("best_model_name")
     opt = STATE.get("optuna_result"); X = STATE.get("X"); y = STATE.get("y")
     preds = STATE.get("predictions"); cat_cols = STATE.get("cat_cols", [])
     task_type = STATE.get("task_type", "classification")
+    shap_vals = STATE.get("shap_values"); model = STATE.get("best_model")
     if cv is None: raise HTTPException(400, "CV 먼저 실행")
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
-    rows = "".join(f"<tr><td>{r['model']}</td><td>{r['accuracy']}</td>"
-                   f"<td>{r['f1']}</td><td>{r['roc_auc']}</td></tr>" for r in cv)
-    opt_sec = (f"<h2>Optuna 튜닝</h2><p>ROC-AUC: {opt['before_roc']} → "
-               f"<b>{opt['after_roc']}</b> (+{opt['improvement']}%)</p>" if opt else "")
-    perf_sec = (f"<h2>최종 성능</h2><p>Accuracy: {accuracy_score(y, preds):.4f}"
-                f" | F1: {f1_score(y, preds, average='weighted'):.4f}</p>" if preds else "")
-    enc_sec = (f"<h2>자동 인코딩 컬럼</h2><p>{', '.join(cat_cols)}</p>" if cat_cols else "")
-    return f"""<!DOCTYPE html><html><head><meta charset="utf-8">
-<title>ModelMate Report</title>
+    is_reg = task_type == "regression"
+
+    # 모델 비교 테이블
+    if is_reg:
+        thead = "<tr><th>모델</th><th>R²</th><th>RMSE</th><th>MAE</th></tr>"
+        tbody = "".join(f"<tr{'class=best' if i==0 else ''}><td>{r['model']}</td>"
+                        f"<td>{r.get('r2','—')}</td><td>{r.get('rmse','—')}</td>"
+                        f"<td>{r.get('mae','—')}</td></tr>"
+                        for i, r in enumerate(cv))
+    else:
+        thead = "<tr><th>모델</th><th>Accuracy</th><th>F1</th><th>ROC-AUC</th></tr>"
+        tbody = "".join(f"<tr{'class=best' if i==0 else ''}><td>{r['model']}</td>"
+                        f"<td>{r.get('accuracy','—')}</td><td>{r.get('f1','—')}</td>"
+                        f"<td>{r.get('roc_auc','—')}</td></tr>"
+                        for i, r in enumerate(cv))
+
+    # 주요 성능 지표
+    if is_reg and preds:
+        preds_arr = np.array(preds); y_arr = y.values
+        perf_items = [
+            ("R² Score", f"{r2_score(y_arr,preds_arr):.4f}"),
+            ("RMSE",     f"{np.sqrt(mean_squared_error(y_arr,preds_arr)):.4f}"),
+            ("MAE",      f"{mean_absolute_error(y_arr,preds_arr):.4f}"),
+        ]
+    elif preds:
+        perf_items = [
+            ("Accuracy", f"{accuracy_score(y,preds):.4f}"),
+            ("F1 Score", f"{f1_score(y,preds,average='weighted'):.4f}"),
+        ]
+    else:
+        perf_items = []
+
+    perf_html = "".join(f"<div class='kpi'><div class='kl'>{k}</div><div class='kv'>{v}</div></div>"
+                        for k, v in perf_items)
+
+    # Optuna 섹션
+    metric_name = opt.get("metric_name","ROC-AUC") if opt else "ROC-AUC"
+    opt_html = (f"<h2>⚡ Optuna 하이퍼파라미터 튜닝</h2>"
+                f"<p>{metric_name}: <b>{opt['before_roc']}</b> → <b style='color:#059669'>{opt['after_roc']}</b>"
+                f" <span style='color:#059669'>(+{opt['improvement']}% 개선)</span></p>"
+                f"<p style='font-size:.85rem;color:#64748b'>최적 파라미터: "
+                + ", ".join(f"<b>{k}</b>={v}" for k,v in opt.get('best_params',{}).items())
+                + "</p>") if opt else ""
+
+    # 피처 중요도
+    fi_html = ""
+    if model and hasattr(model, "feature_importances_") and X is not None:
+        fi = sorted(zip(X.columns, model.feature_importances_), key=lambda x: x[1], reverse=True)[:8]
+        max_fi = fi[0][1] if fi else 1
+        bars = "".join(
+            f"<div style='display:flex;align-items:center;gap:10px;margin-bottom:6px'>"
+            f"<span style='width:140px;font-size:.83rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>"
+            f"{'⭐ ' if i==0 else ''}{col}</span>"
+            f"<div style='flex:1;background:#e2e8f0;border-radius:4px;height:10px'>"
+            f"<div style='width:{imp/max_fi*100:.1f}%;background:#6366f1;border-radius:4px;height:10px'></div></div>"
+            f"<span style='font-size:.83rem;width:44px;text-align:right;color:#6366f1'>{imp*100:.1f}%</span></div>"
+            for i,(col,imp) in enumerate(fi))
+        fi_html = f"<h2>📊 피처 중요도 Top 8</h2>{bars}"
+
+    # 인코딩 섹션
+    enc_html = (f"<h2>🔤 자동 인코딩 컬럼</h2><p style='font-size:.85rem;color:#475569'>"
+                + ", ".join(f"<code>{c}</code>" for c in cat_cols) + "</p>") if cat_cols else ""
+
+    autoprint_script = "<script>window.onload=()=>{window.print();}</script>" if autoprint else ""
+
+    return f"""<!DOCTYPE html><html lang="ko"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ModelMate 분석 리포트</title>
 <style>
-  body{{font-family:'Segoe UI',sans-serif;max-width:960px;margin:40px auto;
-        background:#f8fafc;color:#1e293b}}
-  h1{{background:linear-gradient(135deg,#4f46e5,#0ea5e9);-webkit-background-clip:text;
-      -webkit-text-fill-color:transparent;font-size:2rem;margin-bottom:4px}}
-  h2{{color:#0f172a;margin-top:32px;font-size:1.1rem;border-left:3px solid #4f46e5;
-      padding-left:12px}}
-  table{{width:100%;border-collapse:collapse;margin:16px 0;border-radius:10px;
-          overflow:hidden;box-shadow:0 2px 12px #0001}}
-  th{{background:#4f46e5;color:white;padding:12px;text-align:left;font-size:.88rem}}
-  td{{padding:10px 12px;border-bottom:1px solid #e2e8f0;font-size:.88rem}}
-  tr:first-child td{{font-weight:700;background:#f0f4ff}}
-  .card{{display:inline-block;background:white;border:1px solid #e2e8f0;
-          padding:16px 24px;border-radius:12px;margin:6px;
-          box-shadow:0 1px 4px #0001;min-width:130px}}
-  .cl{{font-size:.72rem;color:#64748b;text-transform:uppercase;letter-spacing:1px}}
-  .cv{{font-size:1.7rem;font-weight:700;color:#4f46e5;margin-top:4px}}
-  .footer{{margin-top:48px;color:#94a3b8;font-size:.78rem;text-align:center;
-            border-top:1px solid #e2e8f0;padding-top:24px}}
+  *{{box-sizing:border-box;margin:0;padding:0}}
+  body{{font-family:'Segoe UI','Apple SD Gothic Neo',sans-serif;max-width:900px;
+        margin:0 auto;padding:40px 32px;background:#f8fafc;color:#1e293b;line-height:1.6}}
+  .header{{background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 50%,#0ea5e9 100%);
+            border-radius:16px;padding:28px 32px;color:white;margin-bottom:28px}}
+  .header h1{{font-size:1.6rem;font-weight:800;letter-spacing:-.02em;margin-bottom:4px}}
+  .header p{{font-size:.85rem;opacity:.8}}
+  h2{{font-size:1rem;font-weight:700;color:#0f172a;margin:28px 0 12px;
+      padding-left:12px;border-left:3px solid #6366f1}}
+  .kpis{{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:4px}}
+  .kpi{{background:white;border:1px solid #e2e8f0;border-radius:12px;padding:14px 20px;
+         min-width:120px;box-shadow:0 1px 4px rgba(0,0,0,.06)}}
+  .kl{{font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:#64748b}}
+  .kv{{font-size:1.5rem;font-weight:700;color:#4f46e5;margin-top:2px}}
+  table{{width:100%;border-collapse:collapse;margin:12px 0;border-radius:10px;
+          overflow:hidden;box-shadow:0 1px 8px rgba(0,0,0,.06)}}
+  th{{background:#6366f1;color:white;padding:11px 14px;text-align:left;font-size:.83rem;font-weight:600}}
+  td{{padding:10px 14px;border-bottom:1px solid #f1f5f9;font-size:.84rem}}
+  tr.best td{{font-weight:700;background:#f0f4ff;color:#3730a3}}
+  code{{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:.8rem;color:#4f46e5}}
+  .badge{{display:inline-block;background:#dcfce7;color:#059669;border-radius:6px;
+           padding:2px 10px;font-size:.75rem;font-weight:700}}
+  .footer{{margin-top:40px;color:#94a3b8;font-size:.75rem;text-align:center;
+            border-top:1px solid #e2e8f0;padding-top:20px}}
+  .no-print{{text-align:center;margin-bottom:20px}}
+  .print-btn{{background:linear-gradient(135deg,#6366f1,#7c3aed);color:white;border:none;
+               padding:12px 28px;border-radius:10px;font-size:.9rem;font-weight:600;
+               cursor:pointer;box-shadow:0 4px 12px rgba(99,102,241,.35)}}
+  .print-btn:hover{{opacity:.9}}
+  @media print{{
+    body{{background:white;padding:20px 24px}}
+    .header{{-webkit-print-color-adjust:exact;print-color-adjust:exact;border-radius:8px}}
+    .no-print{{display:none}}
+    th{{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+    tr.best td{{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+    .kpi{{box-shadow:none;border:1px solid #cbd5e1}}
+    table{{page-break-inside:avoid}}
+    h2{{page-break-after:avoid}}
+  }}
 </style></head><body>
-  <h1>🤖 ModelMate Report</h1>
-  <p style="color:#64748b;margin-top:0">생성: {now} | 작업 유형: {task_type}</p>
-  <div class="card"><div class="cl">행 수</div><div class="cv">{len(X):,}</div></div>
-  <div class="card"><div class="cl">피처 수</div><div class="cv">{len(X.columns)}</div></div>
-  <div class="card"><div class="cl">인코딩 컬럼</div><div class="cv">{len(cat_cols)}</div></div>
-  <div class="card"><div class="cl">최고 모델</div>
-    <div class="cv" style="font-size:.95rem;margin-top:8px">{name}</div></div>
-  {enc_sec}
-  <h2>모델 비교 (3-fold CV)</h2>
-  <table><tr><th>모델</th><th>Accuracy</th><th>F1</th><th>ROC-AUC</th></tr>{rows}</table>
-  {opt_sec}{perf_sec}
-  <div class="footer">Generated by ModelMate — {now}</div>
+
+<div class="no-print">
+  <button class="print-btn" onclick="window.print()">📄 PDF로 저장 (Ctrl+P → PDF 선택)</button>
+</div>
+
+<div class="header">
+  <h1>🤖 ModelMate 분석 리포트</h1>
+  <p>생성일시: {now} &nbsp;·&nbsp; 작업 유형: {'회귀 (Regression)' if is_reg else '분류 (Classification)'}
+     &nbsp;·&nbsp; 타깃: {STATE.get('target_col','—')}</p>
+</div>
+
+<h2>📋 데이터 요약</h2>
+<div class="kpis">
+  <div class="kpi"><div class="kl">데이터 행 수</div><div class="kv">{len(X):,}</div></div>
+  <div class="kpi"><div class="kl">피처 수</div><div class="kv">{len(X.columns)}</div></div>
+  <div class="kpi"><div class="kl">인코딩 컬럼</div><div class="kv">{len(cat_cols)}</div></div>
+  <div class="kpi"><div class="kl">최고 모델</div>
+    <div class="kv" style="font-size:1rem;padding-top:4px">{name}</div></div>
+  {"<div class='kpi'><div class='kl'>Optuna 튜닝</div><div class='kv'><span class='badge'>적용</span></div></div>" if opt else ""}
+</div>
+
+{f'<h2>📈 최종 성능 지표</h2><div class="kpis">{perf_html}</div>' if perf_html else ""}
+
+<h2>🏆 모델 비교 (3-fold CV)</h2>
+<table>{thead}{tbody}</table>
+
+{opt_html}
+{fi_html}
+{enc_html}
+
+<div class="footer">Generated by ModelMate &nbsp;·&nbsp; {now}</div>
+{autoprint_script}
 </body></html>"""
 
 # ── 정적 파일 서빙 (React 빌드) ───────────────────────────
