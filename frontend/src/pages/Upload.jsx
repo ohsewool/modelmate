@@ -13,6 +13,8 @@ const ttStyle = {
 export default function Upload() {
   const [dragging,    setDragging]    = useState(false)
   const [uploadInfo,  setUploadInfo]  = useState(null)
+  const [aiAnalysis,  setAiAnalysis]  = useState(null)
+  const [aiLoading,   setAiLoading]   = useState(false)
   const [edaInfo,     setEdaInfo]     = useState(null)
   const [target,      setTarget]      = useState('')
   const [dropCols,    setDropCols]    = useState([])
@@ -30,6 +32,18 @@ export default function Upload() {
       setUploadInfo(data)
       setTarget(data.default_target)
       setDropCols(data.suggested_drop || [])
+
+      // Gemini 컬럼 분석 자동 실행
+      setAiLoading(true)
+      try {
+        const { data: ai } = await api.post('/analyze-columns')
+        setAiAnalysis(ai)
+        if (ai.target_suggestion && data.columns.includes(ai.target_suggestion))
+          setTarget(ai.target_suggestion)
+        if (ai.drop_suggestions?.length > 0)
+          setDropCols(ai.drop_suggestions.map(d => d.col).filter(c => data.columns.includes(c)))
+      } catch(_) {}
+      setAiLoading(false)
     } catch(e) { alert('업로드 실패: ' + (e.response?.data?.detail || e.message)) }
     setLoading(false)
   }
@@ -109,6 +123,49 @@ export default function Upload() {
                 <p style={{ fontSize:11, marginTop:2, color:'var(--text-3)', margin:'2px 0 0' }}>구분자 자동 감지 ({uploadInfo.separator}) → CSV 변환</p>
               </div>
               <span className="badge badge-cyan">변환됨</span>
+            </div>
+          )}
+
+          {/* Gemini 컬럼 분석 */}
+          {(aiLoading || aiAnalysis) && (
+            <div className="card" style={{
+              borderColor: aiAnalysis?.gemini_used ? 'rgba(99,102,241,0.3)' : 'var(--border)',
+              background: aiAnalysis?.gemini_used
+                ? 'linear-gradient(135deg,rgba(99,102,241,0.06),rgba(139,92,246,0.03))'
+                : 'var(--surface)',
+            }}>
+              <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom: aiLoading ? 0 : 12 }}>
+                <span style={{ fontSize:18 }}>🤖</span>
+                <span style={{ fontSize:13, fontWeight:600, color:'var(--text)' }}>Gemini 데이터 분석</span>
+                {aiLoading && <span className="spinner" style={{ marginLeft:4 }} />}
+                {aiAnalysis && !aiLoading && <span className="badge badge-green" style={{ fontSize:10 }}>완료</span>}
+              </div>
+
+              {aiLoading && (
+                <p style={{ fontSize:12, color:'var(--text-2)', margin:0 }}>컬럼 의미를 분석하고 있습니다...</p>
+              )}
+
+              {aiAnalysis && !aiLoading && (
+                <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                  {/* 데이터셋 요약 */}
+                  <p style={{ fontSize:13, color:'var(--text-2)', margin:0, lineHeight:1.7 }}>
+                    {aiAnalysis.dataset_summary}
+                  </p>
+
+                  {/* 제외 추천 이유 */}
+                  {aiAnalysis.drop_suggestions?.length > 0 && (
+                    <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+                      <p style={{ fontSize:11, fontWeight:600, color:'var(--text-label)', textTransform:'uppercase', letterSpacing:'0.08em', margin:0 }}>제외 추천</p>
+                      {aiAnalysis.drop_suggestions.map((d, i) => (
+                        <div key={i} style={{ display:'flex', alignItems:'flex-start', gap:8, padding:'7px 10px', borderRadius:8, background:'rgba(244,63,94,0.06)', border:'1px solid rgba(244,63,94,0.15)' }}>
+                          <span style={{ fontSize:11, fontWeight:700, color:'#f43f5e', flexShrink:0 }}>{d.col}</span>
+                          <span style={{ fontSize:11, color:'var(--text-2)' }}>— {d.reason}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 

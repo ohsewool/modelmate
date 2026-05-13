@@ -160,6 +160,60 @@ async def upload(file: UploadFile = File(...)):
         "suggested_drop": suggested_drop,
     }
 
+# ── Gemini 컬럼 분석 ─────────────────────────────────────
+@app.post("/api/analyze-columns")
+async def analyze_columns():
+    df = STATE.get("df")
+    if df is None: raise HTTPException(400, "데이터 없음")
+
+    col_info = []
+    for col in df.columns:
+        col_info.append({
+            "name": col,
+            "dtype": str(df[col].dtype),
+            "n_unique": int(df[col].nunique()),
+            "sample": [str(v) for v in df[col].dropna().head(5).tolist()]
+        })
+
+    prompt = (
+        "당신은 머신러닝 데이터 전처리 전문가입니다. "
+        f"다음 CSV 데이터({len(df)}행×{len(df.columns)}열)의 컬럼을 분석하고 "
+        "반드시 아래 JSON 형식으로만 응답하세요 (다른 텍스트 없이).\n\n"
+        f"컬럼 정보:\n{json.dumps(col_info, ensure_ascii=False, default=str)}\n\n"
+        "응답 형식:\n"
+        '{"target_suggestion":"타깃으로 가장 적합한 컬럼명",'
+        '"drop_suggestions":[{"col":"컬럼명","reason":"제외 이유(한국어 1문장)"}],'
+        '"dataset_summary":"데이터셋 요약(한국어 2문장)",'
+        '"task_type":"classification 또는 regression"}\n\n'
+        "판단 기준:\n"
+        "- 일련번호/ID/코드 컬럼 → 제외\n"
+        "- 타깃의 세부 원인/파생 변수(데이터 누수) → 제외\n"
+        "- 예측에 의미있는 피처 → 포함\n"
+        "- 타깃 추천: 예측 목적에 가장 적합한 컬럼 1개"
+    )
+
+    if not GEMINI_OK:
+        suggested = STATE.get("suggested_drop", [])
+        return {
+            "target_suggestion": df.columns[-1],
+            "drop_suggestions": [{"col": c, "reason": "ID성 컬럼으로 자동 감지됨"} for c in suggested],
+            "dataset_summary": f"{len(df)}행 {len(df.columns)}열 데이터입니다. Gemini API 키가 없어 규칙 기반으로 분석했습니다.",
+            "task_type": "classification",
+            "gemini_used": False,
+        }
+
+    raw = await ask_gemini(prompt)
+    try:
+        import re
+        m = re.search(r'\{.*\}', raw, re.DOTALL)
+        result = json.loads(m.group()) if m else {}
+        result["gemini_used"] = True
+        return result
+    except:
+        return {"target_suggestion": df.columns[-1], "drop_suggestions": [],
+                "dataset_summary": raw[:300] if raw else "", "task_type": "classification",
+                "gemini_used": True}
+
 # ── 타깃 확정 & EDA ───────────────────────────────────────
 @app.post("/api/set-target")
 async def set_target(body: dict):
