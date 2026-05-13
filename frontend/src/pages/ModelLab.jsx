@@ -6,6 +6,16 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } fro
 
 const MEDALS = ['🥇','🥈','🥉','']
 const COLORS  = ['#818cf8','#34d399','#fbbf24','#a78bfa']
+
+function getScoreLabel(score) {
+  const v = parseFloat(score)
+  if (isNaN(v)) return null
+  if (v >= 0.95) return { label:'매우 우수', color:'#059669', bg:'rgba(16,185,129,0.1)', border:'rgba(16,185,129,0.25)', icon:'🏆', desc:'실제 현장에서도 즉시 활용할 수 있는 수준입니다.' }
+  if (v >= 0.85) return { label:'우수',     color:'#2563eb', bg:'rgba(37,99,235,0.08)', border:'rgba(37,99,235,0.2)',  icon:'✅', desc:'신뢰도 높은 예측이 가능합니다.' }
+  if (v >= 0.75) return { label:'양호',     color:'#7c3aed', bg:'rgba(124,58,237,0.08)',border:'rgba(124,58,237,0.2)', icon:'👍', desc:'괜찮은 성능이지만 Optuna 튜닝으로 더 높일 수 있습니다.' }
+  if (v >= 0.65) return { label:'보통',     color:'#d97706', bg:'rgba(217,119,6,0.08)', border:'rgba(217,119,6,0.2)',  icon:'⚠️', desc:'아래 Optuna 튜닝으로 성능을 개선해 보세요.' }
+  return           { label:'개선 필요', color:'#dc2626', bg:'rgba(220,38,38,0.08)',  border:'rgba(220,38,38,0.2)',  icon:'❗', desc:'데이터 품질이나 피처 구성을 다시 확인해 보세요.' }
+}
 const ttStyle = {
   background: '#ffffff', border: '1px solid var(--border)',
   borderRadius: 12, fontSize: 11, color: 'var(--text)',
@@ -106,6 +116,31 @@ export default function ModelLab() {
             <KPICard label="F1 Score" value={result.results?.[0]?.f1}           icon="⚡" color="amber" />
           </div>
 
+          {/* 종합 평가 배너 */}
+          {(() => {
+            const lbl = getScoreLabel(result.results?.[0]?.roc_auc)
+            if (!lbl) return null
+            const bestModel = result.best_model?.split(' ')[0]
+            const acc = result.results?.[0]?.accuracy
+            return (
+              <div style={{ display:'flex', alignItems:'flex-start', gap:14, padding:'14px 18px', borderRadius:14, background:lbl.bg, border:`1px solid ${lbl.border}` }}>
+                <span style={{ fontSize:22, flexShrink:0 }}>{lbl.icon}</span>
+                <div>
+                  <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4 }}>
+                    <span style={{ fontSize:14, fontWeight:700, color:lbl.color }}>{lbl.label}</span>
+                    <span style={{ fontSize:11, color:'var(--text-label)', background:'var(--surface)', border:'1px solid var(--border)', padding:'1px 8px', borderRadius:6 }}>
+                      ROC-AUC {result.results?.[0]?.roc_auc}
+                    </span>
+                  </div>
+                  <p style={{ fontSize:12, color:'var(--text-2)', margin:'0 0 4px', lineHeight:1.65 }}>
+                    <strong>{bestModel}</strong>이 가장 좋은 성능을 기록했습니다. 정확도 <strong>{acc}</strong>로, 100개 중 약 {Math.round(parseFloat(acc)*100)}개를 올바르게 예측합니다.
+                  </p>
+                  <p style={{ fontSize:12, color:lbl.color, margin:0, fontWeight:500 }}>{lbl.desc}</p>
+                </div>
+              </div>
+            )
+          })()}
+
           {/* Leaderboard */}
           <div className="card">
             <p className="section-title">리더보드</p>
@@ -123,12 +158,18 @@ export default function ModelLab() {
                 }}>
                   <span style={{ fontSize:20, width:32, textAlign:'center', flexShrink:0 }}>{MEDALS[Math.min(i,3)]}</span>
                   <span style={{ flex:1, fontWeight:500, fontSize:13, color: i === 0 ? 'var(--text)' : 'var(--text-3)' }}>{r.model}</span>
-                  {[['Accuracy', r.accuracy],['F1', r.f1],['ROC-AUC', r.roc_auc]].map(([k,v]) => (
-                    <div key={k} style={{ textAlign:'center', width:80 }}>
-                      <p style={{ fontSize:10, color:'var(--text-2)', marginBottom:2, margin:'0 0 2px' }}>{k}</p>
-                      <p style={{ fontWeight:700, fontSize:13, color: i===0 && k==='ROC-AUC' ? '#4f46e5' : i===0 ? 'var(--text)' : 'var(--text-2)', margin:0 }}>{v}</p>
-                    </div>
-                  ))}
+                  {[['Accuracy', r.accuracy],['F1', r.f1],['ROC-AUC', r.roc_auc]].map(([k,v]) => {
+                    const lbl = k === 'ROC-AUC' ? getScoreLabel(v) : null
+                    return (
+                      <div key={k} style={{ textAlign:'center', width:80 }}>
+                        <p style={{ fontSize:10, color:'var(--text-2)', margin:'0 0 2px' }}>{k}</p>
+                        <p style={{ fontWeight:700, fontSize:13, color: i===0 && k==='ROC-AUC' ? '#4f46e5' : i===0 ? 'var(--text)' : 'var(--text-2)', margin:0 }}>{v}</p>
+                        {lbl && i === 0 && (
+                          <span style={{ fontSize:9, fontWeight:600, color:lbl.color, background:lbl.bg, padding:'1px 6px', borderRadius:4, display:'inline-block', marginTop:3 }}>{lbl.label}</span>
+                        )}
+                      </div>
+                    )
+                  })}
                 </div>
               ))}
             </div>
@@ -154,12 +195,17 @@ export default function ModelLab() {
             {result.feature_importance?.length > 0 && (
               <div className="card">
                 <p className="section-title">피처 중요도 Top 8</p>
-                <div style={{ display:'flex', flexDirection:'column', gap:10, marginTop:4 }}>
-                  {result.feature_importance.slice(0,8).map((f) => (
+                <p style={{ fontSize:11, color:'var(--text-2)', margin:'-8px 0 14px', lineHeight:1.55 }}>
+                  AI가 예측할 때 어떤 항목을 가장 많이 참고했는지 보여줍니다. 막대가 길수록 예측에 큰 영향을 준 항목입니다.
+                </p>
+                <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                  {result.feature_importance.slice(0,8).map((f, fi) => (
                     <div key={f.feature} style={{ display:'flex', alignItems:'center', gap:12 }}>
-                      <span style={{ fontSize:11, color:'var(--text-2)', width:112, flexShrink:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{f.feature}</span>
+                      <span style={{ fontSize:11, color: fi === 0 ? 'var(--text)' : 'var(--text-2)', width:112, flexShrink:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', fontWeight: fi === 0 ? 600 : 400 }}>
+                        {fi === 0 ? '⭐ ' : ''}{f.feature}
+                      </span>
                       <div className="progress-bar" style={{ flex:1 }}>
-                        <div className="progress-fill" style={{ width:`${f.importance*100}%` }} />
+                        <div className="progress-fill" style={{ width:`${f.importance*100}%`, opacity: fi === 0 ? 1 : 0.7 }} />
                       </div>
                       <span style={{ fontSize:11, color:'var(--text-2)', width:36, textAlign:'right', flexShrink:0 }}>
                         {(f.importance*100).toFixed(1)}%
@@ -199,6 +245,22 @@ export default function ModelLab() {
                 <KPICard label="튜닝 후 ROC-AUC" value={optRes.after_roc}
                   sub={`+${optRes.improvement}% 개선`} color="green" icon="✨" />
                 <KPICard label="최적 파라미터" value={Object.keys(optRes.best_params).length + '개'} color="amber" />
+
+                {/* 튜닝 결과 해석 */}
+                {(() => {
+                  const diff = parseFloat(optRes.after_roc) - parseFloat(optRes.before_roc)
+                  const lbl = getScoreLabel(optRes.after_roc)
+                  return lbl ? (
+                    <div style={{ gridColumn:'1/-1', display:'flex', alignItems:'flex-start', gap:10, padding:'10px 14px', borderRadius:10, background:lbl.bg, border:`1px solid ${lbl.border}` }}>
+                      <span style={{ fontSize:15 }}>{lbl.icon}</span>
+                      <p style={{ fontSize:12, color:'var(--text-2)', margin:0, lineHeight:1.6 }}>
+                        튜닝 후 성능이 <strong style={{ color:lbl.color }}>{lbl.label}</strong> 수준이 됐습니다.
+                        {diff > 0.005 ? ` ROC-AUC가 ${diff.toFixed(3)} 향상됐습니다 — 튜닝 효과가 있었습니다.` : ' 이미 좋은 기본 설정이었습니다.'}
+                      </p>
+                    </div>
+                  ) : null
+                })()}
+
                 <div style={{ gridColumn:'1/-1', borderRadius:12, padding:16, border:'1px solid rgba(245,158,11,0.15)', background:'rgba(255,251,235,0.5)' }}>
                   <p style={{ fontSize:10, color:'var(--text-2)', marginBottom:10, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.1em', margin:'0 0 10px' }}>최적 파라미터</p>
                   <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
