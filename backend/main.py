@@ -784,6 +784,17 @@ async def run_agent():
             "optuna_result": optuna_result, "shap_global": shap_global[:8],
             "gemini_used": GEMINI_OK}
 
+# ── 컬럼 목록 (부분 재실행용) ─────────────────────────────
+@app.get("/api/columns")
+async def get_columns():
+    df = STATE.get("df")
+    if df is None: raise HTTPException(400, "데이터 없음")
+    return {
+        "columns": df.columns.tolist(),
+        "current_target": STATE.get("target_col"),
+        "current_drop": STATE.get("drop_cols", []),
+    }
+
 # ── 기록 ─────────────────────────────────────────────────
 @app.get("/api/history")
 async def get_history(): return load_history()

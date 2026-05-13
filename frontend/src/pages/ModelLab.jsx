@@ -30,11 +30,15 @@ const ttStyle = {
 }
 
 export default function ModelLab() {
-  const [state,   setState]   = useState(null)
-  const [result,  setResult]  = useState(null)
-  const [optRes,  setOptRes]  = useState(null)
-  const [nTrials, setNTrials] = useState(30)
-  const [loading, setLoading] = useState('')
+  const [state,       setState]       = useState(null)
+  const [result,      setResult]      = useState(null)
+  const [optRes,      setOptRes]      = useState(null)
+  const [nTrials,     setNTrials]     = useState(30)
+  const [loading,     setLoading]     = useState('')
+  const [showReconfig, setShowReconfig] = useState(false)
+  const [allCols,     setAllCols]     = useState([])
+  const [newTarget,   setNewTarget]   = useState('')
+  const [dropCols,    setDropCols]    = useState([])
   const nav = useNavigate()
 
   useEffect(() => {
@@ -44,6 +48,33 @@ export default function ModelLab() {
       if (r.data.optuna_result) setOptRes(r.data.optuna_result)
     })
   }, [])
+
+  async function openReconfig() {
+    try {
+      const { data } = await api.get('/columns')
+      setAllCols(data.columns)
+      setNewTarget(data.current_target || data.columns.at(-1))
+      setDropCols(data.current_drop || [])
+      setShowReconfig(true)
+    } catch(e) { alert(e.response?.data?.detail || e.message) }
+  }
+
+  function toggleDrop(col) {
+    setDropCols(prev => prev.includes(col) ? prev.filter(c => c !== col) : [...prev, col])
+  }
+
+  async function applyReconfig() {
+    setLoading('reconfig')
+    try {
+      await api.post('/set-target', { target_col: newTarget, drop_cols: dropCols })
+      const { data } = await api.post('/run-cv')
+      setResult(data)
+      setOptRes(null)
+      setShowReconfig(false)
+      api.get('/state').then(r => setState(r.data))
+    } catch(e) { alert(e.response?.data?.detail || e.message) }
+    setLoading('')
+  }
 
   async function runCV() {
     setLoading('cv')
@@ -86,6 +117,69 @@ export default function ModelLab() {
   return (
     <div className="animate-fade-in" style={{ padding:32, maxWidth:960 }}>
 
+      {/* 부분 재실행 패널 */}
+      {showReconfig && (
+        <div className="card animate-slide-up" style={{ marginBottom:20, borderColor:'rgba(99,102,241,0.3)', background:'linear-gradient(135deg,rgba(99,102,241,0.04),rgba(139,92,246,0.02))' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:18 }}>
+            <div style={{ width:34, height:34, borderRadius:10, background:'linear-gradient(135deg,#6366f1,#7c3aed)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 0 0 4.93 19.07"/><path d="M4.93 4.93A10 10 0 0 1 19.07 19.07"/></svg>
+            </div>
+            <div style={{ flex:1 }}>
+              <p style={{ fontSize:14, fontWeight:700, color:'var(--text)', margin:0 }}>타깃 / 피처 재설정</p>
+              <p style={{ fontSize:11, color:'var(--text-label)', margin:0 }}>파일 재업로드 없이 설정을 바꿔 다시 학습합니다</p>
+            </div>
+            <button onClick={() => setShowReconfig(false)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-label)', padding:4 }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+
+          {/* 타깃 선택 */}
+          <div style={{ marginBottom:16 }}>
+            <p style={{ fontSize:11, fontWeight:600, color:'var(--text-2)', margin:'0 0 8px', display:'flex', alignItems:'center', gap:6 }}>
+              <span style={{ fontSize:14 }}>🎯</span> 예측할 타깃 컬럼
+            </p>
+            <select value={newTarget} onChange={e => setNewTarget(e.target.value)}
+              className="input" style={{ width:'100%' }}>
+              {allCols.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+
+          {/* 제외 컬럼 선택 */}
+          <div style={{ marginBottom:20 }}>
+            <p style={{ fontSize:11, fontWeight:600, color:'var(--text-2)', margin:'0 0 8px', display:'flex', alignItems:'center', gap:6 }}>
+              <span style={{ fontSize:14 }}>❌</span> 학습에서 제외할 컬럼 <span style={{ fontWeight:400, color:'var(--text-label)' }}>(선택 없으면 전부 사용)</span>
+            </p>
+            <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
+              {allCols.filter(c => c !== newTarget).map(c => {
+                const isDropped = dropCols.includes(c)
+                return (
+                  <button key={c} onClick={() => toggleDrop(c)} style={{
+                    padding:'5px 12px', borderRadius:8, border:`1.5px solid ${isDropped ? 'rgba(244,63,94,0.5)' : 'var(--border)'}`,
+                    background: isDropped ? 'rgba(244,63,94,0.08)' : 'var(--surface-alt)',
+                    color: isDropped ? '#f43f5e' : 'var(--text-2)',
+                    fontSize:12, cursor:'pointer', fontWeight: isDropped ? 600 : 400,
+                    transition:'all 0.15s',
+                  }}>
+                    {isDropped ? '✕ ' : ''}{c}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* 적용 버튼 */}
+          <div style={{ display:'flex', gap:8, justifyContent:'flex-end' }}>
+            <button onClick={() => setShowReconfig(false)} className="btn-secondary">취소</button>
+            <button onClick={applyReconfig} disabled={!!loading} className="btn-primary">
+              {loading === 'reconfig' ? <span className="spinner" /> : (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+              )}
+              변경 후 재실행
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Run CV 카드 */}
       <div className="card" style={{ marginBottom:20 }}>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
@@ -93,12 +187,20 @@ export default function ModelLab() {
             <p style={{ fontWeight:600, color:'var(--text)', fontSize:15, margin:'0 0 4px' }}>3-fold Stratified CV</p>
             <p style={{ fontSize:11, color:'var(--text-2)', margin:0 }}>Random Forest · Gradient Boosting · Logistic Regression · Decision Tree</p>
           </div>
-          <button onClick={runCV} disabled={!!loading} className="btn-primary">
-            {loading === 'cv' ? <span className="spinner" /> : (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+          <div style={{ display:'flex', gap:8 }}>
+            {state?.has_data && !showReconfig && (
+              <button onClick={openReconfig} disabled={!!loading} className="btn-secondary" style={{ gap:6 }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 0 0 4.93 19.07"/><path d="M4.93 4.93A10 10 0 0 1 19.07 19.07"/></svg>
+                부분 재실행
+              </button>
             )}
-            실행
-          </button>
+            <button onClick={runCV} disabled={!!loading} className="btn-primary">
+              {loading === 'cv' ? <span className="spinner" /> : (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+              )}
+              실행
+            </button>
+          </div>
         </div>
 
         {loading === 'cv' && (
