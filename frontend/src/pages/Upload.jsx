@@ -15,6 +15,7 @@ export default function Upload() {
   const [uploadInfo,  setUploadInfo]  = useState(null)
   const [edaInfo,     setEdaInfo]     = useState(null)
   const [target,      setTarget]      = useState('')
+  const [dropCols,    setDropCols]    = useState([])
   const [loading,     setLoading]     = useState(false)
   const [tab,         setTab]         = useState('preview')
   const fileRef = useRef()
@@ -28,6 +29,7 @@ export default function Upload() {
       const { data } = await api.post('/upload', fd)
       setUploadInfo(data)
       setTarget(data.default_target)
+      setDropCols(data.suggested_drop || [])
     } catch(e) { alert('업로드 실패: ' + (e.response?.data?.detail || e.message)) }
     setLoading(false)
   }
@@ -35,11 +37,15 @@ export default function Upload() {
   async function handleSetTarget() {
     setLoading(true)
     try {
-      const { data } = await api.post('/set-target', { target_col: target })
+      const { data } = await api.post('/set-target', { target_col: target, drop_cols: dropCols })
       setEdaInfo(data)
       setTab('dist')
     } catch(e) { alert(e.response?.data?.detail || e.message) }
     setLoading(false)
+  }
+
+  function toggleDrop(col) {
+    setDropCols(prev => prev.includes(col) ? prev.filter(c => c !== col) : [...prev, col])
   }
 
   const drop = e => { e.preventDefault(); setDragging(false); handleFile(e.dataTransfer.files[0]) }
@@ -108,7 +114,7 @@ export default function Upload() {
 
           {/* 타깃 선택 */}
           <div className="card">
-            <div style={{ display:'flex', alignItems:'flex-end', gap:16 }}>
+            <div style={{ display:'flex', alignItems:'flex-end', gap:16, marginBottom: uploadInfo.columns.length > 2 ? 20 : 0 }}>
               <div style={{ flex:1 }}>
                 <label style={{ display:'block', fontSize:10, fontWeight:600, color:'var(--text-2)', marginBottom:8, textTransform:'uppercase', letterSpacing:'0.1em' }}>타깃 컬럼 선택</label>
                 <select value={target} onChange={e => setTarget(e.target.value)} className="input">
@@ -121,9 +127,43 @@ export default function Upload() {
                 )}
                 데이터 확정
               </button>
-              <button onClick={() => { setUploadInfo(null); setEdaInfo(null) }} className="btn-secondary">
+              <button onClick={() => { setUploadInfo(null); setEdaInfo(null); setDropCols([]) }} className="btn-secondary">
                 ↩ 다시
               </button>
+            </div>
+
+            {/* 제외 컬럼 선택 */}
+            <div>
+              <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:10 }}>
+                <label style={{ fontSize:10, fontWeight:600, color:'var(--text-2)', textTransform:'uppercase', letterSpacing:'0.1em' }}>분석 제외 컬럼</label>
+                {dropCols.length > 0 && (
+                  <span className="badge badge-amber" style={{ fontSize:10 }}>{dropCols.length}개 제외</span>
+                )}
+                {uploadInfo.suggested_drop?.length > 0 && (
+                  <span style={{ fontSize:10, color:'var(--text-label)' }}>· AI가 ID성 컬럼을 자동 감지했습니다</span>
+                )}
+              </div>
+              <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
+                {uploadInfo.columns.filter(c => c !== target).map(col => {
+                  const isSuggested = uploadInfo.suggested_drop?.includes(col)
+                  const isDropped   = dropCols.includes(col)
+                  return (
+                    <button key={col} onClick={() => toggleDrop(col)} style={{
+                      padding:'5px 12px', borderRadius:8, fontSize:12, cursor:'pointer',
+                      border: `1px solid ${isDropped ? 'rgba(244,63,94,0.4)' : isSuggested ? 'rgba(245,158,11,0.4)' : 'var(--border)'}`,
+                      background: isDropped ? 'rgba(244,63,94,0.08)' : isSuggested ? 'rgba(245,158,11,0.08)' : 'var(--surface-alt)',
+                      color: isDropped ? '#f43f5e' : isSuggested ? '#d97706' : 'var(--text-2)',
+                      fontWeight: isSuggested ? 600 : 400,
+                      transition:'all 0.15s',
+                    }}>
+                      {isDropped ? '✕ ' : isSuggested ? '⚠ ' : ''}{col}
+                    </button>
+                  )
+                })}
+              </div>
+              <p style={{ fontSize:11, color:'var(--text-label)', margin:'8px 0 0' }}>
+                클릭하면 제외 / 다시 클릭하면 포함 · <span style={{ color:'#d97706' }}>노란색</span>은 AI 추천 제외 컬럼
+              </p>
             </div>
           </div>
 

@@ -129,6 +129,25 @@ async def upload(file: UploadFile = File(...)):
     cat_cols = df.select_dtypes(include=["object", "category"]).columns.tolist()
     num_cols = df.select_dtypes(include=["number"]).columns.tolist()
 
+    # ID성 컬럼 자동 감지
+    id_keywords = {"id", "idx", "index", "no", "num", "code", "key",
+                   "번호", "이름", "name", "uuid", "uid", "serial"}
+    n = len(df)
+    suggested_drop = []
+    for col in df.columns:
+        col_lower = col.lower().replace(" ", "").replace("_", "").replace("-", "")
+        # 이름 기반
+        name_match = any(kw in col_lower for kw in id_keywords)
+        # 고유값 비율 기반 (80% 이상)
+        uniq_ratio = df[col].nunique() / n
+        # 순차 정수 여부
+        is_seq = False
+        if df[col].dtype in [np.int64, np.int32, np.float64]:
+            diffs = df[col].dropna().diff().dropna()
+            is_seq = (diffs == 1).mean() > 0.9
+        if name_match or uniq_ratio > 0.8 or is_seq:
+            suggested_drop.append(col)
+
     return {
         "columns": df.columns.tolist(),
         "shape": list(df.shape),
@@ -138,6 +157,7 @@ async def upload(file: UploadFile = File(...)):
         "missing_total": int(df.isnull().sum().sum()),
         "cat_cols": cat_cols,
         "num_cols": num_cols,
+        "suggested_drop": suggested_drop,
     }
 
 # ── 타깃 확정 & EDA ───────────────────────────────────────
@@ -148,8 +168,13 @@ async def set_target(body: dict):
     tgt = body["target_col"]
     if tgt not in df.columns: raise HTTPException(400, f"컬럼 없음: {tgt}")
 
+    # 제외 컬럼 처리
+    drop_cols = [c for c in body.get("drop_cols", []) if c in df.columns and c != tgt]
+    df_use = df.drop(columns=drop_cols) if drop_cols else df
+    STATE["drop_cols"] = drop_cols
+
     # 피처 인코딩
-    X, cat_cols, encoders = encode_features(df, tgt)
+    X, cat_cols, encoders = encode_features(df_use, tgt)
 
     # 타겟 인코딩 + task type
     y_raw = df[tgt]
@@ -201,7 +226,8 @@ async def set_target(body: dict):
     return {
         "n_samples": len(X), "n_features": len(X.columns),
         "failure_rate": round(pos_rate, 2),
-        "missing_total": int(df.isnull().sum().sum()),
+        "missing_total": int(df_use.isnull().sum().sum()),
+        "dropped_cols": drop_cols,
         "features": X.columns.tolist(),
         "cat_cols": cat_cols,
         "corr_data": corr_data, "corr_cols": cols,
