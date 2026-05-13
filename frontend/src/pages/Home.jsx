@@ -14,7 +14,7 @@ const FEATURES = [
   {
     icon: '🧮', color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe',
     title: 'SHAP 설명',
-    desc: '어떤 피처가 고장 예측에 영향을 미쳤는지 전역·개별 설명 제공',
+    desc: '어떤 피처가 예측에 영향을 미쳤는지 전역·개별 설명 제공',
   },
   {
     icon: '⚡', color: '#d97706', bg: '#fffbeb', border: '#fde68a',
@@ -23,8 +23,8 @@ const FEATURES = [
   },
   {
     icon: '🔧', color: '#e11d48', bg: '#fff1f2', border: '#fecdd3',
-    title: '정비 우선순위',
-    desc: '고장 확률 기반 위험 설비 순위화 및 긴급·주의·관찰 카드 제공',
+    title: '예측 우선순위',
+    desc: '예측 확률 기반 고위험 샘플 순위화 및 긴급·주의·관찰 카드 제공',
   },
   {
     icon: '📊', color: '#0891b2', bg: '#ecfeff', border: '#a5f3fc',
@@ -73,13 +73,13 @@ export default function Home() {
           </div>
 
           <h1 style={{ fontSize:48, fontWeight:800, color:'#ffffff', margin:'0 0 16px', letterSpacing:'-0.02em', lineHeight:1.1 }}>
-            FailureAI
+            ModelMate
           </h1>
           <p style={{ fontSize:18, color:'rgba(255,255,255,0.8)', margin:'0 0 8px', fontWeight:400 }}>
-            설비 고장 자동 분석 · 정비 우선순위 추천 시스템
+            CSV 업로드 한 번으로 자동 머신러닝 분석 · 예측 모델 생성
           </p>
           <p style={{ fontSize:14, color:'rgba(255,255,255,0.55)', margin:'0 0 40px' }}>
-            AI4I 2020 데이터셋 기반 · Agentic Predictive Analytics
+            분류 · 회귀 · SHAP 설명 · Agentic AutoML 플랫폼
           </p>
 
           <div style={{ display:'flex', gap:12, justifyContent:'center', flexWrap:'wrap' }}>
@@ -173,7 +173,7 @@ export default function Home() {
             지금 바로 분석을 시작해보세요
           </h2>
           <p style={{ fontSize:14, color:'rgba(255,255,255,0.7)', margin:'0 0 28px' }}>
-            CSV 파일을 업로드하면 자동으로 고장 예측 · 설명 · 정비 추천까지 제공합니다
+            CSV 파일을 업로드하면 자동으로 모델 학습 · 예측 · SHAP 설명까지 제공합니다
           </p>
           <button onClick={() => nav('/upload')} style={{
             padding:'14px 36px', borderRadius:12, border:'none', cursor:'pointer',

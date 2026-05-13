@@ -118,23 +118,23 @@ export default function XAI() {
                 <div className="card" style={{ textAlign:'center' }}>
                   <p style={{ fontSize:10, color:'var(--text-2)', marginBottom:8, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.1em' }}>예측 결과</p>
                   <p style={{ fontSize:24, fontWeight:700, color: local.prediction===1 ? '#f43f5e' : '#10b981', margin:0 }}>
-                    {local.prediction === 1 ? '🔴 고장' : '🟢 정상'}
+                    {local.prediction === 1 ? '🔴 양성(1)' : '🟢 음성(0)'}
                   </p>
                 </div>
                 <div className="card" style={{ textAlign:'center' }}>
-                  <p style={{ fontSize:10, color:'var(--text-2)', marginBottom:8, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.1em' }}>정상 확률</p>
+                  <p style={{ fontSize:10, color:'var(--text-2)', marginBottom:8, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.1em' }}>음성 확률</p>
                   <p style={{ fontSize:24, fontWeight:700, color:'#10b981', margin:0 }}>{(local.probability[0]*100).toFixed(1)}%</p>
                 </div>
                 <div className="card" style={{ textAlign:'center' }}>
-                  <p style={{ fontSize:10, color:'var(--text-2)', marginBottom:8, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.1em' }}>고장 확률</p>
+                  <p style={{ fontSize:10, color:'var(--text-2)', marginBottom:8, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.1em' }}>양성 확률</p>
                   <p style={{ fontSize:24, fontWeight:700, color:'#f43f5e', margin:0 }}>{(local.probability[1]*100).toFixed(1)}%</p>
                 </div>
               </div>
               <div className="card">
                 <p className="section-title">SHAP 기여도</p>
                 <div style={{ display:'flex', gap:16, marginBottom:16, fontSize:11, color:'var(--text-2)' }}>
-                  <span style={{ display:'flex', alignItems:'center', gap:6 }}><span style={{ width:12, height:12, borderRadius:3, background:'#f43f5e', display:'inline-block' }} />고장 방향 (+)</span>
-                  <span style={{ display:'flex', alignItems:'center', gap:6 }}><span style={{ width:12, height:12, borderRadius:3, background:'#6366f1', display:'inline-block' }} />정상 방향 (−)</span>
+                  <span style={{ display:'flex', alignItems:'center', gap:6 }}><span style={{ width:12, height:12, borderRadius:3, background:'#f43f5e', display:'inline-block' }} />양성 방향 (+)</span>
+                  <span style={{ display:'flex', alignItems:'center', gap:6 }}><span style={{ width:12, height:12, borderRadius:3, background:'#6366f1', display:'inline-block' }} />음성 방향 (−)</span>
                 </div>
                 <ResponsiveContainer width="100%" height={Math.max(200, local.local.length * 34)}>
                   <BarChart data={[...local.local].reverse()} layout="vertical" barSize={14}>

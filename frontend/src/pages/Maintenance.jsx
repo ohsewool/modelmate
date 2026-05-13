@@ -47,8 +47,8 @@ export default function Maintenance() {
           <div style={{ width:80, height:80, borderRadius:24, margin:'0 auto 20px', display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(245,158,11,0.08)', border:'1px solid rgba(245,158,11,0.2)' }}>
             <span style={{ fontSize:40 }}>🏭</span>
           </div>
-          <p className="empty-title">설비 리스크를 분석합니다</p>
-          <p className="empty-desc" style={{ marginBottom:24 }}>버튼을 클릭하면 전체 설비의 고장 확률을 계산합니다</p>
+          <p className="empty-title">샘플 예측 리스크를 분석합니다</p>
+          <p className="empty-desc" style={{ marginBottom:24 }}>버튼을 클릭하면 전체 샘플의 예측 확률을 계산합니다</p>
           <button onClick={load} disabled={loading} className="btn-primary">
             {loading ? <span className="spinner" /> : '🔄'}
             분석 시작
@@ -58,8 +58,8 @@ export default function Maintenance() {
         <div className="animate-slide-up" style={{ display:'flex', flexDirection:'column', gap:20 }}>
           {/* KPI */}
           <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:16 }}>
-            <KPICard label="전체 설비"  value={data.total.toLocaleString()} icon="🏭" color="blue" />
-            <KPICard label="고장 예측"  value={data.failure_count.toLocaleString()}
+            <KPICard label="전체 샘플"  value={data.total.toLocaleString()} icon="📋" color="blue" />
+            <KPICard label="양성 예측"  value={data.failure_count.toLocaleString()}
               sub={`전체의 ${data.failure_rate}%`} icon="⚠️" color="red" />
             <KPICard label="고위험 ≥80%" value={data.high_risk} icon="🔴" color="red" />
             <KPICard label="Accuracy"  value={data.accuracy} icon="✅" color="green" />
@@ -69,7 +69,7 @@ export default function Maintenance() {
             {/* 위험 바차트 */}
             <div className="card">
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
-                <p className="section-title" style={{ margin:0 }}>위험 설비 Top {topN}</p>
+                <p className="section-title" style={{ margin:0 }}>고위험 샘플 Top {topN}</p>
                 <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                   <span style={{ fontSize:11, color:'var(--text-2)' }}>{Math.min(5, data.risk_items.length)}</span>
                   <input type="range" min={5} max={Math.min(50, data.risk_items.length)} value={topN}
@@ -81,15 +81,15 @@ export default function Maintenance() {
               {risk.length === 0 ? (
                 <div style={{ display:'flex', flexDirection:'column', alignItems:'center', padding:'48px 0', color:'#10b981', gap:8 }}>
                   <span style={{ fontSize:32 }}>✅</span>
-                  <p style={{ fontWeight:600, margin:0 }}>고장 예측 설비 없음</p>
+                  <p style={{ fontWeight:600, margin:0 }}>양성 예측 샘플 없음</p>
                 </div>
               ) : (
                 <ResponsiveContainer width="100%" height={260}>
                   <BarChart data={risk} barSize={18}>
                     <XAxis dataKey="id" tick={{ fill:'var(--text-2)', fontSize:10 }} axisLine={false} tickLine={false}
-                      label={{ value:'설비 ID', position:'insideBottom', fill:'var(--text-2)', fontSize:10 }} />
+                      label={{ value:'샘플 ID', position:'insideBottom', fill:'var(--text-2)', fontSize:10 }} />
                     <YAxis domain={[0,1]} tick={{ fill:'var(--text-2)', fontSize:10 }} axisLine={false} tickLine={false} />
-                    <Tooltip contentStyle={ttStyle} formatter={v => [`${(v*100).toFixed(1)}%`, '고장 확률']} />
+                    <Tooltip contentStyle={ttStyle} formatter={v => [`${(v*100).toFixed(1)}%`, '예측 확률']} />
                     <Bar dataKey="probability" radius={[5,5,0,0]}>
                       {risk.map((r,i) => <Cell key={i} fill={riskColor(r.probability)} />)}
                     </Bar>
@@ -105,8 +105,8 @@ export default function Maintenance() {
                 <ResponsiveContainer width="100%" height={180}>
                   <PieChart>
                     <Pie data={[
-                      { name:'정상', value: data.total - data.failure_count, fill:'#6366f1' },
-                      { name:'고장', value: data.failure_count, fill:'#f43f5e' },
+                      { name:'음성', value: data.total - data.failure_count, fill:'#6366f1' },
+                      { name:'양성', value: data.failure_count, fill:'#f43f5e' },
                     ]} cx="50%" cy="50%" innerRadius={52} outerRadius={76}
                       dataKey="value" stroke="none" />
                     <Tooltip contentStyle={ttStyle} />
@@ -116,14 +116,14 @@ export default function Maintenance() {
                   <div style={{ textAlign:'center' }}>
                     <div style={{ display:'flex', alignItems:'center', gap:6, justifyContent:'center', marginBottom:4 }}>
                       <span style={{ width:8, height:8, borderRadius:'50%', background:'#6366f1', display:'inline-block' }} />
-                      <span style={{ fontSize:11, color:'var(--text-2)' }}>정상</span>
+                      <span style={{ fontSize:11, color:'var(--text-2)' }}>음성</span>
                     </div>
                     <p style={{ fontSize:13, fontWeight:700, color:'var(--text)', margin:0 }}>{(data.total - data.failure_count).toLocaleString()}</p>
                   </div>
                   <div style={{ textAlign:'center' }}>
                     <div style={{ display:'flex', alignItems:'center', gap:6, justifyContent:'center', marginBottom:4 }}>
                       <span style={{ width:8, height:8, borderRadius:'50%', background:'#f43f5e', display:'inline-block' }} />
-                      <span style={{ fontSize:11, color:'var(--text-2)' }}>고장</span>
+                      <span style={{ fontSize:11, color:'var(--text-2)' }}>양성</span>
                     </div>
                     <p style={{ fontSize:13, fontWeight:700, color:'var(--text)', margin:0 }}>{data.failure_count.toLocaleString()}</p>
                   </div>
@@ -132,10 +132,10 @@ export default function Maintenance() {
             </div>
           </div>
 
-          {/* 정비 카드 */}
+          {/* 예측 카드 */}
           {risk.length > 0 && (
             <div>
-              <p className="section-title">정비 우선순위 추천</p>
+              <p className="section-title">예측 우선순위 추천</p>
               <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:12 }}>
                 {risk.slice(0,6).map((r) => {
                   const p = r.probability
@@ -156,7 +156,7 @@ export default function Maintenance() {
                       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
                         <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                           <span style={{ width:8, height:8, borderRadius:'50%', background:cfg.dot, boxShadow:`0 0 8px ${cfg.dot}`, display:'inline-block' }} />
-                          <span style={{ fontWeight:700, color:'var(--text)', fontSize:14 }}>설비 #{r.id}</span>
+                          <span style={{ fontWeight:700, color:'var(--text)', fontSize:14 }}>샘플 #{r.id}</span>
                         </div>
                         <span className={`badge ${cfg.badge}`}>{cfg.label}</span>
                       </div>
@@ -193,9 +193,9 @@ export default function Maintenance() {
                 </p>
                 <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:8 }}>
                   {[
-                    '피처 엔지니어링: 온도 차이·마모율 등 파생 변수 추가',
+                    '피처 엔지니어링: 파생 변수 추가로 모델 성능 향상',
                     'class_weight="balanced" 또는 SMOTE로 클래스 불균형 처리',
-                    '임계값 조정으로 고장 Recall 향상 (threshold 낮추기)',
+                    '임계값 조정으로 양성 Recall 향상 (threshold 낮추기)',
                     '상위 2개 모델 Voting Classifier 앙상블 구성',
                   ].map((tip, i) => (
                     <div key={i} style={{ display:'flex', alignItems:'flex-start', gap:8, borderRadius:10, padding:12, background:'rgba(34,211,238,0.04)', border:'1px solid rgba(34,211,238,0.08)' }}>

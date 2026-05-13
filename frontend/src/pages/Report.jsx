@@ -2,12 +2,12 @@ import { useState, useEffect } from 'react'
 import api from '../api'
 
 const ITEMS = [
-  ['🗂️', '데이터 요약', '샘플 수, 피처 수, 고장률, 결측치'],
+  ['🗂️', '데이터 요약', '샘플 수, 피처 수, 타깃 비율, 결측치'],
   ['🏆', '모델 성능 비교', '4개 모델 Accuracy / F1 / ROC-AUC'],
   ['📈', '최고 모델 상세', '교차검증 상세 지표'],
   ['⚡', 'Optuna 튜닝 결과', '튜닝 전후 성능 비교'],
   ['🔍', 'SHAP 피처 중요도', '전역 피처 중요도 순위'],
-  ['🔧', '정비 우선순위', '고장 예측 설비 Top 10'],
+  ['🔧', '예측 우선순위', '고위험 샘플 Top 10'],
 ]
 
 export default function Report() {
@@ -21,7 +21,7 @@ export default function Report() {
     try {
       const res = await api.get('/report/html', { responseType: 'blob' })
       const url = URL.createObjectURL(new Blob([res.data], { type: 'text/html' }))
-      const a = document.createElement('a'); a.href = url; a.download = 'FailureAI_Report.html'; a.click()
+      const a = document.createElement('a'); a.href = url; a.download = 'ModelMate_Report.html'; a.click()
       URL.revokeObjectURL(url)
     } catch(e) { alert(e.response?.data?.detail || e.message) }
     setLoading(false)
@@ -62,7 +62,7 @@ export default function Report() {
                 <p style={{ fontWeight:700, color:'var(--text)', fontSize:18, margin:'0 0 4px' }}>분석 보고서 준비 완료</p>
                 <p style={{ color:'var(--text-2)', fontSize:13, margin:'0 0 20px' }}>
                   최고 모델 <span style={{ color:'var(--text)', fontWeight:600 }}>{state.best_model}</span>의
-                  학습 결과와 설비 예측 분석이 포함됩니다.
+                  학습 결과와 전체 예측 분석이 포함됩니다.
                 </p>
                 <div style={{ display:'flex', gap:12 }}>
                   <button onClick={() => window.open('/api/report/html', '_blank')} className="btn-primary">

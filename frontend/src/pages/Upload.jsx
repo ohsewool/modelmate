@@ -233,7 +233,7 @@ export default function Upload() {
                 <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:16 }}>
                   <KPICard label="샘플 수" value={edaInfo.n_samples.toLocaleString()} color="blue" />
                   <KPICard label="피처 수" value={edaInfo.n_features} color="cyan" />
-                  <KPICard label="고장률" value={`${edaInfo.failure_rate}%`}
+                  <KPICard label="타깃 비율" value={`${edaInfo.failure_rate}%`}
                     color={edaInfo.failure_rate > 30 ? 'red' : 'green'} />
                 </div>
               )}

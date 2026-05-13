@@ -45,8 +45,8 @@ export default function Sidebar() {
             </svg>
           </div>
           <div style={{ minWidth:0 }}>
-            <div style={{ fontWeight:700, fontSize:14, color:'var(--text)', lineHeight:1.2 }}>FailureAI</div>
-            <div style={{ fontSize:11, color:'var(--text-label)', marginTop:2 }}>설비 고장 예측 시스템</div>
+            <div style={{ fontWeight:700, fontSize:14, color:'var(--text)', lineHeight:1.2 }}>ModelMate</div>
+            <div style={{ fontSize:11, color:'var(--text-label)', marginTop:2 }}>범용 AutoML 플랫폼</div>
           </div>
         </NavLink>
         <button onClick={toggle} className="theme-toggle" title={dark ? '라이트 모드' : '다크 모드'}>
