@@ -15,8 +15,7 @@ function localSummary(localData, prediction, labels = {}) {
   const second = sorted[1]
   const topName = labels[top.feature] || top.feature
   const secondName = second ? (labels[second.feature] || second.feature) : null
-  const isFailure = prediction === 1
-  const dir = top.shap_value > 0 ? (isFailure ? '고장 가능성을 높였습니다' : '양성 가능성을 높였습니다') : (isFailure ? '고장 가능성을 낮췄지만 다른 요인이 더 컸습니다' : '양성 가능성을 낮췄습니다')
+  const dir = top.shap_value > 0 ? '예측값을 높이는 방향으로 작용했습니다' : '예측값을 낮추는 방향으로 작용했습니다'
   let text = `가장 큰 영향을 준 항목은 "${topName}"으로, ${dir}.`
   if (secondName) text += ` "${secondName}"도 주요 판단 근거입니다.`
   return text

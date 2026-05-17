@@ -4,13 +4,12 @@ import api from '../api'
 import { useTheme } from '../ThemeContext'
 
 const NAV = [
-  { to: '/upload',      icon: UploadIcon,  label: '데이터 업로드', step: 1 },
-  { to: '/agent',       icon: AgentIcon,   label: 'AI 자동 분석',  step: 2, highlight: true },
-  { to: '/model-lab',   icon: FlaskIcon,   label: 'Model Lab',     step: 3 },
-  { to: '/xai',         icon: EyeIcon,     label: 'XAI 설명',      step: 4 },
-  { to: '/maintenance', icon: WrenchIcon,  label: 'Maintenance',   step: 5 },
-  { to: '/history',     icon: ChartIcon,   label: '실험 기록',      step: 6 },
-  { to: '/report',      icon: DocIcon,     label: '보고서',         step: 7 },
+  { to: '/upload',    icon: UploadIcon, label: '데이터 업로드', step: 1 },
+  { to: '/agent',     icon: AgentIcon,  label: 'AI 자동 분석',  step: 2, highlight: true },
+  { to: '/model-lab', icon: FlaskIcon,  label: 'Model Lab',     step: 3 },
+  { to: '/xai',       icon: EyeIcon,    label: 'XAI 설명',      step: 4 },
+  { to: '/history',   icon: ChartIcon,  label: '실험 기록',      step: 5 },
+  { to: '/report',    icon: DocIcon,    label: '보고서',         step: 6 },
 ]
 
 export default function Sidebar() {
@@ -128,7 +127,6 @@ function StatusRow({ label, active, value, accent }) {
 function UploadIcon() { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{width:'100%',height:'100%'}}><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17,8 12,3 7,8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> }
 function FlaskIcon() { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{width:'100%',height:'100%'}}><path d="M9 3h6m-6 0v6l-6 12a1 1 0 00.9 1.4h12.2a1 1 0 00.9-1.4L15 9V3"/></svg> }
 function EyeIcon() { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{width:'100%',height:'100%'}}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> }
-function WrenchIcon() { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{width:'100%',height:'100%'}}><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg> }
 function ChartIcon() { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{width:'100%',height:'100%'}}><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg> }
 function DocIcon() { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{width:'100%',height:'100%'}}><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> }
 function CheckIcon() { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{width:'100%',height:'100%'}}><polyline points="20,6 9,17 4,12"/></svg> }

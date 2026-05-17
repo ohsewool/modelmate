@@ -260,7 +260,7 @@ export default function Upload() {
                   <span style={{ fontSize:16 }}>🎯</span>
                   <div>
                     <p style={{ fontSize:13, fontWeight:700, color:'#4f46e5', margin:0 }}>예측 대상 (타깃)</p>
-                    <p style={{ fontSize:11, color:'var(--text-2)', margin:0 }}>AI가 맞춰야 할 정답값입니다. 예: 고장 여부, 가격, 종류</p>
+                    <p style={{ fontSize:11, color:'var(--text-2)', margin:0 }}>AI가 맞춰야 할 정답값입니다. 예: 생존 여부, 가격, 종류</p>
                   </div>
                 </div>
                 <select value={target} onChange={e => { setTarget(e.target.value); setDropCols(prev => prev.filter(c => c !== e.target.value)) }} className="input" style={{ maxWidth:320 }}>
@@ -369,12 +369,17 @@ export default function Upload() {
                 </div>
               )}
 
-              {tab === 'dist' && (
+              {tab === 'dist' && (() => {
+                const lm = edaInfo.label_map || {}
+                const classKeys = Object.keys(edaInfo.class_distribution || {}).sort()
+                const label0 = lm[0] ?? classKeys[0] ?? '클래스 0'
+                const label1 = lm[1] ?? classKeys[1] ?? '클래스 1'
+                return (
                 <div>
                   <div style={{ display:'flex', alignItems:'flex-start', gap:10, padding:'10px 14px', borderRadius:10, background:'rgba(99,102,241,0.05)', border:'1px solid rgba(99,102,241,0.12)', marginBottom:16 }}>
                     <span style={{ fontSize:15, flexShrink:0 }}>📊</span>
                     <p style={{ fontSize:12, color:'var(--text-2)', margin:0, lineHeight:1.6 }}>
-                      각 항목의 값이 어떻게 퍼져 있는지 보여줍니다. <span style={{ color:'#6366f1', fontWeight:600 }}>보라색은 정상</span>, <span style={{ color:'#f43f5e', fontWeight:600 }}>빨간색은 고장</span> 데이터입니다. 두 색이 뚜렷이 나뉠수록 예측에 유용한 항목입니다.
+                      각 항목의 값이 어떻게 퍼져 있는지 보여줍니다. <span style={{ color:'#6366f1', fontWeight:600 }}>보라색은 {label0}</span>, <span style={{ color:'#f43f5e', fontWeight:600 }}>빨간색은 {label1}</span> 데이터입니다. 두 색이 뚜렷이 나뉠수록 예측에 유용한 항목입니다.
                     </p>
                   </div>
                 <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:16 }}>
@@ -394,17 +399,18 @@ export default function Upload() {
                       </ResponsiveContainer>
                       <div style={{ display:'flex', gap:16, marginTop:8 }}>
                         <span style={{ display:'flex', alignItems:'center', gap:6, fontSize:11, color:'var(--text-2)' }}>
-                          <span style={{ width:8, height:8, borderRadius:2, background:'#6366f1', display:'inline-block' }} />정상
+                          <span style={{ width:8, height:8, borderRadius:2, background:'#6366f1', display:'inline-block' }} />{label0}
                         </span>
                         <span style={{ display:'flex', alignItems:'center', gap:6, fontSize:11, color:'var(--text-2)' }}>
-                          <span style={{ width:8, height:8, borderRadius:2, background:'#f43f5e', display:'inline-block' }} />고장
+                          <span style={{ width:8, height:8, borderRadius:2, background:'#f43f5e', display:'inline-block' }} />{label1}
                         </span>
                       </div>
                     </div>
                   ))}
                 </div>
                 </div>
-              )}
+                )
+              })()}
 
               {tab === 'corr' && (
                 <div>
