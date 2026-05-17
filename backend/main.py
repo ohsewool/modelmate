@@ -20,6 +20,9 @@ from datetime import datetime
 from google.oauth2 import id_token
 from google.auth.transport import requests as grequests
 from jose import jwt as jose_jwt
+from passlib.context import CryptContext
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "373474705259-7b18amrkom84aqqt59n87lglhrgq1trj.apps.googleusercontent.com")
 JWT_SECRET = os.getenv("JWT_SECRET", "modelmate-secret-key-change-in-prod")
@@ -41,6 +44,7 @@ def init_db():
             email TEXT UNIQUE NOT NULL,
             name TEXT,
             picture TEXT,
+            password_hash TEXT,
             created_at TEXT
         )
     """)
@@ -895,6 +899,48 @@ async def auth_google(body: GoogleTokenBody):
         JWT_SECRET, algorithm=JWT_ALGORITHM
     )
     return {"token": token, "user": {"id": user_id, "email": email, "name": name, "picture": picture}}
+
+class EmailAuthBody(BaseModel):
+    email: str
+    password: str
+    name: str = ""
+
+def make_token(user_id, email, name, picture=""):
+    return jose_jwt.encode(
+        {"sub": user_id, "email": email, "name": name, "picture": picture},
+        JWT_SECRET, algorithm=JWT_ALGORITHM
+    )
+
+@app.post("/api/auth/signup")
+async def auth_signup(body: EmailAuthBody):
+    import uuid
+    conn = get_db()
+    existing = conn.execute("SELECT id FROM users WHERE email=?", (body.email,)).fetchone()
+    if existing:
+        conn.close()
+        raise HTTPException(400, "이미 사용 중인 이메일입니다")
+    user_id = str(uuid.uuid4())
+    password_hash = pwd_context.hash(body.password)
+    name = body.name or body.email.split("@")[0]
+    conn.execute(
+        "INSERT INTO users (id, email, name, picture, password_hash, created_at) VALUES (?,?,?,?,?,?)",
+        (user_id, body.email, name, "", password_hash, datetime.now().isoformat())
+    )
+    conn.commit(); conn.close()
+    token = make_token(user_id, body.email, name)
+    return {"token": token, "user": {"id": user_id, "email": body.email, "name": name, "picture": ""}}
+
+@app.post("/api/auth/login")
+async def auth_login(body: EmailAuthBody):
+    conn = get_db()
+    row = conn.execute("SELECT * FROM users WHERE email=?", (body.email,)).fetchone()
+    conn.close()
+    if not row or not row["password_hash"]:
+        raise HTTPException(400, "이메일 또는 비밀번호가 올바르지 않습니다")
+    if not pwd_context.verify(body.password, row["password_hash"]):
+        raise HTTPException(400, "이메일 또는 비밀번호가 올바르지 않습니다")
+    token = make_token(row["id"], row["email"], row["name"], row["picture"] or "")
+    return {"token": token, "user": {"id": row["id"], "email": row["email"], "name": row["name"], "picture": row["picture"] or ""}}
 
 @app.get("/api/auth/me")
 async def auth_me(user=Depends(get_current_user)):
