@@ -117,6 +117,16 @@ try:
     import optuna; optuna.logging.set_verbosity(optuna.logging.WARNING); OPTUNA_OK = True
 except: OPTUNA_OK = False
 
+try:
+    from xgboost import XGBClassifier, XGBRegressor; XGB_OK = True
+except: XGB_OK = False
+
+try:
+    from lightgbm import LGBMClassifier, LGBMRegressor
+    import logging; logging.getLogger("lightgbm").setLevel(logging.ERROR)
+    LGBM_OK = True
+except: LGBM_OK = False
+
 _GEMINI_ERROR = ""
 try:
     import google.generativeai as genai
@@ -163,6 +173,10 @@ MODELS = {
     "Logistic Regression": lambda: LogisticRegression(max_iter=1000, random_state=42),
     "Decision Tree":       lambda: DecisionTreeClassifier(random_state=42),
 }
+if XGB_OK:
+    MODELS["XGBoost"]  = lambda: XGBClassifier(n_estimators=100, random_state=42, eval_metric="logloss", verbosity=0, n_jobs=-1)
+if LGBM_OK:
+    MODELS["LightGBM"] = lambda: LGBMClassifier(n_estimators=100, random_state=42, verbosity=-1, n_jobs=-1)
 
 REGRESSION_MODELS = {
     "Random Forest":    lambda: RandomForestRegressor(n_estimators=100, random_state=42),
@@ -170,6 +184,10 @@ REGRESSION_MODELS = {
     "Ridge Regression": lambda: Ridge(),
     "Decision Tree":    lambda: DecisionTreeRegressor(random_state=42),
 }
+if XGB_OK:
+    REGRESSION_MODELS["XGBoost"]  = lambda: XGBRegressor(n_estimators=100, random_state=42, verbosity=0, n_jobs=-1)
+if LGBM_OK:
+    REGRESSION_MODELS["LightGBM"] = lambda: LGBMRegressor(n_estimators=100, random_state=42, verbosity=-1, n_jobs=-1)
 
 def load_history():
     if os.path.exists(HISTORY_FILE):
@@ -544,6 +562,20 @@ async def run_optuna(req: OptunaReq):
                     n_estimators=trial.suggest_int("n_estimators", 50, 300),
                     learning_rate=trial.suggest_float("learning_rate", 0.01, 0.3),
                     max_depth=trial.suggest_int("max_depth", 2, 8), random_state=42)
+            elif best_name == "XGBoost" and XGB_OK:
+                m = XGBRegressor(
+                    n_estimators=trial.suggest_int("n_estimators", 50, 300),
+                    learning_rate=trial.suggest_float("learning_rate", 0.01, 0.3),
+                    max_depth=trial.suggest_int("max_depth", 2, 8),
+                    subsample=trial.suggest_float("subsample", 0.6, 1.0),
+                    random_state=42, verbosity=0, n_jobs=-1)
+            elif best_name == "LightGBM" and LGBM_OK:
+                m = LGBMRegressor(
+                    n_estimators=trial.suggest_int("n_estimators", 50, 300),
+                    learning_rate=trial.suggest_float("learning_rate", 0.01, 0.3),
+                    max_depth=trial.suggest_int("max_depth", 2, 8),
+                    num_leaves=trial.suggest_int("num_leaves", 20, 100),
+                    random_state=42, verbosity=-1, n_jobs=-1)
             else: return before
             try:
                 return cross_val_score(m, X, y,
@@ -552,9 +584,11 @@ async def run_optuna(req: OptunaReq):
         study = optuna.create_study(direction="maximize")
         study.optimize(obj, n_trials=req.n_trials, show_progress_bar=False)
         bp = {**study.best_params, "random_state": 42}
-        tuned = (RandomForestRegressor(**bp) if best_name == "Random Forest"
-                 else GradientBoostingRegressor(**bp) if best_name == "Gradient Boosting"
-                 else STATE["best_model"])
+        if best_name == "Random Forest":       tuned = RandomForestRegressor(**bp)
+        elif best_name == "Gradient Boosting": tuned = GradientBoostingRegressor(**bp)
+        elif best_name == "XGBoost" and XGB_OK:   tuned = XGBRegressor(**bp, verbosity=0, n_jobs=-1)
+        elif best_name == "LightGBM" and LGBM_OK: tuned = LGBMRegressor(**bp, verbosity=-1, n_jobs=-1)
+        else: tuned = STATE["best_model"]
         tuned.fit(X, y)
         try:
             after = round(float(cross_val_score(tuned, X, y,
@@ -579,6 +613,20 @@ async def run_optuna(req: OptunaReq):
                     n_estimators=trial.suggest_int("n_estimators", 50, 300),
                     learning_rate=trial.suggest_float("learning_rate", 0.01, 0.3),
                     max_depth=trial.suggest_int("max_depth", 2, 8), random_state=42)
+            elif best_name == "XGBoost" and XGB_OK:
+                m = XGBClassifier(
+                    n_estimators=trial.suggest_int("n_estimators", 50, 300),
+                    learning_rate=trial.suggest_float("learning_rate", 0.01, 0.3),
+                    max_depth=trial.suggest_int("max_depth", 2, 8),
+                    subsample=trial.suggest_float("subsample", 0.6, 1.0),
+                    random_state=42, eval_metric="logloss", verbosity=0, n_jobs=-1)
+            elif best_name == "LightGBM" and LGBM_OK:
+                m = LGBMClassifier(
+                    n_estimators=trial.suggest_int("n_estimators", 50, 300),
+                    learning_rate=trial.suggest_float("learning_rate", 0.01, 0.3),
+                    max_depth=trial.suggest_int("max_depth", 2, 8),
+                    num_leaves=trial.suggest_int("num_leaves", 20, 100),
+                    random_state=42, verbosity=-1, n_jobs=-1)
             else: return before
             try:
                 return cross_val_score(m, X, y,
@@ -588,9 +636,11 @@ async def run_optuna(req: OptunaReq):
         study = optuna.create_study(direction="maximize")
         study.optimize(obj, n_trials=req.n_trials, show_progress_bar=False)
         bp = {**study.best_params, "random_state": 42}
-        tuned = (RandomForestClassifier(**bp) if best_name == "Random Forest"
-                 else GradientBoostingClassifier(**bp) if best_name == "Gradient Boosting"
-                 else STATE["best_model"])
+        if best_name == "Random Forest":     tuned = RandomForestClassifier(**bp)
+        elif best_name == "Gradient Boosting": tuned = GradientBoostingClassifier(**bp)
+        elif best_name == "XGBoost" and XGB_OK:  tuned = XGBClassifier(**bp, eval_metric="logloss", verbosity=0, n_jobs=-1)
+        elif best_name == "LightGBM" and LGBM_OK: tuned = LGBMClassifier(**bp, verbosity=-1, n_jobs=-1)
+        else: tuned = STATE["best_model"]
         tuned.fit(X, y)
         try:
             after = round(float(cross_val_score(tuned, X, y,
@@ -831,6 +881,20 @@ async def run_agent():
                     n_estimators=trial.suggest_int("n_estimators",50,300),
                     learning_rate=trial.suggest_float("learning_rate",0.01,0.3),
                     max_depth=trial.suggest_int("max_depth",2,8), random_state=42)
+            elif best_name == "XGBoost" and XGB_OK:
+                m = XGBClassifier(
+                    n_estimators=trial.suggest_int("n_estimators",50,300),
+                    learning_rate=trial.suggest_float("learning_rate",0.01,0.3),
+                    max_depth=trial.suggest_int("max_depth",2,8),
+                    subsample=trial.suggest_float("subsample",0.6,1.0),
+                    random_state=42, eval_metric="logloss", verbosity=0, n_jobs=-1)
+            elif best_name == "LightGBM" and LGBM_OK:
+                m = LGBMClassifier(
+                    n_estimators=trial.suggest_int("n_estimators",50,300),
+                    learning_rate=trial.suggest_float("learning_rate",0.01,0.3),
+                    max_depth=trial.suggest_int("max_depth",2,8),
+                    num_leaves=trial.suggest_int("num_leaves",20,100),
+                    random_state=42, verbosity=-1, n_jobs=-1)
             else: return before
             try: return cross_val_score(m, X, y,
                     cv=StratifiedKFold(3,shuffle=True,random_state=42),scoring=scoring).mean()
@@ -839,9 +903,11 @@ async def run_agent():
         study = optuna.create_study(direction="maximize")
         await asyncio.to_thread(study.optimize, obj, n_trials=20, show_progress_bar=False)
         bp = {**study.best_params, "random_state": 42}
-        tuned = (RandomForestClassifier(**bp) if best_name=="Random Forest"
-                 else GradientBoostingClassifier(**bp) if best_name=="Gradient Boosting"
-                 else bm)
+        if best_name == "Random Forest":       tuned = RandomForestClassifier(**bp)
+        elif best_name == "Gradient Boosting": tuned = GradientBoostingClassifier(**bp)
+        elif best_name == "XGBoost" and XGB_OK:   tuned = XGBClassifier(**bp, eval_metric="logloss", verbosity=0, n_jobs=-1)
+        elif best_name == "LightGBM" and LGBM_OK: tuned = LGBMClassifier(**bp, verbosity=-1, n_jobs=-1)
+        else: tuned = bm
         tuned.fit(X, y)
         try:
             after = round(float(cross_val_score(tuned, X, y,

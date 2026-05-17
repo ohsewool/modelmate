@@ -9,3 +9,5 @@ python-multipart
 google-generativeai
 google-auth
 python-jose[cryptography]
+xgboost
+lightgbm
