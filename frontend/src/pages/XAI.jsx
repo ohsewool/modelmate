@@ -63,7 +63,7 @@ export default function XAI() {
     setLoading('')
   }
 
-  const TABS = [['global','전역 중요도'],['local','개별 설명'],['wrong','오분류 분석']]
+  const TABS = [['global','어떤 항목이 중요한가?'],['local','이 데이터는 왜 이렇게 예측됐나?'],['wrong','틀린 예측 확인']]
 
   return (
     <div className="animate-fade-in" style={{ padding:32, maxWidth:960 }}>
@@ -97,7 +97,8 @@ export default function XAI() {
                 <span style={{ fontSize:30 }}>🔍</span>
               </div>
               <p className="empty-title">SHAP 중요도 계산</p>
-              <p className="empty-desc" style={{ marginBottom:24 }}>어떤 항목이 AI 예측에 가장 큰 영향을 미쳤는지 분석합니다</p>
+              <p className="empty-desc">어떤 항목이 AI 예측에 가장 큰 영향을 미쳤는지 분석합니다</p>
+              <p style={{ fontSize:12, color:'var(--text-2)', marginBottom:24, lineHeight:1.6 }}>AI가 예측할 때 어떤 항목을 얼마나 중요하게 봤는지 분석합니다</p>
               <button onClick={runShap} disabled={!!loading} className="btn-primary">
                 {loading === 'shap' ? <span className="spinner" /> : '🔍'}
                 분석 시작

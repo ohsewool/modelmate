@@ -186,8 +186,8 @@ export default function ModelLab() {
       <div className="card" style={{ marginBottom:20 }}>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
           <div>
-            <p style={{ fontWeight:600, color:'var(--text)', fontSize:15, margin:'0 0 4px' }}>3-fold Stratified CV</p>
-            <p style={{ fontSize:11, color:'var(--text-2)', margin:0 }}>Random Forest · Gradient Boosting · Logistic Regression · Decision Tree</p>
+            <p style={{ fontWeight:600, color:'var(--text)', fontSize:15, margin:'0 0 4px' }}>AI 모델 4가지 비교</p>
+            <p style={{ fontSize:11, color:'var(--text-2)', margin:0 }}>4가지 학습 방법으로 어떤 AI가 가장 잘 맞는지 비교합니다</p>
           </div>
           <div style={{ display:'flex', gap:8 }}>
             {state?.has_data && !showReconfig && (
@@ -226,15 +226,15 @@ export default function ModelLab() {
             <KPICard label="최고 모델" value={result.best_model?.split(' ')[0]} icon="🏆" color="blue" />
             {isRegression ? (
               <>
-                <KPICard label="R² Score" value={result.results?.[0]?.r2}   icon="📈" color="green" />
-                <KPICard label="RMSE"     value={result.results?.[0]?.rmse} icon="📉" color="amber" />
-                <KPICard label="MAE"      value={result.results?.[0]?.mae}  icon="📊" color="cyan" />
+                <KPICard label="설명력" title="R²: 예측값이 실제값을 얼마나 잘 설명하는지 (1.0이 최고)" value={result.results?.[0]?.r2}   icon="📈" color="green" />
+                <KPICard label="평균 오차" title="RMSE: 예측값과 실제값의 평균 차이"     value={result.results?.[0]?.rmse} icon="📉" color="amber" />
+                <KPICard label="절대 오차" title="MAE: 예측값과 실제값의 평균 절대 차이"      value={result.results?.[0]?.mae}  icon="📊" color="cyan" />
               </>
             ) : (
               <>
-                <KPICard label="ROC-AUC"  value={result.results?.[0]?.roc_auc} icon="📈" color="green" />
-                <KPICard label="Accuracy" value={result.results?.[0]?.accuracy} icon="✅" color="cyan" />
-                <KPICard label="F1 Score" value={result.results?.[0]?.f1}       icon="⚡" color="amber" />
+                <KPICard label="종합 정확도" title="ROC-AUC: 예측이 얼마나 올바른지 종합적으로 측정한 점수 (1.0이 최고)"  value={result.results?.[0]?.roc_auc} icon="📈" color="green" />
+                <KPICard label="정답률" value={result.results?.[0]?.accuracy} icon="✅" color="cyan" />
+                <KPICard label="균형 점수" title="F1 Score: 정밀도와 재현율의 균형을 나타내는 점수" value={result.results?.[0]?.f1}       icon="⚡" color="amber" />
               </>
             )}
           </div>
@@ -285,10 +285,10 @@ export default function ModelLab() {
                   <span style={{ fontSize:20, width:32, textAlign:'center', flexShrink:0 }}>{MEDALS[Math.min(i,3)]}</span>
                   <span style={{ flex:1, fontWeight:500, fontSize:13, color: i === 0 ? 'var(--text)' : 'var(--text-3)' }}>{r.model}</span>
                   {(isRegression
-                    ? [['R²', r.r2], ['RMSE', r.rmse], ['MAE', r.mae]]
-                    : [['Accuracy', r.accuracy], ['F1', r.f1], ['ROC-AUC', r.roc_auc]]
-                  ).map(([k, v]) => {
-                    const isPrimary = isRegression ? k === 'R²' : k === 'ROC-AUC'
+                    ? [['설명력', r.r2, 'R²'], ['평균 오차', r.rmse, 'RMSE'], ['절대 오차', r.mae, 'MAE']]
+                    : [['정답률', r.accuracy, 'Accuracy'], ['균형 점수', r.f1, 'F1'], ['종합 정확도', r.roc_auc, 'ROC-AUC']]
+                  ).map(([k, v, origKey]) => {
+                    const isPrimary = isRegression ? origKey === 'R²' : origKey === 'ROC-AUC'
                     const lbl = isPrimary ? getScoreLabel(v, isRegression) : null
                     return (
                       <div key={k} style={{ textAlign:'center', width:80 }}>
@@ -309,6 +309,7 @@ export default function ModelLab() {
           <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:20 }}>
             <div className="card">
               <p className="section-title">성능 비교</p>
+              <p style={{ fontSize:11, color:'var(--text-2)', margin:'-8px 0 14px', lineHeight:1.55 }}>막대가 높을수록 더 좋은 AI입니다</p>
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={chartData} barSize={14} barGap={4}>
                   <XAxis dataKey="name" tick={{ fill:'var(--text-2)', fontSize:11 }} axisLine={false} tickLine={false} />
@@ -354,12 +355,12 @@ export default function ModelLab() {
           <div className="card" style={{ borderColor:'rgba(245,158,11,0.3)', background:'linear-gradient(135deg, rgba(255,251,235,0.8), rgba(245,158,11,0.04))' }}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
               <div>
-                <p style={{ fontWeight:600, color:'var(--text)', margin:'0 0 4px' }}>⚡ Optuna 하이퍼파라미터 튜닝</p>
-                <p style={{ fontSize:11, color:'var(--text-2)', margin:0 }}>최고 모델 ({result.best_model?.split(' ')[0]}) 자동 최적화 · {isRegression ? 'R² 기준' : 'ROC-AUC 기준'}</p>
+                <p style={{ fontWeight:600, color:'var(--text)', margin:'0 0 4px' }}>⚡ AI 성능 자동 개선</p>
+                <p style={{ fontSize:11, color:'var(--text-2)', margin:0 }}>AI가 스스로 설정을 바꿔가며 최적의 조합을 찾습니다 ({result.best_model?.split(' ')[0]} · {isRegression ? 'R² 기준' : 'ROC-AUC 기준'})</p>
               </div>
               <div style={{ display:'flex', alignItems:'center', gap:12 }}>
                 <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                  <span style={{ fontSize:11, color:'var(--text-2)' }}>trials</span>
+                  <span style={{ fontSize:11, color:'var(--text-2)' }}>시도 횟수</span>
                   <input type="number" value={nTrials} min={10} max={100}
                     onChange={e => setNTrials(+e.target.value)}
                     className="input" style={{ width:64, textAlign:'center' }} />
@@ -374,8 +375,8 @@ export default function ModelLab() {
 
             {optRes && (
               <div className="animate-slide-up" style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:16, paddingTop:16, borderTop:'1px solid rgba(255,255,255,0.05)' }}>
-                <KPICard label={`튜닝 전 ${optRes.metric_name || 'ROC-AUC'}`} value={optRes.before_roc} color="cyan" />
-                <KPICard label={`튜닝 후 ${optRes.metric_name || 'ROC-AUC'}`} value={optRes.after_roc}
+                <KPICard label={`개선 전 정확도`} value={optRes.before_roc} color="cyan" />
+                <KPICard label={`개선 후 정확도`} value={optRes.after_roc}
                   sub={`+${optRes.improvement}% 개선`} color="green" icon="✨" />
                 <KPICard label="최적 파라미터" value={Object.keys(optRes.best_params).length + '개'} color="amber" />
 

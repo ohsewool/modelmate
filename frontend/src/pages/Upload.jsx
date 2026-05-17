@@ -77,7 +77,7 @@ export default function Upload() {
   }
 
   const drop = e => { e.preventDefault(); setDragging(false); handleFile(e.dataTransfer.files[0]) }
-  const TABS = [['preview','미리보기'],['dist','분포'],['corr','상관관계'],['stats','통계']]
+  const TABS = [['preview','미리보기'],['dist','데이터 분포'],['corr','항목 간 연관성'],['stats','기본 통계']]
 
   return (
     <div className="animate-fade-in" style={{ padding:32, maxWidth:960 }}>
