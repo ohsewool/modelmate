@@ -374,35 +374,51 @@ export default function ModelLab() {
             </div>
 
             {optRes && (
-              <div className="animate-slide-up" style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:16, paddingTop:16, borderTop:'1px solid rgba(255,255,255,0.05)' }}>
-                <KPICard label={`개선 전 정확도`} value={optRes.before_roc} color="cyan" />
-                <KPICard label={`개선 후 정확도`} value={optRes.after_roc}
-                  sub={`+${optRes.improvement}% 개선`} color="green" icon="✨" />
-                <KPICard label="최적 파라미터" value={Object.keys(optRes.best_params).length + '개'} color="amber" />
+              <div className="animate-slide-up" style={{ display:'flex', flexDirection:'column', gap:16, paddingTop:16, borderTop:'1px solid rgba(255,255,255,0.05)' }}>
 
-                {/* 튜닝 결과 해석 */}
+                {/* 핵심: 직관적 비교 카드 */}
                 {(() => {
-                  const diff = parseFloat(optRes.after_roc) - parseFloat(optRes.before_roc)
-                  const lbl = getScoreLabel(optRes.after_roc)
-                  return lbl ? (
-                    <div style={{ gridColumn:'1/-1', display:'flex', alignItems:'flex-start', gap:10, padding:'10px 14px', borderRadius:10, background:lbl.bg, border:`1px solid ${lbl.border}` }}>
-                      <span style={{ fontSize:15 }}>{lbl.icon}</span>
-                      <p style={{ fontSize:12, color:'var(--text-2)', margin:0, lineHeight:1.6 }}>
-                        튜닝 후 성능이 <strong style={{ color:lbl.color }}>{lbl.label}</strong> 수준이 됐습니다.
-                        {diff > 0.005 ? ` ROC-AUC가 ${diff.toFixed(3)} 향상됐습니다 — 튜닝 효과가 있었습니다.` : ' 이미 좋은 기본 설정이었습니다.'}
-                      </p>
-                    </div>
-                  ) : null
-                })()}
+                  const before = parseFloat(optRes.before_roc)
+                  const after  = parseFloat(optRes.after_roc)
+                  const diff   = after - before
+                  const extraPer100 = Math.round(diff * 100)
+                  const beforePer100 = Math.round(before * 100)
+                  const afterPer100  = Math.round(after  * 100)
+                  const lbl = getScoreLabel(after, isRegression)
+                  const improved = diff > 0.001
 
-                <div style={{ gridColumn:'1/-1', borderRadius:12, padding:16, border:'1px solid rgba(245,158,11,0.15)', background:'rgba(255,251,235,0.5)' }}>
-                  <p style={{ fontSize:10, color:'var(--text-2)', marginBottom:10, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.1em', margin:'0 0 10px' }}>최적 파라미터</p>
-                  <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
-                    {Object.entries(optRes.best_params).map(([k,v]) => (
-                      <span key={k} className="badge badge-amber" style={{ fontSize:11 }}>{k}: {String(v)}</span>
-                    ))}
-                  </div>
-                </div>
+                  return (
+                    <div style={{ borderRadius:14, overflow:'hidden', border:'1px solid rgba(245,158,11,0.3)' }}>
+                      {/* 상단: 비교 */}
+                      <div style={{ display:'grid', gridTemplateColumns:'1fr 40px 1fr', background:'var(--surface-alt)', padding:'20px 24px', gap:0, alignItems:'center' }}>
+                        {/* 개선 전 */}
+                        <div style={{ textAlign:'center' }}>
+                          <p style={{ fontSize:11, color:'var(--text-label)', margin:'0 0 6px', fontWeight:600 }}>개선 전</p>
+                          <p style={{ fontSize:36, fontWeight:800, color:'var(--text-3)', margin:'0 0 4px', lineHeight:1 }}>{beforePer100}<span style={{ fontSize:16 }}>명</span></p>
+                          <p style={{ fontSize:12, color:'var(--text-label)', margin:0 }}>100명 중 정확히 예측</p>
+                        </div>
+                        {/* 화살표 */}
+                        <div style={{ textAlign:'center', fontSize:20, color:'#d97706' }}>→</div>
+                        {/* 개선 후 */}
+                        <div style={{ textAlign:'center' }}>
+                          <p style={{ fontSize:11, color:'#d97706', margin:'0 0 6px', fontWeight:600 }}>개선 후 ✨</p>
+                          <p style={{ fontSize:36, fontWeight:800, color:'#d97706', margin:'0 0 4px', lineHeight:1 }}>{afterPer100}<span style={{ fontSize:16 }}>명</span></p>
+                          <p style={{ fontSize:12, color:'var(--text-label)', margin:0 }}>100명 중 정확히 예측</p>
+                        </div>
+                      </div>
+                      {/* 하단: 해석 */}
+                      <div style={{ padding:'14px 24px', background:'rgba(255,251,235,0.6)', display:'flex', alignItems:'center', gap:10 }}>
+                        <span style={{ fontSize:20 }}>{improved ? '📈' : '✅'}</span>
+                        <p style={{ fontSize:13, color:'var(--text-2)', margin:0, lineHeight:1.6 }}>
+                          {improved
+                            ? <>AI 설정을 최적화해서 <strong style={{ color:'#d97706' }}>100명 중 {extraPer100}명 더</strong> 정확히 예측할 수 있게 됐습니다. 현재 성능은 <strong style={{ color: lbl?.color }}>{lbl?.label}</strong> 수준입니다.</>
+                            : <>이미 최적의 설정이었습니다. 추가 개선 없이도 <strong style={{ color: lbl?.color }}>{lbl?.label}</strong> 수준의 성능입니다.</>
+                          }
+                        </p>
+                      </div>
+                    </div>
+                  )
+                })()}
               </div>
             )}
           </div>
