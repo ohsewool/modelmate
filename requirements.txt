@@ -9,4 +9,3 @@ python-multipart
 google-generativeai
 google-auth
 python-jose[cryptography]
-passlib[bcrypt]

@@ -20,16 +20,27 @@ from datetime import datetime
 from google.oauth2 import id_token
 from google.auth.transport import requests as grequests
 from jose import jwt as jose_jwt
-from passlib.context import CryptContext
+import hashlib, secrets
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+def hash_password(password: str) -> str:
+    salt = secrets.token_hex(16)
+    hashed = hashlib.pbkdf2_hmac("sha256", password.encode(), salt.encode(), 260000)
+    return f"{salt}${hashed.hex()}"
+
+def verify_password(password: str, stored: str) -> bool:
+    try:
+        salt, hashed = stored.split("$")
+        check = hashlib.pbkdf2_hmac("sha256", password.encode(), salt.encode(), 260000)
+        return check.hex() == hashed
+    except Exception:
+        return False
 
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "373474705259-7b18amrkom84aqqt59n87lglhrgq1trj.apps.googleusercontent.com")
 JWT_SECRET = os.getenv("JWT_SECRET", "modelmate-secret-key-change-in-prod")
 JWT_ALGORITHM = "HS256"
 security = HTTPBearer(auto_error=False)
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "..", "modelmate.db")
+DB_PATH = os.getenv("DB_PATH", os.path.join(os.path.dirname(__file__), "..", "modelmate.db"))
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)
@@ -920,7 +931,7 @@ async def auth_signup(body: EmailAuthBody):
         conn.close()
         raise HTTPException(400, "이미 사용 중인 이메일입니다")
     user_id = str(uuid.uuid4())
-    password_hash = pwd_context.hash(body.password)
+    password_hash = hash_password(body.password)
     name = body.name or body.email.split("@")[0]
     conn.execute(
         "INSERT INTO users (id, email, name, picture, password_hash, created_at) VALUES (?,?,?,?,?,?)",
@@ -937,7 +948,7 @@ async def auth_login(body: EmailAuthBody):
     conn.close()
     if not row or not row["password_hash"]:
         raise HTTPException(400, "이메일 또는 비밀번호가 올바르지 않습니다")
-    if not pwd_context.verify(body.password, row["password_hash"]):
+    if not verify_password(body.password, row["password_hash"]):
         raise HTTPException(400, "이메일 또는 비밀번호가 올바르지 않습니다")
     token = make_token(row["id"], row["email"], row["name"], row["picture"] or "")
     return {"token": token, "user": {"id": row["id"], "email": row["email"], "name": row["name"], "picture": row["picture"] or ""}}
