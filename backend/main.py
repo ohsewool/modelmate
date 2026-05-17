@@ -63,6 +63,17 @@ def init_db():
     cols = [r[1] for r in conn.execute("PRAGMA table_info(users)").fetchall()]
     if "password_hash" not in cols:
         conn.execute("ALTER TABLE users ADD COLUMN password_hash TEXT")
+
+    # 기본 계정 자동 생성 (없을 때만)
+    admin_email = os.getenv("ADMIN_EMAIL", "qwer@gmail.com")
+    admin_pw    = os.getenv("ADMIN_PASSWORD", "qwer1234")
+    exists = conn.execute("SELECT id FROM users WHERE email=?", (admin_email,)).fetchone()
+    if not exists:
+        import uuid
+        conn.execute(
+            "INSERT INTO users (id, email, name, picture, password_hash, created_at) VALUES (?,?,?,?,?,?)",
+            (str(uuid.uuid4()), admin_email, "관리자", "", hash_password(admin_pw), datetime.now().isoformat())
+        )
     conn.execute("""
         CREATE TABLE IF NOT EXISTS experiments (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
