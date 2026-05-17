@@ -73,73 +73,157 @@ export default function History() {
 
   return (
     <div className="animate-fade-in" style={{ padding:32, maxWidth:960 }}>
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:24 }}>
-        <div>
-          {selected.length >= 2 && (
-            <p style={{ fontSize:12, color:'#6366f1', fontWeight:600, margin:0 }}>
-              {selected.length}개 선택됨 — 아래에서 비교 결과를 확인하세요
-            </p>
-          )}
-          {selected.length === 1 && (
-            <p style={{ fontSize:12, color:'var(--text-2)', margin:0 }}>하나 더 선택하면 비교가 시작됩니다</p>
-          )}
-          {selected.length === 0 && history.length > 0 && (
-            <p style={{ fontSize:12, color:'var(--text-label)', margin:0 }}>행을 클릭하면 실험을 선택해 비교할 수 있습니다 (최대 3개)</p>
-          )}
-        </div>
-        <div style={{ display:'flex', gap:8 }}>
-          {state?.has_data && (
-            <button onClick={rerun} disabled={loading} className="btn-primary">
-              {loading ? <span className="spinner" /> : (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polygon points="5,3 19,12 5,21"/></svg>
-              )}
-              재실행
-            </button>
-          )}
-          {selected.length > 0 && (
-            <button onClick={() => setSelected([])} className="btn-secondary">선택 해제</button>
-          )}
-          {history.length > 0 && (
-            <button onClick={clearAll} className="btn-secondary" style={{ color:'#fda4af', borderColor:'rgba(244,63,94,0.2)' }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="3,6 5,6 21,6"/><path d="M19,6v14a2,2,0,0,1-2,2H7a2,2,0,0,1-2-2V6m3,0V4a2,2,0,0,1,2-2h4a2,2,0,0,1,2-2v2"/></svg>
-              전체 삭제
-            </button>
-          )}
+
+      {/* 페이지 헤더 배너 */}
+      <div style={{
+        borderRadius: 20,
+        padding: '28px 32px',
+        marginBottom: 28,
+        background: 'linear-gradient(135deg, #0891b2 0%, #6366f1 100%)',
+        boxShadow: '0 8px 32px rgba(8,145,178,0.25)',
+        position: 'relative',
+        overflow: 'hidden',
+      }}>
+        <div style={{
+          position: 'absolute', top: -40, right: -40,
+          width: 180, height: 180, borderRadius: '50%',
+          background: 'rgba(255,255,255,0.07)',
+        }} />
+        <div style={{
+          position: 'absolute', bottom: -50, right: 100,
+          width: 150, height: 150, borderRadius: '50%',
+          background: 'rgba(255,255,255,0.05)',
+        }} />
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', position:'relative', flexWrap:'wrap', gap:16 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:16 }}>
+            <div style={{
+              width: 52, height: 52, borderRadius: 16,
+              background: 'rgba(255,255,255,0.18)',
+              backdropFilter: 'blur(8px)',
+              border: '1px solid rgba(255,255,255,0.25)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>
+              </svg>
+            </div>
+            <div>
+              <h1 style={{ fontSize: 22, fontWeight: 800, color: 'white', margin: '0 0 4px', letterSpacing: '-0.02em' }}>
+                실험 히스토리
+              </h1>
+              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', margin: 0 }}>
+                모든 실험 결과를 비교하고 성능 추이를 확인합니다
+              </p>
+            </div>
+          </div>
+
+          {/* 헤더 내 액션 버튼 */}
+          <div style={{ display:'flex', gap:8 }}>
+            {state?.has_data && (
+              <button onClick={rerun} disabled={loading} style={{
+                padding:'8px 16px', borderRadius:10, fontSize:12, fontWeight:600,
+                background:'rgba(255,255,255,0.2)', color:'white',
+                border:'1px solid rgba(255,255,255,0.3)',
+                cursor:'pointer', display:'flex', alignItems:'center', gap:6,
+                backdropFilter:'blur(8px)',
+              }}>
+                {loading ? <span className="spinner" style={{ borderTopColor:'white' }} /> : (
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polygon points="5,3 19,12 5,21"/></svg>
+                )}
+                재실행
+              </button>
+            )}
+            {history.length > 0 && (
+              <button onClick={clearAll} style={{
+                padding:'8px 16px', borderRadius:10, fontSize:12, fontWeight:600,
+                background:'rgba(244,63,94,0.2)', color:'#fda4af',
+                border:'1px solid rgba(244,63,94,0.3)',
+                cursor:'pointer', display:'flex', alignItems:'center', gap:6,
+                backdropFilter:'blur(8px)',
+              }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="3,6 5,6 21,6"/><path d="M19,6v14a2,2,0,0,1-2,2H7a2,2,0,0,1-2-2V6m3,0V4a2,2,0,0,1,2-2h4a2,2,0,0,1,2-2v2"/></svg>
+                전체 삭제
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
-      {history.length === 0 ? (
-        <div className="card empty-state">
-          <div style={{ width:80, height:80, borderRadius:24, margin:'0 auto 20px', display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(99,102,241,0.08)', border:'1px solid rgba(99,102,241,0.15)' }}>
-            <span style={{ fontSize:40 }}>📭</span>
+      {/* 선택 상태 표시 */}
+      {history.length > 0 && (
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
+          <div>
+            {selected.length >= 2 && (
+              <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                <div style={{ width:8, height:8, borderRadius:'50%', background:'#6366f1' }} />
+                <p style={{ fontSize:13, color:'#6366f1', fontWeight:600, margin:0 }}>
+                  {selected.length}개 선택됨 — 아래에서 비교 결과를 확인하세요
+                </p>
+              </div>
+            )}
+            {selected.length === 1 && (
+              <p style={{ fontSize:13, color:'var(--text-2)', margin:0 }}>하나 더 선택하면 비교가 시작됩니다</p>
+            )}
+            {selected.length === 0 && (
+              <p style={{ fontSize:12, color:'var(--text-label)', margin:0 }}>행을 클릭하면 실험을 선택해 비교할 수 있습니다 (최대 3개)</p>
+            )}
           </div>
-          <p className="empty-title">저장된 실험 기록이 없습니다</p>
-          <p className="empty-desc">Model Lab에서 모델을 실행하면 자동으로 저장됩니다.</p>
+          {selected.length > 0 && (
+            <button onClick={() => setSelected([])} className="btn-secondary" style={{ fontSize:12 }}>선택 해제</button>
+          )}
+        </div>
+      )}
+
+      {history.length === 0 ? (
+        <div className="card" style={{ textAlign:'center', padding:'80px 40px' }}>
+          <div style={{
+            width:96, height:96, borderRadius:28, margin:'0 auto 24px',
+            display:'flex', alignItems:'center', justifyContent:'center',
+            background:'linear-gradient(135deg,rgba(8,145,178,0.1),rgba(99,102,241,0.08))',
+            border:'1px solid rgba(99,102,241,0.15)',
+          }}>
+            <span style={{ fontSize:48 }}>📭</span>
+          </div>
+          <p style={{ fontSize:20, fontWeight:700, color:'var(--text)', margin:'0 0 8px' }}>저장된 실험 기록이 없습니다</p>
+          <p style={{ fontSize:13, color:'var(--text-2)', margin:'0 0 24px' }}>Model Lab에서 모델을 실행하면 자동으로 저장됩니다.</p>
+          <div style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'8px 16px', borderRadius:99, background:'rgba(99,102,241,0.08)', border:'1px solid rgba(99,102,241,0.2)' }}>
+            <span style={{ fontSize:11, color:'#6366f1', fontWeight:600 }}>Model Lab에서 시작하세요</span>
+          </div>
         </div>
       ) : (
         <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
 
-          {/* KPI */}
+          {/* KPI 카드 - 크고 굵게 */}
           <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:16 }}>
-            <div className="card" style={{ textAlign:'center' }}>
-              <p style={{ fontSize:10, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.1em', color:'var(--text-3)', margin:'0 0 8px' }}>총 실험 수</p>
-              <p style={{ fontSize:32, fontWeight:700, color:'var(--text)', margin:0 }}>{history.length}</p>
-            </div>
-            <div className="card" style={{ textAlign:'center' }}>
-              <p style={{ fontSize:10, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.1em', color:'var(--text-3)', margin:'0 0 8px' }}>Optuna 적용</p>
-              <p style={{ fontSize:32, fontWeight:700, color:'#d97706', margin:0 }}>{history.filter(h=>h.optuna_applied).length}</p>
-            </div>
-            <div className="card" style={{ textAlign:'center' }}>
-              <p style={{ fontSize:10, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.1em', color:'var(--text-3)', margin:'0 0 8px' }}>최고 성능</p>
-              <p style={{ fontSize:32, fontWeight:700, color:'#059669', margin:0 }}>{bestROC.toFixed(4)}</p>
-            </div>
+            {[
+              { label:'총 실험 수', value: history.length, color:'#6366f1', bg:'rgba(99,102,241,0.06)', border:'rgba(99,102,241,0.2)' },
+              { label:'Optuna 적용', value: history.filter(h=>h.optuna_applied).length, color:'#d97706', bg:'rgba(217,119,6,0.06)', border:'rgba(217,119,6,0.2)' },
+              { label:'최고 성능', value: bestROC.toFixed(4), color:'#059669', bg:'rgba(5,150,105,0.06)', border:'rgba(5,150,105,0.2)' },
+            ].map(({ label, value, color, bg, border }) => (
+              <div key={label} className="card" style={{
+                textAlign:'center',
+                border:`1px solid ${border}`,
+                background:bg,
+                transition:'all 0.2s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.transform='translateY(-2px)'; e.currentTarget.style.boxShadow=`0 8px 24px ${border}` }}
+              onMouseLeave={e => { e.currentTarget.style.transform=''; e.currentTarget.style.boxShadow='' }}
+              >
+                <p style={{ fontSize:11, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.1em', color:'var(--text-3)', margin:'0 0 10px' }}>{label}</p>
+                <p style={{ fontSize:40, fontWeight:800, color, margin:0, letterSpacing:'-0.02em', lineHeight:1 }}>{value}</p>
+              </div>
+            ))}
           </div>
 
           {/* 추이 차트 */}
           {trend.length > 1 && (
-            <div className="card">
+            <div className="card"
+              style={{ transition:'all 0.2s' }}
+              onMouseEnter={e => { e.currentTarget.style.boxShadow='0 4px 20px rgba(8,145,178,0.1)' }}
+              onMouseLeave={e => { e.currentTarget.style.boxShadow='' }}
+            >
               <p className="section-title">성능 추이</p>
-              <p style={{ fontSize:11, color:'var(--text-2)', margin:'-8px 0 14px' }}>실험을 반복할수록 성능이 어떻게 변했는지 보여줍니다. 위로 올라갈수록 좋습니다.</p>
+              <p style={{ fontSize:11, color:'var(--text-2)', margin:'-8px 0 18px' }}>실험을 반복할수록 성능이 어떻게 변했는지 보여줍니다. 위로 올라갈수록 좋습니다.</p>
               <ResponsiveContainer width="100%" height={200}>
                 <LineChart data={trend}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(99,102,241,0.08)" />
@@ -187,11 +271,12 @@ export default function History() {
                       border:`2px solid ${isBest ? 'rgba(16,185,129,0.4)' : 'var(--border)'}`,
                       background: isBest ? 'rgba(16,185,129,0.05)' : 'var(--surface-alt)',
                       position:'relative',
+                      transition:'all 0.2s',
                     }}>
                       {isBest && (
                         <div style={{ position:'absolute', top:-10, left:'50%', transform:'translateX(-50%)',
-                          background:'#10b981', color:'white', fontSize:10, fontWeight:700,
-                          padding:'2px 10px', borderRadius:99 }}>
+                          background:'linear-gradient(135deg,#10b981,#059669)', color:'white', fontSize:10, fontWeight:700,
+                          padding:'2px 12px', borderRadius:99, boxShadow:'0 2px 8px rgba(16,185,129,0.4)' }}>
                           최고 성능
                         </div>
                       )}
@@ -204,10 +289,10 @@ export default function History() {
                         <p style={{ fontSize:10, color:'var(--text-label)', margin:0 }}>{h.timestamp}</p>
                       </div>
 
-                      {/* 주요 메트릭 */}
-                      <div style={{ padding:'12px 14px', borderRadius:10, background: isBest ? 'rgba(16,185,129,0.08)' : 'var(--bg)', marginBottom:12, textAlign:'center' }}>
-                        <p style={{ fontSize:10, fontWeight:600, color:'var(--text-label)', textTransform:'uppercase', letterSpacing:'0.08em', margin:'0 0 4px' }}>{m.primary.label}</p>
-                        <p style={{ fontSize:26, fontWeight:800, color: isBest ? '#059669' : '#6366f1', margin:0 }}>
+                      {/* 주요 메트릭 - 크게 */}
+                      <div style={{ padding:'14px', borderRadius:10, background: isBest ? 'rgba(16,185,129,0.08)' : 'var(--bg)', marginBottom:12, textAlign:'center' }}>
+                        <p style={{ fontSize:10, fontWeight:600, color:'var(--text-label)', textTransform:'uppercase', letterSpacing:'0.08em', margin:'0 0 6px' }}>{m.primary.label}</p>
+                        <p style={{ fontSize:32, fontWeight:800, color: isBest ? '#059669' : '#6366f1', margin:0, letterSpacing:'-0.02em' }}>
                           {m.primary.value ?? '—'}
                         </p>
                       </div>

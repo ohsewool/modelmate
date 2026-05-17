@@ -82,6 +82,52 @@ export default function Upload() {
   return (
     <div className="animate-fade-in" style={{ padding:32, maxWidth:960 }}>
 
+      {/* 페이지 헤더 배너 */}
+      <div style={{
+        borderRadius: 20,
+        padding: '28px 32px',
+        marginBottom: 28,
+        background: 'linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)',
+        boxShadow: '0 8px 32px rgba(14,165,233,0.25)',
+        position: 'relative',
+        overflow: 'hidden',
+      }}>
+        {/* 배경 장식 */}
+        <div style={{
+          position: 'absolute', top: -40, right: -40,
+          width: 180, height: 180, borderRadius: '50%',
+          background: 'rgba(255,255,255,0.07)',
+        }} />
+        <div style={{
+          position: 'absolute', bottom: -60, right: 80,
+          width: 140, height: 140, borderRadius: '50%',
+          background: 'rgba(255,255,255,0.05)',
+        }} />
+        <div style={{ display:'flex', alignItems:'center', gap:16, position:'relative' }}>
+          <div style={{
+            width: 52, height: 52, borderRadius: 16,
+            background: 'rgba(255,255,255,0.18)',
+            backdropFilter: 'blur(8px)',
+            border: '1px solid rgba(255,255,255,0.25)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+              <polyline points="17,8 12,3 7,8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+          </div>
+          <div>
+            <h1 style={{ fontSize: 22, fontWeight: 800, color: 'white', margin: '0 0 4px', letterSpacing: '-0.02em' }}>
+              데이터 업로드
+            </h1>
+            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', margin: 0 }}>
+              CSV 파일을 업로드하고 AI가 자동으로 데이터를 분석합니다
+            </p>
+          </div>
+        </div>
+      </div>
+
       {!uploadInfo ? (
         <div
           style={{
@@ -105,25 +151,70 @@ export default function Upload() {
           <input ref={fileRef} type="file" accept=".csv,.txt" style={{ display:'none' }}
             onChange={e => handleFile(e.target.files[0])} />
           {loading ? (
-            <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:16 }}>
-              <div className="spinner-lg" />
-              <p style={{ color:'var(--text-2)', fontSize:13 }}>파일 분석 중…</p>
+            <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:20 }}>
+              {/* 커스텀 로딩 애니메이션 */}
+              <div style={{ position:'relative', width:72, height:72 }}>
+                <div style={{
+                  position:'absolute', inset:0, borderRadius:'50%',
+                  border: '3px solid rgba(99,102,241,0.15)',
+                }} />
+                <div style={{
+                  position:'absolute', inset:0, borderRadius:'50%',
+                  border: '3px solid transparent',
+                  borderTopColor: '#6366f1',
+                  animation: 'spin 1s linear infinite',
+                }} />
+                <div style={{
+                  position:'absolute', inset:8, borderRadius:'50%',
+                  border: '3px solid transparent',
+                  borderTopColor: '#0ea5e9',
+                  animation: 'spin 0.7s linear infinite reverse',
+                }} />
+                <div style={{
+                  position:'absolute', inset:0,
+                  display:'flex', alignItems:'center', justifyContent:'center',
+                }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                    <polyline points="17,8 12,3 7,8"/>
+                    <line x1="12" y1="3" x2="12" y2="15"/>
+                  </svg>
+                </div>
+              </div>
+              <div>
+                <p style={{ color:'var(--text)', fontSize:15, fontWeight:600, margin:'0 0 6px' }}>파일 분석 중…</p>
+                <p style={{ color:'var(--text-2)', fontSize:12, margin:0 }}>AI가 데이터 구조를 파악하고 있습니다</p>
+              </div>
+              <div style={{ display:'flex', gap:8 }}>
+                {['업로드', '구조 파악', 'AI 분석'].map((step, i) => (
+                  <div key={i} style={{
+                    padding: '4px 12px', borderRadius: 99, fontSize: 11, fontWeight: 500,
+                    background: 'rgba(99,102,241,0.1)', color: '#6366f1',
+                    border: '1px solid rgba(99,102,241,0.2)',
+                  }}>
+                    {step}
+                  </div>
+                ))}
+              </div>
             </div>
           ) : (
             <>
               <div style={{
-                width:64, height:64, borderRadius:18, margin:'0 auto 20px',
+                width:72, height:72, borderRadius:20, margin:'0 auto 24px',
                 display:'flex', alignItems:'center', justifyContent:'center',
-                background: 'linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.1))',
-                border: '1px solid rgba(99,102,241,0.3)',
+                background: 'linear-gradient(135deg, rgba(14,165,233,0.15), rgba(99,102,241,0.1))',
+                border: '1px solid rgba(99,102,241,0.25)',
                 transition: 'transform 0.2s',
               }}>
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#818cf8" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17,8 12,3 7,8"/><line x1="12" y1="3" x2="12" y2="15"/>
                 </svg>
               </div>
-              <p style={{ color:'var(--text)', fontWeight:600, fontSize:15, marginBottom:8 }}>파일을 드래그하거나 클릭해서 업로드</p>
-              <p style={{ color:'var(--text-2)', fontSize:13 }}>CSV, TXT 지원 · TXT는 구분자 자동 감지</p>
+              <p style={{ color:'var(--text)', fontWeight:700, fontSize:17, marginBottom:8 }}>파일을 드래그하거나 클릭해서 업로드</p>
+              <p style={{ color:'var(--text-2)', fontSize:13, marginBottom:20 }}>CSV, TXT 지원 · TXT는 구분자 자동 감지</p>
+              <div style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'8px 16px', borderRadius:99, background:'rgba(99,102,241,0.08)', border:'1px solid rgba(99,102,241,0.2)' }}>
+                <span style={{ fontSize:11, color:'#6366f1', fontWeight:600 }}>파일 선택</span>
+              </div>
             </>
           )}
         </div>
@@ -384,7 +475,11 @@ export default function Upload() {
                   </div>
                 <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:16 }}>
                   {Object.entries(edaInfo.distributions).map(([col, d]) => (
-                    <div key={col} className="card-elevated">
+                    <div key={col} className="card-elevated"
+                      style={{ transition:'all 0.2s', cursor:'default' }}
+                      onMouseEnter={e => { e.currentTarget.style.boxShadow='0 4px 16px rgba(99,102,241,0.12)'; e.currentTarget.style.borderColor='rgba(99,102,241,0.25)' }}
+                      onMouseLeave={e => { e.currentTarget.style.boxShadow=''; e.currentTarget.style.borderColor='' }}
+                    >
                       <p style={{ fontSize:11, fontWeight:600, color:'var(--text-2)', marginBottom:12 }}>
                         {colLabels[col] ? <>{colLabels[col]} <span style={{fontWeight:400,opacity:0.5,fontSize:10}}>({col})</span></> : col}
                       </p>
