@@ -59,6 +59,10 @@ def init_db():
             created_at TEXT
         )
     """)
+    # 기존 테이블에 password_hash 컬럼 없으면 추가
+    cols = [r[1] for r in conn.execute("PRAGMA table_info(users)").fetchall()]
+    if "password_hash" not in cols:
+        conn.execute("ALTER TABLE users ADD COLUMN password_hash TEXT")
     conn.execute("""
         CREATE TABLE IF NOT EXISTS experiments (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
