@@ -332,14 +332,15 @@ async def analyze_columns():
         m = re.search(r'\{.*\}', raw, re.DOTALL)
         result = json.loads(m.group()) if m else {}
         result["gemini_used"] = True
+        result["raw_preview"] = raw[:200] if raw else ""
         if "col_labels" not in result:
             result["col_labels"] = {}
-        STATE["col_labels"] = result["col_labels"]
+        STATE["col_labels"] = result.get("col_labels", {})
         return result
-    except:
+    except Exception as e:
         return {"target_suggestion": df.columns[-1], "drop_suggestions": [],
                 "dataset_summary": raw[:300] if raw else "", "task_type": "classification",
-                "col_labels": {}, "gemini_used": True}
+                "col_labels": {}, "gemini_used": True, "parse_error": str(e), "raw_preview": raw[:200] if raw else ""}
 
 # ── 타깃 확정 & EDA ───────────────────────────────────────
 @app.post("/api/set-target")
