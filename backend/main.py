@@ -608,17 +608,31 @@ async def run_shap():
             return {"type": "feature_importance", "global": fi}
         raise HTTPException(400, "SHAP 미설치")
     try:
-        exp = shap.TreeExplainer(model)
         samp = X.sample(min(300, len(X)), random_state=42)
-        sv = exp.shap_values(samp)
-        if isinstance(sv, list): sv = sv[1]
-        mean_sv = np.abs(sv).mean(axis=0)
+        try:
+            exp = shap.TreeExplainer(model)
+            sv = exp.shap_values(samp)
+            if isinstance(sv, list): sv = sv[1] if len(sv) > 1 else sv[0]
+            mean_sv = np.abs(sv).mean(axis=0)
+            shap_type = "shap"
+        except Exception:
+            # 트리 기반이 아닌 모델 (Logistic Regression, Ridge 등): 계수 기반 중요도
+            if hasattr(model, "coef_"):
+                coef = np.abs(model.coef_)
+                mean_sv = coef.mean(axis=0) if coef.ndim > 1 else coef[0]
+            elif hasattr(model, "feature_importances_"):
+                mean_sv = model.feature_importances_
+            else:
+                mean_sv = np.ones(len(X.columns))
+            sv = None
+            shap_type = "feature_importance"
         g = sorted([{"feature": c, "shap_value": round(float(v), 4)}
                     for c, v in zip(X.columns, mean_sv)],
                    key=lambda x: x["shap_value"], reverse=True)
-        STATE["shap_values"] = sv.tolist()
+        if sv is not None:
+            STATE["shap_values"] = sv.tolist()
         STATE["shap_sample_idx"] = samp.index.tolist()
-        return {"type": "shap", "global": g}
+        return {"type": shap_type, "global": g}
     except Exception as e:
         raise HTTPException(500, str(e))
 
