@@ -119,6 +119,47 @@ export default function ModelLab() {
   return (
     <div className="animate-fade-in" style={{ padding:32, maxWidth:960 }}>
 
+      {/* 상단 그라디언트 헤더 배너 */}
+      <div className="card" style={{
+        background: 'linear-gradient(135deg, #7c3aed 0%, #6366f1 50%, #4f46e5 100%)',
+        border: 'none',
+        marginBottom: 24,
+        position: 'relative',
+        overflow: 'hidden',
+      }}>
+        {/* 배경 장식 */}
+        <div style={{ position:'absolute', top:-30, right:-30, width:180, height:180, borderRadius:'50%', background:'radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%)', pointerEvents:'none' }} />
+        <div style={{ position:'absolute', bottom:-20, left:60, width:120, height:120, borderRadius:'50%', background:'radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 70%)', pointerEvents:'none' }} />
+        <div style={{ position:'relative', display:'flex', alignItems:'center', gap:20 }}>
+          <div style={{
+            width:64, height:64, borderRadius:20, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
+            background:'rgba(255,255,255,0.15)', backdropFilter:'blur(8px)',
+            border:'1px solid rgba(255,255,255,0.25)',
+            boxShadow:'0 4px 20px rgba(0,0,0,0.2)',
+          }}>
+            <span style={{ fontSize:30 }}>🔬</span>
+          </div>
+          <div style={{ flex:1 }}>
+            <p style={{ fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.65)', margin:'0 0 4px', textTransform:'uppercase', letterSpacing:'0.12em' }}>
+              AI 모델 비교 실험실
+            </p>
+            <h2 style={{ fontSize:22, fontWeight:800, color:'#fff', margin:'0 0 6px', letterSpacing:'-0.02em' }}>Model Lab</h2>
+            <p style={{ fontSize:13, color:'rgba(255,255,255,0.78)', margin:0, lineHeight:1.5 }}>
+              4가지 AI 알고리즘을 동시에 학습하고 성능을 비교하세요 &nbsp;·&nbsp; 자동으로 최적 모델을 선택합니다
+            </p>
+          </div>
+          {state?.has_data && (
+            <div style={{
+              flexShrink:0, background:'rgba(255,255,255,0.12)', borderRadius:12,
+              padding:'8px 14px', border:'1px solid rgba(255,255,255,0.2)',
+            }}>
+              <p style={{ fontSize:10, color:'rgba(255,255,255,0.6)', margin:'0 0 2px', textTransform:'uppercase', letterSpacing:'0.08em' }}>상태</p>
+              <p style={{ fontSize:13, fontWeight:700, color:'#fff', margin:0 }}>{result ? '학습 완료 ✓' : '대기 중'}</p>
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* 부분 재실행 패널 */}
       {showReconfig && (
         <div className="card animate-slide-up" style={{ marginBottom:20, borderColor:'rgba(99,102,241,0.3)', background:'linear-gradient(135deg,rgba(99,102,241,0.04),rgba(139,92,246,0.02))' }}>
@@ -183,11 +224,21 @@ export default function ModelLab() {
       )}
 
       {/* Run CV 카드 */}
-      <div className="card" style={{ marginBottom:20 }}>
+      <div className="card" style={{ marginBottom:20, borderColor: loading === 'cv' ? 'rgba(124,58,237,0.3)' : 'var(--border)' }}>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-          <div>
-            <p style={{ fontWeight:600, color:'var(--text)', fontSize:15, margin:'0 0 4px' }}>AI 모델 4가지 비교</p>
-            <p style={{ fontSize:11, color:'var(--text-2)', margin:0 }}>4가지 학습 방법으로 어떤 AI가 가장 잘 맞는지 비교합니다</p>
+          <div style={{ display:'flex', alignItems:'center', gap:14 }}>
+            <div style={{
+              width:44, height:44, borderRadius:14, flexShrink:0,
+              background:'linear-gradient(135deg, rgba(124,58,237,0.12), rgba(99,102,241,0.08))',
+              border:'1px solid rgba(124,58,237,0.2)',
+              display:'flex', alignItems:'center', justifyContent:'center',
+            }}>
+              <span style={{ fontSize:20 }}>🤖</span>
+            </div>
+            <div>
+              <p style={{ fontWeight:700, color:'var(--text)', fontSize:15, margin:'0 0 3px' }}>AI 모델 4가지 비교</p>
+              <p style={{ fontSize:11, color:'var(--text-2)', margin:0 }}>4가지 학습 방법으로 어떤 AI가 가장 잘 맞는지 비교합니다</p>
+            </div>
           </div>
           <div style={{ display:'flex', gap:8 }}>
             {state?.has_data && !showReconfig && (
@@ -196,7 +247,7 @@ export default function ModelLab() {
                 부분 재실행
               </button>
             )}
-            <button onClick={runCV} disabled={!!loading} className="btn-primary">
+            <button onClick={runCV} disabled={!!loading} className="btn-primary" style={{ background:'linear-gradient(135deg,#7c3aed,#6366f1)' }}>
               {loading === 'cv' ? <span className="spinner" /> : (
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
               )}
@@ -207,12 +258,22 @@ export default function ModelLab() {
 
         {loading === 'cv' && (
           <div style={{ marginTop:20, display:'flex', flexDirection:'column', gap:10 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:6 }}>
+              <div className="spinner" style={{ borderTopColor:'#7c3aed', width:16, height:16 }} />
+              <p style={{ fontSize:12, fontWeight:600, color:'#7c3aed', margin:0 }}>4개 모델 동시 학습 중...</p>
+            </div>
             {['Random Forest','Gradient Boosting','Logistic Regression','Decision Tree'].map((m, i) => (
               <div key={m} style={{ display:'flex', alignItems:'center', gap:12 }}>
-                <div style={{ fontSize:11, color:'var(--text-2)', width:144, flexShrink:0 }}>{m}</div>
+                <div style={{ fontSize:16, width:20, textAlign:'center', flexShrink:0 }}>{MEDALS[i] || '⬜'}</div>
+                <div style={{ fontSize:11, color:'var(--text-2)', width:140, flexShrink:0 }}>{m}</div>
                 <div className="progress-bar" style={{ flex:1 }}>
-                  <div className="progress-fill" style={{ width:`${25*(i+1)}%`, animation:'pulse 2s infinite' }} />
+                  <div className="progress-fill" style={{
+                    width:`${25*(i+1)}%`,
+                    background:'linear-gradient(90deg, #7c3aed, #6366f1)',
+                    animation:'pulse 2s infinite',
+                  }} />
                 </div>
+                <span style={{ fontSize:11, color:'var(--text-label)', width:30, textAlign:'right' }}>{25*(i+1)}%</span>
               </div>
             ))}
           </div>
@@ -221,6 +282,61 @@ export default function ModelLab() {
 
       {result && (
         <div className="animate-slide-up" style={{ display:'flex', flexDirection:'column', gap:20 }}>
+          {/* 최고 모델 하이라이트 카드 */}
+          {(() => {
+            const primaryScore = isRegression ? result.results?.[0]?.r2 : result.results?.[0]?.roc_auc
+            const lbl = getScoreLabel(primaryScore, isRegression)
+            const bestModel = result.best_model?.split(' ')[0]
+            if (!lbl || !bestModel) return null
+            return (
+              <div style={{
+                borderRadius:16, overflow:'hidden',
+                background:'linear-gradient(135deg, rgba(124,58,237,0.06) 0%, rgba(99,102,241,0.04) 100%)',
+                border:'1px solid rgba(124,58,237,0.2)',
+                boxShadow:'0 0 30px rgba(124,58,237,0.08)',
+              }}>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', borderBottom:'1px solid rgba(124,58,237,0.1)' }}>
+                  <div style={{ padding:'20px 24px', textAlign:'center', borderRight:'1px solid rgba(124,58,237,0.1)' }}>
+                    <p style={{ fontSize:11, color:'var(--text-label)', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.1em', margin:'0 0 8px' }}>최고 모델</p>
+                    <p style={{ fontSize:22, fontWeight:800, color:'var(--text)', margin:'0 0 4px' }}>🏆 {bestModel}</p>
+                    <p style={{ fontSize:11, color:'var(--text-label)', margin:0 }}>Best Performer</p>
+                  </div>
+                  <div style={{ padding:'20px 24px', textAlign:'center', borderRight:'1px solid rgba(124,58,237,0.1)' }}>
+                    <p style={{ fontSize:11, color:'var(--text-label)', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.1em', margin:'0 0 8px' }}>
+                      {isRegression ? 'R² 설명력' : 'ROC-AUC'}
+                    </p>
+                    <p style={{ fontSize:36, fontWeight:800, color:'#7c3aed', margin:'0 0 4px', lineHeight:1, fontVariantNumeric:'tabular-nums' }}>
+                      {primaryScore}
+                    </p>
+                    <span style={{
+                      fontSize:11, fontWeight:700, color:lbl.color, background:lbl.bg,
+                      padding:'2px 10px', borderRadius:6, display:'inline-block',
+                    }}>{lbl.icon} {lbl.label}</span>
+                  </div>
+                  <div style={{ padding:'20px 24px', textAlign:'center' }}>
+                    <p style={{ fontSize:11, color:'var(--text-label)', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.1em', margin:'0 0 8px' }}>
+                      {isRegression ? '예측 정확도' : '분류 정확도'}
+                    </p>
+                    <p style={{ fontSize:36, fontWeight:800, color:'#6366f1', margin:'0 0 4px', lineHeight:1 }}>
+                      {isRegression ? result.results?.[0]?.rmse : result.results?.[0]?.accuracy}
+                    </p>
+                    <p style={{ fontSize:11, color:'var(--text-label)', margin:0 }}>{isRegression ? 'RMSE 오차' : 'Accuracy'}</p>
+                  </div>
+                </div>
+                <div style={{ padding:'12px 24px', display:'flex', alignItems:'center', gap:10 }}>
+                  <span style={{ fontSize:18 }}>{lbl.icon}</span>
+                  <p style={{ fontSize:13, color:'var(--text-2)', margin:0, lineHeight:1.6 }}>
+                    {isRegression
+                      ? <><strong style={{ color:'var(--text)' }}>{bestModel}</strong>이 가장 좋은 성능을 기록했습니다. R²는 예측값이 실제값을 얼마나 잘 설명하는지를 나타냅니다 (1.0이 최고).</>
+                      : (() => { const acc = result.results?.[0]?.accuracy; return <><strong style={{ color:'var(--text)' }}>{bestModel}</strong>이 가장 좋은 성능을 기록했습니다. 정확도 <strong style={{ color:'#6366f1' }}>{acc}</strong>로, 100개 중 약 {Math.round(parseFloat(acc)*100)}개를 올바르게 예측합니다.</> })()
+                    }
+                    {' '}<span style={{ color:lbl.color, fontWeight:600 }}>{lbl.desc}</span>
+                  </p>
+                </div>
+              </div>
+            )
+          })()}
+
           {/* KPI */}
           <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:16 }}>
             <KPICard label="최고 모델" value={result.best_model?.split(' ')[0]} icon="🏆" color="blue" />
@@ -239,51 +355,29 @@ export default function ModelLab() {
             )}
           </div>
 
-          {/* 종합 평가 배너 */}
-          {(() => {
-            const primaryScore = isRegression ? result.results?.[0]?.r2 : result.results?.[0]?.roc_auc
-            const lbl = getScoreLabel(primaryScore, isRegression)
-            if (!lbl) return null
-            const bestModel = result.best_model?.split(' ')[0]
-            return (
-              <div style={{ display:'flex', alignItems:'flex-start', gap:14, padding:'14px 18px', borderRadius:14, background:lbl.bg, border:`1px solid ${lbl.border}` }}>
-                <span style={{ fontSize:22, flexShrink:0 }}>{lbl.icon}</span>
-                <div>
-                  <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4 }}>
-                    <span style={{ fontSize:14, fontWeight:700, color:lbl.color }}>{lbl.label}</span>
-                    <span style={{ fontSize:11, color:'var(--text-label)', background:'var(--surface)', border:'1px solid var(--border)', padding:'1px 8px', borderRadius:6 }}>
-                      {isRegression ? `R² ${primaryScore}` : `ROC-AUC ${primaryScore}`}
-                    </span>
-                  </div>
-                  <p style={{ fontSize:12, color:'var(--text-2)', margin:'0 0 4px', lineHeight:1.65 }}>
-                    {isRegression
-                      ? <><strong>{bestModel}</strong>이 가장 좋은 성능을 기록했습니다. R²는 예측값이 실제값을 얼마나 잘 설명하는지를 나타냅니다 (1.0이 최고).</>
-                      : (() => { const acc = result.results?.[0]?.accuracy; return <><strong>{bestModel}</strong>이 가장 좋은 성능을 기록했습니다. 정확도 <strong>{acc}</strong>로, 100개 중 약 {Math.round(parseFloat(acc)*100)}개를 올바르게 예측합니다.</>})()
-                    }
-                  </p>
-                  <p style={{ fontSize:12, color:lbl.color, margin:0, fontWeight:500 }}>{lbl.desc}</p>
-                </div>
-              </div>
-            )
-          })()}
-
           {/* Leaderboard */}
           <div className="card">
             <p className="section-title">리더보드</p>
-            <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+            <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
               {result.results.map((r, i) => (
                 <div key={r.model} style={{
                   display:'flex', alignItems:'center', gap:16,
-                  padding:'14px 16px', borderRadius:12, border:'1px solid',
-                  borderColor: i === 0 ? 'rgba(99,102,241,0.3)' : 'var(--border)',
+                  padding:'16px 18px', borderRadius:14, border:'1px solid',
+                  borderColor: i === 0 ? 'rgba(124,58,237,0.35)' : 'var(--border)',
                   background: i === 0
-                    ? 'linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(139,92,246,0.04) 100%)'
+                    ? 'linear-gradient(135deg, rgba(124,58,237,0.09) 0%, rgba(99,102,241,0.05) 100%)'
                     : 'var(--surface-alt)',
                   transition: 'all 0.15s',
-                  boxShadow: i === 0 ? '0 0 20px rgba(99,102,241,0.1), inset 0 1px 0 rgba(255,255,255,0.04)' : 'none',
+                  boxShadow: i === 0 ? '0 0 24px rgba(124,58,237,0.12), inset 0 1px 0 rgba(255,255,255,0.04)' : 'none',
                 }}>
-                  <span style={{ fontSize:20, width:32, textAlign:'center', flexShrink:0 }}>{MEDALS[Math.min(i,3)]}</span>
-                  <span style={{ flex:1, fontWeight:500, fontSize:13, color: i === 0 ? 'var(--text)' : 'var(--text-3)' }}>{r.model}</span>
+                  <div style={{
+                    width:36, height:36, borderRadius:10, flexShrink:0,
+                    display:'flex', alignItems:'center', justifyContent:'center',
+                    background: i === 0 ? 'linear-gradient(135deg,rgba(124,58,237,0.15),rgba(99,102,241,0.1))' : 'var(--surface)',
+                    border: i === 0 ? '1px solid rgba(124,58,237,0.2)' : '1px solid var(--border)',
+                    fontSize:18,
+                  }}>{MEDALS[Math.min(i,3)] || (i+1)}</div>
+                  <span style={{ flex:1, fontWeight: i === 0 ? 700 : 500, fontSize:13, color: i === 0 ? 'var(--text)' : 'var(--text-3)' }}>{r.model}</span>
                   {(isRegression
                     ? [['설명력', r.r2, 'R²'], ['평균 오차', r.rmse, 'RMSE'], ['절대 오차', r.mae, 'MAE']]
                     : [['정답률', r.accuracy, 'Accuracy'], ['균형 점수', r.f1, 'F1'], ['종합 정확도', r.roc_auc, 'ROC-AUC']]
@@ -291,11 +385,11 @@ export default function ModelLab() {
                     const isPrimary = isRegression ? origKey === 'R²' : origKey === 'ROC-AUC'
                     const lbl = isPrimary ? getScoreLabel(v, isRegression) : null
                     return (
-                      <div key={k} style={{ textAlign:'center', width:80 }}>
-                        <p style={{ fontSize:10, color:'var(--text-2)', margin:'0 0 2px' }}>{k}</p>
-                        <p style={{ fontWeight:700, fontSize:13, color: i===0 && isPrimary ? '#4f46e5' : i===0 ? 'var(--text)' : 'var(--text-2)', margin:0 }}>{v}</p>
+                      <div key={k} style={{ textAlign:'center', width:88 }}>
+                        <p style={{ fontSize:10, color:'var(--text-2)', margin:'0 0 3px', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.06em' }}>{origKey}</p>
+                        <p style={{ fontWeight:800, fontSize: isPrimary && i === 0 ? 18 : 14, color: i===0 && isPrimary ? '#7c3aed' : i===0 ? 'var(--text)' : 'var(--text-2)', margin:0 }}>{v}</p>
                         {lbl && i === 0 && (
-                          <span style={{ fontSize:9, fontWeight:600, color:lbl.color, background:lbl.bg, padding:'1px 6px', borderRadius:4, display:'inline-block', marginTop:3 }}>{lbl.label}</span>
+                          <span style={{ fontSize:9, fontWeight:700, color:lbl.color, background:lbl.bg, padding:'1px 6px', borderRadius:4, display:'inline-block', marginTop:3 }}>{lbl.label}</span>
                         )}
                       </div>
                     )
@@ -314,7 +408,7 @@ export default function ModelLab() {
                 <BarChart data={chartData} barSize={14} barGap={4}>
                   <XAxis dataKey="name" tick={{ fill:'var(--text-2)', fontSize:11 }} axisLine={false} tickLine={false} />
                   <YAxis domain={[0,1]} tick={{ fill:'var(--text-2)', fontSize:10 }} axisLine={false} tickLine={false} />
-                  <Tooltip contentStyle={ttStyle} cursor={{ fill:'rgba(99,102,241,0.04)' }} />
+                  <Tooltip contentStyle={ttStyle} cursor={{ fill:'rgba(124,58,237,0.04)' }} />
                   <Legend wrapperStyle={{ fontSize:11, color:'var(--text-2)' }} />
                   {(isRegression ? ['R²'] : ['Accuracy','F1','ROC-AUC']).map((k,i) => (
                     <Bar key={k} dataKey={k} fill={COLORS[i]} radius={[4,4,0,0]} opacity={0.9} />
@@ -339,7 +433,10 @@ export default function ModelLab() {
                         {colLabels[f.feature] && <div style={{ fontSize:9, opacity:0.45, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{f.feature}</div>}
                       </div>
                       <div className="progress-bar" style={{ flex:1 }}>
-                        <div className="progress-fill" style={{ width:`${f.importance*100}%`, opacity: fi === 0 ? 1 : 0.7 }} />
+                        <div className="progress-fill" style={{
+                          width:`${f.importance*100}%`, opacity: fi === 0 ? 1 : 0.7,
+                          background: fi === 0 ? 'linear-gradient(90deg,#7c3aed,#6366f1)' : undefined,
+                        }} />
                       </div>
                       <span style={{ fontSize:11, color:'var(--text-2)', width:36, textAlign:'right', flexShrink:0 }}>
                         {(f.importance*100).toFixed(1)}%
@@ -355,7 +452,7 @@ export default function ModelLab() {
           <div className="card" style={{ borderColor:'rgba(245,158,11,0.3)', background:'linear-gradient(135deg, rgba(255,251,235,0.8), rgba(245,158,11,0.04))' }}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
               <div>
-                <p style={{ fontWeight:600, color:'var(--text)', margin:'0 0 4px' }}>⚡ AI 성능 자동 개선</p>
+                <p style={{ fontWeight:700, color:'var(--text)', margin:'0 0 4px', fontSize:15 }}>⚡ AI 성능 자동 개선</p>
                 <p style={{ fontSize:11, color:'var(--text-2)', margin:0 }}>AI가 스스로 설정을 바꿔가며 최적의 조합을 찾습니다 ({result.best_model?.split(' ')[0]} · {isRegression ? 'R² 기준' : 'ROC-AUC 기준'})</p>
               </div>
               <div style={{ display:'flex', alignItems:'center', gap:12 }}>
@@ -425,7 +522,7 @@ export default function ModelLab() {
 
           <div style={{ display:'grid', gridTemplateColumns:'1fr auto', gap:12 }}>
             <button onClick={() => nav('/xai')} className="btn-primary"
-              style={{ justifyContent:'center', padding:'14px 20px' }}>
+              style={{ justifyContent:'center', padding:'14px 20px', background:'linear-gradient(135deg,#7c3aed,#6366f1)' }}>
               XAI 설명 보기
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
             </button>
