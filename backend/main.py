@@ -118,11 +118,15 @@ except Exception as _e:
     GEMINI_OK = False
     _GEMINI_ERROR = str(_e)
 
+_GEMINI_CALL_ERROR = ""
+
 def _call_gemini_sync(prompt: str) -> str:
+    global _GEMINI_CALL_ERROR
     try:
         r = _GEMINI_MODEL.generate_content(prompt)
         return r.text.strip()
-    except:
+    except Exception as e:
+        _GEMINI_CALL_ERROR = str(e)
         return ""
 
 async def ask_gemini(prompt: str) -> str:
@@ -1021,6 +1025,7 @@ async def get_state():
         "optuna_ok":     OPTUNA_OK,
         "gemini_ok":     GEMINI_OK,
         "gemini_error":  _GEMINI_ERROR,
+        "gemini_call_error": _GEMINI_CALL_ERROR,
         "col_labels":    STATE.get("col_labels", {}),
     }
 
