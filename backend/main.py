@@ -997,6 +997,11 @@ async def clear_history():
     return {"ok": True}
 
 # ── 상태 ─────────────────────────────────────────────────
+@app.get("/api/debug-env")
+async def debug_env():
+    key = os.getenv("GEMINI_API_KEY", "")
+    return {"key_length": len(key), "key_prefix": key[:8] if key else "", "gemini_ok": GEMINI_OK, "gemini_error": _GEMINI_ERROR}
+
 @app.get("/api/state")
 async def get_state():
     return {
