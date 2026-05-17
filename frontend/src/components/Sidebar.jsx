@@ -6,12 +6,13 @@ import { useTheme } from '../ThemeContext'
 import { useAuth } from '../AuthContext'
 
 const NAV = [
-  { to: '/upload',    icon: UploadIcon, label: '데이터 업로드', step: 1 },
-  { to: '/agent',     icon: AgentIcon,  label: 'AI 자동 분석',  step: 2, highlight: true },
-  { to: '/model-lab', icon: FlaskIcon,  label: 'Model Lab',     step: 3 },
-  { to: '/xai',       icon: EyeIcon,    label: 'XAI 설명',      step: 4 },
-  { to: '/history',   icon: ChartIcon,  label: '실험 기록',      step: 5 },
-  { to: '/report',    icon: DocIcon,    label: '보고서',         step: 6 },
+  { to: '/upload',    icon: UploadIcon,  label: '데이터 업로드', step: 1 },
+  { to: '/agent',     icon: AgentIcon,   label: 'AI 자동 분석',  step: 2, highlight: true },
+  { to: '/model-lab', icon: FlaskIcon,   label: 'Model Lab',     step: 3 },
+  { to: '/predict',   icon: PredictIcon, label: '새 데이터 예측', step: 4, highlight2: true },
+  { to: '/xai',       icon: EyeIcon,     label: 'XAI 설명',      step: 5 },
+  { to: '/history',   icon: ChartIcon,   label: '실험 기록',      step: 6 },
+  { to: '/report',    icon: DocIcon,     label: '보고서',         step: 7 },
 ]
 
 export default function Sidebar({ isOpen, onClose }) {
@@ -91,30 +92,35 @@ export default function Sidebar({ isOpen, onClose }) {
         {/* Nav */}
         <nav style={{ flex:1, padding:'12px 10px', overflowY:'auto' }}>
           <p style={{ padding:'0 10px', marginBottom:8, fontSize:10, fontWeight:600, color:'var(--text-label)', textTransform:'uppercase', letterSpacing:'0.12em' }}>워크플로우</p>
-          {NAV.map(({ to, icon: Icon, label, step: s, highlight }) => {
+          {NAV.map(({ to, icon: Icon, label, step: s, highlight, highlight2 }) => {
             const done   = s < step
             const locked = s > step + 1
+            const hl     = highlight || highlight2
+            const hlColor   = highlight ? '#7c3aed' : '#059669'
+            const hlBg      = highlight ? 'rgba(124,58,237,0.06)' : 'rgba(5,150,105,0.06)'
+            const hlBgHover = highlight ? 'rgba(124,58,237,0.1)'  : 'rgba(5,150,105,0.1)'
+            const hlTag     = highlight ? 'AI' : '✨'
             return (
               <NavLink key={to} to={to} onClick={onClose} style={{ textDecoration:'none', pointerEvents:locked?'none':'auto', opacity:locked?0.4:1 }}>
                 {({ isActive }) => (
                   <div style={{
                     display:'flex', alignItems:'center', gap:10,
                     padding:'9px 10px', borderRadius:10, marginBottom:2,
-                    fontSize:13, fontWeight: highlight ? 600 : 500, cursor:locked?'not-allowed':'pointer',
+                    fontSize:13, fontWeight: hl ? 600 : 500, cursor:locked?'not-allowed':'pointer',
                     transition:'all 0.15s',
-                    color: isActive ? '#6366f1' : highlight ? '#7c3aed' : 'var(--text-3)',
-                    background: isActive ? 'rgba(99,102,241,0.08)' : highlight ? 'rgba(124,58,237,0.06)' : 'transparent',
-                    boxShadow: isActive ? '0 0 0 1px rgba(99,102,241,0.15)' : highlight ? '0 0 0 1px rgba(124,58,237,0.15)' : 'none',
+                    color: isActive ? '#6366f1' : hl ? hlColor : 'var(--text-3)',
+                    background: isActive ? 'rgba(99,102,241,0.08)' : hl ? hlBg : 'transparent',
+                    boxShadow: isActive ? '0 0 0 1px rgba(99,102,241,0.15)' : hl ? `0 0 0 1px ${hlColor}25` : 'none',
                   }}
-                  onMouseEnter={e => { if(!isActive && !locked) e.currentTarget.style.background= highlight ? 'rgba(124,58,237,0.1)' : 'var(--surface-alt)' }}
-                  onMouseLeave={e => { if(!isActive) e.currentTarget.style.background= highlight ? 'rgba(124,58,237,0.06)' : 'transparent' }}
+                  onMouseEnter={e => { if(!isActive && !locked) e.currentTarget.style.background= hl ? hlBgHover : 'var(--surface-alt)' }}
+                  onMouseLeave={e => { if(!isActive) e.currentTarget.style.background= hl ? hlBg : 'transparent' }}
                   >
-                    <span style={{ width:16, height:16, flexShrink:0, color: isActive ? '#6366f1' : done ? '#10b981' : highlight ? '#7c3aed' : 'var(--border)' }}>
+                    <span style={{ width:16, height:16, flexShrink:0, color: isActive ? '#6366f1' : done ? '#10b981' : hl ? hlColor : 'var(--border)' }}>
                       {done && !isActive ? <CheckIcon /> : <Icon />}
                     </span>
                     <span style={{ flex:1 }}>{label}</span>
-                    {highlight && !isActive && <span style={{ fontSize:9, fontWeight:700, color:'#7c3aed', background:'rgba(124,58,237,0.12)', padding:'2px 6px', borderRadius:4 }}>AI</span>}
-                    {done && !isActive && !highlight && (
+                    {hl && !isActive && <span style={{ fontSize:9, fontWeight:700, color:hlColor, background:`${hlColor}20`, padding:'2px 6px', borderRadius:4 }}>{hlTag}</span>}
+                    {done && !isActive && !hl && (
                       <span style={{ width:6, height:6, borderRadius:'50%', background:'#10b981', flexShrink:0 }} />
                     )}
                   </div>
@@ -196,3 +202,4 @@ function ChartIcon() { return <svg viewBox="0 0 24 24" fill="none" stroke="curre
 function DocIcon() { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{width:'100%',height:'100%'}}><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> }
 function CheckIcon() { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{width:'100%',height:'100%'}}><polyline points="20,6 9,17 4,12"/></svg> }
 function AgentIcon() { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{width:'100%',height:'100%'}}><circle cx="12" cy="8" r="4"/><path d="M8 8H4a2 2 0 00-2 2v2a2 2 0 002 2h1"/><path d="M16 8h4a2 2 0 012 2v2a2 2 0 01-2 2h-1"/><path d="M9 20h6"/><path d="M12 14v6"/></svg> }
+function PredictIcon() { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{width:'100%',height:'100%'}}><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg> }

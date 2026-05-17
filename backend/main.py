@@ -1196,6 +1196,125 @@ async def html_report(autoprint: bool = False):
 {autoprint_script}
 </body></html>"""
 
+# ── 피처 정보 (예측 폼 생성용) ───────────────────────────
+@app.get("/api/feature-info")
+async def feature_info():
+    X = STATE.get("X")
+    if X is None: raise HTTPException(400, "모델 없음")
+    encoders  = STATE.get("encoders", {})
+    cat_cols  = STATE.get("cat_cols", [])
+    col_labels = STATE.get("col_labels", {})
+    features = []
+    for col in X.columns:
+        if col in cat_cols and col in encoders:
+            features.append({
+                "name": col,
+                "label": col_labels.get(col, col),
+                "type": "categorical",
+                "options": encoders[col].classes_.tolist(),
+            })
+        else:
+            features.append({
+                "name": col,
+                "label": col_labels.get(col, col),
+                "type": "numeric",
+                "min":  round(float(X[col].min()), 4),
+                "max":  round(float(X[col].max()), 4),
+                "mean": round(float(X[col].mean()), 4),
+            })
+    target_enc = STATE.get("target_encoder")
+    return {
+        "features": features,
+        "target_col": STATE.get("target_col"),
+        "task_type": STATE.get("task_type", "classification"),
+        "target_classes": target_enc.classes_.tolist() if target_enc else None,
+    }
+
+# ── 단일 행 예측 ───────────────────────────────────────────
+@app.post("/api/predict")
+async def predict_single(body: dict):
+    model = STATE.get("best_model"); X_train = STATE.get("X")
+    if model is None: raise HTTPException(400, "모델 없음")
+    encoders  = STATE.get("encoders", {})
+    cat_cols  = STATE.get("cat_cols", [])
+    features  = body.get("features", {})
+    row = {}
+    for col in X_train.columns:
+        val = features.get(col)
+        if val is None:
+            row[col] = 0 if col in cat_cols else float(X_train[col].mean())
+        elif col in cat_cols and col in encoders:
+            try:   row[col] = int(encoders[col].transform([str(val)])[0])
+            except: row[col] = 0
+        else:
+            try:   row[col] = float(val)
+            except: row[col] = float(X_train[col].mean())
+    X_input = pd.DataFrame([row], columns=X_train.columns)
+    pred = model.predict(X_input)[0]
+    task_type = STATE.get("task_type", "classification")
+    result = {"task_type": task_type}
+    if task_type == "regression":
+        result["prediction"] = round(float(pred), 4)
+    else:
+        result["prediction"] = int(pred)
+        target_enc = STATE.get("target_encoder")
+        if target_enc is not None:
+            result["prediction_label"] = str(target_enc.inverse_transform([int(pred)])[0])
+            result["class_labels"] = target_enc.classes_.tolist()
+        else:
+            result["prediction_label"] = str(int(pred))
+        if hasattr(model, "predict_proba"):
+            proba = model.predict_proba(X_input)[0].tolist()
+            result["probabilities"] = [round(p, 4) for p in proba]
+            result["confidence"] = round(max(proba), 4)
+        classes = STATE.get("target_encoder").classes_.tolist() if STATE.get("target_encoder") else None
+        result["classes"] = classes
+    return result
+
+# ── 배치(CSV) 예측 ─────────────────────────────────────────
+@app.post("/api/predict-batch")
+async def predict_batch(file: UploadFile = File(...)):
+    model = STATE.get("best_model"); X_train = STATE.get("X")
+    if model is None: raise HTTPException(400, "모델 없음")
+    raw = (await file.read()).decode("utf-8", errors="replace")
+    try:
+        df_new = pd.read_csv(io.StringIO(raw))
+    except Exception as e:
+        raise HTTPException(400, f"CSV 파싱 실패: {e}")
+    encoders  = STATE.get("encoders", {})
+    cat_cols  = STATE.get("cat_cols", [])
+    target_col = STATE.get("target_col")
+    if target_col and target_col in df_new.columns:
+        df_new = df_new.drop(columns=[target_col])
+    X_new = df_new.copy()
+    for col in cat_cols:
+        if col in X_new.columns and col in encoders:
+            X_new[col] = X_new[col].fillna("missing").astype(str)
+            # 알 수 없는 값 → 첫 번째 클래스로 대체
+            known = set(encoders[col].classes_)
+            X_new[col] = X_new[col].apply(lambda v: v if v in known else encoders[col].classes_[0])
+            X_new[col] = encoders[col].transform(X_new[col])
+    for col in X_train.columns:
+        if col not in X_new.columns:
+            X_new[col] = 0
+    X_new = X_new[X_train.columns].fillna(X_train.median(numeric_only=True))
+    preds = model.predict(X_new).tolist()
+    task_type = STATE.get("task_type", "classification")
+    target_enc = STATE.get("target_encoder")
+    rows = []
+    for i, pred in enumerate(preds):
+        row_r = {"row": i + 1}
+        if task_type == "regression":
+            row_r["prediction"] = round(float(pred), 4)
+        else:
+            row_r["prediction"] = int(pred)
+            row_r["prediction_label"] = str(target_enc.inverse_transform([int(pred)])[0]) if target_enc else str(int(pred))
+            if hasattr(model, "predict_proba"):
+                proba = model.predict_proba(X_new.iloc[[i]])[0]
+                row_r["confidence"] = round(float(proba.max()), 4)
+        rows.append(row_r)
+    return {"count": len(rows), "task_type": task_type, "results": rows}
+
 # ── 정적 파일 서빙 (React 빌드) ───────────────────────────
 if os.path.isdir(STATIC_DIR):
     app.mount("/assets", StaticFiles(directory=os.path.join(STATIC_DIR, "assets")), name="assets")
