@@ -10,9 +10,10 @@ const NAV = [
   { to: '/agent',     icon: AgentIcon,   label: 'AI 자동 분석',  step: 2, highlight: true },
   { to: '/model-lab', icon: FlaskIcon,   label: 'Model Lab',     step: 3 },
   { to: '/predict',   icon: PredictIcon, label: '새 데이터 예측', step: 4, highlight2: true },
-  { to: '/xai',       icon: EyeIcon,     label: 'XAI 설명',      step: 5 },
-  { to: '/history',   icon: ChartIcon,   label: '실험 기록',      step: 6 },
-  { to: '/report',    icon: DocIcon,     label: '보고서',         step: 7 },
+  { to: '/deploy',    icon: DeployIcon,  label: 'API 배포',       step: 5, highlight2: true },
+  { to: '/xai',       icon: EyeIcon,     label: 'XAI 설명',      step: 6 },
+  { to: '/history',   icon: ChartIcon,   label: '실험 기록',      step: 7 },
+  { to: '/report',    icon: DocIcon,     label: '보고서',         step: 8 },
 ]
 
 export default function Sidebar({ isOpen, onClose }) {
@@ -34,7 +35,7 @@ export default function Sidebar({ isOpen, onClose }) {
     return () => clearInterval(id)
   }, [])
 
-  const step = state.has_model ? 6 : state.has_data ? 2 : 1
+  const step = state.has_model ? 8 : state.has_data ? 2 : 1
 
   return (
     <>
@@ -203,3 +204,4 @@ function DocIcon() { return <svg viewBox="0 0 24 24" fill="none" stroke="current
 function CheckIcon() { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{width:'100%',height:'100%'}}><polyline points="20,6 9,17 4,12"/></svg> }
 function AgentIcon() { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{width:'100%',height:'100%'}}><circle cx="12" cy="8" r="4"/><path d="M8 8H4a2 2 0 00-2 2v2a2 2 0 002 2h1"/><path d="M16 8h4a2 2 0 012 2v2a2 2 0 01-2 2h-1"/><path d="M9 20h6"/><path d="M12 14v6"/></svg> }
 function PredictIcon() { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{width:'100%',height:'100%'}}><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg> }
+function DeployIcon() { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{width:'100%',height:'100%'}}><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg> }

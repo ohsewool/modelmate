@@ -13,7 +13,7 @@ from sklearn.model_selection import cross_val_score, StratifiedKFold, KFold
 from sklearn.metrics import accuracy_score, f1_score, roc_auc_score, r2_score, mean_squared_error, mean_absolute_error
 from sklearn.preprocessing import LabelEncoder
 from pydantic import BaseModel
-import json, os, io, asyncio, sqlite3
+import json, os, io, asyncio, sqlite3, joblib
 from datetime import datetime
 
 # ── Google OAuth ──────────────────────────────────────────
@@ -40,7 +40,9 @@ JWT_SECRET = os.getenv("JWT_SECRET", "modelmate-secret-key-change-in-prod")
 JWT_ALGORITHM = "HS256"
 security = HTTPBearer(auto_error=False)
 
-DB_PATH = os.getenv("DB_PATH", os.path.join(os.path.dirname(__file__), "..", "modelmate.db"))
+DB_PATH    = os.getenv("DB_PATH", os.path.join(os.path.dirname(__file__), "..", "modelmate.db"))
+MODELS_DIR = os.path.join(os.path.dirname(__file__), "..", "deployed_models")
+os.makedirs(MODELS_DIR, exist_ok=True)
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)
@@ -74,6 +76,18 @@ def init_db():
             "INSERT INTO users (id, email, name, picture, password_hash, created_at) VALUES (?,?,?,?,?,?)",
             (str(uuid.uuid4()), admin_email, "관리자", "", hash_password(admin_pw), datetime.now().isoformat())
         )
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS deployed_models (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            task_type TEXT NOT NULL,
+            best_model_name TEXT,
+            target_col TEXT,
+            features TEXT,
+            metrics TEXT,
+            created_at TEXT
+        )
+    """)
     conn.execute("""
         CREATE TABLE IF NOT EXISTS experiments (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1314,6 +1328,135 @@ async def predict_batch(file: UploadFile = File(...)):
                 row_r["confidence"] = round(float(proba.max()), 4)
         rows.append(row_r)
     return {"count": len(rows), "task_type": task_type, "results": rows}
+
+# ── 모델 배포 ─────────────────────────────────────────────
+@app.post("/api/deploy")
+async def deploy_model(body: dict):
+    import uuid
+    model = STATE.get("best_model"); X = STATE.get("X")
+    if model is None: raise HTTPException(400, "학습된 모델 없음")
+
+    model_id  = str(uuid.uuid4())[:8]
+    name      = body.get("name") or f"모델 ({STATE.get('best_model_name', 'Unknown')})"
+    task_type = STATE.get("task_type", "classification")
+    encoders  = STATE.get("encoders", {})
+    cat_cols  = STATE.get("cat_cols", [])
+    col_labels = STATE.get("col_labels", {})
+
+    # 피처 예시값 (코드 스니펫 생성용)
+    features_meta = []
+    for col in X.columns:
+        if col in cat_cols and col in encoders:
+            features_meta.append({
+                "name": col, "label": col_labels.get(col, col),
+                "type": "categorical",
+                "example": encoders[col].classes_[0],
+                "options": encoders[col].classes_.tolist(),
+            })
+        else:
+            features_meta.append({
+                "name": col, "label": col_labels.get(col, col),
+                "type": "numeric",
+                "example": round(float(X[col].mean()), 3),
+            })
+
+    # 모델 번들 저장
+    bundle = {
+        "model": model,
+        "encoders": encoders,
+        "target_encoder": STATE.get("target_encoder"),
+        "feature_names": X.columns.tolist(),
+        "cat_cols": cat_cols,
+        "task_type": task_type,
+        "target_col": STATE.get("target_col"),
+    }
+    joblib.dump(bundle, os.path.join(MODELS_DIR, f"{model_id}.pkl"))
+
+    # 메트릭
+    cv = STATE.get("cv_results", [])
+    metrics = cv[0] if cv else {}
+
+    conn = get_db()
+    conn.execute(
+        "INSERT INTO deployed_models (id,name,task_type,best_model_name,target_col,features,metrics,created_at)"
+        " VALUES (?,?,?,?,?,?,?,?)",
+        (model_id, name, task_type, STATE.get("best_model_name"),
+         STATE.get("target_col"),
+         json.dumps(features_meta, ensure_ascii=False),
+         json.dumps(metrics, ensure_ascii=False),
+         datetime.now().isoformat())
+    )
+    conn.commit(); conn.close()
+    return {"model_id": model_id, "name": name}
+
+@app.get("/api/deployed")
+async def list_deployed():
+    conn = get_db()
+    rows = conn.execute("SELECT * FROM deployed_models ORDER BY created_at DESC").fetchall()
+    conn.close()
+    return [{
+        "id": r["id"], "name": r["name"],
+        "task_type": r["task_type"], "best_model_name": r["best_model_name"],
+        "target_col": r["target_col"],
+        "features": json.loads(r["features"]),
+        "metrics": json.loads(r["metrics"]),
+        "created_at": r["created_at"],
+        "file_exists": os.path.exists(os.path.join(MODELS_DIR, f"{r['id']}.pkl")),
+    } for r in rows]
+
+@app.delete("/api/deployed/{model_id}")
+async def delete_deployed(model_id: str):
+    fp = os.path.join(MODELS_DIR, f"{model_id}.pkl")
+    if os.path.exists(fp): os.remove(fp)
+    conn = get_db()
+    conn.execute("DELETE FROM deployed_models WHERE id=?", (model_id,))
+    conn.commit(); conn.close()
+    return {"ok": True}
+
+@app.post("/api/v1/{model_id}/predict")
+async def v1_predict(model_id: str, body: dict):
+    fp = os.path.join(MODELS_DIR, f"{model_id}.pkl")
+    if not os.path.exists(fp):
+        raise HTTPException(404, f"모델을 찾을 수 없습니다: {model_id}")
+    bundle = joblib.load(fp)
+    model  = bundle["model"]
+    enc    = bundle["encoders"]
+    cat_cols = bundle["cat_cols"]
+    feats  = bundle["feature_names"]
+    task   = bundle["task_type"]
+    tgt_enc = bundle["target_encoder"]
+
+    features = body.get("features", {})
+    row = {}
+    for col in feats:
+        val = features.get(col)
+        if val is None:
+            row[col] = 0
+        elif col in cat_cols and col in enc:
+            known = set(enc[col].classes_)
+            sv = str(val) if str(val) in known else enc[col].classes_[0]
+            row[col] = int(enc[col].transform([sv])[0])
+        else:
+            try:   row[col] = float(val)
+            except: row[col] = 0
+
+    X_in = pd.DataFrame([row], columns=feats)
+    pred = model.predict(X_in)[0]
+    result = {"model_id": model_id, "task_type": task}
+
+    if task == "regression":
+        result["prediction"] = round(float(pred), 4)
+    else:
+        result["prediction"] = int(pred)
+        result["prediction_label"] = (
+            str(tgt_enc.inverse_transform([int(pred)])[0]) if tgt_enc else str(int(pred))
+        )
+        if hasattr(model, "predict_proba"):
+            proba = model.predict_proba(X_in)[0]
+            classes = tgt_enc.classes_.tolist() if tgt_enc else list(range(len(proba)))
+            result["probabilities"] = {str(c): round(float(p), 4) for c, p in zip(classes, proba)}
+            result["confidence"] = round(float(proba.max()), 4)
+    return result
 
 # ── 정적 파일 서빙 (React 빌드) ───────────────────────────
 if os.path.isdir(STATIC_DIR):
