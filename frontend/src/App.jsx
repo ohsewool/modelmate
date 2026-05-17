@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 import { AuthProvider, useAuth } from './AuthContext'
+import { useState } from 'react'
 import Sidebar from './components/Sidebar'
 import Home from './pages/Home'
 import Upload from './pages/Upload'
@@ -22,32 +23,40 @@ const PAGE_META = {
   '/report':      { title: '분석 보고서',          desc: '분석 결과를 HTML 보고서로 내보내기' },
 }
 
-function Header() {
+function Header({ onMenuClick }) {
   const { pathname } = useLocation()
   const meta = PAGE_META[pathname] || {}
   if (!meta.title) return null
   return (
     <header style={{
       flexShrink:0, display:'flex', alignItems:'center', justifyContent:'space-between',
-      padding:'0 32px', height:56,
+      padding:'0 16px 0 12px', height:56,
       background:'var(--surface)', borderBottom:'1px solid var(--border)',
     }}>
-      <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+      <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+        {/* 햄버거 버튼 (모바일) */}
+        <button onClick={onMenuClick} className="hamburger-btn" style={{
+          background:'none', border:'none', cursor:'pointer', color:'var(--text)',
+          padding:6, borderRadius:8, display:'none', alignItems:'center', justifyContent:'center',
+        }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+        </button>
         <h1 style={{ fontSize:15, fontWeight:700, color:'var(--text)', lineHeight:1.2, margin:0 }}>{meta.title}</h1>
         {meta.desc && (
-          <>
-            <span style={{ color:'var(--border)' }}>·</span>
-            <p style={{ fontSize:12, color:'var(--text-label)', margin:0 }}>{meta.desc}</p>
-          </>
+          <p style={{ fontSize:12, color:'var(--text-label)', margin:0, display:'none' }} className="header-desc">
+            {meta.desc}
+          </p>
         )}
       </div>
       <div style={{
         display:'flex', alignItems:'center', gap:6, fontSize:11, fontWeight:600,
         color:'#059669', background:'#f0fdf4', border:'1px solid #bbf7d0',
-        padding:'5px 12px', borderRadius:99,
+        padding:'5px 10px', borderRadius:99,
       }}>
         <span style={{ width:6, height:6, borderRadius:'50%', background:'#10b981', display:'inline-block', animation:'pulse 2s infinite' }} />
-        시스템 정상
+        <span className="status-text">시스템 정상</span>
       </div>
     </header>
   )
@@ -56,14 +65,15 @@ function Header() {
 function Layout({ children }) {
   const { pathname } = useLocation()
   const isHome = pathname === '/'
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   if (isHome) return <>{children}</>
 
   return (
     <div style={{ display:'flex', height:'100vh', overflow:'hidden', background:'var(--bg)' }}>
-      <Sidebar />
-      <div style={{ display:'flex', flexDirection:'column', flex:1, overflow:'hidden' }}>
-        <Header />
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <div style={{ display:'flex', flexDirection:'column', flex:1, overflow:'hidden', minWidth:0 }}>
+        <Header onMenuClick={() => setSidebarOpen(v => !v)} />
         <main style={{ flex:1, overflowY:'auto', background:'var(--bg)' }}>
           {children}
         </main>

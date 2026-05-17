@@ -201,3 +201,43 @@ html.dark .banner-danger  { background: rgba(244,63,94,0.1);   border-color: rgb
 @keyframes slideUp { from { opacity:0; transform:translateY(8px) } to { opacity:1; transform:none } }
 .animate-fade-in  { animation: fadeIn  0.3s ease; }
 .animate-slide-up { animation: slideUp 0.35s ease; }
+
+/* ── 반응형 (모바일) ─────────────────────────────────── */
+@media (max-width: 768px) {
+  /* 사이드바: 모바일에서 드로어로 */
+  .sidebar {
+    position: fixed !important;
+    top: 0; left: 0;
+    height: 100vh;
+    transform: translateX(-100%);
+    box-shadow: 4px 0 24px rgba(0,0,0,0.15);
+  }
+  .sidebar.sidebar-open {
+    transform: translateX(0) !important;
+  }
+  .mobile-overlay {
+    display: block !important;
+  }
+  .sidebar-close-btn {
+    display: flex !important;
+  }
+
+  /* 햄버거 버튼 표시 */
+  .hamburger-btn {
+    display: flex !important;
+  }
+
+  /* 헤더 설명 텍스트 숨기기 */
+  .header-desc {
+    display: none !important;
+  }
+  .status-text {
+    display: none;
+  }
+
+  /* 페이지 패딩 줄이기 */
+  main > div {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+}

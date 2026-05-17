@@ -14,7 +14,7 @@ const NAV = [
   { to: '/report',    icon: DocIcon,    label: '보고서',         step: 6 },
 ]
 
-export default function Sidebar() {
+export default function Sidebar({ isOpen, onClose }) {
   const [state, setState] = useState({})
   const { dark, toggle } = useTheme()
   const { user, login, logout } = useAuth()
@@ -36,122 +36,144 @@ export default function Sidebar() {
   const step = state.has_model ? 3 : state.has_data ? 2 : 1
 
   return (
-    <aside style={{
-      width: 236, flexShrink: 0, display: 'flex', flexDirection: 'column',
-      background: 'var(--surface)', borderRight: '1px solid var(--border)',
-      transition: 'background 0.2s, border-color 0.2s',
-    }}>
-      {/* Logo */}
-      <div style={{ padding:'20px 20px 16px', borderBottom:'1px solid var(--border-sub)', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-        <NavLink to="/" style={{ textDecoration:'none', display:'flex', alignItems:'center', gap:12, flex:1, minWidth:0 }}>
-          <div style={{
-            width:36, height:36, borderRadius:12, flexShrink:0,
-            background: 'linear-gradient(135deg, #6366f1 0%, #7c3aed 100%)',
-            display:'flex', alignItems:'center', justifyContent:'center',
-            boxShadow: '0 4px 12px rgba(99,102,241,0.3)',
-          }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
-            </svg>
-          </div>
-          <div style={{ minWidth:0 }}>
-            <div style={{ fontWeight:700, fontSize:14, color:'var(--text)', lineHeight:1.2 }}>ModelMate</div>
-            <div style={{ fontSize:11, color:'var(--text-label)', marginTop:2 }}>범용 AutoML 플랫폼</div>
-          </div>
-        </NavLink>
-        <button onClick={toggle} className="theme-toggle" title={dark ? '라이트 모드' : '다크 모드'}>
-          {dark
-            ? <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-            : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z"/></svg>
-          }
-        </button>
-      </div>
+    <>
+      {/* 모바일 오버레이 */}
+      {isOpen && (
+        <div onClick={onClose} style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+          zIndex: 40, display: 'none',
+        }} className="mobile-overlay" />
+      )}
 
-      {/* Nav */}
-      <nav style={{ flex:1, padding:'12px 10px', overflowY:'auto' }}>
-        <p style={{ padding:'0 10px', marginBottom:8, fontSize:10, fontWeight:600, color:'var(--text-label)', textTransform:'uppercase', letterSpacing:'0.12em' }}>워크플로우</p>
-        {NAV.map(({ to, icon: Icon, label, step: s, highlight }) => {
-          const done   = s < step
-          const locked = s > step + 1
-          return (
-            <NavLink key={to} to={to} style={{ textDecoration:'none', pointerEvents:locked?'none':'auto', opacity:locked?0.4:1 }}>
-              {({ isActive }) => (
-                <div style={{
-                  display:'flex', alignItems:'center', gap:10,
-                  padding:'9px 10px', borderRadius:10, marginBottom:2,
-                  fontSize:13, fontWeight: highlight ? 600 : 500, cursor:locked?'not-allowed':'pointer',
-                  transition:'all 0.15s',
-                  color: isActive ? '#6366f1' : highlight ? '#7c3aed' : 'var(--text-3)',
-                  background: isActive ? 'rgba(99,102,241,0.08)' : highlight ? 'rgba(124,58,237,0.06)' : 'transparent',
-                  boxShadow: isActive ? '0 0 0 1px rgba(99,102,241,0.15)' : highlight ? '0 0 0 1px rgba(124,58,237,0.15)' : 'none',
-                }}
-                onMouseEnter={e => { if(!isActive && !locked) e.currentTarget.style.background= highlight ? 'rgba(124,58,237,0.1)' : 'var(--surface-alt)' }}
-                onMouseLeave={e => { if(!isActive) e.currentTarget.style.background= highlight ? 'rgba(124,58,237,0.06)' : 'transparent' }}
-                >
-                  <span style={{ width:16, height:16, flexShrink:0, color: isActive ? '#6366f1' : done ? '#10b981' : highlight ? '#7c3aed' : 'var(--border)' }}>
-                    {done && !isActive ? <CheckIcon /> : <Icon />}
-                  </span>
-                  <span style={{ flex:1 }}>{label}</span>
-                  {highlight && !isActive && <span style={{ fontSize:9, fontWeight:700, color:'#7c3aed', background:'rgba(124,58,237,0.12)', padding:'2px 6px', borderRadius:4 }}>AI</span>}
-                  {done && !isActive && !highlight && (
-                    <span style={{ width:6, height:6, borderRadius:'50%', background:'#10b981', flexShrink:0 }} />
-                  )}
-                </div>
-              )}
-            </NavLink>
-          )
-        })}
-      </nav>
-
-      {/* Status */}
-      <div style={{ margin:'0 10px 8px', borderRadius:12, border:'1px solid var(--border)', overflow:'hidden', background:'var(--surface-alt)', transition:'background 0.2s, border-color 0.2s' }}>
-        <div style={{ padding:'10px 14px', borderBottom:'1px solid var(--border-sub)' }}>
-          <p style={{ fontSize:10, fontWeight:600, color:'var(--text-label)', textTransform:'uppercase', letterSpacing:'0.1em', margin:0 }}>시스템 상태</p>
-        </div>
-        <div style={{ padding:'12px 14px', display:'flex', flexDirection:'column', gap:10 }}>
-          <StatusRow label="데이터셋"  active={state.has_data}
-            value={state.data_shape ? `${state.data_shape[0].toLocaleString()} 행` : '미업로드'} />
-          <StatusRow label="학습 모델" active={state.has_model}
-            value={state.best_model ? state.best_model.split(' ')[0] : '없음'} />
-          {state.cv_results && (
-            <StatusRow label="ROC-AUC" active={true} value={state.cv_results[0]?.roc_auc ?? '—'} accent />
-          )}
-        </div>
-      </div>
-
-      {/* 로그인 / 유저 */}
-      <div style={{ margin:'0 10px 12px' }}>
-        {user ? (
-          <div style={{ borderRadius:12, border:'1px solid var(--border)', padding:'10px 12px', background:'var(--surface-alt)', display:'flex', alignItems:'center', gap:10 }}>
-            {user.picture
-              ? <img src={user.picture} alt="" style={{ width:32, height:32, borderRadius:'50%', flexShrink:0 }} />
-              : <div style={{ width:32, height:32, borderRadius:'50%', background:'#6366f1', flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:700, fontSize:14 }}>{user.name?.[0]}</div>
-            }
-            <div style={{ flex:1, minWidth:0 }}>
-              <p style={{ fontSize:12, fontWeight:600, color:'var(--text)', margin:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{user.name}</p>
-              <p style={{ fontSize:10, color:'var(--text-label)', margin:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{user.email}</p>
+      <aside style={{
+        width: 236, flexShrink: 0, display: 'flex', flexDirection: 'column',
+        background: 'var(--surface)', borderRight: '1px solid var(--border)',
+        transition: 'background 0.2s, border-color 0.2s, transform 0.3s',
+        zIndex: 50,
+      }} className={`sidebar ${isOpen ? 'sidebar-open' : ''}`}>
+        {/* Logo */}
+        <div style={{ padding:'20px 20px 16px', borderBottom:'1px solid var(--border-sub)', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+          <NavLink to="/" onClick={onClose} style={{ textDecoration:'none', display:'flex', alignItems:'center', gap:12, flex:1, minWidth:0 }}>
+            <div style={{
+              width:36, height:36, borderRadius:12, flexShrink:0,
+              background: 'linear-gradient(135deg, #6366f1 0%, #7c3aed 100%)',
+              display:'flex', alignItems:'center', justifyContent:'center',
+              boxShadow: '0 4px 12px rgba(99,102,241,0.3)',
+            }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+              </svg>
             </div>
-            <button onClick={logout} title="로그아웃" style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-label)', padding:4, borderRadius:6, flexShrink:0 }}
-              onMouseEnter={e => e.currentTarget.style.color='#e11d48'}
-              onMouseLeave={e => e.currentTarget.style.color='var(--text-label)'}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            <div style={{ minWidth:0 }}>
+              <div style={{ fontWeight:700, fontSize:14, color:'var(--text)', lineHeight:1.2 }}>ModelMate</div>
+              <div style={{ fontSize:11, color:'var(--text-label)', marginTop:2 }}>범용 AutoML 플랫폼</div>
+            </div>
+          </NavLink>
+          <div style={{ display:'flex', alignItems:'center', gap:4 }}>
+            <button onClick={toggle} className="theme-toggle" title={dark ? '라이트 모드' : '다크 모드'}>
+              {dark
+                ? <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z"/></svg>
+              }
+            </button>
+            {/* 모바일 닫기 버튼 */}
+            <button onClick={onClose} className="sidebar-close-btn" style={{
+              background:'none', border:'none', cursor:'pointer', color:'var(--text-label)',
+              padding:4, borderRadius:6, display:'none',
+            }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
             </button>
           </div>
-        ) : (
-          <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
-            <p style={{ fontSize:10, fontWeight:600, color:'var(--text-label)', textTransform:'uppercase', letterSpacing:'0.1em', margin:'0 0 4px' }}>로그인</p>
-            <GoogleLogin
-              onSuccess={handleGoogleSuccess}
-              onError={() => console.error('Google 로그인 실패')}
-              size="medium"
-              width="214"
-              text="signin_with"
-              shape="rectangular"
-            />
+        </div>
+
+        {/* Nav */}
+        <nav style={{ flex:1, padding:'12px 10px', overflowY:'auto' }}>
+          <p style={{ padding:'0 10px', marginBottom:8, fontSize:10, fontWeight:600, color:'var(--text-label)', textTransform:'uppercase', letterSpacing:'0.12em' }}>워크플로우</p>
+          {NAV.map(({ to, icon: Icon, label, step: s, highlight }) => {
+            const done   = s < step
+            const locked = s > step + 1
+            return (
+              <NavLink key={to} to={to} onClick={onClose} style={{ textDecoration:'none', pointerEvents:locked?'none':'auto', opacity:locked?0.4:1 }}>
+                {({ isActive }) => (
+                  <div style={{
+                    display:'flex', alignItems:'center', gap:10,
+                    padding:'9px 10px', borderRadius:10, marginBottom:2,
+                    fontSize:13, fontWeight: highlight ? 600 : 500, cursor:locked?'not-allowed':'pointer',
+                    transition:'all 0.15s',
+                    color: isActive ? '#6366f1' : highlight ? '#7c3aed' : 'var(--text-3)',
+                    background: isActive ? 'rgba(99,102,241,0.08)' : highlight ? 'rgba(124,58,237,0.06)' : 'transparent',
+                    boxShadow: isActive ? '0 0 0 1px rgba(99,102,241,0.15)' : highlight ? '0 0 0 1px rgba(124,58,237,0.15)' : 'none',
+                  }}
+                  onMouseEnter={e => { if(!isActive && !locked) e.currentTarget.style.background= highlight ? 'rgba(124,58,237,0.1)' : 'var(--surface-alt)' }}
+                  onMouseLeave={e => { if(!isActive) e.currentTarget.style.background= highlight ? 'rgba(124,58,237,0.06)' : 'transparent' }}
+                  >
+                    <span style={{ width:16, height:16, flexShrink:0, color: isActive ? '#6366f1' : done ? '#10b981' : highlight ? '#7c3aed' : 'var(--border)' }}>
+                      {done && !isActive ? <CheckIcon /> : <Icon />}
+                    </span>
+                    <span style={{ flex:1 }}>{label}</span>
+                    {highlight && !isActive && <span style={{ fontSize:9, fontWeight:700, color:'#7c3aed', background:'rgba(124,58,237,0.12)', padding:'2px 6px', borderRadius:4 }}>AI</span>}
+                    {done && !isActive && !highlight && (
+                      <span style={{ width:6, height:6, borderRadius:'50%', background:'#10b981', flexShrink:0 }} />
+                    )}
+                  </div>
+                )}
+              </NavLink>
+            )
+          })}
+        </nav>
+
+        {/* Status */}
+        <div style={{ margin:'0 10px 8px', borderRadius:12, border:'1px solid var(--border)', overflow:'hidden', background:'var(--surface-alt)', transition:'background 0.2s, border-color 0.2s' }}>
+          <div style={{ padding:'10px 14px', borderBottom:'1px solid var(--border-sub)' }}>
+            <p style={{ fontSize:10, fontWeight:600, color:'var(--text-label)', textTransform:'uppercase', letterSpacing:'0.1em', margin:0 }}>시스템 상태</p>
           </div>
-        )}
-      </div>
-    </aside>
+          <div style={{ padding:'12px 14px', display:'flex', flexDirection:'column', gap:10 }}>
+            <StatusRow label="데이터셋"  active={state.has_data}
+              value={state.data_shape ? `${state.data_shape[0].toLocaleString()} 행` : '미업로드'} />
+            <StatusRow label="학습 모델" active={state.has_model}
+              value={state.best_model ? state.best_model.split(' ')[0] : '없음'} />
+            {state.cv_results && (
+              <StatusRow label="ROC-AUC" active={true} value={state.cv_results[0]?.roc_auc ?? '—'} accent />
+            )}
+          </div>
+        </div>
+
+        {/* 로그인 / 유저 */}
+        <div style={{ margin:'0 10px 12px' }}>
+          {user ? (
+            <div style={{ borderRadius:12, border:'1px solid var(--border)', padding:'10px 12px', background:'var(--surface-alt)', display:'flex', alignItems:'center', gap:10 }}>
+              {user.picture
+                ? <img src={user.picture} alt="" style={{ width:32, height:32, borderRadius:'50%', flexShrink:0 }} />
+                : <div style={{ width:32, height:32, borderRadius:'50%', background:'#6366f1', flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:700, fontSize:14 }}>{user.name?.[0]}</div>
+              }
+              <div style={{ flex:1, minWidth:0 }}>
+                <p style={{ fontSize:12, fontWeight:600, color:'var(--text)', margin:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{user.name}</p>
+                <p style={{ fontSize:10, color:'var(--text-label)', margin:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{user.email}</p>
+              </div>
+              <button onClick={logout} title="로그아웃" style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-label)', padding:4, borderRadius:6, flexShrink:0 }}
+                onMouseEnter={e => e.currentTarget.style.color='#e11d48'}
+                onMouseLeave={e => e.currentTarget.style.color='var(--text-label)'}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+              </button>
+            </div>
+          ) : (
+            <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+              <p style={{ fontSize:10, fontWeight:600, color:'var(--text-label)', textTransform:'uppercase', letterSpacing:'0.1em', margin:'0 0 4px' }}>로그인</p>
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={() => console.error('Google 로그인 실패')}
+                size="medium"
+                width="214"
+                text="signin_with"
+                shape="rectangular"
+              />
+            </div>
+          )}
+        </div>
+      </aside>
+    </>
   )
 }
 
