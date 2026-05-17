@@ -1,7 +1,8 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
@@ -12,8 +13,57 @@ from sklearn.model_selection import cross_val_score, StratifiedKFold, KFold
 from sklearn.metrics import accuracy_score, f1_score, roc_auc_score, r2_score, mean_squared_error, mean_absolute_error
 from sklearn.preprocessing import LabelEncoder
 from pydantic import BaseModel
-import json, os, io, asyncio
+import json, os, io, asyncio, sqlite3
 from datetime import datetime
+
+# ── Google OAuth ──────────────────────────────────────────
+from google.oauth2 import id_token
+from google.auth.transport import requests as grequests
+from jose import jwt as jose_jwt
+
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "373474705259-7b18amrkom84aqqt59n87lglhrgq1trj.apps.googleusercontent.com")
+JWT_SECRET = os.getenv("JWT_SECRET", "modelmate-secret-key-change-in-prod")
+JWT_ALGORITHM = "HS256"
+security = HTTPBearer(auto_error=False)
+
+DB_PATH = os.path.join(os.path.dirname(__file__), "..", "modelmate.db")
+
+def get_db():
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+def init_db():
+    conn = get_db()
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id TEXT PRIMARY KEY,
+            email TEXT UNIQUE NOT NULL,
+            name TEXT,
+            picture TEXT,
+            created_at TEXT
+        )
+    """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS experiments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id TEXT NOT NULL,
+            data TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    if not credentials:
+        return None
+    try:
+        payload = jose_jwt.decode(credentials.credentials, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        return payload
+    except Exception:
+        return None
 
 try:
     import shap; SHAP_OK = True
@@ -50,6 +100,8 @@ app = FastAPI(title="ModelMate API")
 app.add_middleware(CORSMiddleware, allow_origins=["*"],
                    allow_methods=["*"], allow_headers=["*"])
 
+init_db()
+
 HISTORY_FILE = "experiment_history.json"
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")
 STATE: dict = {}
@@ -74,7 +126,15 @@ def load_history():
             return json.load(f)
     return []
 
-def save_history(rec):
+def save_history(rec, user_id=None):
+    if user_id:
+        conn = get_db()
+        conn.execute(
+            "INSERT INTO experiments (user_id, data, created_at) VALUES (?,?,?)",
+            (user_id, json.dumps(rec, ensure_ascii=False), datetime.now().isoformat())
+        )
+        conn.commit()
+        conn.close()
     h = load_history(); h.append(rec)
     with open(HISTORY_FILE, "w", encoding="utf-8") as f:
         json.dump(h, f, ensure_ascii=False, indent=2)
@@ -802,9 +862,59 @@ async def get_columns():
         "current_drop": STATE.get("drop_cols", []),
     }
 
+# ── 인증 ─────────────────────────────────────────────────
+class GoogleTokenBody(BaseModel):
+    credential: str
+
+@app.post("/api/auth/google")
+async def auth_google(body: GoogleTokenBody):
+    try:
+        info = id_token.verify_oauth2_token(
+            body.credential, grequests.Request(), GOOGLE_CLIENT_ID
+        )
+    except Exception as e:
+        raise HTTPException(400, f"Google 토큰 검증 실패: {e}")
+
+    user_id = info["sub"]
+    email   = info.get("email", "")
+    name    = info.get("name", "")
+    picture = info.get("picture", "")
+
+    conn = get_db()
+    existing = conn.execute("SELECT id FROM users WHERE id=?", (user_id,)).fetchone()
+    if not existing:
+        conn.execute(
+            "INSERT INTO users (id, email, name, picture, created_at) VALUES (?,?,?,?,?)",
+            (user_id, email, name, picture, datetime.now().isoformat())
+        )
+        conn.commit()
+    conn.close()
+
+    token = jose_jwt.encode(
+        {"sub": user_id, "email": email, "name": name, "picture": picture},
+        JWT_SECRET, algorithm=JWT_ALGORITHM
+    )
+    return {"token": token, "user": {"id": user_id, "email": email, "name": name, "picture": picture}}
+
+@app.get("/api/auth/me")
+async def auth_me(user=Depends(get_current_user)):
+    if not user:
+        raise HTTPException(401, "로그인이 필요합니다")
+    return user
+
 # ── 기록 ─────────────────────────────────────────────────
 @app.get("/api/history")
-async def get_history(): return load_history()
+async def get_history(user=Depends(get_current_user)):
+    if user:
+        conn = get_db()
+        rows = conn.execute(
+            "SELECT data, created_at FROM experiments WHERE user_id=? ORDER BY id DESC LIMIT 50",
+            (user["sub"],)
+        ).fetchall()
+        conn.close()
+        user_history = [json.loads(r["data"]) for r in rows]
+        return user_history if user_history else load_history()
+    return load_history()
 
 @app.delete("/api/history")
 async def clear_history():

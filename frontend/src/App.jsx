@@ -1,4 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { GoogleOAuthProvider } from '@react-oauth/google'
+import { AuthProvider, useAuth } from './AuthContext'
 import Sidebar from './components/Sidebar'
 import Home from './pages/Home'
 import Upload from './pages/Upload'
@@ -7,6 +9,8 @@ import XAI from './pages/XAI'
 import History from './pages/History'
 import Report from './pages/Report'
 import Agent from './pages/Agent'
+
+const GOOGLE_CLIENT_ID = '373474705259-7b18amrkom84aqqt59n87lglhrgq1trj.apps.googleusercontent.com'
 
 const PAGE_META = {
   '/upload':      { title: '데이터 업로드',       desc: 'CSV / TXT 파일을 업로드하고 EDA를 수행합니다' },
@@ -69,23 +73,27 @@ function Layout({ children }) {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/*" element={
-          <Layout>
-            <Routes>
-              <Route path="/upload"      element={<Upload />} />
-              <Route path="/agent"       element={<Agent />} />
-              <Route path="/model-lab"   element={<ModelLab />} />
-              <Route path="/xai"         element={<XAI />} />
-              <Route path="/history"     element={<History />} />
-              <Route path="/report"      element={<Report />} />
-              <Route path="*"            element={<Navigate to="/" replace />} />
-            </Routes>
-          </Layout>
-        } />
-      </Routes>
-    </BrowserRouter>
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/*" element={
+              <Layout>
+                <Routes>
+                  <Route path="/upload"    element={<Upload />} />
+                  <Route path="/agent"     element={<Agent />} />
+                  <Route path="/model-lab" element={<ModelLab />} />
+                  <Route path="/xai"       element={<XAI />} />
+                  <Route path="/history"   element={<History />} />
+                  <Route path="/report"    element={<Report />} />
+                  <Route path="*"          element={<Navigate to="/" replace />} />
+                </Routes>
+              </Layout>
+            } />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
+    </GoogleOAuthProvider>
   )
 }

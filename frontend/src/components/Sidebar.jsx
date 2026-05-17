@@ -1,7 +1,9 @@
 import { NavLink } from 'react-router-dom'
 import { useEffect, useState } from 'react'
+import { GoogleLogin } from '@react-oauth/google'
 import api from '../api'
 import { useTheme } from '../ThemeContext'
+import { useAuth } from '../AuthContext'
 
 const NAV = [
   { to: '/upload',    icon: UploadIcon, label: '데이터 업로드', step: 1 },
@@ -15,6 +17,14 @@ const NAV = [
 export default function Sidebar() {
   const [state, setState] = useState({})
   const { dark, toggle } = useTheme()
+  const { user, login, logout } = useAuth()
+
+  async function handleGoogleSuccess(credentialResponse) {
+    try {
+      const { data } = await api.post('/auth/google', { credential: credentialResponse.credential })
+      login(data.token, data.user)
+    } catch(e) { console.error('로그인 실패', e) }
+  }
 
   useEffect(() => {
     const fetch = () => api.get('/state').then(r => setState(r.data)).catch(() => {})
@@ -94,7 +104,7 @@ export default function Sidebar() {
       </nav>
 
       {/* Status */}
-      <div style={{ margin:'0 10px 10px', borderRadius:12, border:'1px solid var(--border)', overflow:'hidden', background:'var(--surface-alt)', transition:'background 0.2s, border-color 0.2s' }}>
+      <div style={{ margin:'0 10px 8px', borderRadius:12, border:'1px solid var(--border)', overflow:'hidden', background:'var(--surface-alt)', transition:'background 0.2s, border-color 0.2s' }}>
         <div style={{ padding:'10px 14px', borderBottom:'1px solid var(--border-sub)' }}>
           <p style={{ fontSize:10, fontWeight:600, color:'var(--text-label)', textTransform:'uppercase', letterSpacing:'0.1em', margin:0 }}>시스템 상태</p>
         </div>
@@ -107,6 +117,39 @@ export default function Sidebar() {
             <StatusRow label="ROC-AUC" active={true} value={state.cv_results[0]?.roc_auc ?? '—'} accent />
           )}
         </div>
+      </div>
+
+      {/* 로그인 / 유저 */}
+      <div style={{ margin:'0 10px 12px' }}>
+        {user ? (
+          <div style={{ borderRadius:12, border:'1px solid var(--border)', padding:'10px 12px', background:'var(--surface-alt)', display:'flex', alignItems:'center', gap:10 }}>
+            {user.picture
+              ? <img src={user.picture} alt="" style={{ width:32, height:32, borderRadius:'50%', flexShrink:0 }} />
+              : <div style={{ width:32, height:32, borderRadius:'50%', background:'#6366f1', flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:700, fontSize:14 }}>{user.name?.[0]}</div>
+            }
+            <div style={{ flex:1, minWidth:0 }}>
+              <p style={{ fontSize:12, fontWeight:600, color:'var(--text)', margin:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{user.name}</p>
+              <p style={{ fontSize:10, color:'var(--text-label)', margin:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{user.email}</p>
+            </div>
+            <button onClick={logout} title="로그아웃" style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-label)', padding:4, borderRadius:6, flexShrink:0 }}
+              onMouseEnter={e => e.currentTarget.style.color='#e11d48'}
+              onMouseLeave={e => e.currentTarget.style.color='var(--text-label)'}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            </button>
+          </div>
+        ) : (
+          <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+            <p style={{ fontSize:10, fontWeight:600, color:'var(--text-label)', textTransform:'uppercase', letterSpacing:'0.1em', margin:'0 0 4px' }}>로그인</p>
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => console.error('Google 로그인 실패')}
+              size="medium"
+              width="214"
+              text="signin_with"
+              shape="rectangular"
+            />
+          </div>
+        )}
       </div>
     </aside>
   )
