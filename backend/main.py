@@ -1008,6 +1008,7 @@ async def get_state():
         "data_shape":    list(STATE["X"].shape) if STATE.get("X") is not None else None,
         "shap_ok":       SHAP_OK,
         "optuna_ok":     OPTUNA_OK,
+        "gemini_ok":     GEMINI_OK,
         "col_labels":    STATE.get("col_labels", {}),
     }
 
