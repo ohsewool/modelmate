@@ -1000,9 +1000,9 @@ async def clear_history():
 @app.get("/api/debug-env")
 async def debug_env():
     key = os.getenv("GEMINI_API_KEY", "")
-    all_keys = [k for k in os.environ.keys()]
+    all_keys = sorted(os.environ.keys())
     gemini_keys = [k for k in all_keys if "GEMINI" in k.upper() or "API" in k.upper()]
-    return {"key_length": len(key), "key_prefix": key[:8] if key else "", "gemini_ok": GEMINI_OK, "gemini_error": _GEMINI_ERROR, "env_count": len(all_keys), "gemini_related_keys": gemini_keys}
+    return {"key_length": len(key), "key_prefix": key[:8] if key else "", "gemini_ok": GEMINI_OK, "gemini_error": _GEMINI_ERROR, "env_count": len(all_keys), "gemini_related_keys": gemini_keys, "all_env_keys": all_keys}
 
 @app.get("/api/state")
 async def get_state():
