@@ -109,7 +109,7 @@ try:
     _GEMINI_KEY = os.getenv("GEMINI_API_KEY", "REDACTED_LEAKED_KEY_SEE_SECURITY_MD")
     if _GEMINI_KEY:
         genai.configure(api_key=_GEMINI_KEY)
-        _GEMINI_MODEL = genai.GenerativeModel("gemini-pro")
+        _GEMINI_MODEL = genai.GenerativeModel("gemini-2.0-flash")
         GEMINI_OK = True
     else:
         GEMINI_OK = False
