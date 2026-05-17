@@ -70,7 +70,7 @@ export default function Home() {
           </p>
 
           <button
-            onClick={() => nav('/upload')}
+            onClick={() => nav('/login')}
             style={{
               padding: '16px 40px', borderRadius: 14, border: 'none', cursor: 'pointer',
               background: '#ffffff', color: '#6366f1', fontWeight: 700, fontSize: 16,
@@ -160,7 +160,7 @@ export default function Home() {
             업로드하면 AI가 자동으로 분석하고 결과를 알려드려요
           </p>
           <button
-            onClick={() => nav('/upload')}
+            onClick={() => nav('/login')}
             style={{
               padding: '14px 36px', borderRadius: 12, border: 'none', cursor: 'pointer',
               background: '#ffffff', color: '#6366f1', fontWeight: 700, fontSize: 15,

@@ -9,6 +9,7 @@ import XAI from './pages/XAI'
 import History from './pages/History'
 import Report from './pages/Report'
 import Agent from './pages/Agent'
+import Login from './pages/Login'
 
 const GOOGLE_CLIENT_ID = '373474705259-7b18amrkom84aqqt59n87lglhrgq1trj.apps.googleusercontent.com'
 
@@ -78,6 +79,7 @@ export default function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
             <Route path="/*" element={
               <Layout>
                 <Routes>
