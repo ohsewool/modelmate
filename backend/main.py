@@ -106,7 +106,7 @@ except: OPTUNA_OK = False
 _GEMINI_ERROR = ""
 try:
     import google.generativeai as genai
-    _GEMINI_KEY = os.getenv("GEMINI_API_KEY", "")
+    _GEMINI_KEY = os.getenv("GEMINI_API_KEY", "REDACTED_LEAKED_KEY_SEE_SECURITY_MD")
     if _GEMINI_KEY:
         genai.configure(api_key=_GEMINI_KEY)
         _GEMINI_MODEL = genai.GenerativeModel("gemini-1.5-flash")
