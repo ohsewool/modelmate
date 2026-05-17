@@ -103,17 +103,20 @@ try:
     import optuna; optuna.logging.set_verbosity(optuna.logging.WARNING); OPTUNA_OK = True
 except: OPTUNA_OK = False
 
+_GEMINI_ERROR = ""
 try:
     import google.generativeai as genai
     _GEMINI_KEY = os.getenv("GEMINI_API_KEY", "")
     if _GEMINI_KEY:
         genai.configure(api_key=_GEMINI_KEY)
-        _GEMINI_MODEL = genai.GenerativeModel("gemini-2.0-flash")
+        _GEMINI_MODEL = genai.GenerativeModel("gemini-1.5-flash")
         GEMINI_OK = True
     else:
         GEMINI_OK = False
-except:
+        _GEMINI_ERROR = "API 키 없음"
+except Exception as _e:
     GEMINI_OK = False
+    _GEMINI_ERROR = str(_e)
 
 def _call_gemini_sync(prompt: str) -> str:
     try:
@@ -1009,6 +1012,7 @@ async def get_state():
         "shap_ok":       SHAP_OK,
         "optuna_ok":     OPTUNA_OK,
         "gemini_ok":     GEMINI_OK,
+        "gemini_error":  _GEMINI_ERROR,
         "col_labels":    STATE.get("col_labels", {}),
     }
 
