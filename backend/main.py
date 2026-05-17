@@ -174,9 +174,9 @@ MODELS = {
     "Decision Tree":       lambda: DecisionTreeClassifier(random_state=42),
 }
 if XGB_OK:
-    MODELS["XGBoost"]  = lambda: XGBClassifier(n_estimators=100, random_state=42, eval_metric="logloss", verbosity=0, n_jobs=-1)
+    MODELS["XGBoost"]  = lambda: XGBClassifier(n_estimators=100, random_state=42, eval_metric="logloss", verbosity=0, n_jobs=1)
 if LGBM_OK:
-    MODELS["LightGBM"] = lambda: LGBMClassifier(n_estimators=100, random_state=42, verbosity=-1, n_jobs=-1)
+    MODELS["LightGBM"] = lambda: LGBMClassifier(n_estimators=100, random_state=42, verbosity=-1, n_jobs=1)
 
 REGRESSION_MODELS = {
     "Random Forest":    lambda: RandomForestRegressor(n_estimators=100, random_state=42),
@@ -185,9 +185,9 @@ REGRESSION_MODELS = {
     "Decision Tree":    lambda: DecisionTreeRegressor(random_state=42),
 }
 if XGB_OK:
-    REGRESSION_MODELS["XGBoost"]  = lambda: XGBRegressor(n_estimators=100, random_state=42, verbosity=0, n_jobs=-1)
+    REGRESSION_MODELS["XGBoost"]  = lambda: XGBRegressor(n_estimators=100, random_state=42, verbosity=0, n_jobs=1)
 if LGBM_OK:
-    REGRESSION_MODELS["LightGBM"] = lambda: LGBMRegressor(n_estimators=100, random_state=42, verbosity=-1, n_jobs=-1)
+    REGRESSION_MODELS["LightGBM"] = lambda: LGBMRegressor(n_estimators=100, random_state=42, verbosity=-1, n_jobs=1)
 
 def load_history():
     if os.path.exists(HISTORY_FILE):
@@ -503,22 +503,39 @@ async def run_cv():
     n_unique = STATE.get("n_unique_target", 2)
     is_binary = n_unique == 2
     cv = StratifiedKFold(n_splits=3, shuffle=True, random_state=42)
+    scoring = "roc_auc" if is_binary else "roc_auc_ovr_weighted"
     results = []
     for name, fn in MODELS.items():
-        m = fn()
-        acc = float(cross_val_score(m, X, y, cv=cv, scoring="accuracy").mean())
-        f1  = float(cross_val_score(m, X, y, cv=cv, scoring="f1_weighted").mean())
-        scoring = "roc_auc" if is_binary else "roc_auc_ovr_weighted"
         try:
-            roc = float(cross_val_score(m, X, y, cv=cv, scoring=scoring).mean())
-        except:
-            roc = acc
-        results.append({"model": name,
-                        "accuracy": round(acc, 4), "f1": round(f1, 4), "roc_auc": round(roc, 4)})
+            m = fn()
+            acc = float(cross_val_score(m, X, y, cv=cv, scoring="accuracy").mean())
+            f1  = float(cross_val_score(m, X, y, cv=cv, scoring="f1_weighted").mean())
+            try:
+                roc = float(cross_val_score(m, X, y, cv=cv, scoring=scoring).mean())
+            except:
+                roc = acc
+            results.append({"model": name,
+                            "accuracy": round(acc, 4), "f1": round(f1, 4), "roc_auc": round(roc, 4)})
+        except Exception as e:
+            print(f"[CV SKIP] {name}: {e}")
+    if not results:
+        raise HTTPException(500, "모든 모델 학습 실패")
     results.sort(key=lambda x: x["roc_auc"], reverse=True)
     best_name = results[0]["model"]
-    bm = MODELS[best_name](); bm.fit(X, y)
-    preds = bm.predict(X).tolist()
+    try:
+        bm = MODELS[best_name](); bm.fit(X, y)
+        preds = bm.predict(X).tolist()
+    except Exception as e:
+        # 최고 모델이 실패하면 다음 모델로 폴백
+        for r in results[1:]:
+            try:
+                best_name = r["model"]
+                bm = MODELS[best_name](); bm.fit(X, y)
+                preds = bm.predict(X).tolist()
+                break
+            except: continue
+        else:
+            raise HTTPException(500, f"모델 학습 실패: {e}")
     STATE.update({"cv_results": results, "best_model_name": best_name,
                   "best_model": bm, "predictions": preds,
                   "optuna_result": None, "shap_values": None})
