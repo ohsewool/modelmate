@@ -33,7 +33,7 @@ export default function Sidebar({ isOpen, onClose }) {
     return () => clearInterval(id)
   }, [])
 
-  const step = state.has_model ? 3 : state.has_data ? 2 : 1
+  const step = state.has_model ? 6 : state.has_data ? 2 : 1
 
   return (
     <>
