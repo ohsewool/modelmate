@@ -185,48 +185,99 @@ export default function Login() {
         </button>
       </div>
 
-      {/* 오른쪽 — 브랜딩 */}
+      {/* 오른쪽 — 앱 미리보기 */}
       <div style={{
         flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center',
-        padding: '60px 72px',
-        background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #4c1d95 100%)',
+        alignItems: 'center', padding: '48px 48px',
+        background: '#f5f3ff',
         position: 'relative', overflow: 'hidden',
       }}>
-        <div style={{ position:'absolute', top:-120, right:-120, width:400, height:400, borderRadius:'50%', background:'rgba(255,255,255,0.04)', pointerEvents:'none' }} />
-        <div style={{ position:'absolute', bottom:-80, left:-80, width:280, height:280, borderRadius:'50%', background:'rgba(255,255,255,0.04)', pointerEvents:'none' }} />
+        {/* 배경 도트 패턴 */}
+        <svg style={{ position:'absolute', inset:0, width:'100%', height:'100%', opacity:0.4 }}>
+          <defs>
+            <pattern id="dots" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse">
+              <circle cx="2" cy="2" r="1.2" fill="#c4b5fd" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#dots)" />
+        </svg>
 
-        <div style={{ position: 'relative' }}>
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-            padding: '6px 14px', borderRadius: 99, marginBottom: 40,
-            background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)',
-          }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981', display: 'inline-block' }} />
-            <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: 500 }}>AI 자동 분석 플랫폼</span>
-          </div>
+        <div style={{ position:'relative', width:'100%', maxWidth:400 }}>
 
-          <h2 style={{ fontSize: 42, fontWeight: 900, color: '#ffffff', margin: '0 0 20px', lineHeight: 1.2, letterSpacing: '-0.03em' }}>
-            예측은 코딩이<br />아니라 데이터다.
-          </h2>
-          <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.55)', margin: '0 0 52px', lineHeight: 1.8, maxWidth: 380 }}>
-            CSV 파일 하나만 있으면 AI가 자동으로 분석하고,
-            어떤 항목이 결과에 영향을 주는지 알려드립니다.
+          {/* 상단 라벨 */}
+          <p style={{ fontSize:12, fontWeight:600, color:'#7c3aed', textTransform:'uppercase', letterSpacing:'0.1em', margin:'0 0 16px' }}>
+            분석 결과 미리보기
           </p>
 
-          {[
-            { icon: '🤖', text: 'AI가 최적 모델 자동 선택' },
-            { icon: '📊', text: '예측 근거를 차트로 시각화' },
-            { icon: '📄', text: '분석 결과 PDF 보고서 생성' },
-          ].map((f, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-              <div style={{
-                width: 34, height: 34, borderRadius: 9, flexShrink: 0,
-                background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15,
-              }}>{f.icon}</div>
-              <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.75)', fontWeight: 500 }}>{f.text}</span>
+          {/* 카드 1 — 모델 성능 */}
+          <div style={{
+            background:'#fff', borderRadius:16, padding:'18px 20px',
+            boxShadow:'0 4px 24px rgba(99,102,241,0.12)', marginBottom:12,
+            border:'1px solid #ede9fe',
+          }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
+              <span style={{ fontSize:13, fontWeight:600, color:'#374151' }}>모델 성능 비교</span>
+              <span style={{ fontSize:11, color:'#10b981', fontWeight:600, background:'#f0fdf4', padding:'2px 8px', borderRadius:99 }}>✓ 완료</span>
             </div>
-          ))}
+            {[
+              { name:'Random Forest', score:0.94, color:'#6366f1' },
+              { name:'Gradient Boosting', score:0.91, color:'#7c3aed' },
+              { name:'Logistic Regression', score:0.83, color:'#a78bfa' },
+            ].map((m,i) => (
+              <div key={i} style={{ marginBottom: i < 2 ? 10 : 0 }}>
+                <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4 }}>
+                  <span style={{ fontSize:11, color:'#6b7280' }}>{m.name}</span>
+                  <span style={{ fontSize:11, fontWeight:700, color:m.color }}>{m.score}</span>
+                </div>
+                <div style={{ height:6, borderRadius:99, background:'#f3f4f6' }}>
+                  <div style={{ height:'100%', width:`${m.score*100}%`, borderRadius:99, background:m.color, transition:'width 1s' }} />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* 카드 2 — 피처 중요도 */}
+          <div style={{
+            background:'#fff', borderRadius:16, padding:'18px 20px',
+            boxShadow:'0 4px 24px rgba(99,102,241,0.12)', marginBottom:12,
+            border:'1px solid #ede9fe',
+          }}>
+            <span style={{ fontSize:13, fontWeight:600, color:'#374151', display:'block', marginBottom:14 }}>주요 영향 요인</span>
+            {[
+              { name:'나이', pct:38 },
+              { name:'소득 수준', pct:27 },
+              { name:'사용 기간', pct:21 },
+              { name:'지역', pct:14 },
+            ].map((f,i) => (
+              <div key={i} style={{ display:'flex', alignItems:'center', gap:10, marginBottom: i < 3 ? 8 : 0 }}>
+                <span style={{ fontSize:11, color:'#6b7280', width:64, flexShrink:0 }}>{f.name}</span>
+                <div style={{ flex:1, height:8, borderRadius:99, background:'#f3f4f6' }}>
+                  <div style={{ height:'100%', width:`${f.pct}%`, borderRadius:99, background:'linear-gradient(90deg,#6366f1,#a78bfa)' }} />
+                </div>
+                <span style={{ fontSize:11, fontWeight:600, color:'#6366f1', width:28, textAlign:'right', flexShrink:0 }}>{f.pct}%</span>
+              </div>
+            ))}
+          </div>
+
+          {/* 카드 3 — KPI 요약 */}
+          <div style={{
+            display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:10,
+          }}>
+            {[
+              { label:'정확도', value:'94.2%', color:'#6366f1' },
+              { label:'데이터', value:'10,234행', color:'#7c3aed' },
+              { label:'소요 시간', value:'12초', color:'#059669' },
+            ].map((k,i) => (
+              <div key={i} style={{
+                background:'#fff', borderRadius:12, padding:'14px 12px', textAlign:'center',
+                boxShadow:'0 2px 12px rgba(99,102,241,0.08)', border:'1px solid #ede9fe',
+              }}>
+                <p style={{ fontSize:17, fontWeight:800, color:k.color, margin:'0 0 4px' }}>{k.value}</p>
+                <p style={{ fontSize:10, color:'#9ca3af', margin:0, fontWeight:500 }}>{k.label}</p>
+              </div>
+            ))}
+          </div>
+
         </div>
       </div>
     </div>
