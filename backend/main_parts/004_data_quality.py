@@ -1,4 +1,5 @@
 import re
+import warnings
 
 def decode_upload_bytes(data: bytes):
     for enc in ("utf-8-sig", "utf-8", "cp949", "euc-kr", "latin1"):
@@ -20,35 +21,41 @@ def read_table_text(raw: str, filename: str = ""):
         return df, sep
 
 def looks_like_datetime(series):
-    if not (series.dtype == "object" or str(series.dtype).startswith("datetime")):
+    if str(series.dtype).startswith("datetime"):
+        return True
+    if pd.api.types.is_numeric_dtype(series):
         return False
     sample = series.dropna().astype(str).head(50)
     if len(sample) < 5:
         return False
-    parsed = pd.to_datetime(sample, errors="coerce")
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        parsed = pd.to_datetime(sample, errors="coerce")
     return float(parsed.notna().mean()) >= 0.8
 
 def suggested_feature_drops(df, target_col=None):
     n = max(len(df), 1)
     drops, reasons = [], {}
-    id_keywords = {"id", "idx", "index", "no", "num", "code", "key",
-                   "name", "uuid", "uid", "serial", "번호", "이름"}
+    id_words = {"id", "idx", "index", "no", "num", "code", "key",
+                "name", "uuid", "uid", "serial", "number"}
     for col in df.columns:
         if col == target_col:
             continue
         s = df[col]
-        name = col.lower().replace(" ", "").replace("_", "").replace("-", "")
-        parts = [p for p in re.split(r"[^a-zA-Z0-9가-힣]+", col.lower()) if p]
+        compact = col.lower().replace(" ", "").replace("_", "").replace("-", "")
+        parts = [p for p in re.split(r"[^a-zA-Z0-9]+", col.lower()) if p]
         unique_ratio = s.nunique(dropna=True) / n
         reason = None
         if s.nunique(dropna=True) <= 1:
             reason = "constant column"
-        elif name in id_keywords or any(p in id_keywords for p in parts) or (name.endswith("id") and len(name) <= 7):
+        elif compact in id_words or any(p in id_words for p in parts):
             reason = "identifier-like column"
-        elif n >= 20 and unique_ratio > 0.95 and (s.dtype == "object" or not pd.api.types.is_numeric_dtype(s)):
-            reason = "high-cardinality text column"
+        elif compact.endswith("id") and len(compact) <= 7:
+            reason = "identifier-like column"
         elif looks_like_datetime(s):
             reason = "datetime column"
+        elif n >= 20 and unique_ratio > 0.95 and (s.dtype == "object" or not pd.api.types.is_numeric_dtype(s)):
+            reason = "high-cardinality text column"
         else:
             numeric = pd.to_numeric(s, errors="coerce")
             if n >= 10 and numeric.notna().mean() > 0.9 and numeric.is_monotonic_increasing:

@@ -38,10 +38,10 @@ async def run_cv():
                       "task_type": "regression"})
         return {"results": results, "best_model": best_name,
                 "feature_importance": fi, "task_type": "regression",
+                "explanations": cv_explanations(best_name, results, "regression"),
                 "final_r2":   round(float(r2_score(y, preds)), 4),
                 "final_rmse": round(float(np.sqrt(mean_squared_error(y, preds))), 4)}
 
-    # ── 분류 ───────────────────────────────────────────────
     n_unique = STATE.get("n_unique_target", 2)
     is_binary = n_unique == 2
     cv = StratifiedKFold(n_splits=3, shuffle=True, random_state=42)
@@ -71,7 +71,6 @@ async def run_cv():
         bm = MODELS[best_name](); bm.fit(X, y)
         preds = bm.predict(X).tolist()
     except Exception as e:
-        # 최고 모델이 실패하면 다음 모델로 폴백
         for r in results[1:]:
             try:
                 best_name = r["model"]
@@ -95,6 +94,7 @@ async def run_cv():
                   "task_type": "classification"})
     return {"results": results, "best_model": best_name,
             "feature_importance": fi, "task_type": "classification",
+            "explanations": cv_explanations(best_name, results, "classification"),
             "final_accuracy": round(float(accuracy_score(y, preds)), 4),
             "final_f1": round(float(f1_score(y, preds, average="weighted")), 4)}
 

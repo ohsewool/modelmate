@@ -76,5 +76,6 @@ async def set_target(body: dict):
         "task_type": task_type,
         "n_unique_target": n_unique,
         "stats": df.describe(include="all").fillna(0).round(3).to_dict(),
+        "explanations": preprocess_explanations(task_type, n_unique, len(X.columns)),
     }
 

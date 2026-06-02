@@ -46,7 +46,9 @@ def auto_parse(raw):
 def encode_features(df, tgt):
     """카테고리형 컬럼 자동 인코딩 + 범용 전처리."""
     X = df.drop(columns=[tgt]).copy()
-    auto_drop, _ = suggested_feature_drops(df, target_col=tgt)
+    auto_drop, auto_reasons = suggested_feature_drops(df, target_col=tgt)
+    STATE["auto_drop_cols"] = auto_drop
+    STATE["auto_drop_reasons"] = auto_reasons
     if auto_drop:
         X = X.drop(columns=[c for c in auto_drop if c in X.columns])
     for col in X.columns.tolist():
