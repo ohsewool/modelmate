@@ -102,3 +102,19 @@ Model rows can include:
 
 Frontend should render failed rows differently from valid low-scoring rows.
 
+## GET `/api/report/summary`
+
+Returns one structured JSON payload for the report/XAI backend flow.
+
+Frontend-ready sections:
+
+- `readiness`: completion flags for upload, target selection, CV, model, and Optuna.
+- `executive_summary`: short plain-language result summary.
+- `dataset`: raw/training shape, target, task type, missing count, categorical columns.
+- `preprocessing`: manually dropped columns, auto-dropped columns, and drop reasons.
+- `model_selection`: CV results, best model, score fields, failed model count.
+- `optimization`: Optuna status, metric name, before/after score, trials, params.
+- `final_metrics`: final train-set metrics for classification or regression.
+- `feature_evidence`: top feature importance or coefficient evidence.
+- `presentation_points`: short bullet points the UI can display.
+
