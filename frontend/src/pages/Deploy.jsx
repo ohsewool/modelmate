@@ -32,7 +32,7 @@ function CodeBlock({ model }) {
     <div style={{ display: 'grid', gap: 10 }}>
       <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
         <code style={{ flex: 1, padding: '10px 12px', borderRadius: 10, background: 'var(--surface-alt)', border: '1px solid var(--border)', fontSize: 12, wordBreak: 'break-all' }}>{url}</code>
-        <button className="btn-secondary" onClick={copy}><Clipboard size={14} /> {copied ? 'Copied' : 'Copy'}</button>
+        <button className="btn-secondary" onClick={copy}><Clipboard size={14} /> {copied ? '복사됨' : '복사'}</button>
       </div>
       <pre style={{ margin: 0, padding: 16, borderRadius: 12, background: '#0f172a', color: '#e2e8f0', fontSize: 12, overflowX: 'auto' }}>
         <code>{snippet}</code>
@@ -84,17 +84,17 @@ function ModelTester({ model }) {
       </div>
       <button className="btn-primary" onClick={testPredict} disabled={loading}>
         {loading ? <span className="spinner" /> : <Send size={14} />}
-        Test v2 prediction
+        예측 테스트
       </button>
       {result && (
         <div className="banner-success" style={{ alignItems: 'flex-start' }}>
           <CheckCircle2 size={16} />
           <div>
             <p style={{ margin: '0 0 4px', fontSize: 13, fontWeight: 800, color: 'var(--text)' }}>
-              Prediction: {result.prediction_label || fmt(result.prediction)}
+              예측 결과: {result.prediction_label || fmt(result.prediction)}
             </p>
             <p style={{ margin: 0, fontSize: 12, color: 'var(--text-2)' }}>
-              Confidence {fmt(result.confidence)} · warnings {result.input_warnings?.length || 0}
+              확신도 {fmt(result.confidence)} / 보정 {result.input_warnings?.length || 0}
             </p>
           </div>
         </div>
@@ -117,12 +117,12 @@ function ModelCard({ model, onDelete }) {
             <span className="badge badge-green">{model.task_type}</span>
           </div>
           <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)' }}>
-            ID {model.id} · target {model.target_col} · score {fmt(primary)}
+            ID {model.id} / 맞히려는 값 {model.target_col} / 점수 {fmt(primary)}
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button className="btn-secondary" onClick={() => setOpen(v => !v)}><Play size={14} /> {open ? 'Hide' : 'Test'}</button>
-          <button className="btn-secondary" onClick={() => onDelete(model.id)}><Trash2 size={14} /> Delete</button>
+          <button className="btn-secondary" onClick={() => setOpen(v => !v)}><Play size={14} /> {open ? '닫기' : '테스트'}</button>
+          <button className="btn-secondary" onClick={() => onDelete(model.id)}><Trash2 size={14} /> 삭제</button>
         </div>
       </div>
       <CodeBlock model={model} />
@@ -156,7 +156,7 @@ export default function Deploy() {
       const { data } = await api.post('/deploy/stable', { name: modelName || undefined })
       setModelName('')
       await load()
-      setError(`Deployed ${data.name} (${data.model_id})`)
+      setError(`공유 API를 만들었습니다: ${data.name} (${data.model_id})`)
     } catch (e) {
       setError(e.response?.data?.detail || e.message)
     } finally {
@@ -165,12 +165,12 @@ export default function Deploy() {
   }
 
   async function deleteModel(id) {
-    if (!confirm('Delete this deployed model?')) return
+    if (!confirm('이 공유 모델을 삭제할까요?')) return
     await api.delete(`/deployed/${id}`).catch(() => {})
     await load()
   }
 
-  const countLabel = useMemo(() => `${models.length} deployed`, [models.length])
+  const countLabel = useMemo(() => `공유된 모델 ${models.length}개`, [models.length])
 
   return (
     <div className="animate-fade-in" style={{ padding: 32, maxWidth: 1080 }}>
@@ -182,27 +182,27 @@ export default function Deploy() {
                 <Rocket size={27} />
               </div>
               <div>
-                <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 800, color: '#4f46e5', textTransform: 'uppercase' }}>Model Deployment</p>
-                <h1 style={{ margin: '0 0 6px', fontSize: 26, fontWeight: 900, color: '#0f172a', letterSpacing: 0 }}>Publish a stable prediction API</h1>
+                <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 800, color: '#4f46e5', textTransform: 'uppercase' }}>모델 공유</p>
+                <h1 style={{ margin: '0 0 6px', fontSize: 26, fontWeight: 900, color: '#0f172a', letterSpacing: 0 }}>예측 모델을 API로 공유하기</h1>
                 <p style={{ margin: 0, color: '#475569', fontSize: 14 }}>{countLabel}</p>
               </div>
             </div>
-            <span className={hasModel ? 'badge badge-green' : 'badge badge-amber'}>{hasModel ? 'Model ready' : 'Train model first'}</span>
+            <span className={hasModel ? 'badge badge-green' : 'badge badge-amber'}>{hasModel ? '모델 준비 완료' : '먼저 모델 학습 필요'}</span>
           </div>
         </div>
 
         <section className="card">
-          <p className="section-title">Deploy current model</p>
+          <p className="section-title">현재 모델 공유하기</p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 10 }}>
-            <input className="input" value={modelName} onChange={e => setModelName(e.target.value)} placeholder="Display name, optional" />
+            <input className="input" value={modelName} onChange={e => setModelName(e.target.value)} placeholder="표시 이름, 선택 사항" />
             <button className="btn-primary" onClick={deployStable} disabled={!hasModel || loading}>
               {loading ? <span className="spinner" /> : <Rocket size={15} />}
-              Deploy stable API
+              공유 API 만들기
             </button>
           </div>
           {error && (
-            <div className={error.startsWith('Deployed') ? 'banner-success' : 'banner-warning'} style={{ marginTop: 12 }}>
-              {error.startsWith('Deployed') ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+            <div className={error.startsWith('공유 API') ? 'banner-success' : 'banner-warning'} style={{ marginTop: 12 }}>
+              {error.startsWith('공유 API') ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
               <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)' }}>{error}</p>
             </div>
           )}
@@ -215,8 +215,8 @@ export default function Deploy() {
         ) : (
           <div className="card empty-state">
             <Rocket size={42} color="#6366f1" />
-            <p className="empty-title" style={{ marginTop: 16 }}>No deployed models yet</p>
-            <p className="empty-desc">Deploy the current trained model to create a reusable API.</p>
+            <p className="empty-title" style={{ marginTop: 16 }}>아직 공유된 모델이 없습니다</p>
+            <p className="empty-desc">학습된 모델을 공유 API로 만들면 다른 서비스에서도 예측을 요청할 수 있습니다.</p>
           </div>
         )}
       </div>

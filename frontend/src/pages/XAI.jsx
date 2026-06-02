@@ -28,10 +28,10 @@ const fmt = value => {
 
 function SourceBadge({ source }) {
   const label = {
-    feature_importance: 'Feature importance',
-    model_coefficient: 'Model coefficient',
-    target_correlation: 'Target correlation',
-  }[source] || source || 'Explanation'
+    feature_importance: '중요도 기준',
+    model_coefficient: '모델 계수 기준',
+    target_correlation: '정답과의 관계 기준',
+  }[source] || source || '설명 기준'
   return <span className="badge badge-cyan">{label}</span>
 }
 
@@ -39,22 +39,22 @@ function EmptyState({ error, onRetry }) {
   return (
     <div className="card empty-state">
       <AlertCircle size={42} color="#e11d48" />
-      <p className="empty-title" style={{ marginTop: 16 }}>XAI is not ready</p>
-      <p className="empty-desc">{error || 'Run upload, target selection, and cross-validation first.'}</p>
-      {onRetry && <button className="btn-secondary" onClick={onRetry} style={{ marginTop: 16 }}><RefreshCw size={14} /> Retry</button>}
+      <p className="empty-title" style={{ marginTop: 16 }}>아직 이유 분석이 준비되지 않았습니다</p>
+      <p className="empty-desc">{error || '먼저 데이터 업로드, 정답 선택, 모델 비교를 진행해주세요.'}</p>
+      {onRetry && <button className="btn-secondary" onClick={onRetry} style={{ marginTop: 16 }}><RefreshCw size={14} /> 다시 시도</button>}
     </div>
   )
 }
 
 function FeatureBars({ items, valueKey = 'importance', signed = false }) {
   const data = useMemo(() => [...(items || [])].slice(0, 10).reverse(), [items])
-  if (!data.length) return <p style={{ margin: 0, color: 'var(--text-2)', fontSize: 13 }}>No feature evidence available.</p>
+  if (!data.length) return <p style={{ margin: 0, color: 'var(--text-2)', fontSize: 13 }}>아직 보여줄 근거 정보가 없습니다.</p>
   return (
     <ResponsiveContainer width="100%" height={Math.max(260, data.length * 38)}>
       <BarChart data={data} layout="vertical" barSize={14} margin={{ left: 12, right: 16 }}>
         <XAxis type="number" tick={{ fill: 'var(--text-2)', fontSize: 11 }} axisLine={false} tickLine={false} />
         <YAxis dataKey="feature" type="category" width={160} tick={{ fill: 'var(--text-2)', fontSize: 12 }} axisLine={false} tickLine={false} />
-        <Tooltip contentStyle={tooltipStyle} formatter={v => [fmt(v), signed ? 'Contribution' : 'Importance']} />
+        <Tooltip contentStyle={tooltipStyle} formatter={v => [fmt(v), signed ? '영향도' : '중요도']} />
         <Bar dataKey={valueKey} radius={[0, 6, 6, 0]}>
           {data.map((row, idx) => (
             <Cell key={`${row.feature}-${idx}`} fill={signed && row[valueKey] < 0 ? '#6366f1' : '#059669'} />
@@ -110,7 +110,7 @@ export default function XAI() {
       <div style={{ padding: 32, maxWidth: 1080 }}>
         <div className="card empty-state">
           <Loader2 className="animate-spin" size={36} color="#059669" />
-          <p className="empty-title" style={{ marginTop: 16 }}>Loading explanations</p>
+          <p className="empty-title" style={{ marginTop: 16 }}>예측 이유를 불러오는 중입니다</p>
         </div>
       </div>
     )
@@ -130,27 +130,27 @@ export default function XAI() {
                 <Brain size={27} />
               </div>
               <div>
-                <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 800, color: '#059669', textTransform: 'uppercase' }}>Explainable AI</p>
+                <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 800, color: '#059669', textTransform: 'uppercase' }}>예측 이유 보기</p>
                 <h1 style={{ margin: '0 0 6px', fontSize: 26, fontWeight: 900, color: '#0f172a', letterSpacing: 0 }}>
                   {summary.summary}
                 </h1>
                 <p style={{ margin: 0, color: '#475569', fontSize: 14 }}>
-                  {summary.model} · {summary.task_type} · <SourceBadge source={summary.source} />
+                  사용 모델 {summary.model} / 예측 유형 {summary.task_type} / <SourceBadge source={summary.source} />
                 </p>
               </div>
             </div>
             <button className="btn-secondary" onClick={loadSummary}>
-              <RefreshCw size={14} /> Refresh
+              <RefreshCw size={14} /> 새로고침
             </button>
           </div>
         </div>
 
         <div className="tab-bar" style={{ width: 'fit-content' }}>
           <button onClick={() => setTab('global')} className={tab === 'global' ? 'tab-item tab-item-active' : 'tab-item tab-item-inactive'}>
-            Global explanation
+            전체 데이터 기준
           </button>
           <button onClick={() => setTab('local')} className={tab === 'local' ? 'tab-item tab-item-active' : 'tab-item tab-item-inactive'}>
-            Local sample
+            한 행 자세히 보기
           </button>
         </div>
 
@@ -159,13 +159,13 @@ export default function XAI() {
             <section className="card">
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
                 <CheckCircle2 size={18} color="#059669" />
-                <h2 style={{ margin: 0, fontSize: 15, fontWeight: 800 }}>Top signal</h2>
+                <h2 style={{ margin: 0, fontSize: 15, fontWeight: 800 }}>가장 중요한 근거</h2>
               </div>
               <p style={{ margin: '0 0 8px', fontSize: 28, fontWeight: 900, color: '#059669', lineHeight: 1.1 }}>
                 {topFeature?.feature || '-'}
               </p>
               <p style={{ margin: '0 0 18px', color: 'var(--text-2)', fontSize: 13, lineHeight: 1.7 }}>
-                This feature has the strongest evidence for the selected model. It helps users understand what the model checks first.
+                이 정보가 현재 모델의 예측에 가장 큰 영향을 주었습니다. 모델이 무엇을 먼저 보는지 이해하는 데 도움이 됩니다.
               </p>
               <div style={{ display: 'grid', gap: 10 }}>
                 {(summary.items || []).slice(0, 4).map(item => (
@@ -183,7 +183,7 @@ export default function XAI() {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <BarChart3 size={18} color="#4f46e5" />
-                  <h2 style={{ margin: 0, fontSize: 15, fontWeight: 800 }}>Feature ranking</h2>
+                  <h2 style={{ margin: 0, fontSize: 15, fontWeight: 800 }}>중요 정보 순위</h2>
                 </div>
                 <SourceBadge source={summary.source} />
               </div>
@@ -197,16 +197,16 @@ export default function XAI() {
             <section className="card">
               <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 14, alignItems: 'end' }}>
                 <div>
-                  <p className="section-title" style={{ marginBottom: 8 }}>Sample explanation</p>
+                  <p className="section-title" style={{ marginBottom: 8 }}>개별 데이터 설명</p>
                   <p style={{ margin: 0, color: 'var(--text-2)', fontSize: 13 }}>
-                    Enter a training row index to see why the model made that prediction.
+                    학습 데이터의 행 번호를 입력하면 그 행에서 왜 그런 예측이 나왔는지 확인할 수 있습니다.
                   </p>
                 </div>
                 <div style={{ display: 'flex', gap: 10 }}>
                   <input className="input" type="number" min={0} value={idx} onChange={e => setIdx(Number(e.target.value))} style={{ width: 120 }} />
                   <button className="btn-primary" onClick={() => loadLocal(idx)} disabled={localLoading}>
                     {localLoading ? <span className="spinner" /> : <Search size={14} />}
-                    Explain
+                    이유 보기
                   </button>
                 </div>
               </div>
@@ -215,29 +215,29 @@ export default function XAI() {
             {local ? (
               <div style={{ display: 'grid', gridTemplateColumns: '0.9fr 1.1fr', gap: 18 }}>
                 <section className="card">
-                  <p className="section-title">Prediction</p>
+                  <p className="section-title">예측 결과</p>
                   <p style={{ margin: '0 0 8px', fontSize: 30, fontWeight: 900, color: '#4f46e5' }}>
                     {local.prediction_label || fmt(local.prediction)}
                   </p>
                   <p style={{ margin: '0 0 18px', color: 'var(--text-2)', fontSize: 13 }}>
-                    Sample #{local.sample_index} · {local.task_type}
+                    샘플 #{local.sample_index} / {local.task_type}
                   </p>
                   {local.confidence !== undefined && (
                     <div className="card-elevated">
-                      <p style={{ margin: '0 0 6px', fontSize: 11, fontWeight: 800, color: 'var(--text-label)', textTransform: 'uppercase' }}>Confidence</p>
+                      <p style={{ margin: '0 0 6px', fontSize: 11, fontWeight: 800, color: 'var(--text-label)', textTransform: 'uppercase' }}>확신도</p>
                       <p style={{ margin: 0, fontSize: 24, fontWeight: 850, color: '#059669' }}>{fmt(local.confidence)}</p>
                     </div>
                   )}
                   {localTop && (
                     <p style={{ margin: '16px 0 0', color: 'var(--text-2)', fontSize: 13, lineHeight: 1.7 }}>
-                      Strongest local factor: <strong style={{ color: 'var(--text)' }}>{localTop.feature}</strong>, direction <strong>{localTop.direction}</strong>.
+                      이 행에서 가장 큰 근거는 <strong style={{ color: 'var(--text)' }}>{localTop.feature}</strong>입니다. 방향: <strong>{localTop.direction}</strong>
                     </p>
                   )}
                 </section>
 
                 <section className="card">
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-                    <h2 style={{ margin: 0, fontSize: 15, fontWeight: 800 }}>Local contribution</h2>
+                    <h2 style={{ margin: 0, fontSize: 15, fontWeight: 800 }}>개별 영향도</h2>
                     <SourceBadge source={local.source} />
                   </div>
                   <FeatureBars items={local.features} valueKey="contribution" signed />
@@ -246,14 +246,14 @@ export default function XAI() {
             ) : (
               <div className="card empty-state" style={{ padding: 56 }}>
                 <Search size={36} color="#6366f1" />
-                <p className="empty-title" style={{ marginTop: 16 }}>Choose a sample to explain</p>
+                <p className="empty-title" style={{ marginTop: 16 }}>설명할 샘플을 선택해주세요</p>
               </div>
             )}
           </div>
         )}
 
         <section className="card">
-          <p className="section-title">Limitations</p>
+          <p className="section-title">주의할 점</p>
           <div style={{ display: 'grid', gap: 8 }}>
             {(summary.limitations || []).map(item => (
               <div key={item} className="banner-info" style={{ padding: 10 }}>

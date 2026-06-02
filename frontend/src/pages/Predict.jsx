@@ -26,11 +26,11 @@ function FactorList({ items = [] }) {
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginBottom: 6 }}>
             <span style={{ fontSize: 13, fontWeight: 750, color: 'var(--text)' }}>{item.feature}</span>
             <span className={item.direction === 'high' ? 'badge badge-amber' : item.direction === 'low' ? 'badge badge-blue' : 'badge badge-cyan'}>
-              {item.direction}
+              {item.direction === 'high' ? '높을수록 영향' : item.direction === 'low' ? '낮을수록 영향' : '영향 있음'}
             </span>
           </div>
           <p style={{ margin: 0, fontSize: 12, color: 'var(--text-2)' }}>
-            value {fmt(item.value)} · baseline {fmt(item.baseline)} · contribution {fmt(item.contribution)}
+            입력값 {fmt(item.value)} / 기준값 {fmt(item.baseline)} / 영향도 {fmt(item.contribution)}
           </p>
         </div>
       ))}
@@ -44,7 +44,7 @@ function Warnings({ items = [] }) {
     <div className="banner-warning" style={{ alignItems: 'flex-start' }}>
       <AlertCircle size={16} />
       <div>
-        <p style={{ margin: '0 0 6px', fontSize: 13, fontWeight: 750, color: 'var(--text)' }}>Input corrections applied</p>
+        <p style={{ margin: '0 0 6px', fontSize: 13, fontWeight: 750, color: 'var(--text)' }}>입력값을 자동 보정했습니다</p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
           {items.map((item, idx) => (
             <span key={`${item.feature}-${idx}`} className="badge badge-amber">
@@ -62,15 +62,15 @@ function PredictionCard({ result }) {
     return (
       <div className="card empty-state" style={{ minHeight: 360 }}>
         <Wand2 size={42} color="#0ea5e9" />
-        <p className="empty-title" style={{ marginTop: 16 }}>Ready for prediction</p>
-        <p className="empty-desc">Enter feature values and run the model.</p>
+        <p className="empty-title" style={{ marginTop: 16 }}>예측할 준비가 되었습니다</p>
+        <p className="empty-desc">값을 입력하고 모델 예측을 실행하세요.</p>
       </div>
     )
   }
   const label = result.prediction_label || fmt(result.prediction)
   return (
     <div className="card animate-slide-up" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <p className="section-title">Prediction Result</p>
+      <p className="section-title">예측 결과</p>
       <div style={{ padding: 24, borderRadius: 16, background: 'linear-gradient(135deg,rgba(14,165,233,0.08),rgba(99,102,241,0.05))', border: '1px solid rgba(14,165,233,0.2)' }}>
         <p style={{ margin: '0 0 8px', color: 'var(--text-label)', fontSize: 12, fontWeight: 800, textTransform: 'uppercase' }}>
           {result.task_type}
@@ -78,14 +78,14 @@ function PredictionCard({ result }) {
         <p style={{ margin: 0, fontSize: 34, lineHeight: 1.05, fontWeight: 900, color: '#0369a1' }}>{label}</p>
         {result.confidence !== undefined && (
           <p style={{ margin: '10px 0 0', color: 'var(--text-2)', fontSize: 13 }}>
-            Confidence <strong>{fmt(result.confidence)}</strong>
+            확신도 <strong>{fmt(result.confidence)}</strong>
           </p>
         )}
       </div>
       <Warnings items={result.input_warnings} />
       {result.probabilities && (
         <div>
-          <p className="section-title" style={{ marginBottom: 10 }}>Probabilities</p>
+          <p className="section-title" style={{ marginBottom: 10 }}>가능성</p>
           <div style={{ display: 'grid', gap: 8 }}>
             {Object.entries(result.probabilities).map(([key, value]) => (
               <div key={key} style={{ display: 'grid', gridTemplateColumns: '100px 1fr 54px', gap: 10, alignItems: 'center' }}>
@@ -98,7 +98,7 @@ function PredictionCard({ result }) {
         </div>
       )}
       <div>
-        <p className="section-title" style={{ marginBottom: 10 }}>Top factors</p>
+        <p className="section-title" style={{ marginBottom: 10 }}>예측에 영향을 준 정보</p>
         <FactorList items={result.top_factors} />
       </div>
     </div>
@@ -111,9 +111,9 @@ function BatchResults({ data }) {
     <div className="card animate-slide-up" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
         <div>
-          <p className="section-title" style={{ marginBottom: 4 }}>Batch Results</p>
+          <p className="section-title" style={{ marginBottom: 4 }}>여러 행 예측 결과</p>
           <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)' }}>
-            {data.count} rows · warnings {data.warning_count} · {data.encoding} / {data.separator}
+            {data.count}개 행 / 보정 {data.warning_count}개 / {data.encoding} / {data.separator}
           </p>
         </div>
         <span className="badge badge-green">{data.status}</span>
@@ -122,11 +122,11 @@ function BatchResults({ data }) {
         <table className="data-table">
           <thead>
             <tr>
-              <th>Row</th>
-              <th>Prediction</th>
-              <th>Confidence</th>
-              <th>Warnings</th>
-              <th>Top factor</th>
+              <th>행</th>
+              <th>예측값</th>
+              <th>확신도</th>
+              <th>보정</th>
+              <th>주요 근거</th>
             </tr>
           </thead>
           <tbody>
@@ -224,8 +224,8 @@ export default function Predict() {
       <div style={{ padding: 32, maxWidth: 960 }}>
         <div className="card empty-state">
           {error ? <AlertCircle size={42} color="#e11d48" /> : <Loader2 className="animate-spin" size={36} color="#0ea5e9" />}
-          <p className="empty-title" style={{ marginTop: 16 }}>{error ? 'Prediction is not ready' : 'Loading model schema'}</p>
-          <p className="empty-desc">{error || 'Run cross-validation first.'}</p>
+          <p className="empty-title" style={{ marginTop: 16 }}>{error ? '아직 예측이 준비되지 않았습니다' : '모델 정보를 불러오는 중입니다'}</p>
+          <p className="empty-desc">{error || '먼저 모델 비교를 진행해주세요.'}</p>
         </div>
       </div>
     )
@@ -241,26 +241,26 @@ export default function Predict() {
                 <Wand2 size={27} />
               </div>
               <div>
-                <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 800, color: '#0284c7', textTransform: 'uppercase' }}>Prediction</p>
-                <h1 style={{ margin: '0 0 6px', fontSize: 26, fontWeight: 900, color: '#0f172a', letterSpacing: 0 }}>Use the trained model</h1>
+                <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 800, color: '#0284c7', textTransform: 'uppercase' }}>새 데이터 예측</p>
+                <h1 style={{ margin: '0 0 6px', fontSize: 26, fontWeight: 900, color: '#0f172a', letterSpacing: 0 }}>학습된 모델로 예측하기</h1>
                 <p style={{ margin: 0, color: '#475569', fontSize: 14 }}>
-                  Target {info.target_col} · {info.task_type} · {info.features.length} features
+                  맞히려는 값 {info.target_col} / {info.task_type} / 사용 정보 {info.features.length}개
                 </p>
               </div>
             </div>
-            <span className="badge badge-blue">Model ready</span>
+            <span className="badge badge-blue">모델 준비 완료</span>
           </div>
         </div>
 
         <div className="tab-bar" style={{ width: 'fit-content' }}>
-          <button onClick={() => setTab('single')} className={tab === 'single' ? 'tab-item tab-item-active' : 'tab-item tab-item-inactive'}>Single row</button>
-          <button onClick={() => setTab('batch')} className={tab === 'batch' ? 'tab-item tab-item-active' : 'tab-item tab-item-inactive'}>Batch CSV</button>
+          <button onClick={() => setTab('single')} className={tab === 'single' ? 'tab-item tab-item-active' : 'tab-item tab-item-inactive'}>한 행 예측</button>
+          <button onClick={() => setTab('batch')} className={tab === 'batch' ? 'tab-item tab-item-active' : 'tab-item tab-item-inactive'}>CSV 여러 행 예측</button>
         </div>
 
         {tab === 'single' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 0.9fr', gap: 18, alignItems: 'start' }}>
             <section className="card">
-              <p className="section-title">Input features</p>
+              <p className="section-title">예측에 사용할 값</p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 12 }}>
                 {info.features.map(feature => (
                   <label key={feature.name} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -273,14 +273,14 @@ export default function Predict() {
                       <input className="input" type="number" value={values[feature.name] ?? ''} onChange={e => setValues(v => ({ ...v, [feature.name]: e.target.value }))} />
                     )}
                     {feature.type === 'numeric' && (
-                      <span style={{ fontSize: 11, color: 'var(--text-label)' }}>mean {fmt(feature.mean)}</span>
+                      <span style={{ fontSize: 11, color: 'var(--text-label)' }}>평균 {fmt(feature.mean)}</span>
                     )}
                   </label>
                 ))}
               </div>
               <button className="btn-primary" onClick={predictSingle} disabled={loading} style={{ marginTop: 18 }}>
                 {loading ? <span className="spinner" /> : <Send size={15} />}
-                Predict
+                예측 실행
               </button>
             </section>
             <PredictionCard result={result} />
@@ -293,20 +293,20 @@ export default function Predict() {
               <input ref={fileRef} type="file" accept=".csv,.txt" style={{ display: 'none' }} onChange={e => setBatchFile(e.target.files?.[0] || null)} />
               <UploadCloud size={42} color="#0284c7" />
               <p style={{ margin: '14px 0 6px', fontSize: 16, fontWeight: 800, color: 'var(--text)' }}>
-                {batchFile ? batchFile.name : 'Upload a CSV for batch prediction'}
+                {batchFile ? batchFile.name : '여러 행을 예측할 CSV 파일을 올려주세요'}
               </p>
               <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)' }}>
-                Missing features are filled and reported as input warnings.
+                빠진 값은 자동으로 채우고 보정 내역으로 알려줍니다.
               </p>
             </section>
             <div style={{ display: 'flex', gap: 10 }}>
               <button className="btn-primary" onClick={predictBatch} disabled={!batchFile || batchLoading}>
                 {batchLoading ? <span className="spinner" /> : <FileSpreadsheet size={15} />}
-                Run batch prediction
+                여러 행 예측 실행
               </button>
               {batchResult && (
                 <button className="btn-secondary" onClick={downloadBatch}>
-                  <Download size={15} /> Download CSV
+                  <Download size={15} /> CSV 내려받기
                 </button>
               )}
             </div>

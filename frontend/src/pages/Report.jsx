@@ -18,6 +18,21 @@ const fmt = value => {
 }
 
 const pct = value => `${Math.round((Number(value) || 0) * 100)}%`
+const statusLabel = key => ({
+  has_data: '데이터 준비',
+  has_target: '정답 선택',
+  has_model: '모델 학습',
+  has_explanation: '이유 분석',
+  has_deployment: '공유 준비',
+}[key] || key.replaceAll('_', ' '))
+const metricLabel = key => ({
+  accuracy: '정확도',
+  f1: 'F1',
+  rmse: '오차',
+  mae: '평균 오차',
+  roc_auc: 'ROC-AUC',
+  r2: 'R2',
+}[key] || key)
 
 function MiniStat({ label, value, tone = 'blue' }) {
   const colors = {
@@ -105,7 +120,7 @@ export default function Report() {
       <div style={{ padding: 32, maxWidth: 1120 }}>
         <div className="card empty-state">
           <Loader2 className="animate-spin" size={36} color="#6366f1" />
-          <p className="empty-title" style={{ marginTop: 16 }}>Loading report summary</p>
+          <p className="empty-title" style={{ marginTop: 16 }}>결과 요약을 불러오는 중입니다</p>
         </div>
       </div>
     )
@@ -116,7 +131,7 @@ export default function Report() {
       <div style={{ padding: 32, maxWidth: 960 }}>
         <div className="card empty-state">
           <AlertCircle size={42} color="#e11d48" />
-          <p className="empty-title" style={{ marginTop: 16 }}>Report is not ready</p>
+          <p className="empty-title" style={{ marginTop: 16 }}>아직 결과 요약이 준비되지 않았습니다</p>
           <p className="empty-desc">{error}</p>
         </div>
       </div>
@@ -130,69 +145,69 @@ export default function Report() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 20, alignItems: 'center' }}>
             <div>
               <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 800, color: '#4f46e5', textTransform: 'uppercase' }}>
-                Analysis Report
+                결과 요약
               </p>
               <h1 style={{ margin: '0 0 10px', fontSize: 28, fontWeight: 900, color: '#0f172a', letterSpacing: 0 }}>
                 {summary.executive_summary}
               </h1>
               <p style={{ margin: 0, color: '#475569', fontSize: 14 }}>
-                Generated {new Date(summary.generated_at).toLocaleString()} · Target {dataset.target_col || '-'}
+                생성 시간 {new Date(summary.generated_at).toLocaleString()} / 맞히려는 값 {dataset.target_col || '-'}
               </p>
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
               <button className="btn-secondary" onClick={() => window.open('/api/report/html', '_blank')}>
-                <ExternalLink size={15} /> Open HTML
+                <ExternalLink size={15} /> HTML로 열기
               </button>
               <button className="btn-primary" onClick={downloadReport} disabled={downloading}>
                 {downloading ? <span className="spinner" /> : <Download size={15} />}
-                Download
+                내려받기
               </button>
             </div>
           </div>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 14 }}>
-          <MiniStat label="Readiness" value={pct(summary.readiness_score)} tone="green" />
-          <MiniStat label="Best Model" value={summary.model_selection?.best_model || '-'} />
-          <MiniStat label="Task" value={dataset.task_type || '-'} tone="amber" />
-          <MiniStat label="Features" value={dataset.training_shape?.[1] ?? '-'} />
+          <MiniStat label="준비도" value={pct(summary.readiness_score)} tone="green" />
+          <MiniStat label="선택된 모델" value={summary.model_selection?.best_model || '-'} />
+          <MiniStat label="예측 유형" value={dataset.task_type || '-'} tone="amber" />
+          <MiniStat label="사용한 정보" value={dataset.training_shape?.[1] ?? '-'} />
         </div>
 
-        <Section title="Pipeline Status" icon={CheckCircle2}>
+        <Section title="분석 진행 상태" icon={CheckCircle2}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: 10 }}>
             {Object.entries(summary.readiness || {}).map(([key, ok]) => (
               <div key={key} className={ok ? 'banner-success' : 'banner-warning'} style={{ padding: 10, justifyContent: 'center' }}>
-                <span style={{ fontSize: 12, fontWeight: 750 }}>{key.replaceAll('_', ' ')}</span>
+                <span style={{ fontSize: 12, fontWeight: 750 }}>{statusLabel(key)}</span>
               </div>
             ))}
           </div>
         </Section>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: 18 }}>
-          <Section title="Model Leaderboard" icon={BarChart3}>
+          <Section title="모델 비교 결과" icon={BarChart3}>
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Model</th>
-                  <th>Status</th>
+                  <th>모델</th>
+                  <th>상태</th>
                   <th>{primaryMetric || 'Score'}</th>
-                  <th>Secondary</th>
+                  <th>보조 점수</th>
                 </tr>
               </thead>
               <tbody>
                 {topModels.map((row, idx) => (
                   <tr key={row.model}>
                     <td style={{ fontWeight: idx === 0 ? 800 : 600, color: 'var(--text)' }}>{row.model}</td>
-                    <td><span className={row.status === 'ok' ? 'badge badge-green' : 'badge badge-red'}>{row.status || 'ok'}</span></td>
+                    <td><span className={row.status === 'ok' ? 'badge badge-green' : 'badge badge-red'}>{row.status === 'ok' || !row.status ? '완료' : '실패'}</span></td>
                     <td>{fmt(row[primaryMetric])}</td>
-                    <td>{Object.keys(row).filter(k => ['accuracy', 'f1', 'rmse', 'mae'].includes(k)).map(k => `${k}: ${fmt(row[k])}`).join(' · ')}</td>
+                    <td>{Object.keys(row).filter(k => ['accuracy', 'f1', 'rmse', 'mae'].includes(k)).map(k => `${metricLabel(k)}: ${fmt(row[k])}`).join(' / ')}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </Section>
 
-          <Section title="Optimization" icon={Sparkles}>
+          <Section title="성능 자동 개선" icon={Sparkles}>
             {opt.status ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <span className={opt.status === 'ok' ? 'badge badge-green' : 'badge badge-amber'} style={{ width: 'fit-content' }}>
@@ -200,35 +215,35 @@ export default function Report() {
                 </span>
                 <MiniStat label={opt.metric_name || 'Metric'} value={`${fmt(opt.before_score)} -> ${fmt(opt.after_score)}`} tone="green" />
                 <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6 }}>
-                  Trials: {opt.n_trials || '-'} · Improvement: {fmt(opt.improvement)}%
+                  시도 횟수: {opt.n_trials || '-'} / 개선율: {fmt(opt.improvement)}%
                 </p>
               </div>
             ) : (
-              <p style={{ margin: 0, color: 'var(--text-2)', fontSize: 13 }}>Optuna has not been run yet.</p>
+              <p style={{ margin: 0, color: 'var(--text-2)', fontSize: 13 }}>아직 자동 개선을 실행하지 않았습니다.</p>
             )}
           </Section>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '0.9fr 1.1fr', gap: 18 }}>
-          <Section title="Preprocessing" icon={FileText}>
+          <Section title="데이터 정리 내용" icon={FileText}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)' }}>
-                Raw shape: {dataset.raw_shape?.join(' x ') || '-'} · Training shape: {dataset.training_shape?.join(' x ') || '-'}
+                원본 크기: {dataset.raw_shape?.join(' x ') || '-'} / 학습에 사용한 크기: {dataset.training_shape?.join(' x ') || '-'}
               </p>
               <div>
-                <p className="section-title" style={{ marginBottom: 8 }}>Auto dropped</p>
+                <p className="section-title" style={{ marginBottom: 8 }}>자동으로 제외한 정보</p>
                 {(summary.preprocessing?.auto_drop_cols || []).length ? (
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                     {summary.preprocessing.auto_drop_cols.map(col => (
                       <span className="badge badge-violet" key={col}>{col}</span>
                     ))}
                   </div>
-                ) : <p style={{ margin: 0, fontSize: 13, color: 'var(--text-label)' }}>No automatic drops.</p>}
+                ) : <p style={{ margin: 0, fontSize: 13, color: 'var(--text-label)' }}>자동으로 제외한 정보가 없습니다.</p>}
               </div>
             </div>
           </Section>
 
-          <Section title="Feature Evidence" icon={BarChart3}>
+          <Section title="예측에 영향을 준 정보" icon={BarChart3}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {features.slice(0, 6).map(item => (
                 <div key={item.feature} style={{ display: 'grid', gridTemplateColumns: '150px 1fr 64px', gap: 12, alignItems: 'center' }}>
