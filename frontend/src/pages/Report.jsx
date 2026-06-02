@@ -1,236 +1,248 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import {
+  AlertCircle,
+  BarChart3,
+  CheckCircle2,
+  Download,
+  ExternalLink,
+  FileText,
+  Loader2,
+  Sparkles,
+} from 'lucide-react'
 import api from '../api'
 
-const ITEMS = [
-  ['🗂️', '데이터 요약', '샘플 수, 피처 수, 타깃 비율, 결측치'],
-  ['🏆', '모델 성능 비교', '4개 모델 Accuracy / F1 / ROC-AUC'],
-  ['📈', '최고 모델 상세', '교차검증 상세 지표'],
-  ['⚡', 'Optuna 튜닝 결과', '튜닝 전후 성능 비교'],
-  ['🔍', 'SHAP 피처 중요도', '전역 피처 중요도 순위'],
-  ['🔧', '예측 우선순위', '고위험 샘플 Top 10'],
-]
+const fmt = value => {
+  if (value === null || value === undefined || value === '') return '-'
+  if (typeof value === 'number') return Number.isInteger(value) ? value : value.toFixed(4)
+  return value
+}
+
+const pct = value => `${Math.round((Number(value) || 0) * 100)}%`
+
+function MiniStat({ label, value, tone = 'blue' }) {
+  const colors = {
+    blue: ['rgba(99,102,241,0.12)', '#4f46e5'],
+    green: ['rgba(16,185,129,0.12)', '#059669'],
+    amber: ['rgba(245,158,11,0.12)', '#d97706'],
+  }
+  const [bg, fg] = colors[tone] || colors.blue
+  return (
+    <div className="card-elevated" style={{ minHeight: 88 }}>
+      <p style={{ margin: '0 0 8px', fontSize: 11, fontWeight: 700, color: 'var(--text-label)', textTransform: 'uppercase' }}>
+        {label}
+      </p>
+      <p style={{ margin: 0, fontSize: 24, fontWeight: 850, color: fg, lineHeight: 1 }}>
+        {value}
+      </p>
+      <div style={{ height: 3, width: 36, borderRadius: 99, background: bg, marginTop: 12 }} />
+    </div>
+  )
+}
+
+function Section({ title, icon: Icon, children, action }) {
+  return (
+    <section className="card">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ width: 32, height: 32, borderRadius: 10, display: 'grid', placeItems: 'center', background: 'rgba(99,102,241,0.1)', color: '#4f46e5' }}>
+            <Icon size={17} />
+          </span>
+          <h2 style={{ margin: 0, fontSize: 15, fontWeight: 800 }}>{title}</h2>
+        </div>
+        {action}
+      </div>
+      {children}
+    </section>
+  )
+}
 
 export default function Report() {
-  const [state,   setState]   = useState(null)
-  const [loading, setLoading] = useState(false)
+  const [summary, setSummary] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [downloading, setDownloading] = useState(false)
+  const [error, setError] = useState('')
 
-  useEffect(() => { api.get('/state').then(r => setState(r.data)) }, [])
+  async function loadSummary() {
+    setLoading(true)
+    setError('')
+    try {
+      const res = await api.get('/report/summary')
+      setSummary(res.data)
+    } catch (e) {
+      setError(e.response?.data?.detail || e.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { loadSummary() }, [])
 
   async function downloadReport() {
-    setLoading(true)
+    setDownloading(true)
     try {
       const res = await api.get('/report/html', { responseType: 'blob' })
       const url = URL.createObjectURL(new Blob([res.data], { type: 'text/html' }))
-      const a = document.createElement('a'); a.href = url; a.download = 'ModelMate_Report.html'; a.click()
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'ModelMate_Report.html'
+      a.click()
       URL.revokeObjectURL(url)
-    } catch(e) { alert(e.response?.data?.detail || e.message) }
-    setLoading(false)
+    } catch (e) {
+      alert(e.response?.data?.detail || e.message)
+    } finally {
+      setDownloading(false)
+    }
   }
 
-  const ready = state?.has_model
+  const topModels = useMemo(() => summary?.model_selection?.models?.slice(0, 5) || [], [summary])
+  const primaryMetric = summary?.model_selection?.score_info?.primary
+  const opt = summary?.optimization || {}
+  const dataset = summary?.dataset || {}
+  const features = summary?.feature_evidence?.items || []
+
+  if (loading) {
+    return (
+      <div style={{ padding: 32, maxWidth: 1120 }}>
+        <div className="card empty-state">
+          <Loader2 className="animate-spin" size={36} color="#6366f1" />
+          <p className="empty-title" style={{ marginTop: 16 }}>Loading report summary</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div style={{ padding: 32, maxWidth: 960 }}>
+        <div className="card empty-state">
+          <AlertCircle size={42} color="#e11d48" />
+          <p className="empty-title" style={{ marginTop: 16 }}>Report is not ready</p>
+          <p className="empty-desc">{error}</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div className="animate-fade-in" style={{ padding:32, maxWidth:960 }}>
-      {!ready ? (
-        <div className="card empty-state">
-          <div style={{ width:80, height:80, borderRadius:24, margin:'0 auto 20px', display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(99,102,241,0.08)', border:'1px solid rgba(99,102,241,0.15)' }}>
-            <span style={{ fontSize:40 }}>📋</span>
-          </div>
-          <p className="empty-title">보고서를 생성하려면 모델 학습이 필요합니다</p>
-          <p className="empty-desc">Model Lab에서 CV 실행 후 다시 오세요.</p>
-        </div>
-      ) : (
-        <div className="animate-slide-up" style={{ display:'flex', flexDirection:'column', gap:20 }}>
-
-          {/* 상단 그라디언트 헤더 배너 */}
-          <div className="card" style={{
-            background: 'linear-gradient(135deg, #6366f1 0%, #7c3aed 50%, #6d28d9 100%)',
-            border: 'none',
-            position: 'relative',
-            overflow: 'hidden',
-          }}>
-            {/* 배경 장식 */}
-            <div style={{ position:'absolute', top:-40, right:-20, width:200, height:200, borderRadius:'50%', background:'radial-gradient(circle, rgba(255,255,255,0.09) 0%, transparent 70%)', pointerEvents:'none' }} />
-            <div style={{ position:'absolute', bottom:-20, left:60, width:140, height:140, borderRadius:'50%', background:'radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 70%)', pointerEvents:'none' }} />
-            <div style={{ position:'relative', display:'flex', alignItems:'center', gap:20 }}>
-              <div style={{
-                width:64, height:64, borderRadius:20, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
-                background:'rgba(255,255,255,0.15)', backdropFilter:'blur(8px)',
-                border:'1px solid rgba(255,255,255,0.25)',
-                boxShadow:'0 4px 20px rgba(0,0,0,0.15)',
-              }}>
-                <span style={{ fontSize:30 }}>📄</span>
-              </div>
-              <div style={{ flex:1 }}>
-                <p style={{ fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.65)', margin:'0 0 4px', textTransform:'uppercase', letterSpacing:'0.12em' }}>
-                  분석 리포트
-                </p>
-                <h2 style={{ fontSize:22, fontWeight:800, color:'#fff', margin:'0 0 6px', letterSpacing:'-0.02em' }}>보고서 내보내기</h2>
-                <p style={{ fontSize:13, color:'rgba(255,255,255,0.78)', margin:0, lineHeight:1.5 }}>
-                  PDF로 저장하거나 공유할 수 있습니다 &nbsp;·&nbsp;
-                  최고 모델 <strong style={{ color:'#fff' }}>{state.best_model?.split(' ')[0]}</strong>의 전체 분석 결과가 포함됩니다
-                </p>
-              </div>
-              <div style={{
-                flexShrink:0, display:'flex', flexDirection:'column', gap:8,
-              }}>
-                {/* 브라우저에서 열기 버튼 */}
-                <button onClick={() => window.open('/api/report/html', '_blank')} style={{
-                  display:'flex', alignItems:'center', gap:8, padding:'9px 16px',
-                  borderRadius:10, border:'1px solid rgba(255,255,255,0.3)',
-                  background:'rgba(255,255,255,0.15)', backdropFilter:'blur(4px)',
-                  color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer',
-                  transition:'all 0.2s', whiteSpace:'nowrap',
-                }}
-                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.22)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15,3 21,3 21,9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                  브라우저에서 열기
-                </button>
-                {/* 다운로드 버튼 */}
-                <button onClick={downloadReport} disabled={loading} style={{
-                  display:'flex', alignItems:'center', gap:8, padding:'9px 16px',
-                  borderRadius:10, border:'1px solid rgba(255,255,255,0.5)',
-                  background:'rgba(255,255,255,0.92)', backdropFilter:'blur(4px)',
-                  color:'#4f46e5', fontSize:13, fontWeight:800, cursor:'pointer',
-                  transition:'all 0.2s', whiteSpace:'nowrap',
-                  boxShadow:'0 2px 8px rgba(0,0,0,0.15)',
-                  opacity: loading ? 0.7 : 1,
-                }}
-                onMouseEnter={e => !loading && (e.currentTarget.style.background = '#fff')}
-                onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.92)'}>
-                  {loading ? <span className="spinner" style={{ borderTopColor:'#4f46e5' }} /> : (
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                  )}
-                  {loading ? '생성 중...' : 'PDF 다운로드'}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* 설명 텍스트 배너 */}
-          <div style={{
-            display:'flex', alignItems:'center', gap:14, padding:'14px 18px', borderRadius:14,
-            background:'linear-gradient(135deg,rgba(99,102,241,0.06),rgba(124,58,237,0.04))',
-            border:'1px solid rgba(99,102,241,0.15)',
-          }}>
-            <div style={{
-              width:36, height:36, borderRadius:10, flexShrink:0,
-              background:'linear-gradient(135deg,rgba(99,102,241,0.15),rgba(124,58,237,0.1))',
-              border:'1px solid rgba(99,102,241,0.2)',
-              display:'flex', alignItems:'center', justifyContent:'center', fontSize:16,
-            }}>💡</div>
+    <div className="animate-fade-in" style={{ padding: 32, maxWidth: 1120 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+        <div className="card" style={{ border: 'none', background: 'linear-gradient(135deg,#eef2ff,#f8fafc 55%,#ecfeff)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 20, alignItems: 'center' }}>
             <div>
-              <p style={{ fontSize:13, fontWeight:700, color:'var(--text)', margin:'0 0 3px' }}>보고서 활용 방법</p>
-              <p style={{ fontSize:12, color:'var(--text-2)', margin:0, lineHeight:1.6 }}>
-                브라우저에서 열기 후 <strong>Ctrl+P (또는 Cmd+P)</strong>를 눌러 PDF로 저장하거나 공유할 수 있습니다.
-                또는 PDF 다운로드 버튼으로 HTML 파일을 저장하세요.
+              <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 800, color: '#4f46e5', textTransform: 'uppercase' }}>
+                Analysis Report
+              </p>
+              <h1 style={{ margin: '0 0 10px', fontSize: 28, fontWeight: 900, color: '#0f172a', letterSpacing: 0 }}>
+                {summary.executive_summary}
+              </h1>
+              <p style={{ margin: 0, color: '#475569', fontSize: 14 }}>
+                Generated {new Date(summary.generated_at).toLocaleString()} · Target {dataset.target_col || '-'}
               </p>
             </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button className="btn-secondary" onClick={() => window.open('/api/report/html', '_blank')}>
+                <ExternalLink size={15} /> Open HTML
+              </button>
+              <button className="btn-primary" onClick={downloadReport} disabled={downloading}>
+                {downloading ? <span className="spinner" /> : <Download size={15} />}
+                Download
+              </button>
+            </div>
           </div>
+        </div>
 
-          {/* 포함 항목 */}
-          <div className="card">
-            <p className="section-title">보고서 포함 항목</p>
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:12 }}>
-              {ITEMS.map(([icon, title, desc], idx) => (
-                <div key={title} style={{
-                  display:'flex', alignItems:'flex-start', gap:12,
-                  borderRadius:12, padding:16,
-                  border:'1px solid rgba(99,102,241,0.08)',
-                  background:'rgba(99,102,241,0.03)',
-                  transition:'all 0.15s',
-                }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor='rgba(99,102,241,0.2)'; e.currentTarget.style.background='rgba(99,102,241,0.07)'; e.currentTarget.style.transform='translateY(-1px)' }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor='rgba(99,102,241,0.08)'; e.currentTarget.style.background='rgba(99,102,241,0.03)'; e.currentTarget.style.transform='translateY(0)' }}
-                >
-                  <div style={{
-                    width:36, height:36, borderRadius:10, flexShrink:0,
-                    background:'linear-gradient(135deg,rgba(99,102,241,0.12),rgba(124,58,237,0.08))',
-                    border:'1px solid rgba(99,102,241,0.15)',
-                    display:'flex', alignItems:'center', justifyContent:'center', fontSize:18,
-                  }}>{icon}</div>
-                  <div>
-                    <p style={{ fontSize:13, fontWeight:700, color:'var(--text)', margin:'0 0 3px' }}>{title}</p>
-                    <p style={{ fontSize:11, color:'var(--text-2)', margin:0, lineHeight:1.5 }}>{desc}</p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 14 }}>
+          <MiniStat label="Readiness" value={pct(summary.readiness_score)} tone="green" />
+          <MiniStat label="Best Model" value={summary.model_selection?.best_model || '-'} />
+          <MiniStat label="Task" value={dataset.task_type || '-'} tone="amber" />
+          <MiniStat label="Features" value={dataset.training_shape?.[1] ?? '-'} />
+        </div>
+
+        <Section title="Pipeline Status" icon={CheckCircle2}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: 10 }}>
+            {Object.entries(summary.readiness || {}).map(([key, ok]) => (
+              <div key={key} className={ok ? 'banner-success' : 'banner-warning'} style={{ padding: 10, justifyContent: 'center' }}>
+                <span style={{ fontSize: 12, fontWeight: 750 }}>{key.replaceAll('_', ' ')}</span>
+              </div>
+            ))}
+          </div>
+        </Section>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: 18 }}>
+          <Section title="Model Leaderboard" icon={BarChart3}>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Model</th>
+                  <th>Status</th>
+                  <th>{primaryMetric || 'Score'}</th>
+                  <th>Secondary</th>
+                </tr>
+              </thead>
+              <tbody>
+                {topModels.map((row, idx) => (
+                  <tr key={row.model}>
+                    <td style={{ fontWeight: idx === 0 ? 800 : 600, color: 'var(--text)' }}>{row.model}</td>
+                    <td><span className={row.status === 'ok' ? 'badge badge-green' : 'badge badge-red'}>{row.status || 'ok'}</span></td>
+                    <td>{fmt(row[primaryMetric])}</td>
+                    <td>{Object.keys(row).filter(k => ['accuracy', 'f1', 'rmse', 'mae'].includes(k)).map(k => `${k}: ${fmt(row[k])}`).join(' · ')}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </Section>
+
+          <Section title="Optimization" icon={Sparkles}>
+            {opt.status ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <span className={opt.status === 'ok' ? 'badge badge-green' : 'badge badge-amber'} style={{ width: 'fit-content' }}>
+                  {opt.status}
+                </span>
+                <MiniStat label={opt.metric_name || 'Metric'} value={`${fmt(opt.before_score)} -> ${fmt(opt.after_score)}`} tone="green" />
+                <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6 }}>
+                  Trials: {opt.n_trials || '-'} · Improvement: {fmt(opt.improvement)}%
+                </p>
+              </div>
+            ) : (
+              <p style={{ margin: 0, color: 'var(--text-2)', fontSize: 13 }}>Optuna has not been run yet.</p>
+            )}
+          </Section>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '0.9fr 1.1fr', gap: 18 }}>
+          <Section title="Preprocessing" icon={FileText}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)' }}>
+                Raw shape: {dataset.raw_shape?.join(' x ') || '-'} · Training shape: {dataset.training_shape?.join(' x ') || '-'}
+              </p>
+              <div>
+                <p className="section-title" style={{ marginBottom: 8 }}>Auto dropped</p>
+                {(summary.preprocessing?.auto_drop_cols || []).length ? (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                    {summary.preprocessing.auto_drop_cols.map(col => (
+                      <span className="badge badge-violet" key={col}>{col}</span>
+                    ))}
                   </div>
+                ) : <p style={{ margin: 0, fontSize: 13, color: 'var(--text-label)' }}>No automatic drops.</p>}
+              </div>
+            </div>
+          </Section>
+
+          <Section title="Feature Evidence" icon={BarChart3}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {features.slice(0, 6).map(item => (
+                <div key={item.feature} style={{ display: 'grid', gridTemplateColumns: '150px 1fr 64px', gap: 12, alignItems: 'center' }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.feature}</span>
+                  <div className="progress-bar">
+                    <div className="progress-fill" style={{ width: `${Math.min(100, Math.max(3, (item.importance || 0) * 100))}%` }} />
+                  </div>
+                  <span style={{ fontSize: 12, color: 'var(--text-2)', textAlign: 'right' }}>{fmt(item.importance)}</span>
                 </div>
               ))}
             </div>
-          </div>
-
-          {/* 현재 결과 요약 */}
-          <div className="card">
-            <p className="section-title">현재 분석 결과 요약</p>
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:16 }}>
-              <div style={{
-                borderRadius:14, padding:'18px 16px', textAlign:'center',
-                border:'1px solid var(--border)', background:'var(--bg)',
-                transition:'all 0.15s',
-              }}>
-                <p style={{ fontSize:10, color:'var(--text-2)', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.1em', margin:'0 0 10px' }}>최고 모델</p>
-                <p style={{ fontSize:18, fontWeight:800, color:'var(--text)', margin:'0 0 4px' }}>🏆 {state.best_model?.split(' ')[0]}</p>
-                <p style={{ fontSize:11, color:'var(--text-label)', margin:0 }}>Best Performer</p>
-              </div>
-              <div style={{
-                borderRadius:14, padding:'18px 16px', textAlign:'center',
-                border:'1px solid rgba(99,102,241,0.25)',
-                background:'linear-gradient(135deg,rgba(99,102,241,0.08),rgba(99,102,241,0.04))',
-              }}>
-                <p style={{ fontSize:10, color:'var(--text-2)', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.1em', margin:'0 0 10px' }}>ROC-AUC</p>
-                <p style={{ fontSize:36, fontWeight:900, color:'#4f46e5', fontVariantNumeric:'tabular-nums', margin:'0 0 4px', lineHeight:1 }}>
-                  {state.cv_results?.[0]?.roc_auc ?? '—'}
-                </p>
-                <p style={{ fontSize:11, color:'var(--text-label)', margin:0 }}>종합 예측 정확도</p>
-              </div>
-              <div style={{
-                borderRadius:14, padding:'18px 16px', textAlign:'center',
-                border:`1px solid ${state.optuna_result ? 'rgba(16,185,129,0.3)' : 'var(--border)'}`,
-                background: state.optuna_result
-                  ? 'linear-gradient(135deg,rgba(16,185,129,0.08),rgba(16,185,129,0.04))'
-                  : 'var(--bg)',
-              }}>
-                <p style={{ fontSize:10, color:'var(--text-2)', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.1em', margin:'0 0 10px' }}>Optuna 튜닝</p>
-                <p style={{ fontSize:state.optuna_result ? 24 : 18, fontWeight:800, color: state.optuna_result ? '#059669' : 'var(--text)', margin:'0 0 4px', lineHeight:1 }}>
-                  {state.optuna_result ? `+${state.optuna_result.improvement}%` : '미실행'}
-                </p>
-                <p style={{ fontSize:11, color:'var(--text-label)', margin:0 }}>
-                  {state.optuna_result ? '성능 개선' : 'Model Lab에서 실행 가능'}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* 하단 다운로드 CTA */}
-          <div style={{
-            display:'grid', gridTemplateColumns:'1fr auto', gap:12, alignItems:'center',
-            padding:'20px 24px', borderRadius:16,
-            background:'linear-gradient(135deg,rgba(99,102,241,0.06),rgba(124,58,237,0.04))',
-            border:'1px solid rgba(99,102,241,0.15)',
-          }}>
-            <div>
-              <p style={{ fontSize:14, fontWeight:700, color:'var(--text)', margin:'0 0 4px' }}>보고서를 팀과 공유하세요</p>
-              <p style={{ fontSize:12, color:'var(--text-2)', margin:0 }}>
-                PDF로 저장하거나 공유할 수 있습니다. 브라우저에서 Ctrl+P → PDF로 저장을 선택하세요.
-              </p>
-            </div>
-            <div style={{ display:'flex', gap:10, flexShrink:0 }}>
-              <button onClick={() => window.open('/api/report/html', '_blank')} className="btn-secondary" style={{ whiteSpace:'nowrap' }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15,3 21,3 21,9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                미리보기
-              </button>
-              <button onClick={downloadReport} disabled={loading} className="btn-primary"
-                style={{ whiteSpace:'nowrap', background:'linear-gradient(135deg,#6366f1,#7c3aed)' }}>
-                {loading ? <span className="spinner" /> : (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                )}
-                {loading ? '생성 중...' : 'PDF 다운로드'}
-              </button>
-            </div>
-          </div>
-
+          </Section>
         </div>
-      )}
+      </div>
     </div>
   )
 }
