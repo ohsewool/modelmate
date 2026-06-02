@@ -145,3 +145,30 @@ Fields:
 - `features`: ranked local contribution approximation with value, baseline, direction, and contribution.
 - `source`: global evidence source used for the local approximation.
 
+## POST `/api/predict/single`
+
+Stable single-row prediction endpoint.
+
+Request:
+
+```json
+{
+  "features": {
+    "feature_a": 1.2,
+    "feature_b": "category"
+  },
+  "limit": 5
+}
+```
+
+Response fields:
+
+- `status`: `ok` when prediction succeeded.
+- `task_type`: `classification` or `regression`.
+- `prediction`: numeric prediction.
+- `prediction_label`: decoded class label when available.
+- `probabilities` and `confidence`: classification-only fields when supported.
+- `input_features`: final model-ready feature values after filling/coercion.
+- `input_warnings`: missing, unknown-category, or invalid-number corrections.
+- `top_factors`: ranked local contribution approximation for the prediction.
+
