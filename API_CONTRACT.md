@@ -172,3 +172,22 @@ Response fields:
 - `input_warnings`: missing, unknown-category, or invalid-number corrections.
 - `top_factors`: ranked local contribution approximation for the prediction.
 
+## POST `/api/predict/batch`
+
+Stable CSV batch prediction endpoint.
+
+Request:
+
+- multipart form file field: `file`
+- optional query parameter: `limit`, number of top factors per row, clamped to 1-10.
+
+Response fields:
+
+- `status`: `ok` when prediction succeeded.
+- `count`: number of predicted rows.
+- `task_type`: `classification` or `regression`.
+- `encoding` and `separator`: detected input parsing metadata.
+- `dropped_target`: whether the target column was removed from the prediction file.
+- `warning_count`: total number of input corrections across rows.
+- `results`: row-level predictions with confidence, probabilities, input warnings, and top factors.
+
