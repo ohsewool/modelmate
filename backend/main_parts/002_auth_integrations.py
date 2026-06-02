@@ -1,0 +1,90 @@
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS experiments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id TEXT NOT NULL,
+            data TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    if not credentials:
+        return None
+    try:
+        payload = jose_jwt.decode(credentials.credentials, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        return payload
+    except Exception:
+        return None
+
+try:
+    import shap; SHAP_OK = True
+except: SHAP_OK = False
+
+try:
+    import optuna; optuna.logging.set_verbosity(optuna.logging.WARNING); OPTUNA_OK = True
+except: OPTUNA_OK = False
+
+try:
+    from xgboost import XGBClassifier, XGBRegressor; XGB_OK = True
+except: XGB_OK = False
+
+try:
+    from lightgbm import LGBMClassifier, LGBMRegressor
+    import logging; logging.getLogger("lightgbm").setLevel(logging.ERROR)
+    LGBM_OK = True
+except: LGBM_OK = False
+
+_GEMINI_ERROR = ""
+try:
+    import google.generativeai as genai
+    _GEMINI_KEY = os.getenv("GEMINI_API_KEY", "REDACTED_LEAKED_KEY_SEE_SECURITY_MD")
+    if _GEMINI_KEY:
+        genai.configure(api_key=_GEMINI_KEY)
+        _GEMINI_MODEL = genai.GenerativeModel("gemini-2.0-flash")
+        GEMINI_OK = True
+    else:
+        GEMINI_OK = False
+        _GEMINI_ERROR = "API 키 없음"
+except Exception as _e:
+    GEMINI_OK = False
+    _GEMINI_ERROR = str(_e)
+
+_GEMINI_CALL_ERROR = ""
+
+def _call_gemini_sync(prompt: str) -> str:
+    global _GEMINI_CALL_ERROR
+    try:
+        r = _GEMINI_MODEL.generate_content(prompt)
+        return r.text.strip()
+    except Exception as e:
+        _GEMINI_CALL_ERROR = str(e)
+        return ""
+
+async def ask_gemini(prompt: str) -> str:
+    if not GEMINI_OK: return ""
+    return await asyncio.to_thread(_call_gemini_sync, prompt)
+
+app = FastAPI(title="ModelMate API")
+app.add_middleware(CORSMiddleware, allow_origins=["*"],
+                   allow_methods=["*"], allow_headers=["*"])
+
+init_db()
+
+HISTORY_FILE = "experiment_history.json"
+STATIC_DIR = os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")
+STATE: dict = {}
+
+MODELS = {
+    "Random Forest":       lambda: RandomForestClassifier(n_estimators=100, random_state=42),
+    "Gradient Boosting":   lambda: GradientBoostingClassifier(random_state=42),
+    "Logistic Regression": lambda: LogisticRegression(max_iter=1000, random_state=42),
+    "Decision Tree":       lambda: DecisionTreeClassifier(random_state=42),
+}
+if XGB_OK:
+    MODELS["XGBoost"]  = lambda: XGBClassifier(n_estimators=100, random_state=42, eval_metric="logloss", verbosity=0, n_jobs=1)
+if LGBM_OK:
+    MODELS["LightGBM"] = lambda: LGBMClassifier(n_estimators=100, random_state=42, verbosity=-1, n_jobs=1)
+
