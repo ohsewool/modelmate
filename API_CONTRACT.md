@@ -1,0 +1,104 @@
+# ModelMate API Contract Notes
+
+Branch: `codex/split-for-team`
+
+This document records backend response fields that frontend teammates can use safely.
+
+## Compatibility Rule
+
+Do not remove or rename existing fields without team agreement.
+
+New fields should be treated as optional by the frontend:
+
+```js
+const explanations = data.explanations || {}
+```
+
+## POST `/api/set-target`
+
+Existing fields are preserved, including:
+
+- `n_samples`
+- `n_features`
+- `failure_rate`
+- `missing_total`
+- `dropped_cols`
+- `features`
+- `cat_cols`
+- `corr_data`
+- `corr_cols`
+- `distributions`
+- `class_distribution`
+- `label_map`
+- `task_type`
+- `n_unique_target`
+- `stats`
+
+Optional new field:
+
+```json
+{
+  "explanations": {
+    "task_reason": "Target has 3 unique value(s), so it was treated as a classification problem.",
+    "drop_reasons": {
+      "row_id": "Dropped because it looks like an ID or identifier column.",
+      "created_at": "Dropped from the base feature set because it is datetime-like."
+    },
+    "preprocess_summary": "Training data was prepared with 8 feature column(s)."
+  }
+}
+```
+
+Frontend usage:
+
+- Show `task_reason` in an "AI decision" or "Analysis setup" card.
+- Show `drop_reasons` only when it has keys.
+- Show `preprocess_summary` near feature count or EDA summary.
+
+## POST `/api/run-cv`
+
+Existing fields are preserved, including:
+
+- `results`
+- `best_model`
+- `feature_importance`
+- `task_type`
+- `final_accuracy`
+- `final_f1`
+- `final_r2`
+- `final_rmse`
+
+Optional new field:
+
+```json
+{
+  "explanations": {
+    "best_model_reason": "Random Forest was selected because it had the highest roc_auc score. Best roc_auc: 0.9412.",
+    "failed_model_count": 1
+  }
+}
+```
+
+Frontend usage:
+
+- Show `best_model_reason` above or below the leaderboard.
+- If `failed_model_count > 0`, show a subtle warning that some models were skipped or failed.
+- Do not assume `explanations` always exists.
+
+## Failed Model Row
+
+Model rows can include:
+
+```json
+{
+  "model": "XGBoost",
+  "status": "failed",
+  "error_message": "unsupported input type",
+  "accuracy": null,
+  "f1": null,
+  "roc_auc": null
+}
+```
+
+Frontend should render failed rows differently from valid low-scoring rows.
+

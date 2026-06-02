@@ -1,0 +1,90 @@
+    return {"key_length": len(key), "key_prefix": key[:8] if key else "", "gemini_ok": GEMINI_OK, "gemini_error": _GEMINI_ERROR, "env_count": len(all_keys), "gemini_related_keys": gemini_keys, "all_env_keys": all_keys}
+
+@app.get("/api/state")
+async def get_state():
+    return {
+        "has_data":      STATE.get("df") is not None,
+        "has_model":     STATE.get("best_model") is not None,
+        "best_model":    STATE.get("best_model_name"),
+        "target_col":    STATE.get("target_col"),
+        "task_type":     STATE.get("task_type"),
+        "cat_cols":      STATE.get("cat_cols", []),
+        "cv_results":    STATE.get("cv_results"),
+        "optuna_result": STATE.get("optuna_result"),
+        "data_shape":    list(STATE["X"].shape) if STATE.get("X") is not None else None,
+        "shap_ok":       SHAP_OK,
+        "optuna_ok":     OPTUNA_OK,
+        "gemini_ok":     GEMINI_OK,
+        "gemini_error":  _GEMINI_ERROR,
+        "gemini_call_error": _GEMINI_CALL_ERROR,
+        "col_labels":    STATE.get("col_labels", {}),
+    }
+
+# ── HTML 리포트 (PDF 인쇄 지원) ──────────────────────────
+@app.get("/api/report/html", response_class=HTMLResponse)
+async def html_report(autoprint: bool = False):
+    cv = STATE.get("cv_results"); name = STATE.get("best_model_name")
+    opt = STATE.get("optuna_result"); X = STATE.get("X"); y = STATE.get("y")
+    preds = STATE.get("predictions"); cat_cols = STATE.get("cat_cols", [])
+    task_type = STATE.get("task_type", "classification")
+    shap_vals = STATE.get("shap_values"); model = STATE.get("best_model")
+    if cv is None: raise HTTPException(400, "CV 먼저 실행")
+    now = datetime.now().strftime("%Y-%m-%d %H:%M")
+    is_reg = task_type == "regression"
+
+    # 모델 비교 테이블
+    if is_reg:
+        thead = "<tr><th>모델</th><th>R²</th><th>RMSE</th><th>MAE</th></tr>"
+        tbody = "".join(f"<tr{'class=best' if i==0 else ''}><td>{r['model']}</td>"
+                        f"<td>{r.get('r2','—')}</td><td>{r.get('rmse','—')}</td>"
+                        f"<td>{r.get('mae','—')}</td></tr>"
+                        for i, r in enumerate(cv))
+    else:
+        thead = "<tr><th>모델</th><th>Accuracy</th><th>F1</th><th>ROC-AUC</th></tr>"
+        tbody = "".join(f"<tr{'class=best' if i==0 else ''}><td>{r['model']}</td>"
+                        f"<td>{r.get('accuracy','—')}</td><td>{r.get('f1','—')}</td>"
+                        f"<td>{r.get('roc_auc','—')}</td></tr>"
+                        for i, r in enumerate(cv))
+
+    # 주요 성능 지표
+    if is_reg and preds:
+        preds_arr = np.array(preds); y_arr = y.values
+        perf_items = [
+            ("R² Score", f"{r2_score(y_arr,preds_arr):.4f}"),
+            ("RMSE",     f"{np.sqrt(mean_squared_error(y_arr,preds_arr)):.4f}"),
+            ("MAE",      f"{mean_absolute_error(y_arr,preds_arr):.4f}"),
+        ]
+    elif preds:
+        perf_items = [
+            ("Accuracy", f"{accuracy_score(y,preds):.4f}"),
+            ("F1 Score", f"{f1_score(y,preds,average='weighted'):.4f}"),
+        ]
+    else:
+        perf_items = []
+
+    perf_html = "".join(f"<div class='kpi'><div class='kl'>{k}</div><div class='kv'>{v}</div></div>"
+                        for k, v in perf_items)
+
+    # Optuna 섹션
+    metric_name = opt.get("metric_name","ROC-AUC") if opt else "ROC-AUC"
+    opt_html = (f"<h2>⚡ Optuna 하이퍼파라미터 튜닝</h2>"
+                f"<p>{metric_name}: <b>{opt['before_roc']}</b> → <b style='color:#059669'>{opt['after_roc']}</b>"
+                f" <span style='color:#059669'>(+{opt['improvement']}% 개선)</span></p>"
+                f"<p style='font-size:.85rem;color:#64748b'>최적 파라미터: "
+                + ", ".join(f"<b>{k}</b>={v}" for k,v in opt.get('best_params',{}).items())
+                + "</p>") if opt else ""
+
+    # 피처 중요도
+    fi_html = ""
+    if model and hasattr(model, "feature_importances_") and X is not None:
+        fi = sorted(zip(X.columns, model.feature_importances_), key=lambda x: x[1], reverse=True)[:8]
+        max_fi = fi[0][1] if fi else 1
+        bars = "".join(
+            f"<div style='display:flex;align-items:center;gap:10px;margin-bottom:6px'>"
+            f"<span style='width:140px;font-size:.83rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>"
+            f"{'⭐ ' if i==0 else ''}{col}</span>"
+            f"<div style='flex:1;background:#e2e8f0;border-radius:4px;height:10px'>"
+            f"<div style='width:{imp/max_fi*100:.1f}%;background:#6366f1;border-radius:4px;height:10px'></div></div>"
+            f"<span style='font-size:.83rem;width:44px;text-align:right;color:#6366f1'>{imp*100:.1f}%</span></div>"
+            for i,(col,imp) in enumerate(fi))
+        fi_html = f"<h2>📊 피처 중요도 Top 8</h2>{bars}"
