@@ -7,9 +7,9 @@
 async def predict_batch(file: UploadFile = File(...)):
     model = STATE.get("best_model"); X_train = STATE.get("X")
     if model is None: raise HTTPException(400, "모델 없음")
-    raw = (await file.read()).decode("utf-8", errors="replace")
+    raw, _ = decode_upload_bytes(await file.read())
     try:
-        df_new = pd.read_csv(io.StringIO(raw))
+        df_new, _ = read_table_text(raw, file.filename)
     except Exception as e:
         raise HTTPException(400, f"CSV 파싱 실패: {e}")
     encoders  = STATE.get("encoders", {})

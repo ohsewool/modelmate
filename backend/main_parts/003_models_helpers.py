@@ -44,15 +44,26 @@ def auto_parse(raw):
     return df, {",":"쉼표", "\t":"탭", ";":"세미콜론", "|":"파이프", "space":"공백"}.get(best, best)
 
 def encode_features(df, tgt):
-    """카테고리형 컬럼 자동 인코딩, 수치형 결측치 처리"""
+    """카테고리형 컬럼 자동 인코딩 + 범용 전처리."""
     X = df.drop(columns=[tgt]).copy()
+    auto_drop, _ = suggested_feature_drops(df, target_col=tgt)
+    if auto_drop:
+        X = X.drop(columns=[c for c in auto_drop if c in X.columns])
+    for col in X.columns.tolist():
+        if looks_like_datetime(X[col]):
+            dt = pd.to_datetime(X[col], errors="coerce")
+            X[col + "_year"] = dt.dt.year
+            X[col + "_month"] = dt.dt.month
+            X[col + "_day"] = dt.dt.day
+            X = X.drop(columns=[col])
     cat_cols = X.select_dtypes(include=["object", "category", "bool"]).columns.tolist()
     encoders = {}
     for col in cat_cols:
         le = LabelEncoder()
         X[col] = le.fit_transform(X[col].fillna("missing").astype(str))
         encoders[col] = le
-    X = X.fillna(X.median(numeric_only=True))
+    X = X.apply(pd.to_numeric, errors="coerce")
+    X = X.fillna(X.median(numeric_only=True)).fillna(0)
     return X, cat_cols, encoders
 
 def encode_target(y_raw):
