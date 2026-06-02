@@ -1,3 +1,5 @@
+import re
+
 def decode_upload_bytes(data: bytes):
     for enc in ("utf-8-sig", "utf-8", "cp949", "euc-kr", "latin1"):
         try:
@@ -36,11 +38,12 @@ def suggested_feature_drops(df, target_col=None):
             continue
         s = df[col]
         name = col.lower().replace(" ", "").replace("_", "").replace("-", "")
+        parts = [p for p in re.split(r"[^a-zA-Z0-9가-힣]+", col.lower()) if p]
         unique_ratio = s.nunique(dropna=True) / n
         reason = None
         if s.nunique(dropna=True) <= 1:
             reason = "constant column"
-        elif any(kw in name for kw in id_keywords):
+        elif name in id_keywords or any(p in id_keywords for p in parts) or (name.endswith("id") and len(name) <= 7):
             reason = "identifier-like column"
         elif n >= 20 and unique_ratio > 0.95 and (s.dtype == "object" or not pd.api.types.is_numeric_dtype(s)):
             reason = "high-cardinality text column"
@@ -48,7 +51,7 @@ def suggested_feature_drops(df, target_col=None):
             reason = "datetime column"
         else:
             numeric = pd.to_numeric(s, errors="coerce")
-            if n >= 10 and numeric.notna().mean() > 0.9:
+            if n >= 10 and numeric.notna().mean() > 0.9 and numeric.is_monotonic_increasing:
                 diffs = numeric.dropna().diff().dropna()
                 if len(diffs) and (diffs == 1).mean() > 0.9:
                     reason = "sequential identifier"
