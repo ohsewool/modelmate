@@ -191,3 +191,29 @@ Response fields:
 - `warning_count`: total number of input corrections across rows.
 - `results`: row-level predictions with confidence, probabilities, input warnings, and top factors.
 
+## POST `/api/deploy/stable`
+
+Stores the current trained model with feature metadata, defaults, encoders, target metadata, and metrics.
+
+Response fields:
+
+- `status`: `ok` when the model was saved.
+- `model_id`: short model identifier.
+- `name`: display name.
+- `task_type`: `classification` or `regression`.
+- `features`: model input schema with examples and options.
+- `predict_url`: stable prediction URL for the saved model.
+
+## POST `/api/v2/{model_id}/predict`
+
+Stable prediction endpoint for a saved model.
+
+Response fields:
+
+- `status`: `ok` when prediction succeeded.
+- `model_id`: saved model identifier.
+- `prediction`, `prediction_label`, `probabilities`, and `confidence`.
+- `input_features`: final model-ready feature values.
+- `input_warnings`: missing, unknown-category, or invalid-number corrections.
+- `target_col` and `best_model_name`: saved model metadata.
+
