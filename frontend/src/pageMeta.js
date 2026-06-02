@@ -1,12 +1,36 @@
 const PAGE_META = {
-  '/upload': { title: '데이터 업로드', desc: 'CSV / TXT 파일을 업로드하고 EDA를 수행합니다' },
-  '/agent': { title: 'AI 자동 분석', desc: 'Agentic AutoML - 버튼 하나로 전체 분석 자동 실행' },
-  '/model-lab': { title: 'Model Lab', desc: '4개 모델 교차검증 및 Optuna 하이퍼파라미터 튜닝' },
-  '/predict': { title: '새 데이터 예측', desc: '학습된 모델로 새 데이터를 예측합니다' },
-  '/deploy': { title: 'API 배포', desc: '모델을 REST API로 배포하고 외부에서 호출합니다' },
-  '/xai': { title: 'XAI 설명', desc: 'SHAP 기반 모델 예측 근거 시각화' },
-  '/history': { title: '실험 기록', desc: '모든 실험 결과 및 성능 추이 확인' },
-  '/report': { title: '분석 보고서', desc: '분석 결과를 HTML 보고서로 내보내기' },
+  '/upload': {
+    title: '1. 데이터 넣기',
+    desc: 'CSV 파일을 올리면 AI가 예측할 항목과 제외할 항목을 먼저 정리합니다.',
+  },
+  '/agent': {
+    title: '2. 자동 분석',
+    desc: '복잡한 설정 없이 데이터 확인, 모델 학습, 성능 비교를 한 번에 진행합니다.',
+  },
+  '/model-lab': {
+    title: '3. 모델 고르기',
+    desc: '여러 AI 모델을 비교하고 가장 잘 맞는 모델을 선택합니다.',
+  },
+  '/report': {
+    title: '4. 결과 요약',
+    desc: '비전공자도 이해할 수 있게 데이터, 모델, 성능을 한 화면에 정리합니다.',
+  },
+  '/xai': {
+    title: '5. 이유 보기',
+    desc: 'AI가 왜 그런 예측을 했는지 중요한 근거를 보여줍니다.',
+  },
+  '/predict': {
+    title: '6. 새 데이터 예측',
+    desc: '새로운 값을 넣어 학습된 모델의 예측 결과를 확인합니다.',
+  },
+  '/deploy': {
+    title: '7. 공유하기',
+    desc: '완성된 모델을 다른 서비스에서도 사용할 수 있는 API로 준비합니다.',
+  },
+  '/history': {
+    title: '작업 기록',
+    desc: '지금까지 진행한 분석과 모델 결과를 확인합니다.',
+  },
 }
 
 export default PAGE_META
