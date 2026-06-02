@@ -118,3 +118,30 @@ Frontend-ready sections:
 - `feature_evidence`: top feature importance or coefficient evidence.
 - `presentation_points`: short bullet points the UI can display.
 
+## GET `/api/explain/summary`
+
+Returns a stable global explanation for the selected model.
+
+Fields:
+
+- `status`: `ok` when explanation data is available.
+- `model`: selected model name.
+- `task_type`: `classification` or `regression`.
+- `source`: one of `feature_importance`, `model_coefficient`, or `target_correlation`.
+- `summary`: short explanation sentence.
+- `items`: ranked feature list with `feature`, `importance`, `raw_importance`, and `source`.
+- `limitations`: explanation caveats for the UI.
+
+## GET `/api/explain/local/{idx}`
+
+Returns a stable per-row explanation for one sample.
+
+Fields:
+
+- `sample_index`: row index in the training data.
+- `prediction`: model prediction.
+- `prediction_label`: decoded class label when available.
+- `probabilities` and `confidence`: classification-only fields when supported.
+- `features`: ranked local contribution approximation with value, baseline, direction, and contribution.
+- `source`: global evidence source used for the local approximation.
+
