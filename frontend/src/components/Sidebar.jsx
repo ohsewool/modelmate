@@ -86,12 +86,12 @@ export default function Sidebar({ isOpen, onClose }) {
         </div>
 
         <nav style={{ flex: 1, padding: '12px 10px', overflowY: 'auto' }}>
-          <p style={{ padding: '0 10px', marginBottom: 8, fontSize: 10, fontWeight: 700, color: 'var(--text-label)', textTransform: 'uppercase', letterSpacing: '0.12em' }}>
+          <p style={{ padding: '0 10px', marginBottom: 8, fontSize: 10, fontWeight: 700, color: 'var(--text-label)', textTransform: 'uppercase', letterSpacing: '0.12em', textAlign: 'center' }}>
             분석 흐름
           </p>
           {CORE_NAV.map(({ to, icon: Icon, label, step, tag }, idx) => (
             <div key={to}>
-              <NavItem to={to} icon={Icon} label={label} done={step < currentStep} tag={tag} onClose={onClose} />
+              <NavItem to={to} icon={Icon} label={label} done={step < currentStep} tag={tag} centered onClose={onClose} />
               {idx < CORE_NAV.length - 1 && <FlowArrow done={step < currentStep} />}
             </div>
           ))}
@@ -162,12 +162,12 @@ export default function Sidebar({ isOpen, onClose }) {
   )
 }
 
-function NavItem({ to, icon: Icon, label, desc, done, tag, optional, onClose }) {
+function NavItem({ to, icon: Icon, label, desc, done, tag, optional, centered, onClose }) {
   return (
     <NavLink key={to} to={to} onClick={onClose} style={{ textDecoration: 'none' }}>
       {({ isActive }) => (
         <div style={{
-          display: 'flex', alignItems: 'center', gap: 10,
+          display: 'flex', alignItems: 'center', justifyContent: centered ? 'center' : 'flex-start', gap: 10,
           padding: '9px 10px', borderRadius: 10, marginBottom: 2,
           fontSize: 13, fontWeight: isActive ? 800 : 600, cursor: 'pointer',
           transition: 'all 0.15s',
@@ -178,7 +178,7 @@ function NavItem({ to, icon: Icon, label, desc, done, tag, optional, onClose }) 
           <span style={{ width: 16, height: 16, flexShrink: 0 }}>
             {done && !isActive ? <CheckIcon /> : <Icon />}
           </span>
-          <span style={{ flex: 1, minWidth: 0 }}>
+          <span style={{ flex: centered ? '0 1 auto' : 1, minWidth: 0, textAlign: centered ? 'center' : 'left' }}>
             <span style={{ display: 'block' }}>{label}</span>
             {desc && <span style={{ display: 'block', marginTop: 2, fontSize: 10, fontWeight: 600, color: 'var(--text-label)', lineHeight: 1.25 }}>{desc}</span>}
           </span>
@@ -191,7 +191,7 @@ function NavItem({ to, icon: Icon, label, desc, done, tag, optional, onClose }) 
 
 function FlowArrow({ done }) {
   return (
-    <div style={{ height: 14, display: 'flex', alignItems: 'center', paddingLeft: 17, color: done ? '#059669' : 'var(--text-label)', opacity: done ? 0.9 : 0.55 }}>
+    <div style={{ height: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', color: done ? '#059669' : 'var(--text-label)', opacity: done ? 0.9 : 0.55 }}>
       <svg width="10" height="14" viewBox="0 0 10 14" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <path d="M5 1v10" />
         <path d="M2 8l3 3 3-3" />
