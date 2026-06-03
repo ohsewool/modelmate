@@ -249,4 +249,13 @@ html.dark .banner-danger  { background: rgba(244,63,94,0.1);   border-color: rgb
     padding-left: 12px !important;
     padding-right: 12px !important;
   }
+
+  .home-hero-grid,
+  .home-step-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .home-hero-grid h1 {
+    font-size: 48px !important;
+  }
 }
