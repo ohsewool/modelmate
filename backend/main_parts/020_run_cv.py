@@ -1,5 +1,5 @@
 @app.post("/api/run-cv")
-async def run_cv():
+async def run_cv(user=Depends(get_current_user)):
     X, y = STATE.get("X"), STATE.get("y")
     if X is None: raise HTTPException(400, "데이터 없음")
     task_type = STATE.get("task_type", "classification")
@@ -35,7 +35,7 @@ async def run_cv():
         save_history({"timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                       "data_shape": list(X.shape), "target": STATE["target_col"],
                       "best_model": best_name, "results": results, "optuna_applied": False,
-                      "task_type": "regression"})
+                      "task_type": "regression"}, user_id=user["sub"] if user else None)
         return {"results": results, "best_model": best_name,
                 "feature_importance": fi, "task_type": "regression",
                 "explanations": cv_explanations(best_name, results, "regression"),
@@ -91,7 +91,7 @@ async def run_cv():
     save_history({"timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                   "data_shape": list(X.shape), "target": STATE["target_col"],
                   "best_model": best_name, "results": results, "optuna_applied": False,
-                  "task_type": "classification"})
+                  "task_type": "classification"}, user_id=user["sub"] if user else None)
     return {"results": results, "best_model": best_name,
             "feature_importance": fi, "task_type": "classification",
             "explanations": cv_explanations(best_name, results, "classification"),

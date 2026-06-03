@@ -1,404 +1,233 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { BarChart3, Clock, LogIn, RefreshCw, Trash2, UserRound } from 'lucide-react'
 import api from '../api'
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
+import { useAuth } from '../AuthContext'
+import { Badge } from '../components/ui/badge'
+import { Button } from '../components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
 
-const ttStyle = {
-  background: '#ffffff', border: '1px solid var(--border)',
-  borderRadius: 12, fontSize: 11, color: 'var(--text)',
-  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+const fmt = value => {
+  if (value === null || value === undefined || value === '') return '-'
+  if (typeof value === 'number') return Number.isInteger(value) ? value : value.toFixed(4)
+  return value
 }
 
-function getMetrics(h) {
-  const br = h.results?.find(r => r.model === h.best_model) || h.results?.[0] || {}
-  const isReg = h.task_type === 'regression'
-  if (isReg) {
-    const finalScore = h.optuna_applied ? h.tuned_roc : br.r2
-    return { primary: { label:'R²', value: finalScore ?? br.r2 },
-             secondary: [{ label:'RMSE', value: br.rmse }, { label:'MAE', value: br.mae }],
-             isRegression: true }
-  }
-  const finalScore = h.optuna_applied ? h.tuned_roc : br.roc_auc
-  return { primary: { label:'ROC-AUC', value: finalScore ?? br.roc_auc },
-           secondary: [{ label:'Accuracy', value: br.accuracy }, { label:'F1', value: br.f1 }],
-           isRegression: false }
+function getPrimaryMetric(item) {
+  const first = item.results?.[0] || {}
+  const label = item.tuned_metric || (item.task_type === 'regression' ? 'R2' : 'ROC-AUC')
+  const value = item.tuned_score ?? first.roc_auc ?? first.r2 ?? first.accuracy
+  return { label, value }
+}
+
+function taskLabel(task) {
+  if (task === 'regression') return '숫자 예측'
+  if (task === 'classification') return '분류 예측'
+  return '분석'
 }
 
 export default function History() {
-  const [history,  setHistory]  = useState([])
-  const [state,    setState]    = useState(null)
-  const [loading,  setLoading]  = useState(false)
-  const [selected, setSelected] = useState([])
+  const { user, logout } = useAuth()
+  const nav = useNavigate()
+  const [profile, setProfile] = useState(null)
+  const [history, setHistory] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [clearing, setClearing] = useState(false)
 
-  const load = () => {
-    api.get('/history').then(r => setHistory(r.data))
-    api.get('/state').then(r => setState(r.data))
-  }
-  useEffect(load, [])
-
-  async function clearAll() {
-    if (!confirm('전체 기록을 삭제할까요?')) return
-    await api.delete('/history'); load(); setSelected([])
-  }
-
-  async function rerun() {
+  async function load() {
     setLoading(true)
-    try { await api.post('/run-cv'); load() }
-    catch(e) { alert(e.response?.data?.detail || e.message) }
-    setLoading(false)
+    try {
+      const [profileRes, historyRes] = await Promise.all([
+        api.get('/profile/summary'),
+        api.get('/history'),
+      ])
+      setProfile(profileRes.data)
+      setHistory(historyRes.data || [])
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  function toggleSelect(idx) {
-    setSelected(prev => prev.includes(idx) ? prev.filter(i => i !== idx) : [...prev, idx].slice(-3))
+  useEffect(() => { load() }, [])
+
+  async function clearMyHistory() {
+    if (!confirm(user ? '내 실험 기록을 삭제할까요?' : '비로그인 실험 기록을 삭제할까요?')) return
+    setClearing(true)
+    try {
+      await api.delete('/history')
+      await load()
+    } catch (e) {
+      alert(e.response?.data?.detail || e.message)
+    } finally {
+      setClearing(false)
+    }
   }
 
-  const reversed = [...history].reverse()
+  const latest = history[0]
+  const optunaCount = history.filter(h => h.optuna_applied).length
+  const best = useMemo(() => {
+    let max = null
+    history.forEach(item => {
+      const value = Number(getPrimaryMetric(item).value)
+      if (!Number.isNaN(value)) max = max === null ? value : Math.max(max, value)
+    })
+    return max
+  }, [history])
 
-  const trend = reversed.map((h, i) => ({
-    name: `#${i+1}`,
-    roc:    h.results?.[0]?.roc_auc ?? h.results?.[0]?.r2 ?? 0,
-    optuna: h.optuna_applied ? h.tuned_roc ?? h.results?.[0]?.roc_auc : null,
-  }))
-
-  const bestROC = history.length > 0
-    ? Math.max(...history.map(h => h.results?.[0]?.roc_auc ?? h.results?.[0]?.r2 ?? 0))
-    : 0
-
-  // 선택된 실험 데이터
-  const selectedExps = selected.map(idx => ({ idx, h: reversed[idx] }))
-
-  // 비교할 primary metric 최고값
-  const maxPrimary = selectedExps.length > 0
-    ? Math.max(...selectedExps.map(({ h }) => parseFloat(getMetrics(h).primary.value) || 0))
-    : 0
+  if (loading) {
+    return (
+      <div style={{ padding: 32, maxWidth: 1040 }}>
+        <Card className="empty-state">
+          <RefreshCw className="animate-spin" size={32} color="#2563eb" />
+          <p className="empty-title" style={{ marginTop: 14 }}>계정 정보를 불러오는 중입니다</p>
+        </Card>
+      </div>
+    )
+  }
 
   return (
-    <div className="animate-fade-in" style={{ padding:32, maxWidth:960 }}>
-
-      {/* 페이지 헤더 배너 */}
-      <div style={{
-        borderRadius: 20,
-        padding: '28px 32px',
-        marginBottom: 28,
-        background: 'linear-gradient(135deg, #0891b2 0%, #6366f1 100%)',
-        boxShadow: '0 8px 32px rgba(8,145,178,0.25)',
-        position: 'relative',
-        overflow: 'hidden',
-      }}>
-        <div style={{
-          position: 'absolute', top: -40, right: -40,
-          width: 180, height: 180, borderRadius: '50%',
-          background: 'rgba(255,255,255,0.07)',
-        }} />
-        <div style={{
-          position: 'absolute', bottom: -50, right: 100,
-          width: 150, height: 150, borderRadius: '50%',
-          background: 'rgba(255,255,255,0.05)',
-        }} />
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', position:'relative', flexWrap:'wrap', gap:16 }}>
-          <div style={{ display:'flex', alignItems:'center', gap:16 }}>
-            <div style={{
-              width: 52, height: 52, borderRadius: 16,
-              background: 'rgba(255,255,255,0.18)',
-              backdropFilter: 'blur(8px)',
-              border: '1px solid rgba(255,255,255,0.25)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>
-              </svg>
-            </div>
-            <div>
-              <h1 style={{ fontSize: 22, fontWeight: 800, color: 'white', margin: '0 0 4px', letterSpacing: '-0.02em' }}>
-                실험 히스토리
-              </h1>
-              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', margin: 0 }}>
-                모든 실험 결과를 비교하고 성능 추이를 확인합니다
-              </p>
-            </div>
-          </div>
-
-          {/* 헤더 내 액션 버튼 */}
-          <div style={{ display:'flex', gap:8 }}>
-            {state?.has_data && (
-              <button onClick={rerun} disabled={loading} style={{
-                padding:'8px 16px', borderRadius:10, fontSize:12, fontWeight:600,
-                background:'rgba(255,255,255,0.2)', color:'white',
-                border:'1px solid rgba(255,255,255,0.3)',
-                cursor:'pointer', display:'flex', alignItems:'center', gap:6,
-                backdropFilter:'blur(8px)',
-              }}>
-                {loading ? <span className="spinner" style={{ borderTopColor:'white' }} /> : (
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polygon points="5,3 19,12 5,21"/></svg>
+    <div className="animate-fade-in" style={{ padding: 32, maxWidth: 1080 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+        <Card>
+          <CardContent className="pt-5">
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 20, alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0 }}>
+                {user?.picture ? (
+                  <img src={user.picture} alt="" style={{ width: 54, height: 54, borderRadius: '50%', border: '1px solid var(--border)' }} />
+                ) : (
+                  <div style={{ width: 54, height: 54, borderRadius: 12, display: 'grid', placeItems: 'center', background: 'var(--surface-alt)', border: '1px solid var(--border)', color: '#2563eb' }}>
+                    <UserRound size={26} />
+                  </div>
                 )}
-                재실행
-              </button>
-            )}
-            {history.length > 0 && (
-              <button onClick={clearAll} style={{
-                padding:'8px 16px', borderRadius:10, fontSize:12, fontWeight:600,
-                background:'rgba(244,63,94,0.2)', color:'#fda4af',
-                border:'1px solid rgba(244,63,94,0.3)',
-                cursor:'pointer', display:'flex', alignItems:'center', gap:6,
-                backdropFilter:'blur(8px)',
-              }}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="3,6 5,6 21,6"/><path d="M19,6v14a2,2,0,0,1-2,2H7a2,2,0,0,1-2-2V6m3,0V4a2,2,0,0,1,2-2h4a2,2,0,0,1,2-2v2"/></svg>
-                전체 삭제
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* 선택 상태 표시 */}
-      {history.length > 0 && (
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
-          <div>
-            {selected.length >= 2 && (
-              <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                <div style={{ width:8, height:8, borderRadius:'50%', background:'#6366f1' }} />
-                <p style={{ fontSize:13, color:'#6366f1', fontWeight:600, margin:0 }}>
-                  {selected.length}개 선택됨 — 아래에서 비교 결과를 확인하세요
-                </p>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <h1 style={{ margin: 0, fontSize: 22, fontWeight: 850, color: 'var(--text)' }}>
+                      {user ? `${user.name || '사용자'}님의 작업 공간` : '비로그인 작업 공간'}
+                    </h1>
+                    <Badge variant={user ? 'success' : 'warning'}>{user ? '계정 저장 중' : '임시 저장'}</Badge>
+                  </div>
+                  <p style={{ margin: '6px 0 0', fontSize: 13, color: 'var(--text-2)' }}>
+                    {user ? user.email : '로그인하면 실험 기록이 계정별로 저장되고 다른 사람 기록과 섞이지 않습니다.'}
+                  </p>
+                </div>
               </div>
-            )}
-            {selected.length === 1 && (
-              <p style={{ fontSize:13, color:'var(--text-2)', margin:0 }}>하나 더 선택하면 비교가 시작됩니다</p>
-            )}
-            {selected.length === 0 && (
-              <p style={{ fontSize:12, color:'var(--text-label)', margin:0 }}>행을 클릭하면 실험을 선택해 비교할 수 있습니다 (최대 3개)</p>
-            )}
-          </div>
-          {selected.length > 0 && (
-            <button onClick={() => setSelected([])} className="btn-secondary" style={{ fontSize:12 }}>선택 해제</button>
-          )}
-        </div>
-      )}
-
-      {history.length === 0 ? (
-        <div className="card" style={{ textAlign:'center', padding:'80px 40px' }}>
-          <div style={{
-            width:96, height:96, borderRadius:28, margin:'0 auto 24px',
-            display:'flex', alignItems:'center', justifyContent:'center',
-            background:'linear-gradient(135deg,rgba(8,145,178,0.1),rgba(99,102,241,0.08))',
-            border:'1px solid rgba(99,102,241,0.15)',
-          }}>
-            <span style={{ fontSize:48 }}>📭</span>
-          </div>
-          <p style={{ fontSize:20, fontWeight:700, color:'var(--text)', margin:'0 0 8px' }}>저장된 실험 기록이 없습니다</p>
-          <p style={{ fontSize:13, color:'var(--text-2)', margin:'0 0 24px' }}>Model Lab에서 모델을 실행하면 자동으로 저장됩니다.</p>
-          <div style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'8px 16px', borderRadius:99, background:'rgba(99,102,241,0.08)', border:'1px solid rgba(99,102,241,0.2)' }}>
-            <span style={{ fontSize:11, color:'#6366f1', fontWeight:600 }}>Model Lab에서 시작하세요</span>
-          </div>
-        </div>
-      ) : (
-        <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
-
-          {/* KPI 카드 - 크고 굵게 */}
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:16 }}>
-            {[
-              { label:'총 실험 수', value: history.length, color:'#6366f1', bg:'rgba(99,102,241,0.06)', border:'rgba(99,102,241,0.2)' },
-              { label:'Optuna 적용', value: history.filter(h=>h.optuna_applied).length, color:'#d97706', bg:'rgba(217,119,6,0.06)', border:'rgba(217,119,6,0.2)' },
-              { label:'최고 성능', value: bestROC.toFixed(4), color:'#059669', bg:'rgba(5,150,105,0.06)', border:'rgba(5,150,105,0.2)' },
-            ].map(({ label, value, color, bg, border }) => (
-              <div key={label} className="card" style={{
-                textAlign:'center',
-                border:`1px solid ${border}`,
-                background:bg,
-                transition:'all 0.2s',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.transform='translateY(-2px)'; e.currentTarget.style.boxShadow=`0 8px 24px ${border}` }}
-              onMouseLeave={e => { e.currentTarget.style.transform=''; e.currentTarget.style.boxShadow='' }}
-              >
-                <p style={{ fontSize:11, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.1em', color:'var(--text-3)', margin:'0 0 10px' }}>{label}</p>
-                <p style={{ fontSize:40, fontWeight:800, color, margin:0, letterSpacing:'-0.02em', lineHeight:1 }}>{value}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* 추이 차트 */}
-          {trend.length > 1 && (
-            <div className="card"
-              style={{ transition:'all 0.2s' }}
-              onMouseEnter={e => { e.currentTarget.style.boxShadow='0 4px 20px rgba(8,145,178,0.1)' }}
-              onMouseLeave={e => { e.currentTarget.style.boxShadow='' }}
-            >
-              <p className="section-title">성능 추이</p>
-              <p style={{ fontSize:11, color:'var(--text-2)', margin:'-8px 0 18px' }}>실험을 반복할수록 성능이 어떻게 변했는지 보여줍니다. 위로 올라갈수록 좋습니다.</p>
-              <ResponsiveContainer width="100%" height={200}>
-                <LineChart data={trend}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(99,102,241,0.08)" />
-                  <XAxis dataKey="name" tick={{ fill:'var(--text-2)', fontSize:11 }} axisLine={false} tickLine={false} />
-                  <YAxis domain={['auto','auto']} tick={{ fill:'var(--text-2)', fontSize:10 }} axisLine={false} tickLine={false} />
-                  <Tooltip contentStyle={ttStyle} />
-                  <Line type="monotone" dataKey="roc" stroke="#6366f1" strokeWidth={2.5}
-                    dot={{ fill:'#6366f1', r:4, strokeWidth:2, stroke:'#ffffff' }} name="기본 성능" />
-                  <Line type="monotone" dataKey="optuna" stroke="#f59e0b" strokeWidth={2}
-                    dot={{ fill:'#f59e0b', r:4, strokeWidth:2, stroke:'#ffffff' }} name="Optuna 적용"
-                    connectNulls={false} strokeDasharray="5 3" />
-                </LineChart>
-              </ResponsiveContainer>
-              <div style={{ display:'flex', gap:24, marginTop:12, justifyContent:'flex-end' }}>
-                <span style={{ display:'flex', alignItems:'center', gap:8, fontSize:11, color:'var(--text-2)' }}>
-                  <span style={{ width:20, height:2, borderRadius:99, background:'#6366f1', display:'inline-block' }} />기본 성능
-                </span>
-                <span style={{ display:'flex', alignItems:'center', gap:8, fontSize:11, color:'var(--text-2)' }}>
-                  <span style={{ width:20, height:0, display:'inline-block', borderTop:'2px dashed #f59e0b' }} />Optuna 적용
-                </span>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                {user ? (
+                  <Button variant="secondary" onClick={logout}>로그아웃</Button>
+                ) : (
+                  <Button onClick={() => nav('/login')}><LogIn size={15} /> 로그인</Button>
+                )}
+                <Button variant="outline" onClick={load}><RefreshCw size={15} /> 새로고침</Button>
               </div>
             </div>
-          )}
+          </CardContent>
+        </Card>
 
-          {/* ── 실험 비교 카드 ── */}
-          {selectedExps.length >= 2 && (
-            <div className="card animate-slide-up" style={{ borderColor:'rgba(99,102,241,0.3)', background:'linear-gradient(135deg,rgba(99,102,241,0.05),rgba(139,92,246,0.02))' }}>
-              <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:20 }}>
-                <div style={{ width:36, height:36, borderRadius:10, background:'linear-gradient(135deg,#6366f1,#7c3aed)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
-                </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 14 }}>
+          <StatCard label="내 실험 기록" value={history.length} sub={user ? '계정 기준' : '임시 기록'} />
+          <StatCard label="최고 성능" value={best === null ? '-' : best.toFixed(4)} sub="가장 좋은 점수" />
+          <StatCard label="자동 개선" value={optunaCount} sub="Optuna 적용" />
+          <StatCard label="최근 실행" value={latest ? taskLabel(latest.task_type) : '-'} sub={latest?.timestamp || profile?.last_experiment_at || '기록 없음'} />
+        </div>
+
+        {!user && (
+          <Card style={{ borderColor: '#fde68a', background: '#fffbeb' }}>
+            <CardContent className="pt-5">
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center' }}>
                 <div>
-                  <p style={{ fontSize:14, fontWeight:700, color:'var(--text)', margin:0 }}>실험 비교</p>
-                  <p style={{ fontSize:11, color:'var(--text-label)', margin:0 }}>선택한 {selectedExps.length}개 실험을 나란히 비교합니다. 초록색이 가장 좋은 값입니다.</p>
+                  <CardTitle style={{ color: '#92400e' }}>로그인 기능을 실용적으로 쓰려면 계정 저장을 사용하세요</CardTitle>
+                  <CardDescription style={{ color: '#b45309', marginTop: 6 }}>
+                    로그인 후 실행한 모델 비교와 성능 개선 기록은 내 계정에 따로 저장됩니다.
+                  </CardDescription>
                 </div>
+                <Button onClick={() => nav('/login')}>로그인하기</Button>
               </div>
+            </CardContent>
+          </Card>
+        )}
 
-              <div style={{ display:'grid', gridTemplateColumns:`repeat(${selectedExps.length}, 1fr)`, gap:12 }}>
-                {selectedExps.map(({ idx, h }) => {
-                  const m = getMetrics(h)
-                  const isBest = parseFloat(m.primary.value) === maxPrimary
-                  return (
-                    <div key={idx} style={{
-                      borderRadius:14, padding:18,
-                      border:`2px solid ${isBest ? 'rgba(16,185,129,0.4)' : 'var(--border)'}`,
-                      background: isBest ? 'rgba(16,185,129,0.05)' : 'var(--surface-alt)',
-                      position:'relative',
-                      transition:'all 0.2s',
-                    }}>
-                      {isBest && (
-                        <div style={{ position:'absolute', top:-10, left:'50%', transform:'translateX(-50%)',
-                          background:'linear-gradient(135deg,#10b981,#059669)', color:'white', fontSize:10, fontWeight:700,
-                          padding:'2px 12px', borderRadius:99, boxShadow:'0 2px 8px rgba(16,185,129,0.4)' }}>
-                          최고 성능
-                        </div>
-                      )}
-
-                      {/* 실험 헤더 */}
-                      <div style={{ marginBottom:14 }}>
-                        <p style={{ fontSize:13, fontWeight:700, color:'var(--text)', margin:'0 0 2px' }}>
-                          실험 #{history.length - idx}
-                        </p>
-                        <p style={{ fontSize:10, color:'var(--text-label)', margin:0 }}>{h.timestamp}</p>
-                      </div>
-
-                      {/* 주요 메트릭 - 크게 */}
-                      <div style={{ padding:'14px', borderRadius:10, background: isBest ? 'rgba(16,185,129,0.08)' : 'var(--bg)', marginBottom:12, textAlign:'center' }}>
-                        <p style={{ fontSize:10, fontWeight:600, color:'var(--text-label)', textTransform:'uppercase', letterSpacing:'0.08em', margin:'0 0 6px' }}>{m.primary.label}</p>
-                        <p style={{ fontSize:32, fontWeight:800, color: isBest ? '#059669' : '#6366f1', margin:0, letterSpacing:'-0.02em' }}>
-                          {m.primary.value ?? '—'}
-                        </p>
-                      </div>
-
-                      {/* 보조 메트릭 */}
-                      <div style={{ display:'flex', flexDirection:'column', gap:6, marginBottom:14 }}>
-                        {m.secondary.map(({ label, value }) => (
-                          <div key={label} style={{ display:'flex', justifyContent:'space-between', padding:'5px 8px', borderRadius:7, background:'rgba(0,0,0,0.03)' }}>
-                            <span style={{ fontSize:11, color:'var(--text-label)' }}>{label}</span>
-                            <span style={{ fontSize:11, fontWeight:600, color:'var(--text-2)' }}>{value ?? '—'}</span>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* 추가 정보 */}
-                      <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
-                        <div style={{ display:'flex', justifyContent:'space-between', fontSize:11 }}>
-                          <span style={{ color:'var(--text-label)' }}>모델</span>
-                          <span style={{ color:'var(--text-2)', fontWeight:500, maxWidth:100, textAlign:'right', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{h.best_model}</span>
-                        </div>
-                        <div style={{ display:'flex', justifyContent:'space-between', fontSize:11 }}>
-                          <span style={{ color:'var(--text-label)' }}>데이터</span>
-                          <span style={{ color:'var(--text-2)' }}>{h.data_shape?.join('×')}</span>
-                        </div>
-                        <div style={{ display:'flex', justifyContent:'space-between', fontSize:11 }}>
-                          <span style={{ color:'var(--text-label)' }}>Optuna</span>
-                          {h.optuna_applied
-                            ? <span className="badge badge-green" style={{ fontSize:9 }}>적용</span>
-                            : <span style={{ color:'var(--text-label)' }}>—</span>}
-                        </div>
-                        {h.task_type && (
-                          <div style={{ display:'flex', justifyContent:'space-between', fontSize:11 }}>
-                            <span style={{ color:'var(--text-label)' }}>유형</span>
-                            <span style={{ color:'var(--text-2)' }}>{h.task_type === 'regression' ? '회귀' : '분류'}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* 이력 테이블 */}
-          <div className="card" style={{ overflowX:'auto' }}>
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
+        <Card>
+          <CardHeader>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
               <div>
-                <p className="section-title" style={{ margin:'0 0 4px' }}>전체 실험 이력</p>
-                <p style={{ fontSize:11, color:'var(--text-2)', margin:0 }}>행을 클릭해서 비교할 실험을 선택하세요 (최대 3개)</p>
+                <CardTitle>최근 실험 기록</CardTitle>
+                <CardDescription>
+                  모델 비교를 실행하면 이곳에 데이터 크기, 타깃, 선택 모델, 성능이 저장됩니다.
+                </CardDescription>
               </div>
+              {history.length > 0 && (
+                <Button variant="danger" size="sm" onClick={clearMyHistory} disabled={clearing}>
+                  <Trash2 size={14} /> 기록 삭제
+                </Button>
+              )}
             </div>
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th style={{ width:28 }} />
-                  {['#','시간','데이터','타깃','최고 모델','주요 성능','Optuna'].map(h => (
-                    <th key={h}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {reversed.map((h, i) => {
-                  const m = getMetrics(h)
-                  const isSelected = selected.includes(i)
-                  return (
-                    <tr key={i}
-                      onClick={() => toggleSelect(i)}
-                      style={{ cursor:'pointer', background: isSelected ? 'rgba(99,102,241,0.06)' : 'transparent', transition:'background 0.15s' }}
-                      onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = 'var(--surface-alt)' }}
-                      onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent' }}
-                    >
-                      <td>
-                        <div style={{
-                          width:16, height:16, borderRadius:4, border:`2px solid ${isSelected ? '#6366f1' : 'var(--border)'}`,
-                          background: isSelected ? '#6366f1' : 'transparent',
-                          display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
-                        }}>
-                          {isSelected && <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5" strokeLinecap="round"><polyline points="20,6 9,17 4,12"/></svg>}
-                        </div>
-                      </td>
-                      <td style={{ color:'var(--text-2)', fontSize:11 }}>#{history.length-i}</td>
-                      <td style={{ color:'var(--text-2)', fontSize:11, whiteSpace:'nowrap' }}>{h.timestamp}</td>
-                      <td style={{ color:'var(--text-2)', fontSize:11 }}>{h.data_shape?.join('×')}</td>
-                      <td style={{ color:'var(--text-2)', fontSize:11 }}>{h.target || '—'}</td>
-                      <td style={{ color:'var(--text)', fontWeight:500, fontSize:11 }}>{h.best_model}</td>
-                      <td style={{ color:'#4f46e5', fontWeight:600, fontSize:11, fontVariantNumeric:'tabular-nums' }}>
-                        {m.primary.label} {m.primary.value ?? '—'}
-                        {h.optuna_applied && h.tuned_roc && (
-                          <span className="badge badge-green" style={{ fontSize:9, marginLeft:6 }}>↑{h.tuned_roc}</span>
-                        )}
-                      </td>
-                      <td>
-                        {h.optuna_applied
-                          ? <span className="badge badge-green">✓ 적용</span>
-                          : <span style={{ fontSize:11, color:'var(--text-label)' }}>—</span>}
-                      </td>
+          </CardHeader>
+          <CardContent>
+            {history.length === 0 ? (
+              <div className="empty-state" style={{ padding: '52px 20px' }}>
+                <BarChart3 size={36} color="#94a3b8" />
+                <p className="empty-title" style={{ marginTop: 14 }}>아직 저장된 실험이 없습니다</p>
+                <p className="empty-desc">모델 고르기 화면에서 모델 비교를 실행하면 자동으로 저장됩니다.</p>
+                <Button style={{ marginTop: 18 }} onClick={() => nav('/model-lab')}>모델 비교하러 가기</Button>
+              </div>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>시간</th>
+                      <th>데이터</th>
+                      <th>맞히려는 값</th>
+                      <th>예측 유형</th>
+                      <th>선택 모델</th>
+                      <th>성능</th>
+                      <th>개선</th>
                     </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-
-        </div>
-      )}
+                  </thead>
+                  <tbody>
+                    {history.map((item, idx) => {
+                      const metric = getPrimaryMetric(item)
+                      return (
+                        <tr key={`${item.timestamp}-${idx}`}>
+                          <td style={{ whiteSpace: 'nowrap' }}>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                              <Clock size={13} color="#94a3b8" /> {item.timestamp || '-'}
+                            </span>
+                          </td>
+                          <td>{item.data_shape?.join(' x ') || '-'}</td>
+                          <td>{item.target || '-'}</td>
+                          <td>{taskLabel(item.task_type)}</td>
+                          <td style={{ fontWeight: 750, color: 'var(--text)' }}>{item.best_model || '-'}</td>
+                          <td style={{ fontWeight: 750, color: '#2563eb' }}>{metric.label} {fmt(metric.value)}</td>
+                          <td>
+                            <Badge variant={item.optuna_applied ? 'success' : 'secondary'}>
+                              {item.optuna_applied ? '적용됨' : '기본'}
+                            </Badge>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
+  )
+}
+
+function StatCard({ label, value, sub }) {
+  return (
+    <Card>
+      <CardContent className="pt-5">
+        <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 750, color: 'var(--text-label)' }}>{label}</p>
+        <p style={{ margin: 0, fontSize: 26, fontWeight: 850, color: 'var(--text)' }}>{value}</p>
+        <p style={{ margin: '6px 0 0', fontSize: 12, color: 'var(--text-2)' }}>{sub}</p>
+      </CardContent>
+    </Card>
   )
 }

@@ -24,5 +24,5 @@
         "optuna_applied": True,
         "tuned_score": after,
         "tuned_metric": metric_name,
-    })
+    }, user_id=user["sub"] if user else None)
     return result

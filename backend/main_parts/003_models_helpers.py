@@ -24,7 +24,9 @@ def save_history(rec, user_id=None):
         )
         conn.commit()
         conn.close()
-    h = load_history(); h.append(rec)
+        return
+    h = load_history()
+    h.append(rec)
     with open(HISTORY_FILE, "w", encoding="utf-8") as f:
         json.dump(h, f, ensure_ascii=False, indent=2)
 

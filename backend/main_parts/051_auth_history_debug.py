@@ -47,14 +47,77 @@ async def get_history(user=Depends(get_current_user)):
             (user["sub"],)
         ).fetchall()
         conn.close()
-        user_history = [json.loads(r["data"]) for r in rows]
-        return user_history if user_history else load_history()
+        return [json.loads(r["data"]) for r in rows]
     return load_history()
 
 @app.delete("/api/history")
-async def clear_history():
+async def clear_history(user=Depends(get_current_user)):
+    if user:
+        conn = get_db()
+        conn.execute("DELETE FROM experiments WHERE user_id=?", (user["sub"],))
+        conn.commit()
+        conn.close()
+        return {"ok": True}
     if os.path.exists(HISTORY_FILE): os.remove(HISTORY_FILE)
     return {"ok": True}
+
+@app.get("/api/profile/summary")
+async def profile_summary(user=Depends(get_current_user)):
+    if not user:
+        return {
+            "logged_in": False,
+            "user": None,
+            "history_count": len(load_history()),
+            "best_score": None,
+            "last_experiment_at": None,
+            "task_counts": {},
+            "message": "로그인하면 실험 기록이 계정별로 저장됩니다.",
+        }
+
+    conn = get_db()
+    db_user = conn.execute(
+        "SELECT id, email, name, picture, created_at FROM users WHERE id=?",
+        (user["sub"],)
+    ).fetchone()
+    rows = conn.execute(
+        "SELECT data, created_at FROM experiments WHERE user_id=? ORDER BY id DESC LIMIT 200",
+        (user["sub"],)
+    ).fetchall()
+    conn.close()
+
+    history = [json.loads(r["data"]) for r in rows]
+    best_score = None
+    task_counts = {}
+    for item in history:
+        task = item.get("task_type") or "unknown"
+        task_counts[task] = task_counts.get(task, 0) + 1
+        results = item.get("results") or []
+        first = results[0] if results else {}
+        score = item.get("tuned_score")
+        if score is None:
+            score = first.get("roc_auc", first.get("r2"))
+        try:
+            score = float(score)
+            best_score = score if best_score is None else max(best_score, score)
+        except (TypeError, ValueError):
+            pass
+
+    profile = dict(db_user) if db_user else {
+        "id": user["sub"],
+        "email": user.get("email", ""),
+        "name": user.get("name", ""),
+        "picture": user.get("picture", ""),
+        "created_at": None,
+    }
+    return {
+        "logged_in": True,
+        "user": profile,
+        "history_count": len(history),
+        "best_score": round(best_score, 4) if best_score is not None else None,
+        "last_experiment_at": rows[0]["created_at"] if rows else None,
+        "task_counts": task_counts,
+        "message": "로그인한 계정의 실험 기록만 보여줍니다.",
+    }
 
 # ── 상태 ─────────────────────────────────────────────────
 @app.get("/api/debug-env")

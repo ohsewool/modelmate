@@ -4,7 +4,7 @@ class OptunaReq(BaseModel):
 
 
 @app.post("/api/run-optuna")
-async def run_optuna(req: OptunaReq):
+async def run_optuna(req: OptunaReq, user=Depends(get_current_user)):
     if not OPTUNA_OK:
         raise HTTPException(400, "optuna is not installed")
 
