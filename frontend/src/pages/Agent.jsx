@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../api'
 import { Button } from '../components/ui/button'
@@ -11,17 +11,22 @@ const AGENT_PLAN = [
   { title: '예측 근거 정리', desc: '어떤 정보가 예측에 영향을 줬는지 찾습니다.' },
   { title: '발표용 결론 작성', desc: '결과 요약 화면에서 이해하기 쉽게 보여줍니다.' },
 ]
+const UPLOAD_DRAFT_KEY = 'mm_upload_draft'
 
 export default function Agent() {
   const [loading, setLoading] = useState(false)
+  const [quickLoading, setQuickLoading] = useState('')
   const [result, setResult] = useState(null)
   const [error, setError] = useState('')
+  const [quickSummary, setQuickSummary] = useState(null)
+  const [dragging, setDragging] = useState(false)
+  const fileRef = useRef(null)
   const nav = useNavigate()
 
-  async function runAgent() {
+  async function runAgent(options = {}) {
+    if (!options.keepResult) setResult(null)
     setLoading(true)
     setError('')
-    setResult(null)
     try {
       const { data } = await api.post('/run-agent')
       setResult(data)
@@ -29,6 +34,65 @@ export default function Agent() {
       setError(e.response?.data?.detail || e.message)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function handleQuickFile(file) {
+    if (!file) return
+    setError('')
+    setResult(null)
+    setQuickSummary(null)
+    setQuickLoading('upload')
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const { data: upload } = await api.post('/upload', fd)
+
+      setQuickLoading('analyze')
+      let ai = null
+      try {
+        const { data } = await api.post('/analyze-columns')
+        ai = data
+      } catch (_) {
+        ai = null
+      }
+
+      const target = ai?.target_suggestion && upload.columns.includes(ai.target_suggestion)
+        ? ai.target_suggestion
+        : upload.default_target || upload.columns?.at(-1)
+      const colLabels = ai?.col_labels || {}
+      const dropCols = ai?.drop_suggestions?.length
+        ? ai.drop_suggestions.map(d => d.col).filter(c => upload.columns.includes(c) && c !== target)
+        : (upload.suggested_drop || []).filter(c => c !== target)
+
+      setQuickLoading('target')
+      const { data: eda } = await api.post('/set-target', { target_col: target, drop_cols: dropCols, col_labels: colLabels })
+
+      sessionStorage.setItem(UPLOAD_DRAFT_KEY, JSON.stringify({
+        uploadInfo: upload,
+        aiAnalysis: ai,
+        target,
+        dropCols,
+        colLabels,
+        edaInfo: eda,
+      }))
+
+      setQuickSummary({
+        fileName: file.name,
+        rows: upload.shape?.[0],
+        cols: upload.shape?.[1],
+        target,
+        domain: ai?.dataset_domain || '도메인 확인 필요',
+        purpose: ai?.target_category || eda.target_category || '분석 준비 완료',
+      })
+
+      setQuickLoading('agent')
+      await runAgent({ keepResult: true })
+    } catch (e) {
+      setError(e.response?.data?.detail || e.message)
+    } finally {
+      setQuickLoading('')
+      setDragging(false)
     }
   }
 
@@ -56,7 +120,7 @@ export default function Agent() {
         </div>
       </section>
 
-      {!result && !loading && (
+      {!result && !loading && !quickLoading && (
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 320px', gap: 16, alignItems: 'start' }}>
           <PlanBoard activeIndex={-1} />
           <div className="card" style={{ position: 'sticky', top: 20 }}>
@@ -68,22 +132,29 @@ export default function Agent() {
               모델 후보를 비교하고, 점수가 충분한지 판단하고, 설명에 필요한 근거를 추려냅니다.
             </p>
             <div style={{ display: 'grid', gap: 8 }}>
-              <Button onClick={runAgent}>AI 분석 코치 실행</Button>
+              <Button onClick={() => runAgent()}>AI 분석 코치 실행</Button>
               <Button onClick={() => nav('/model-lab')} variant="secondary">직접 모델 고르기</Button>
             </div>
           </div>
+          <QuickUploadCard
+            fileRef={fileRef}
+            dragging={dragging}
+            setDragging={setDragging}
+            onFile={handleQuickFile}
+            summary={quickSummary}
+          />
         </div>
       )}
 
-      {loading && (
+      {(loading || quickLoading) && (
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 320px', gap: 16, alignItems: 'start' }}>
-          <PlanBoard activeIndex={1} />
+          <PlanBoard activeIndex={quickLoading === 'upload' ? 0 : quickLoading === 'analyze' || quickLoading === 'target' ? 0 : 1} />
           <div className="card" style={{ display: 'grid', gap: 12 }}>
             <p style={{ fontSize: 12, fontWeight: 900, color: '#7c3aed', margin: 0 }}>실행 중</p>
-            {['모델 후보를 비교합니다', '개선 필요성을 판단합니다', '예측 근거를 찾습니다', '결론을 정리합니다'].map(item => (
-              <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 10, borderRadius: 10, background: 'var(--surface-alt)' }}>
+            {progressItems(quickLoading).map(item => (
+              <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 10, borderRadius: 10, background: item.active ? 'rgba(124,58,237,0.08)' : 'var(--surface-alt)', border: item.active ? '1px solid rgba(124,58,237,0.2)' : '1px solid transparent' }}>
                 <span className="spinner" />
-                <span style={{ fontSize: 12, color: 'var(--text-2)', fontWeight: 750 }}>{item}</span>
+                <span style={{ fontSize: 12, color: item.active ? '#7c3aed' : 'var(--text-2)', fontWeight: 750 }}>{item.label}</span>
               </div>
             ))}
           </div>
@@ -136,6 +207,56 @@ export default function Agent() {
       )}
     </div>
   )
+}
+
+function QuickUploadCard({ fileRef, dragging, setDragging, onFile, summary }) {
+  return (
+    <div
+      className="card"
+      onDragOver={e => { e.preventDefault(); setDragging(true) }}
+      onDragLeave={() => setDragging(false)}
+      onDrop={e => { e.preventDefault(); onFile(e.dataTransfer.files?.[0]) }}
+      style={{
+        gridColumn: '1 / -1',
+        borderStyle: 'dashed',
+        borderColor: dragging ? '#7c3aed' : 'var(--border)',
+        background: dragging ? 'rgba(124,58,237,0.07)' : 'var(--surface)',
+        display: 'grid',
+        gridTemplateColumns: 'minmax(0, 1fr) auto',
+        gap: 16,
+        alignItems: 'center',
+      }}
+    >
+      <input ref={fileRef} type="file" accept=".csv,.txt,.tsv" style={{ display: 'none' }} onChange={e => onFile(e.target.files?.[0])} />
+      <div>
+        <p style={{ fontSize: 12, fontWeight: 900, color: '#7c3aed', margin: '0 0 6px' }}>CSV 바로 넣고 실행</p>
+        <h2 style={{ fontSize: 18, color: 'var(--text)', margin: '0 0 6px' }}>파일을 넣으면 AI 코치가 바로 시작합니다</h2>
+        <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6, margin: 0 }}>
+          업로드, 데이터 종류 판단, 맞힐 값 설정, 모델 비교를 한 번에 진행합니다.
+        </p>
+        {summary && (
+          <p style={{ fontSize: 12, color: 'var(--text-label)', margin: '10px 0 0' }}>
+            {summary.fileName} · {summary.rows?.toLocaleString?.() || summary.rows}행 · 맞힐 값 {summary.target} · {summary.domain}
+          </p>
+        )}
+      </div>
+      <Button onClick={() => fileRef.current?.click()}>CSV 선택</Button>
+    </div>
+  )
+}
+
+function progressItems(stage) {
+  const labels = [
+    ['upload', 'CSV 파일을 업로드합니다'],
+    ['analyze', '데이터 종류와 맞힐 값을 판단합니다'],
+    ['target', '분석에 사용할 설정을 확정합니다'],
+    ['agent', '모델 비교와 이유 분석을 실행합니다'],
+  ]
+  if (!stage) {
+    return ['모델 후보를 비교합니다', '개선 필요성을 판단합니다', '예측 근거를 찾습니다', '결론을 정리합니다']
+      .map((label, idx) => ({ label, active: idx === 0 }))
+  }
+  return labels.map(([key, label]) => ({ label, active: key === stage }))
 }
 
 function PlanBoard({ activeIndex, completed }) {
