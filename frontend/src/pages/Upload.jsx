@@ -76,16 +76,17 @@ export default function Upload() {
   return (
     <div className="animate-fade-in" style={{ padding: 32, maxWidth: 980 }}>
       <section style={{
-        borderRadius: 16, padding: '26px 28px', marginBottom: 22,
-        background: 'linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)',
-        color: '#fff', boxShadow: '0 16px 36px rgba(37,99,235,0.22)',
+        borderRadius: 10, padding: '22px 24px', marginBottom: 18,
+        background: 'var(--surface)',
+        color: 'var(--text)', border: '1px solid var(--border)',
+        boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
       }}>
-        <p style={{ fontSize: 12, fontWeight: 800, opacity: 0.78, margin: '0 0 8px' }}>첫 단계</p>
-        <h1 style={{ fontSize: 25, fontWeight: 900, margin: '0 0 8px', letterSpacing: '-0.02em' }}>
-          예측하고 싶은 데이터 파일을 넣어주세요
+        <p style={{ fontSize: 12, fontWeight: 800, color: '#2563eb', margin: '0 0 8px' }}>1. 데이터 넣기</p>
+        <h1 style={{ fontSize: 22, fontWeight: 900, margin: '0 0 6px', letterSpacing: 0 }}>
+          CSV 업로드
         </h1>
-        <p style={{ fontSize: 14, lineHeight: 1.65, opacity: 0.86, margin: 0 }}>
-          CSV 파일을 올리면 AI가 어떤 값을 맞혀야 하는지, 어떤 컬럼은 빼는 게 좋은지 먼저 제안합니다.
+        <p style={{ fontSize: 13, lineHeight: 1.55, color: 'var(--text-2)', margin: 0 }}>
+          파일을 올리면 AI가 예측할 값과 제외할 정보를 정리합니다.
         </p>
       </section>
 
@@ -97,7 +98,7 @@ export default function Upload() {
           onClick={() => fileRef.current.click()}
           style={{
             border: `2px dashed ${dragging ? '#2563eb' : 'rgba(37,99,235,0.24)'}`,
-            borderRadius: 18, padding: '70px 32px', textAlign: 'center', cursor: 'pointer',
+            borderRadius: 10, padding: '56px 32px', textAlign: 'center', cursor: 'pointer',
             background: dragging ? 'rgba(37,99,235,0.07)' : 'var(--surface)',
             transition: 'all 0.2s',
           }}
@@ -113,7 +114,7 @@ export default function Upload() {
             </div>
           ) : (
             <>
-              <div style={{ width: 68, height: 68, borderRadius: 18, margin: '0 auto 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(37,99,235,0.09)', color: '#2563eb' }}>
+              <div style={{ width: 56, height: 56, borderRadius: 10, margin: '0 auto 18px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(37,99,235,0.08)', color: '#2563eb' }}>
                 <UploadIcon />
               </div>
               <p style={{ color: 'var(--text)', fontWeight: 900, fontSize: 18, margin: '0 0 8px' }}>

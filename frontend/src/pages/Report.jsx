@@ -167,19 +167,19 @@ export default function Report() {
   return (
     <div className="animate-fade-in" style={{ padding: 32, maxWidth: 1120 }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-        <div className="card" style={{ border: 'none', background: 'linear-gradient(135deg,#eef2ff,#f8fafc 55%,#ecfeff)' }}>
+        <div className="card">
           <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 20, alignItems: 'center' }}>
             <div>
-              <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 800, color: '#4f46e5', textTransform: 'uppercase' }}>
+              <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 800, color: '#2563eb' }}>
                 결과 요약
               </p>
-              <h1 style={{ margin: '0 0 10px', fontSize: 28, fontWeight: 900, color: '#0f172a', letterSpacing: 0 }}>
+              <h1 style={{ margin: '0 0 8px', fontSize: 24, fontWeight: 900, color: 'var(--text)', letterSpacing: 0 }}>
                 선택된 모델
               </h1>
-              <p style={{ margin: 0, color: '#475569', fontSize: 14 }}>
+              <p style={{ margin: 0, color: 'var(--text-2)', fontSize: 13, lineHeight: 1.55 }}>
                 {reportSummaryText(summary, dataset, opt)}
               </p>
-              <p style={{ margin: '6px 0 0', color: '#64748b', fontSize: 12 }}>
+              <p style={{ margin: '6px 0 0', color: 'var(--text-label)', fontSize: 12 }}>
                 {new Date(summary.generated_at).toLocaleString()} / 맞히려는 값 {dataset.target_col || '-'}
               </p>
             </div>

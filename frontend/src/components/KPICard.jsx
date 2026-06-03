@@ -1,51 +1,53 @@
 import { useTheme } from '../ThemeContext'
 
 const LIGHT = {
-  blue:   { top:'#6366f1', bg:'#eff6ff', border:'#c7d2fe', val:'#3730a3', sub:'#6366f1' },
-  green:  { top:'#059669', bg:'#f0fdf4', border:'#bbf7d0', val:'#166534', sub:'#059669' },
-  red:    { top:'#e11d48', bg:'#fff1f2', border:'#fecdd3', val:'#9f1239', sub:'#e11d48' },
-  amber:  { top:'#d97706', bg:'#fffbeb', border:'#fde68a', val:'#92400e', sub:'#d97706' },
-  cyan:   { top:'#0891b2', bg:'#ecfeff', border:'#a5f3fc', val:'#164e63', sub:'#0891b2' },
-  violet: { top:'#7c3aed', bg:'#f5f3ff', border:'#ddd6fe', val:'#5b21b6', sub:'#7c3aed' },
+  blue:   { top: '#2563eb', val: '#1d4ed8' },
+  green:  { top: '#059669', val: '#047857' },
+  red:    { top: '#dc2626', val: '#b91c1c' },
+  amber:  { top: '#d97706', val: '#b45309' },
+  cyan:   { top: '#0891b2', val: '#0e7490' },
+  violet: { top: '#7c3aed', val: '#6d28d9' },
 }
+
 const DARK = {
-  blue:   { top:'#6366f1', bg:'rgba(99,102,241,0.12)',  border:'rgba(99,102,241,0.3)',  val:'#818cf8', sub:'#818cf8' },
-  green:  { top:'#059669', bg:'rgba(16,185,129,0.1)',   border:'rgba(16,185,129,0.3)',  val:'#34d399', sub:'#34d399' },
-  red:    { top:'#e11d48', bg:'rgba(244,63,94,0.1)',    border:'rgba(244,63,94,0.3)',   val:'#fb7185', sub:'#fb7185' },
-  amber:  { top:'#d97706', bg:'rgba(245,158,11,0.1)',   border:'rgba(245,158,11,0.3)',  val:'#fbbf24', sub:'#fbbf24' },
-  cyan:   { top:'#0891b2', bg:'rgba(34,211,238,0.1)',   border:'rgba(34,211,238,0.3)',  val:'#22d3ee', sub:'#22d3ee' },
-  violet: { top:'#7c3aed', bg:'rgba(139,92,246,0.1)',   border:'rgba(139,92,246,0.3)',  val:'#a78bfa', sub:'#a78bfa' },
+  blue:   { top: '#60a5fa', val: '#93c5fd' },
+  green:  { top: '#34d399', val: '#6ee7b7' },
+  red:    { top: '#f87171', val: '#fca5a5' },
+  amber:  { top: '#f59e0b', val: '#fbbf24' },
+  cyan:   { top: '#22d3ee', val: '#67e8f9' },
+  violet: { top: '#a78bfa', val: '#c4b5fd' },
 }
 
 export default function KPICard({ label, value, sub, color = 'blue', icon }) {
   const { dark } = useTheme()
   const palette = dark ? DARK : LIGHT
   const p = palette[color] || palette.blue
+
   return (
     <div style={{
       background: 'var(--surface)',
       border: '1px solid var(--border)',
       borderTop: `3px solid ${p.top}`,
-      borderRadius: 16,
-      padding: 20,
-      boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-      transition: 'all 0.2s',
+      borderRadius: 10,
+      padding: 16,
+      boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
       cursor: 'default',
-    }}
-    onMouseEnter={e => { e.currentTarget.style.transform='translateY(-2px)'; e.currentTarget.style.boxShadow='0 8px 20px rgba(0,0,0,0.08)' }}
-    onMouseLeave={e => { e.currentTarget.style.transform=''; e.currentTarget.style.boxShadow='0 1px 3px rgba(0,0,0,0.05)' }}
-    >
-      <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:12 }}>
-        <div style={{ minWidth:0 }}>
-          <p style={{ fontSize:10, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.1em', color:'var(--text-label)', margin:'0 0 8px' }}>{label}</p>
-          <p style={{ fontSize:24, fontWeight:700, fontVariantNumeric:'tabular-nums', lineHeight:1, color:p.val, margin:0 }}>{value ?? '—'}</p>
-          {sub && <p style={{ fontSize:11, marginTop:6, fontWeight:500, color:p.sub, margin:'6px 0 0' }}>{sub}</p>}
+    }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+        <div style={{ minWidth: 0 }}>
+          <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-label)', margin: '0 0 8px' }}>
+            {label}
+          </p>
+          <p style={{ fontSize: 22, fontWeight: 800, fontVariantNumeric: 'tabular-nums', lineHeight: 1.1, color: p.val, margin: 0 }}>
+            {value ?? '-'}
+          </p>
+          {sub && <p style={{ fontSize: 11, margin: '6px 0 0', fontWeight: 600, color: p.val }}>{sub}</p>}
         </div>
         {icon && (
           <div style={{
-            width:40, height:40, borderRadius:12, flexShrink:0, fontSize:20,
-            display:'flex', alignItems:'center', justifyContent:'center',
-            background: p.bg, border:`1px solid ${p.border}`,
+            width: 34, height: 34, borderRadius: 8, flexShrink: 0, fontSize: 18,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'var(--surface-alt)', border: '1px solid var(--border)',
           }}>
             {icon}
           </div>

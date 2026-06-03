@@ -27,16 +27,17 @@ export default function Agent() {
   return (
     <div className="animate-fade-in" style={{ padding: 32, maxWidth: 980 }}>
       <section style={{
-        borderRadius: 16, padding: '26px 28px', marginBottom: 22,
-        background: 'linear-gradient(135deg, #7c3aed 0%, #2563eb 100%)',
-        color: '#fff', boxShadow: '0 16px 36px rgba(124,58,237,0.22)',
+        borderRadius: 10, padding: '22px 24px', marginBottom: 18,
+        background: 'var(--surface)',
+        color: 'var(--text)', border: '1px solid var(--border)',
+        boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
       }}>
-        <p style={{ fontSize: 12, fontWeight: 800, opacity: 0.78, margin: '0 0 8px' }}>자동 분석 모드</p>
-        <h1 style={{ fontSize: 25, fontWeight: 900, margin: '0 0 8px', letterSpacing: '-0.02em' }}>
-          버튼 한 번으로 모델 비교부터 설명까지 진행합니다
+        <p style={{ fontSize: 12, fontWeight: 800, color: '#2563eb', margin: '0 0 8px' }}>2. 자동 분석</p>
+        <h1 style={{ fontSize: 22, fontWeight: 900, margin: '0 0 6px', letterSpacing: 0 }}>
+          자동 분석 실행
         </h1>
-        <p style={{ fontSize: 14, lineHeight: 1.65, opacity: 0.86, margin: 0 }}>
-          발표에서는 이 화면을 “AI가 대신 분석 절차를 진행하는 모습”으로 보여주면 가장 직관적입니다.
+        <p style={{ fontSize: 13, lineHeight: 1.55, color: 'var(--text-2)', margin: 0 }}>
+          모델 비교, 성능 확인, 이유 분석을 한 번에 진행합니다.
         </p>
       </section>
 

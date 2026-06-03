@@ -137,21 +137,21 @@ export default function XAI() {
   return (
     <div className="animate-fade-in" style={{ padding: 32, maxWidth: 1080 }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-        <div className="card" style={{ border: 'none', background: 'linear-gradient(135deg,#ecfdf5,#f8fafc 52%,#eff6ff)' }}>
+        <div className="card">
           <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'center', gap: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              <div style={{ width: 54, height: 54, borderRadius: 16, display: 'grid', placeItems: 'center', background: 'rgba(5,150,105,0.12)', color: '#059669' }}>
+              <div style={{ width: 44, height: 44, borderRadius: 10, display: 'grid', placeItems: 'center', background: 'rgba(5,150,105,0.1)', color: '#059669' }}>
                 <Brain size={27} />
               </div>
               <div>
-                <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 800, color: '#059669', textTransform: 'uppercase' }}>예측 이유 보기</p>
-                <h1 style={{ margin: '0 0 6px', fontSize: 26, fontWeight: 900, color: '#0f172a', letterSpacing: 0 }}>
+                <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 800, color: '#059669' }}>예측 이유 보기</p>
+                <h1 style={{ margin: '0 0 6px', fontSize: 24, fontWeight: 900, color: 'var(--text)', letterSpacing: 0 }}>
                   {summaryTitle}
                 </h1>
-                <p style={{ margin: 0, color: '#475569', fontSize: 14 }}>
+                <p style={{ margin: 0, color: 'var(--text-2)', fontSize: 13 }}>
                   {topFeature ? `${topFeature.feature}가 가장 큰 영향을 주었습니다.` : '중요한 정보를 순서대로 보여줍니다.'}
                 </p>
-                <p style={{ margin: '6px 0 0', color: '#64748b', fontSize: 12 }}>
+                <p style={{ margin: '6px 0 0', color: 'var(--text-label)', fontSize: 12 }}>
                   사용 모델 {summary.model} / 예측 유형 {taskLabel(summary.task_type)} / <SourceBadge source={summary.source} />
                 </p>
               </div>

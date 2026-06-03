@@ -74,16 +74,17 @@ export default function ModelLab() {
   return (
     <div className="animate-fade-in" style={{ padding: 32, maxWidth: 980 }}>
       <section style={{
-        borderRadius: 16, padding: '26px 28px', marginBottom: 22,
-        background: 'linear-gradient(135deg, #7c3aed 0%, #2563eb 100%)',
-        color: '#fff', boxShadow: '0 16px 36px rgba(124,58,237,0.22)',
+        borderRadius: 10, padding: '22px 24px', marginBottom: 18,
+        background: 'var(--surface)',
+        color: 'var(--text)', border: '1px solid var(--border)',
+        boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
       }}>
-        <p style={{ fontSize: 12, fontWeight: 800, opacity: 0.78, margin: '0 0 8px' }}>모델 비교</p>
-        <h1 style={{ fontSize: 25, fontWeight: 900, margin: '0 0 8px', letterSpacing: '-0.02em' }}>
-          여러 AI 모델을 돌려 보고 가장 잘 맞는 모델을 고릅니다
+        <p style={{ fontSize: 12, fontWeight: 800, color: '#2563eb', margin: '0 0 8px' }}>3. 모델 고르기</p>
+        <h1 style={{ fontSize: 22, fontWeight: 900, margin: '0 0 6px', letterSpacing: 0 }}>
+          모델 비교
         </h1>
-        <p style={{ fontSize: 14, lineHeight: 1.65, opacity: 0.86, margin: 0 }}>
-          사용자는 알고리즘 이름을 몰라도 됩니다. ModelMate가 같은 데이터로 여러 모델을 시험하고 점수가 가장 좋은 모델을 보여줍니다.
+        <p style={{ fontSize: 13, lineHeight: 1.55, color: 'var(--text-2)', margin: 0 }}>
+          같은 데이터로 여러 모델을 시험하고 가장 좋은 모델을 보여줍니다.
         </p>
       </section>
 
