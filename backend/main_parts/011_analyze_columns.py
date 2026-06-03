@@ -37,7 +37,13 @@ def infer_dataset_domain(df):
             "dataset_domain_reason": "사람 ID와 수면 날짜, 라이프로그 날짜처럼 개인별 건강 기록을 나타내는 컬럼이 있습니다.",
             "dataset_domain_confidence": "높음",
         }
-    if has_any(["fault", "failure", "defect", "machine", "sensor", "temperature", "pressure", "vibration", "불량", "고장", "설비"]):
+    if has_any(["diabetes", "glucose", "plasma", "insulin", "bmi", "pregnant", "pregnancy", "patient", "diagnosis", "disease", "medical", "혈당", "당뇨", "진단", "환자", "질병"]):
+        return {
+            "dataset_domain": "의료/건강 진단",
+            "dataset_domain_reason": "혈당, 인슐린, BMI, 진단 결과처럼 건강 상태를 판단하는 컬럼이 있습니다.",
+            "dataset_domain_confidence": "높음",
+        }
+    if has_any(["fault", "failure", "defect", "machine", "sensor", "temperature", "vibration", "불량", "고장", "설비"]):
         return {
             "dataset_domain": "제조/설비 품질",
             "dataset_domain_reason": "고장, 불량, 센서, 설비 상태와 관련된 컬럼명이 있습니다.",
@@ -91,7 +97,19 @@ def infer_target_category(df, target_col):
     price_words = ["price", "cost", "amount", "sales", "revenue", "fare", "요금", "가격", "금액", "매출"]
     score_words = ["score", "grade", "rating", "rank", "점수", "등급", "평점"]
 
-    if domain_name == "수면/건강 라이프로그" and is_binary_like:
+    if domain_name == "의료/건강 진단" and "diabetes" in name and is_binary_like:
+        label = "당뇨 여부"
+        reason = "맞힐 값이 diabetes이고 두 종류 값으로 구성되어 당뇨 여부 분류로 보입니다."
+        confidence = "높음"
+    elif domain_name == "의료/건강 진단" and is_binary_like:
+        label = "질병/진단 여부"
+        reason = "전체 컬럼이 건강 진단 구조이고, 맞힐 값은 두 종류의 진단 결과입니다."
+        confidence = "높음"
+    elif domain_name == "의료/건강 진단":
+        label = "건강 지표 예측"
+        reason = "전체 컬럼이 건강 진단 구조라 맞힐 값을 건강 관련 지표로 보는 것이 자연스럽습니다."
+        confidence = "중간"
+    elif domain_name == "수면/건강 라이프로그" and is_binary_like:
         label = "수면/건강 상태 분류"
         reason = "전체 컬럼이 수면/라이프로그 구조이고, 맞힐 값은 두 종류의 상태값입니다."
         confidence = "높음"
