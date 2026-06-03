@@ -87,14 +87,17 @@ export default function Sidebar({ isOpen, onClose }) {
 
         <nav style={{ flex: 1, padding: '12px 10px', overflowY: 'auto' }}>
           <p style={{ padding: '0 10px', marginBottom: 8, fontSize: 10, fontWeight: 700, color: 'var(--text-label)', textTransform: 'uppercase', letterSpacing: '0.12em' }}>
-            발표 핵심 흐름
+            분석 흐름
           </p>
-          {CORE_NAV.map(({ to, icon: Icon, label, step, tag }) => (
-            <NavItem key={to} to={to} icon={Icon} label={`${step}. ${label}`} done={step < currentStep} tag={tag} onClose={onClose} />
+          {CORE_NAV.map(({ to, icon: Icon, label, step, tag }, idx) => (
+            <div key={to}>
+              <NavItem to={to} icon={Icon} label={label} done={step < currentStep} tag={tag} onClose={onClose} />
+              {idx < CORE_NAV.length - 1 && <FlowArrow done={step < currentStep} />}
+            </div>
           ))}
 
           <p style={{ padding: '14px 10px 6px', margin: 0, fontSize: 10, fontWeight: 700, color: 'var(--text-label)', textTransform: 'uppercase', letterSpacing: '0.12em' }}>
-            선택 확장 기능
+            추가 도구
           </p>
           {OPTIONAL_NAV.map(({ to, icon: Icon, label, desc, tag }) => (
             <NavItem key={to} to={to} icon={Icon} label={label} desc={desc} tag={tag} optional onClose={onClose} />
@@ -183,6 +186,17 @@ function NavItem({ to, icon: Icon, label, desc, done, tag, optional, onClose }) 
         </div>
       )}
     </NavLink>
+  )
+}
+
+function FlowArrow({ done }) {
+  return (
+    <div style={{ height: 14, display: 'flex', alignItems: 'center', paddingLeft: 17, color: done ? '#059669' : 'var(--text-label)', opacity: done ? 0.9 : 0.55 }}>
+      <svg width="10" height="14" viewBox="0 0 10 14" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M5 1v10" />
+        <path d="M2 8l3 3 3-3" />
+      </svg>
+    </div>
   )
 }
 

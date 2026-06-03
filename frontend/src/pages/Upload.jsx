@@ -111,7 +111,7 @@ export default function Upload() {
         color: 'var(--text)', border: '1px solid var(--border)',
         boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
       }}>
-        <p style={{ fontSize: 12, fontWeight: 800, color: '#2563eb', margin: '0 0 8px' }}>1. 데이터 넣기</p>
+        <p style={{ fontSize: 12, fontWeight: 800, color: '#2563eb', margin: '0 0 8px' }}>분석 흐름 · 데이터 넣기</p>
         <h1 style={{ fontSize: 22, fontWeight: 900, margin: '0 0 6px', letterSpacing: 0 }}>
           CSV 업로드
         </h1>
