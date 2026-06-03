@@ -123,8 +123,13 @@ export default function Sidebar({ isOpen, onClose }) {
                 <p style={{ fontSize: 10, color: 'var(--text-label)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</p>
                 {user.role === 'admin' && <p style={{ fontSize: 10, color: '#1d4ed8', fontWeight: 800, margin: '2px 0 0' }}>관리자</p>}
               </div>
-              <button onClick={logout} title="로그아웃" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-label)', padding: 4, borderRadius: 6, flexShrink: 0 }}>
-                <LogoutIcon />
+              <button onClick={logout} title="로그아웃" style={{
+                width: 28, height: 28, background: 'none', border: 'none',
+                cursor: 'pointer', color: 'var(--text-label)', padding: 6,
+                borderRadius: 6, flexShrink: 0, display: 'flex',
+                alignItems: 'center', justifyContent: 'center',
+              }}>
+                <span style={{ width: 16, height: 16, display: 'block' }}><LogoutIcon /></span>
               </button>
             </div>
           ) : (
