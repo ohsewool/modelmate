@@ -24,6 +24,11 @@ const statusLabel = key => ({
   has_model: '모델 학습',
   has_explanation: '이유 분석',
   has_deployment: '공유 준비',
+  dataset_uploaded: '데이터 업로드',
+  target_selected: '정답 선택',
+  cv_completed: '모델 비교 완료',
+  model_ready: '모델 준비 완료',
+  optuna_checked: '성능 개선 확인',
 }[key] || key.replaceAll('_', ' '))
 const metricLabel = key => ({
   accuracy: '정확도',
@@ -33,6 +38,27 @@ const metricLabel = key => ({
   roc_auc: 'ROC-AUC',
   r2: 'R2',
 }[key] || key)
+const taskLabel = value => ({
+  classification: '분류 예측',
+  regression: '숫자 예측',
+}[value] || value || '-')
+const optStatusLabel = value => ({
+  ok: '개선 완료',
+  skipped: '개선 생략',
+  not_tunable: '개선 생략',
+  failed: '개선 실패',
+}[value] || value || '-')
+const reportSummaryText = (summary, dataset, opt) => {
+  const model = summary?.model_selection?.best_model || '선택된 모델'
+  const target = dataset?.target_col || '정답값'
+  if (opt?.status === 'skipped' || opt?.status === 'not_tunable') {
+    return `${model} 모델이 '${target}' 예측에 가장 적합한 모델로 선택되었습니다. 이 모델은 추가 자동 개선이 필요하지 않아 성능 개선 단계를 생략했습니다.`
+  }
+  if (opt?.status === 'ok') {
+    return `${model} 모델이 '${target}' 예측에 가장 적합한 모델로 선택되었고, 자동 성능 개선까지 완료했습니다.`
+  }
+  return `${model} 모델이 '${target}' 예측에 가장 적합한 모델로 선택되었습니다.`
+}
 
 function MiniStat({ label, value, tone = 'blue' }) {
   const colors = {
@@ -148,7 +174,7 @@ export default function Report() {
                 결과 요약
               </p>
               <h1 style={{ margin: '0 0 10px', fontSize: 28, fontWeight: 900, color: '#0f172a', letterSpacing: 0 }}>
-                {summary.executive_summary}
+                {reportSummaryText(summary, dataset, opt)}
               </h1>
               <p style={{ margin: 0, color: '#475569', fontSize: 14 }}>
                 생성 시간 {new Date(summary.generated_at).toLocaleString()} / 맞히려는 값 {dataset.target_col || '-'}
@@ -169,7 +195,7 @@ export default function Report() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 14 }}>
           <MiniStat label="준비도" value={pct(summary.readiness_score)} tone="green" />
           <MiniStat label="선택된 모델" value={summary.model_selection?.best_model || '-'} />
-          <MiniStat label="예측 유형" value={dataset.task_type || '-'} tone="amber" />
+          <MiniStat label="예측 유형" value={taskLabel(dataset.task_type)} tone="amber" />
           <MiniStat label="사용한 정보" value={dataset.training_shape?.[1] ?? '-'} />
         </div>
 
@@ -211,9 +237,9 @@ export default function Report() {
             {opt.status ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <span className={opt.status === 'ok' ? 'badge badge-green' : 'badge badge-amber'} style={{ width: 'fit-content' }}>
-                  {opt.status}
+                  {optStatusLabel(opt.status)}
                 </span>
-                <MiniStat label={opt.metric_name || 'Metric'} value={`${fmt(opt.before_score)} -> ${fmt(opt.after_score)}`} tone="green" />
+                <MiniStat label={metricLabel(opt.metric_name) || '점수'} value={`${fmt(opt.before_score)} -> ${fmt(opt.after_score)}`} tone="green" />
                 <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6 }}>
                   시도 횟수: {opt.n_trials || '-'} / 개선율: {fmt(opt.improvement)}%
                 </p>

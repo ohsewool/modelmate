@@ -25,6 +25,19 @@ const fmt = value => {
   if (typeof value === 'number') return Number.isInteger(value) ? value : value.toFixed(4)
   return value
 }
+const taskLabel = value => ({
+  classification: '분류 예측',
+  regression: '숫자 예측',
+}[value] || value || '-')
+const directionLabel = value => ({
+  high: '높을수록 영향',
+  low: '낮을수록 영향',
+  neutral: '영향 있음',
+}[value] || value || '영향 있음')
+const limitationText = item => ({
+  'Feature importance shows signal strength, not guaranteed causality.': '중요도는 예측에 영향을 준 정도를 보여주지만, 실제 원인이라고 단정할 수는 없습니다.',
+  'Local explanations are approximations when SHAP values are unavailable.': 'SHAP 값을 사용할 수 없을 때의 개별 설명은 근사치일 수 있습니다.',
+}[item] || item)
 
 function SourceBadge({ source }) {
   const label = {
@@ -104,6 +117,9 @@ export default function XAI() {
 
   const topFeature = summary?.items?.[0]
   const localTop = local?.features?.[0]
+  const summaryTitle = topFeature
+    ? `${topFeature.feature}가 ${summary?.model || '모델'} 예측에서 가장 큰 영향을 준 정보입니다.`
+    : '예측에 영향을 준 정보를 확인합니다.'
 
   if (loading) {
     return (
@@ -132,10 +148,10 @@ export default function XAI() {
               <div>
                 <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 800, color: '#059669', textTransform: 'uppercase' }}>예측 이유 보기</p>
                 <h1 style={{ margin: '0 0 6px', fontSize: 26, fontWeight: 900, color: '#0f172a', letterSpacing: 0 }}>
-                  {summary.summary}
+                  {summaryTitle}
                 </h1>
                 <p style={{ margin: 0, color: '#475569', fontSize: 14 }}>
-                  사용 모델 {summary.model} / 예측 유형 {summary.task_type} / <SourceBadge source={summary.source} />
+                  사용 모델 {summary.model} / 예측 유형 {taskLabel(summary.task_type)} / <SourceBadge source={summary.source} />
                 </p>
               </div>
             </div>
@@ -220,7 +236,7 @@ export default function XAI() {
                     {local.prediction_label || fmt(local.prediction)}
                   </p>
                   <p style={{ margin: '0 0 18px', color: 'var(--text-2)', fontSize: 13 }}>
-                    샘플 #{local.sample_index} / {local.task_type}
+                    샘플 #{local.sample_index} / {taskLabel(local.task_type)}
                   </p>
                   {local.confidence !== undefined && (
                     <div className="card-elevated">
@@ -230,7 +246,7 @@ export default function XAI() {
                   )}
                   {localTop && (
                     <p style={{ margin: '16px 0 0', color: 'var(--text-2)', fontSize: 13, lineHeight: 1.7 }}>
-                      이 행에서 가장 큰 근거는 <strong style={{ color: 'var(--text)' }}>{localTop.feature}</strong>입니다. 방향: <strong>{localTop.direction}</strong>
+                      이 행에서 가장 큰 근거는 <strong style={{ color: 'var(--text)' }}>{localTop.feature}</strong>입니다. 방향: <strong>{directionLabel(localTop.direction)}</strong>
                     </p>
                   )}
                 </section>
@@ -258,7 +274,7 @@ export default function XAI() {
             {(summary.limitations || []).map(item => (
               <div key={item} className="banner-info" style={{ padding: 10 }}>
                 <AlertCircle size={14} />
-                <p style={{ margin: 0, fontSize: 12, color: 'var(--text-2)' }}>{item}</p>
+                <p style={{ margin: 0, fontSize: 12, color: 'var(--text-2)' }}>{limitationText(item)}</p>
               </div>
             ))}
           </div>

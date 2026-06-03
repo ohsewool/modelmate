@@ -5,15 +5,18 @@ import api from '../api'
 import { useTheme } from '../ThemeContext'
 import { useAuth } from '../AuthContext'
 
-const NAV = [
+const CORE_NAV = [
   { to: '/upload', icon: UploadIcon, label: '데이터 넣기', step: 1 },
   { to: '/agent', icon: AgentIcon, label: '자동 분석', step: 2, tag: 'AI' },
   { to: '/model-lab', icon: FlaskIcon, label: '모델 고르기', step: 3 },
   { to: '/report', icon: DocIcon, label: '결과 요약', step: 4 },
   { to: '/xai', icon: EyeIcon, label: '이유 보기', step: 5 },
-  { to: '/predict', icon: PredictIcon, label: '새 데이터 예측', step: 6 },
-  { to: '/deploy', icon: DeployIcon, label: '공유하기', step: 7 },
-  { to: '/history', icon: ChartIcon, label: '작업 기록', step: 8 },
+]
+
+const OPTIONAL_NAV = [
+  { to: '/predict', icon: PredictIcon, label: '새 데이터 예측' },
+  { to: '/deploy', icon: DeployIcon, label: 'API 공유' },
+  { to: '/history', icon: ChartIcon, label: '작업 기록' },
 ]
 
 export default function Sidebar({ isOpen, onClose }) {
@@ -37,7 +40,7 @@ export default function Sidebar({ isOpen, onClose }) {
     return () => clearInterval(id)
   }, [])
 
-  const currentStep = state.has_model ? 8 : state.has_data ? 3 : 1
+  const currentStep = state.has_model ? 5 : state.has_data ? 3 : 1
 
   return (
     <>
@@ -84,33 +87,18 @@ export default function Sidebar({ isOpen, onClose }) {
 
         <nav style={{ flex: 1, padding: '12px 10px', overflowY: 'auto' }}>
           <p style={{ padding: '0 10px', marginBottom: 8, fontSize: 10, fontWeight: 700, color: 'var(--text-label)', textTransform: 'uppercase', letterSpacing: '0.12em' }}>
-            분석 흐름
+            발표 핵심 흐름
           </p>
-          {NAV.map(({ to, icon: Icon, label, step, tag }) => {
-            const done = step < currentStep
-            const locked = step > currentStep + 2
-            return (
-              <NavLink key={to} to={to} onClick={onClose} style={{ textDecoration: 'none', pointerEvents: locked ? 'none' : 'auto', opacity: locked ? 0.42 : 1 }}>
-                {({ isActive }) => (
-                  <div style={{
-                    display: 'flex', alignItems: 'center', gap: 10,
-                    padding: '9px 10px', borderRadius: 10, marginBottom: 2,
-                    fontSize: 13, fontWeight: isActive ? 800 : 600, cursor: locked ? 'not-allowed' : 'pointer',
-                    transition: 'all 0.15s',
-                    color: isActive ? '#2563eb' : done ? '#059669' : 'var(--text-3)',
-                    background: isActive ? 'rgba(37,99,235,0.09)' : 'transparent',
-                    boxShadow: isActive ? '0 0 0 1px rgba(37,99,235,0.16)' : 'none',
-                  }}>
-                    <span style={{ width: 16, height: 16, flexShrink: 0 }}>
-                      {done && !isActive ? <CheckIcon /> : <Icon />}
-                    </span>
-                    <span style={{ flex: 1 }}>{step}. {label}</span>
-                    {tag && <span style={{ fontSize: 9, fontWeight: 800, color: '#7c3aed', background: 'rgba(124,58,237,0.12)', padding: '2px 6px', borderRadius: 4 }}>{tag}</span>}
-                  </div>
-                )}
-              </NavLink>
-            )
-          })}
+          {CORE_NAV.map(({ to, icon: Icon, label, step, tag }) => (
+            <NavItem key={to} to={to} icon={Icon} label={`${step}. ${label}`} done={step < currentStep} tag={tag} onClose={onClose} />
+          ))}
+
+          <p style={{ padding: '14px 10px 6px', margin: 0, fontSize: 10, fontWeight: 700, color: 'var(--text-label)', textTransform: 'uppercase', letterSpacing: '0.12em' }}>
+            선택 확장 기능
+          </p>
+          {OPTIONAL_NAV.map(({ to, icon: Icon, label }) => (
+            <NavItem key={to} to={to} icon={Icon} label={label} optional onClose={onClose} />
+          ))}
         </nav>
 
         <div style={{ margin: '0 10px 8px', borderRadius: 12, border: '1px solid var(--border)', overflow: 'hidden', background: 'var(--surface-alt)' }}>
@@ -154,6 +142,30 @@ export default function Sidebar({ isOpen, onClose }) {
         </div>
       </aside>
     </>
+  )
+}
+
+function NavItem({ to, icon: Icon, label, done, tag, optional, onClose }) {
+  return (
+    <NavLink key={to} to={to} onClick={onClose} style={{ textDecoration: 'none' }}>
+      {({ isActive }) => (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          padding: '9px 10px', borderRadius: 10, marginBottom: 2,
+          fontSize: 13, fontWeight: isActive ? 800 : 600, cursor: 'pointer',
+          transition: 'all 0.15s',
+          color: isActive ? '#2563eb' : done ? '#059669' : optional ? 'var(--text-label)' : 'var(--text-3)',
+          background: isActive ? 'rgba(37,99,235,0.09)' : 'transparent',
+          boxShadow: isActive ? '0 0 0 1px rgba(37,99,235,0.16)' : 'none',
+        }}>
+          <span style={{ width: 16, height: 16, flexShrink: 0 }}>
+            {done && !isActive ? <CheckIcon /> : <Icon />}
+          </span>
+          <span style={{ flex: 1 }}>{label}</span>
+          {tag && <span style={{ fontSize: 9, fontWeight: 800, color: '#7c3aed', background: 'rgba(124,58,237,0.12)', padding: '2px 6px', borderRadius: 4 }}>{tag}</span>}
+        </div>
+      )}
+    </NavLink>
   )
 }
 
