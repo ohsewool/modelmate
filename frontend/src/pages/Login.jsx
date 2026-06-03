@@ -188,14 +188,6 @@ export default function Login() {
           />
         </div>
 
-        {/* 로그인 없이 시작 */}
-        <button onClick={() => nav('/upload')} style={{
-          display:'block', width:'100%', background:'none', border:'none',
-          color:'#9ca3af', fontSize:12, cursor:'pointer', textAlign:'center',
-          marginTop:20, fontFamily:'inherit',
-        }}>
-          로그인 없이 시작하기 →
-        </button>
       </div>
     </div>
   )

@@ -41,7 +41,7 @@ export default function Home() {
             {dark ? <Sun size={15} /> : <Moon size={15} />}
           </button>
           <Button variant="secondary" onClick={() => nav('/login')}>로그인</Button>
-          <Button onClick={() => nav('/upload')}>시작하기</Button>
+          <Button onClick={() => nav('/login')}>시작하기</Button>
         </div>
       </nav>
 
@@ -68,7 +68,7 @@ export default function Home() {
                 </p>
 
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 22 }}>
-                  <Button size="lg" onClick={() => nav('/upload')}>
+                  <Button size="lg" onClick={() => nav('/login')}>
                     <Upload size={17} /> 시작하기
                   </Button>
                 </div>
