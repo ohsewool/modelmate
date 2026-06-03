@@ -40,14 +40,17 @@ except: LGBM_OK = False
 _GEMINI_ERROR = ""
 try:
     import google.generativeai as genai
-    _GEMINI_KEY = os.getenv("GEMINI_API_KEY", "REDACTED_LEAKED_KEY_SEE_SECURITY_MD")
+    _GEMINI_KEY = os.getenv("GEMINI_API_KEY", "")
+    GEMINI_DISABLED = os.getenv("MODEL_MATE_DISABLE_GEMINI", "").lower() in ("1", "true", "yes", "on")
     if _GEMINI_KEY:
         genai.configure(api_key=_GEMINI_KEY)
         _GEMINI_MODEL = genai.GenerativeModel("gemini-2.0-flash")
-        GEMINI_OK = True
+        GEMINI_OK = not GEMINI_DISABLED
+        if GEMINI_DISABLED:
+            _GEMINI_ERROR = "Gemini disabled by MODEL_MATE_DISABLE_GEMINI"
     else:
         GEMINI_OK = False
-        _GEMINI_ERROR = "API 키 없음"
+        _GEMINI_ERROR = "API key missing"
 except Exception as _e:
     GEMINI_OK = False
     _GEMINI_ERROR = str(_e)
@@ -63,7 +66,9 @@ def _call_gemini_sync(prompt: str) -> str:
         _GEMINI_CALL_ERROR = str(e)
         return ""
 
-async def ask_gemini(prompt: str) -> str:
+async def ask_gemini(prompt: str, demo: bool = False) -> str:
+    if demo:
+        return ""
     if not GEMINI_OK: return ""
     return await asyncio.to_thread(_call_gemini_sync, prompt)
 

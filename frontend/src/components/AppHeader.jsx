@@ -4,6 +4,7 @@ import PAGE_META from '../pageMeta'
 export default function AppHeader({ onMenuClick }) {
   const { pathname } = useLocation()
   const meta = PAGE_META[pathname] || {}
+  const demoMode = localStorage.getItem('mm_demo_mode') === '1'
   if (!meta.title) return null
 
   return (
@@ -40,14 +41,16 @@ export default function AppHeader({ onMenuClick }) {
       </div>
       <div style={{
         display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700,
-        color: '#047857', background: '#ecfdf5', border: '1px solid #a7f3d0',
+        color: demoMode ? '#92400e' : '#047857',
+        background: demoMode ? '#fffbeb' : '#ecfdf5',
+        border: `1px solid ${demoMode ? '#fde68a' : '#a7f3d0'}`,
         padding: '5px 10px', borderRadius: 99, flexShrink: 0,
       }}>
         <span style={{
-          width: 6, height: 6, borderRadius: '50%', background: '#10b981',
+          width: 6, height: 6, borderRadius: '50%', background: demoMode ? '#f59e0b' : '#10b981',
           display: 'inline-block', animation: 'pulse 2s infinite',
         }} />
-        <span className="status-text">정상 작동</span>
+        <span className="status-text">{demoMode ? '데모 모드' : '정상 작동'}</span>
       </div>
     </header>
   )
