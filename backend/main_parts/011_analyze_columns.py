@@ -42,28 +42,41 @@ def infer_target_category(df, target_col):
     if any(word in text for word in fault_words):
         label = "고장/불량 분류" if not is_binary_like else "고장 여부"
         reason = "컬럼명이나 값에 고장, 불량, 이상 상태와 관련된 표현이 보입니다."
+        confidence = "높음"
     elif any(word in text for word in pass_words) or is_binary_like:
-        label = "합격 여부" if is_binary_like else "상태 분류"
-        reason = "정답 값이 두 종류에 가깝거나 합격/정상 판정과 관련된 표현이 보입니다."
+        if any(word in text for word in pass_words):
+            label = "합격 여부" if is_binary_like else "상태 분류"
+            reason = "컬럼명이나 값에 합격, 정상 판정과 관련된 표현이 보입니다."
+            confidence = "높음"
+        else:
+            label = "두 값 분류"
+            reason = "정답 값이 두 종류라 분류 문제로 보이지만, 업무 의미는 컬럼명만으로 단정하기 어렵습니다."
+            confidence = "낮음"
     elif any(word in text for word in churn_words):
         label = "이탈 여부"
         reason = "고객 이탈이나 해지 여부를 나타내는 표현이 보입니다."
+        confidence = "높음"
     elif any(word in text for word in price_words):
         label = "금액 예측"
         reason = "가격, 금액, 매출처럼 숫자 크기를 예측하는 컬럼으로 보입니다."
+        confidence = "높음"
     elif any(word in text for word in score_words):
         label = "점수/등급 예측"
         reason = "점수나 등급을 예측하는 컬럼명으로 보입니다."
+        confidence = "중간"
     elif is_numeric and unique_count > 12:
-        label = "수치 예측"
-        reason = "정답 값이 여러 숫자 값으로 나뉘어 연속적인 수치를 예측하는 형태입니다."
+        label = "연속값 예측"
+        reason = "정답 값이 다양한 숫자로 구성되어 있어 연속적인 값을 맞히는 문제로 보입니다."
+        confidence = "중간"
     else:
-        label = "상태 분류"
-        reason = "정답 값이 몇 가지 종류로 나뉘어 있어 분류 문제로 보입니다."
+        label = "목적 확인 필요"
+        reason = "데이터 형태만으로는 고장, 합격, 이탈 같은 실제 업무 의미를 정확히 알기 어렵습니다."
+        confidence = "낮음"
 
     return {
         "target_category": label,
         "target_category_reason": reason,
+        "target_category_confidence": confidence,
         "target_unique_count": unique_count,
     }
 
