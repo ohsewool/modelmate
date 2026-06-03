@@ -88,8 +88,8 @@ export default function History() {
   }
 
   return (
-    <div className="animate-fade-in" style={{ padding: 32, maxWidth: 1080 }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+    <div className="animate-fade-in" style={{ padding: 24, maxWidth: 980 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <Card>
           <CardContent className="pt-5">
             <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 20, alignItems: 'center' }}>
@@ -103,10 +103,12 @@ export default function History() {
                 )}
                 <div style={{ minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                    <h1 style={{ margin: 0, fontSize: 22, fontWeight: 850, color: 'var(--text)' }}>
+                    <h1 style={{ margin: 0, fontSize: 18, fontWeight: 850, color: 'var(--text)' }}>
                       {user ? `${user.name || '사용자'}님의 작업 공간` : '비로그인 작업 공간'}
                     </h1>
-                    <Badge variant={user ? 'success' : 'warning'}>{user ? '계정 저장 중' : '임시 저장'}</Badge>
+                    <Badge variant={profile?.is_admin ? 'default' : user ? 'success' : 'warning'}>
+                      {profile?.is_admin ? '관리자' : user ? '계정 저장 중' : '임시 저장'}
+                    </Badge>
                   </div>
                   <p style={{ margin: '6px 0 0', fontSize: 13, color: 'var(--text-2)' }}>
                     {user ? user.email : '로그인하면 실험 기록이 계정별로 저장되고 다른 사람 기록과 섞이지 않습니다.'}
@@ -125,11 +127,11 @@ export default function History() {
           </CardContent>
         </Card>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 14 }}>
-          <StatCard label="내 실험 기록" value={history.length} sub={user ? '계정 기준' : '임시 기록'} />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 10 }}>
+          <StatCard label={profile?.is_admin ? '전체 실험 기록' : '내 실험 기록'} value={history.length} sub={profile?.is_admin ? '관리자 기준' : user ? '계정 기준' : '임시 기록'} />
           <StatCard label="최고 성능" value={best === null ? '-' : best.toFixed(4)} sub="가장 좋은 점수" />
           <StatCard label="자동 개선" value={optunaCount} sub="Optuna 적용" />
-          <StatCard label="최근 실행" value={latest ? taskLabel(latest.task_type) : '-'} sub={latest?.timestamp || profile?.last_experiment_at || '기록 없음'} />
+          <StatCard label={profile?.is_admin ? '사용자 수' : '최근 실행'} value={profile?.is_admin ? profile.user_count ?? '-' : latest ? taskLabel(latest.task_type) : '-'} sub={profile?.is_admin ? '등록 계정' : latest?.timestamp || profile?.last_experiment_at || '기록 없음'} />
         </div>
 
         {!user && (
@@ -152,9 +154,9 @@ export default function History() {
           <CardHeader>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
               <div>
-                <CardTitle>최근 실험 기록</CardTitle>
+                <CardTitle>{profile?.is_admin ? '전체 실험 기록' : '최근 실험 기록'}</CardTitle>
                 <CardDescription>
-                  모델 비교를 실행하면 이곳에 데이터 크기, 타깃, 선택 모델, 성능이 저장됩니다.
+                  {profile?.is_admin ? '관리자는 모든 사용자의 실험 기록을 확인할 수 있습니다.' : '모델 비교를 실행하면 이곳에 데이터 크기, 타깃, 선택 모델, 성능이 저장됩니다.'}
                 </CardDescription>
               </div>
               {history.length > 0 && (
@@ -178,6 +180,7 @@ export default function History() {
                   <thead>
                     <tr>
                       <th>시간</th>
+                      {profile?.is_admin && <th>사용자</th>}
                       <th>데이터</th>
                       <th>맞히려는 값</th>
                       <th>예측 유형</th>
@@ -196,6 +199,7 @@ export default function History() {
                               <Clock size={13} color="#94a3b8" /> {item.timestamp || '-'}
                             </span>
                           </td>
+                          {profile?.is_admin && <td>{item.owner_email || item.owner_name || '-'}</td>}
                           <td>{item.data_shape?.join(' x ') || '-'}</td>
                           <td>{item.target || '-'}</td>
                           <td>{taskLabel(item.task_type)}</td>
@@ -225,7 +229,7 @@ function StatCard({ label, value, sub }) {
     <Card>
       <CardContent className="pt-5">
         <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 750, color: 'var(--text-label)' }}>{label}</p>
-        <p style={{ margin: 0, fontSize: 26, fontWeight: 850, color: 'var(--text)' }}>{value}</p>
+        <p style={{ margin: 0, fontSize: 22, fontWeight: 850, color: 'var(--text)' }}>{value}</p>
         <p style={{ margin: '6px 0 0', fontSize: 12, color: 'var(--text-2)' }}>{sub}</p>
       </CardContent>
     </Card>

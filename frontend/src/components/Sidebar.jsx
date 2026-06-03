@@ -144,7 +144,7 @@ export default function Sidebar({ isOpen, onClose }) {
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 12, fontWeight: 750,
               }}>
-                이메일 / 관리자 로그인
+                이메일 로그인
               </NavLink>
             </div>
           )}

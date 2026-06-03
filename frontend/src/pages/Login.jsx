@@ -81,7 +81,7 @@ export default function Login() {
           </div>
           <h1 style={{ fontSize: 22, fontWeight: 800, color: '#111827', margin: 0, letterSpacing: '-0.02em' }}>ModelMate</h1>
           <p style={{ fontSize: 13, color: '#9ca3af', margin: '4px 0 0', fontWeight: 400 }}>
-            {mode === 'login' ? '이메일, 관리자 계정, Google로 로그인하세요' : '이메일 또는 Google로 계정을 만들 수 있습니다'}
+            {mode === 'login' ? '이메일 또는 Google로 로그인하세요' : '이메일 또는 Google로 계정을 만들 수 있습니다'}
           </p>
         </div>
 
@@ -104,16 +104,6 @@ export default function Login() {
 
         {/* 폼 */}
         <form onSubmit={handleEmailSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {mode === 'login' && (
-            <button type="button" onClick={() => { setEmail('admin@modelmate.local'); setPassword('admin1234'); setError('') }} style={{
-              padding: '10px 12px', borderRadius: 10, border: '1px solid #bfdbfe',
-              background: '#eff6ff', color: '#1d4ed8', cursor: 'pointer',
-              fontSize: 12, fontWeight: 700, fontFamily: 'inherit', textAlign: 'left',
-            }}>
-              관리자 계정 입력: admin@modelmate.local / admin1234
-            </button>
-          )}
-
           {mode === 'signup' && (
             <div>
               <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>이름</label>
@@ -175,7 +165,7 @@ export default function Login() {
           }}
           onMouseEnter={e => { if(!loading) e.currentTarget.style.transform='translateY(-1px)' }}
           onMouseLeave={e => e.currentTarget.style.transform=''}>
-            {loading ? '처리 중...' : mode === 'login' ? '이메일 / 관리자 로그인' : '이메일로 회원가입'}
+            {loading ? '처리 중...' : mode === 'login' ? '이메일로 로그인' : '이메일로 회원가입'}
           </button>
         </form>
 
