@@ -7,13 +7,13 @@ import { useAuth } from '../AuthContext'
 
 const CORE_NAV = [
   { to: '/upload', icon: UploadIcon, label: '데이터 넣기', step: 1 },
-  { to: '/agent', icon: AgentIcon, label: '자동 분석', step: 2, tag: 'AI' },
-  { to: '/model-lab', icon: FlaskIcon, label: '모델 고르기', step: 3 },
-  { to: '/report', icon: DocIcon, label: '결과 요약', step: 4 },
-  { to: '/xai', icon: EyeIcon, label: '이유 보기', step: 5 },
+  { to: '/model-lab', icon: FlaskIcon, label: '모델 고르기', step: 2 },
+  { to: '/report', icon: DocIcon, label: '결과 요약', step: 3 },
+  { to: '/xai', icon: EyeIcon, label: '이유 보기', step: 4 },
 ]
 
 const OPTIONAL_NAV = [
+  { to: '/agent', icon: AgentIcon, label: 'AI 한 번에 실행', desc: '모델 비교부터 이유 분석까지 자동 진행', tag: 'AI' },
   { to: '/predict', icon: PredictIcon, label: '새 데이터 예측', desc: '학습한 모델에 새 값을 넣어 결과 확인' },
   { to: '/deploy', icon: DeployIcon, label: 'API 공유', desc: '다른 앱에서 예측을 요청할 URL 생성' },
   { to: '/history', icon: ChartIcon, label: '작업 기록', desc: '내 실험 결과를 다시 확인' },
@@ -40,7 +40,7 @@ export default function Sidebar({ isOpen, onClose }) {
     return () => clearInterval(id)
   }, [])
 
-  const currentStep = state.has_model ? 5 : state.has_data ? 3 : 1
+  const currentStep = state.has_model ? 4 : state.has_data ? 2 : 1
 
   return (
     <>
@@ -96,8 +96,8 @@ export default function Sidebar({ isOpen, onClose }) {
           <p style={{ padding: '14px 10px 6px', margin: 0, fontSize: 10, fontWeight: 700, color: 'var(--text-label)', textTransform: 'uppercase', letterSpacing: '0.12em' }}>
             선택 확장 기능
           </p>
-          {OPTIONAL_NAV.map(({ to, icon: Icon, label, desc }) => (
-            <NavItem key={to} to={to} icon={Icon} label={label} desc={desc} optional onClose={onClose} />
+          {OPTIONAL_NAV.map(({ to, icon: Icon, label, desc, tag }) => (
+            <NavItem key={to} to={to} icon={Icon} label={label} desc={desc} tag={tag} optional onClose={onClose} />
           ))}
         </nav>
 

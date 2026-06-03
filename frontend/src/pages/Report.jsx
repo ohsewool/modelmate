@@ -304,7 +304,7 @@ export default function Report() {
             </p>
           </div>
           <Button onClick={() => nav('/xai')} style={{ flexShrink: 0 }}>
-            5. 이유 보기로 이동
+            4. 이유 보기로 이동
           </Button>
         </div>
       </div>

@@ -32,12 +32,12 @@ export default function Agent() {
         color: 'var(--text)', border: '1px solid var(--border)',
         boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
       }}>
-        <p style={{ fontSize: 12, fontWeight: 800, color: '#2563eb', margin: '0 0 8px' }}>2. 자동 분석</p>
+        <p style={{ fontSize: 12, fontWeight: 800, color: '#7c3aed', margin: '0 0 8px' }}>선택 기능 · AI 한 번에 실행</p>
         <h1 style={{ fontSize: 22, fontWeight: 900, margin: '0 0 6px', letterSpacing: 0 }}>
-          자동 분석 실행
+          AI가 모델 비교부터 이유 분석까지 대신 실행
         </h1>
         <p style={{ fontSize: 13, lineHeight: 1.55, color: 'var(--text-2)', margin: 0 }}>
-          모델 비교, 성능 확인, 이유 분석을 한 번에 진행합니다.
+          직접 2~4단계를 눌러 진행할 수도 있고, 여기서 한 번에 맡길 수도 있습니다.
         </p>
       </section>
 
@@ -46,15 +46,20 @@ export default function Agent() {
           <div style={{ width: 76, height: 76, borderRadius: 22, margin: '0 auto 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(124,58,237,0.1)', color: '#7c3aed' }}>
             <AgentIcon />
           </div>
-          <h2 style={{ fontSize: 22, color: 'var(--text)', margin: '0 0 10px' }}>복잡한 분석 과정을 자동으로 실행합니다</h2>
+          <h2 style={{ fontSize: 22, color: 'var(--text)', margin: '0 0 10px' }}>시간이 없을 때 쓰는 자동 실행 모드</h2>
           <p style={{ fontSize: 14, color: 'var(--text-2)', lineHeight: 1.7, maxWidth: 560, margin: '0 auto 26px' }}>
-            모델 비교, 성능 개선 여부 판단, 예측 이유 분석을 한 번에 실행합니다.
-            각 단계가 끝나면 AI가 무엇을 했는지 짧게 설명합니다.
+            AI 에이전트는 모델을 비교하고, 개선이 필요한지 판단하고, 어떤 정보가 예측에 중요했는지 요약합니다.
+            발표 흐름을 빠르게 만들고 싶을 때 사용하는 선택 기능입니다.
           </p>
-          <button onClick={runAgent} className="btn-primary" disabled={loading} style={{ padding: '13px 24px' }}>
-            {loading && <span className="spinner" />}
-            자동 분석 시작
-          </button>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <button onClick={runAgent} className="btn-primary" disabled={loading} style={{ padding: '13px 24px' }}>
+              {loading && <span className="spinner" />}
+              AI에게 한 번에 맡기기
+            </button>
+            <button onClick={() => nav('/model-lab')} className="btn-secondary" disabled={loading} style={{ padding: '13px 20px' }}>
+              직접 모델 고르기
+            </button>
+          </div>
         </div>
       )}
 
@@ -74,7 +79,7 @@ export default function Agent() {
 
       {error && (
         <div className="card" style={{ borderColor: 'rgba(220,38,38,0.22)', background: 'rgba(220,38,38,0.05)', marginBottom: 16 }}>
-          <h2 style={{ fontSize: 16, color: '#dc2626', margin: '0 0 8px' }}>자동 분석을 시작하지 못했습니다</h2>
+          <h2 style={{ fontSize: 16, color: '#dc2626', margin: '0 0 8px' }}>AI 자동 실행을 시작하지 못했습니다</h2>
           <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6, margin: '0 0 14px' }}>{error}</p>
           <button onClick={() => nav('/upload')} className="btn-secondary">데이터 확인하기</button>
         </div>
@@ -89,7 +94,7 @@ export default function Agent() {
           </div>
           <div className="card" style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center' }}>
             <div>
-              <h2 style={{ fontSize: 18, color: 'var(--text)', margin: '0 0 6px' }}>자동 분석이 끝났습니다</h2>
+              <h2 style={{ fontSize: 18, color: 'var(--text)', margin: '0 0 6px' }}>AI 자동 실행이 끝났습니다</h2>
               <p style={{ fontSize: 13, color: 'var(--text-2)', margin: 0 }}>
                 이제 결과 요약에서 비전공자도 이해할 수 있는 형태로 정리된 내용을 확인하세요.
               </p>
@@ -116,7 +121,7 @@ function StepCard({ step, idx }) {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
             <span style={{ fontSize: 12, fontWeight: 900, color: 'var(--text-label)' }}>STEP {step.step ?? idx + 1}</span>
-            <h3 style={{ fontSize: 15, color: 'var(--text)', margin: 0 }}>{step.name || '자동 분석 단계'}</h3>
+            <h3 style={{ fontSize: 15, color: 'var(--text)', margin: 0 }}>{step.name || 'AI 실행 단계'}</h3>
             <span className="badge badge-green" style={{ fontSize: 10 }}>완료</span>
           </div>
           {step.comment && (
