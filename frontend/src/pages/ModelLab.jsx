@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { Bar, BarChart, Cell, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import api from '../api'
 import KPICard from '../components/KPICard'
 
@@ -68,8 +68,14 @@ export default function ModelLab() {
   const best = result?.best_model || state?.best_model || rows[0]?.model || '-'
   const chartData = rows.map(row => ({
     name: shortModel(row.model),
+    model: row.model,
     score: metricValue(row, isRegression),
   })).filter(row => row.score != null)
+  const scores = chartData.map(row => row.score)
+  const bestScore = scores.length ? Math.max(...scores) : null
+  const worstScore = scores.length ? Math.min(...scores) : null
+  const bestModel = chartData.find(row => row.score === bestScore)?.model || best
+  const worstModel = chartData.find(row => row.score === worstScore)?.model || null
 
   return (
     <div className="animate-fade-in" style={{ padding: 32, maxWidth: 980 }}>
@@ -114,14 +120,26 @@ export default function ModelLab() {
           <div className="card" style={{ marginBottom: 16 }}>
             <h2 style={{ fontSize: 17, color: 'var(--text)', margin: '0 0 6px' }}>모델별 점수</h2>
             <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.6, margin: '0 0 16px' }}>
-              막대가 길수록 현재 데이터에서 더 좋은 결과를 낸 모델입니다. 점수는 테스트용 데이터로 확인했습니다.
+              초록색은 최고점, 주황색은 최저점입니다. 점수 차이가 작아도 어떤 모델이 앞서는지 바로 볼 수 있습니다.
             </p>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
+              <LegendDot color="#059669" label={`최고점 ${shortModel(bestModel)} ${formatScore(bestScore)}`} />
+              {worstModel && worstModel !== bestModel && (
+                <LegendDot color="#d97706" label={`최저점 ${shortModel(worstModel)} ${formatScore(worstScore)}`} />
+              )}
+              <LegendDot color="#2563eb" label="비교 모델" />
+            </div>
             <ResponsiveContainer width="100%" height={260}>
               <BarChart data={chartData}>
                 <XAxis dataKey="name" tick={{ fontSize: 11 }} />
                 <YAxis domain={[0, 'dataMax']} tick={{ fontSize: 11 }} />
                 <Tooltip contentStyle={ttStyle} formatter={v => Number(v).toFixed(4)} />
-                <Bar dataKey="score" fill="#2563eb" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="score" radius={[6, 6, 0, 0]}>
+                  {chartData.map(row => (
+                    <Cell key={row.model} fill={barColor(row.score, bestScore, worstScore)} />
+                  ))}
+                  <LabelList dataKey="score" position="top" formatter={v => Number(v).toFixed(3)} style={{ fontSize: 11, fontWeight: 800, fill: 'var(--text-2)' }} />
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -140,15 +158,20 @@ export default function ModelLab() {
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map(row => (
-                    <tr key={row.model}>
+                  {rows.map(row => {
+                    const score = metricValue(row, isRegression)
+                    const rank = score === bestScore ? 'best' : score === worstScore ? 'worst' : ''
+                    return (
+                    <tr key={row.model} style={{ background: rank === 'best' ? 'rgba(5,150,105,0.06)' : rank === 'worst' ? 'rgba(217,119,6,0.06)' : 'transparent' }}>
                       <td style={{ fontWeight: 800 }}>{shortModel(row.model)}</td>
-                      <td>{row.error ? '실패' : row.model === best ? '가장 좋음' : '완료'}</td>
+                      <td>
+                        {row.error ? '실패' : rank === 'best' ? <span className="badge badge-green">최고점</span> : rank === 'worst' ? <span className="badge badge-amber">최저점</span> : '완료'}
+                      </td>
                       <td>{formatScore(isRegression ? row.r2 : row.accuracy)}</td>
                       {!isRegression && <td>{formatScore(row.f1)}</td>}
                       {!isRegression && <td>{formatScore(row.roc_auc)}</td>}
                     </tr>
-                  ))}
+                  )})}
                 </tbody>
               </table>
             </div>
@@ -240,6 +263,21 @@ function shortModel(name) {
 function formatScore(value) {
   const num = Number(value)
   return Number.isFinite(num) ? num.toFixed(4) : '-'
+}
+
+function barColor(score, bestScore, worstScore) {
+  if (score === bestScore) return '#059669'
+  if (score === worstScore && bestScore !== worstScore) return '#d97706'
+  return '#2563eb'
+}
+
+function LegendDot({ color, label }) {
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 750, color: 'var(--text-2)' }}>
+      <span style={{ width: 9, height: 9, borderRadius: '50%', background: color, display: 'inline-block' }} />
+      {label}
+    </span>
+  )
 }
 
 function FlaskIcon() {
