@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight, BarChart3, CheckCircle2, Moon, Play, ShieldCheck, Sparkles, Sun, Upload } from 'lucide-react'
+import { BarChart3, CheckCircle2, Moon, Play, ShieldCheck, Sparkles, Sun, Upload } from 'lucide-react'
 import { useTheme } from '../ThemeContext'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
@@ -69,10 +69,7 @@ export default function Home() {
 
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 22 }}>
                   <Button size="lg" onClick={() => nav('/upload')}>
-                    <Upload size={17} /> CSV 넣기
-                  </Button>
-                  <Button size="lg" variant="secondary" onClick={() => nav('/history')}>
-                    작업 기록 보기 <ArrowRight size={16} />
+                    <Upload size={17} /> 시작하기
                   </Button>
                 </div>
 
