@@ -120,7 +120,7 @@ export default function ModelLab() {
           <div className="card" style={{ marginBottom: 16 }}>
             <h2 style={{ fontSize: 17, color: 'var(--text)', margin: '0 0 6px' }}>모델별 점수</h2>
             <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.6, margin: '0 0 16px' }}>
-              초록색은 최고점, 주황색은 최저점입니다. 점수 차이가 작아도 어떤 모델이 앞서는지 바로 볼 수 있습니다.
+              초록색은 최고점, 주황색은 최저점입니다.
             </p>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
               <LegendDot color="#059669" label={`최고점 ${shortModel(bestModel)} ${formatScore(bestScore)}`} />

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   AlertCircle,
   BarChart3,
@@ -100,6 +101,7 @@ function Section({ title, icon: Icon, children, action }) {
 }
 
 export default function Report() {
+  const nav = useNavigate()
   const [summary, setSummary] = useState(null)
   const [loading, setLoading] = useState(true)
   const [downloading, setDownloading] = useState(false)
@@ -287,6 +289,23 @@ export default function Report() {
               ))}
             </div>
           </Section>
+        </div>
+
+        <div className="card" style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          gap: 16, background: 'var(--surface-alt)',
+        }}>
+          <div>
+            <p style={{ margin: '0 0 4px', fontSize: 13, fontWeight: 850, color: 'var(--text)' }}>
+              다음 단계
+            </p>
+            <p style={{ margin: 0, fontSize: 12, color: 'var(--text-2)' }}>
+              선택된 모델이 어떤 정보를 중요하게 봤는지 확인합니다.
+            </p>
+          </div>
+          <Button onClick={() => nav('/xai')} style={{ flexShrink: 0 }}>
+            5. 이유 보기로 이동
+          </Button>
         </div>
       </div>
     </div>
