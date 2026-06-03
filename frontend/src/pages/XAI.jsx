@@ -117,9 +117,7 @@ export default function XAI() {
 
   const topFeature = summary?.items?.[0]
   const localTop = local?.features?.[0]
-  const summaryTitle = topFeature
-    ? `${topFeature.feature}가 ${summary?.model || '모델'} 예측에서 가장 큰 영향을 준 정보입니다.`
-    : '예측에 영향을 준 정보를 확인합니다.'
+  const summaryTitle = topFeature ? '핵심 근거' : '예측 근거'
 
   if (loading) {
     return (
@@ -151,6 +149,9 @@ export default function XAI() {
                   {summaryTitle}
                 </h1>
                 <p style={{ margin: 0, color: '#475569', fontSize: 14 }}>
+                  {topFeature ? `${topFeature.feature}가 가장 큰 영향을 주었습니다.` : '중요한 정보를 순서대로 보여줍니다.'}
+                </p>
+                <p style={{ margin: '6px 0 0', color: '#64748b', fontSize: 12 }}>
                   사용 모델 {summary.model} / 예측 유형 {taskLabel(summary.task_type)} / <SourceBadge source={summary.source} />
                 </p>
               </div>

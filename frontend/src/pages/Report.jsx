@@ -52,10 +52,10 @@ const reportSummaryText = (summary, dataset, opt) => {
   const model = summary?.model_selection?.best_model || '선택된 모델'
   const target = dataset?.target_col || '정답값'
   if (opt?.status === 'skipped' || opt?.status === 'not_tunable') {
-    return `${model} 모델이 '${target}' 예측에 가장 적합한 모델로 선택되었습니다. 이 모델은 추가 자동 개선이 필요하지 않아 성능 개선 단계를 생략했습니다.`
+    return `${model} 모델이 '${target}' 예측에 가장 적합한 모델로 선택되었습니다. 추가 자동 개선은 생략되었습니다.`
   }
   if (opt?.status === 'ok') {
-    return `${model} 모델이 '${target}' 예측에 가장 적합한 모델로 선택되었고, 자동 성능 개선까지 완료했습니다.`
+    return `${model} 모델이 '${target}' 예측에 가장 적합한 모델로 선택되었고, 자동 개선도 완료되었습니다.`
   }
   return `${model} 모델이 '${target}' 예측에 가장 적합한 모델로 선택되었습니다.`
 }
@@ -174,10 +174,13 @@ export default function Report() {
                 결과 요약
               </p>
               <h1 style={{ margin: '0 0 10px', fontSize: 28, fontWeight: 900, color: '#0f172a', letterSpacing: 0 }}>
-                {reportSummaryText(summary, dataset, opt)}
+                선택된 모델
               </h1>
               <p style={{ margin: 0, color: '#475569', fontSize: 14 }}>
-                생성 시간 {new Date(summary.generated_at).toLocaleString()} / 맞히려는 값 {dataset.target_col || '-'}
+                {reportSummaryText(summary, dataset, opt)}
+              </p>
+              <p style={{ margin: '6px 0 0', color: '#64748b', fontSize: 12 }}>
+                {new Date(summary.generated_at).toLocaleString()} / 맞히려는 값 {dataset.target_col || '-'}
               </p>
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
