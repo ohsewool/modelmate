@@ -1,0 +1,743 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ModelMate 발표용 라이트 모드</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --surface-2: #f8fafc;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --text-2: #475569;
+      --text-3: #64748b;
+      --label: #94a3b8;
+      --blue: #2563eb;
+      --blue-2: #1d4ed8;
+      --violet: #7c3aed;
+      --green: #059669;
+      --amber: #d97706;
+      --cyan: #0891b2;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; background: var(--bg); }
+    body {
+      margin: 0;
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif;
+      background:
+        radial-gradient(circle at 86% 18%, rgba(124,58,237,.10), transparent 24rem),
+        radial-gradient(circle at 15% 12%, rgba(37,99,235,.11), transparent 26rem),
+        linear-gradient(180deg, #f8fafc, #eef2ff 52%, #f8fafc);
+      letter-spacing: 0;
+      line-height: 1.55;
+      overflow-x: hidden;
+    }
+
+    .deck-nav {
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      z-index: 20;
+      display: flex;
+      gap: 6px;
+      padding: 8px;
+      border: 1px solid rgba(37,99,235,.18);
+      border-radius: 999px;
+      background: rgba(255,255,255,.84);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 18px 50px rgba(15,23,42,.12);
+    }
+
+    .deck-nav a {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: #cbd5e1;
+      display: block;`n      transition: transform .18s ease, background .18s ease, box-shadow .18s ease;
+    }
+
+    .deck-nav a:hover,
+    .deck-nav a.active {
+      background: linear-gradient(135deg, var(--blue-2), var(--violet));`n      transform: scale(1.22);`n      box-shadow: 0 0 0 5px rgba(37,99,235,.10);
+    }
+
+    section {
+      min-height: 100vh;
+      padding: clamp(34px, 6vw, 78px);
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid rgba(226,232,240,.95);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .wrap {
+      width: min(1160px, 100%);
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    .kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      margin-bottom: 18px;
+      color: var(--blue);
+      font-size: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .kicker::before {
+      content: "";
+      width: 28px;
+      height: 2px;
+      border-radius: 99px;
+      background: linear-gradient(90deg, var(--blue), var(--violet));
+    }
+
+    h1, h2, h3, p { margin-top: 0; }
+
+    h1 {
+      max-width: 980px;
+      font-size: clamp(54px, 9vw, 112px);
+      line-height: .92;
+      margin-bottom: 22px;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      max-width: 980px;
+      font-size: clamp(34px, 5.2vw, 68px);
+      line-height: 1.04;
+      margin-bottom: 20px;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      font-size: 20px;
+      margin-bottom: 8px;
+    }
+
+    .lead {
+      max-width: 850px;
+      color: var(--text-2);
+      font-size: clamp(18px, 2.2vw, 24px);
+      line-height: 1.55;
+    }
+
+    .muted { color: var(--text-3); }
+
+    .gradient {
+      background: linear-gradient(135deg, #2563eb, #7c3aed 50%, #0891b2);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      right: -110px;
+      top: 50%;
+      width: min(48vw, 560px);
+      aspect-ratio: 1;
+      border-radius: 999px;
+      transform: translateY(-50%);
+      border: 1px solid rgba(37,99,235,.13);
+      box-shadow:
+        inset 0 0 0 80px rgba(37,99,235,.045),
+        inset 0 0 0 160px rgba(124,58,237,.045),
+        0 0 80px rgba(37,99,235,.12);
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 30px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 7px 13px;
+      border-radius: 999px;
+      border: 1px solid rgba(37,99,235,.18);
+      background: rgba(255,255,255,.92);
+      color: var(--text-2);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .two { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .three { grid-template-columns: repeat(3, minmax(0,1fr)); }
+    .four { grid-template-columns: repeat(4, minmax(0,1fr)); }
+
+    .card {
+      min-width: 0;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px;
+      background: rgba(255,255,255,.92);
+      box-shadow: 0 18px 60px rgba(15,23,42,.08);
+    }
+
+    .card p, .card li {
+      color: var(--text-2);
+      font-size: 15px;
+    }
+
+    .card p:last-child { margin-bottom: 0; }
+
+    .big {
+      padding: clamp(24px, 4vw, 42px);
+      border: 1px solid rgba(37,99,235,.20);
+      border-radius: 18px;
+      background:
+        linear-gradient(135deg, rgba(37,99,235,.09), rgba(124,58,237,.055)),
+        rgba(255,255,255,.94);
+    }
+
+    .why {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 18px;
+      align-items: stretch;
+      margin-top: 30px;
+    }
+
+    .arrow {
+      display: grid;
+      place-items: center;
+      color: var(--blue);
+      font-size: 32px;
+      font-weight: 900;
+    }
+
+    .label {
+      color: var(--label);
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .process {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(150px,1fr));
+      gap: 12px;
+      margin-top: 28px;
+    }
+
+    .step {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px;
+      min-height: 180px;
+      background: rgba(255,255,255,.94);
+      position: relative;
+    }
+
+    .step::after {
+      content: "";
+      position: absolute;
+      right: -12px;
+      top: 32px;
+      width: 12px;
+      height: 2px;
+      background: rgba(37,99,235,.26);
+    }
+
+    .step:last-child::after { display: none; }
+
+    .num {
+      width: 30px;
+      height: 30px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      margin-bottom: 14px;
+      color: #ffffff;
+      background: linear-gradient(135deg, var(--blue), var(--violet));
+      font-weight: 900;
+      font-size: 12px;
+    }
+
+    .split {
+      display: grid;
+      grid-template-columns: .95fr 1.05fr;
+      gap: 34px;
+      align-items: center;
+    }
+
+    .demo-flow {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0,1fr));
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    .demo-flow .card {
+      padding: 18px;
+      min-height: 145px;
+    }
+
+    .icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      margin-bottom: 12px;
+      background: rgba(37,99,235,.09);
+      color: var(--blue);
+      font-weight: 900;
+    }
+
+    .team {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0,1fr));
+      gap: 16px;
+    }
+
+    .name {
+      display: block;
+      font-size: 22px;
+      font-weight: 900;
+      margin-bottom: 8px;
+    }
+
+    .role {
+      color: var(--blue);
+      font-weight: 900;
+      font-size: 12px;
+    }
+
+    .quote {
+      max-width: 920px;
+      padding-left: 24px;
+      border-left: 3px solid var(--blue);
+      color: var(--text-2);
+      font-size: clamp(24px, 3.5vw, 42px);
+      font-weight: 800;
+      line-height: 1.35;
+    }
+
+    .center { text-align: center; }
+    .center .lead, .center h2 { margin-left: auto; margin-right: auto; }
+    .center .meta { justify-content: center; }
+
+
+    .progress {
+      position: fixed;
+      left: 0;
+      top: 0;
+      height: 3px;
+      width: 0%;
+      z-index: 30;
+      background: linear-gradient(90deg, var(--blue), var(--violet), var(--cyan));
+      box-shadow: 0 0 18px rgba(37,99,235,.35);
+      transition: width .28s ease;
+    }
+
+    section {
+      opacity: .42;
+      transform: translateY(18px) scale(.985);
+      transition: opacity .55s ease, transform .55s ease;
+    }
+
+    section.in-view {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    .card, .step, .pill {
+      transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease, background .22s ease;
+    }
+
+    .card:hover, .step:hover {
+      transform: translateY(-5px);
+      border-color: rgba(37,99,235,.34);
+      box-shadow: 0 22px 64px rgba(37,99,235,.12);
+    }
+
+    .pill:hover {
+      transform: translateY(-2px);
+      border-color: rgba(124,58,237,.32);
+      background: #ffffff;
+    }
+
+    .hero-orbit {
+      position: absolute;
+      right: clamp(-120px, -6vw, -40px);
+      top: 50%;
+      width: min(48vw, 560px);
+      aspect-ratio: 1;
+      border-radius: 999px;
+      transform: translateY(-50%);
+      pointer-events: none;
+    }
+
+    .hero-orbit span {
+      position: absolute;
+      inset: var(--inset);
+      border-radius: inherit;
+      border: 1px solid rgba(37,99,235,var(--alpha));
+      animation: orbitPulse 4.8s ease-in-out infinite;
+      animation-delay: var(--delay);
+    }
+
+    @keyframes orbitPulse {
+      0%, 100% { transform: scale(1); opacity: .72; }
+      50% { transform: scale(1.035); opacity: 1; }
+    }
+
+    .cursor-glow {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 280px;
+      height: 280px;
+      border-radius: 999px;
+      pointer-events: none;
+      z-index: 0;
+      background: radial-gradient(circle, rgba(37,99,235,.12), rgba(124,58,237,.06) 38%, transparent 68%);
+      transform: translate(-50%, -50%);
+      transition: opacity .2s ease;
+    }
+
+    .flash {
+      position: fixed;
+      inset: 0;
+      z-index: 25;
+      pointer-events: none;
+      background: linear-gradient(90deg, transparent, rgba(37,99,235,.08), transparent);
+      opacity: 0;
+    }
+
+    .flash.play {
+      animation: slideFlash .46s ease;
+    }
+
+    @keyframes slideFlash {
+      0% { opacity: 0; transform: translateX(-20%); }
+      35% { opacity: 1; }
+      100% { opacity: 0; transform: translateX(20%); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+      section { opacity: 1; transform: none; }
+    }
+
+
+    .term-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-top: 18px;
+    }
+
+    .term {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(37,99,235,.18);
+      background: rgba(37,99,235,.06);
+      color: var(--blue);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .note {
+      margin-top: 18px;
+      padding: 16px 18px;
+      border-left: 3px solid var(--blue);
+      border-radius: 10px;
+      background: rgba(255,255,255,.72);
+      color: var(--text-2);
+      font-size: 15px;
+    }
+
+    @media (max-width: 980px) {
+      section { min-height: auto; padding: 58px 20px; }
+      .two, .three, .four, .split, .team, .demo-flow, .why {
+        grid-template-columns: 1fr;
+      }
+      .process {
+        grid-template-columns: repeat(5, 220px);
+        overflow-x: auto;
+        padding-bottom: 8px;
+      }
+      .arrow { transform: rotate(90deg); }
+      .deck-nav { display: none; }
+    }
+
+    @media (max-width: 560px) {
+      h1 { font-size: 50px; }
+      h2 { font-size: 34px; }
+      .card, .big { padding: 18px; }
+    }
+  </style>
+</head>
+<body>`n  <div class="progress" id="progress"></div>`n  <div class="cursor-glow" id="cursorGlow"></div>`n  <div class="flash" id="flash"></div>
+  <nav class="deck-nav" aria-label="slides">
+    <a href="#s1" class="active"></a><a href="#s2"></a><a href="#s3"></a><a href="#s4"></a><a href="#s5"></a><a href="#s6"></a><a href="#s7-modules"></a><a href="#s7"></a><a href="#s8"></a><a href="#s9"></a>
+  </nav>
+
+  <section id="s1" class="hero">`n    <div class="hero-orbit" aria-hidden="true"><span style="--inset:0%;--alpha:.13;--delay:0s"></span><span style="--inset:18%;--alpha:.18;--delay:.28s"></span><span style="--inset:36%;--alpha:.24;--delay:.56s"></span></div>
+    <div class="wrap">
+      <div class="kicker">AI Final Project</div>
+      <h1><span class="gradient">ModelMate</span></h1>
+      <p class="lead">정형 데이터 업로드 기반 Agentic AutoML 및 설명가능 리포트 생성 시스템</p>
+      <div class="meta">
+        <span class="pill">23017111 문규승</span>
+        <span class="pill">23017115 이재훈</span>
+        <span class="pill">23017120 오세울</span>
+        <span class="pill">과목명: 인공지능</span>
+        <span class="pill">지도교수: 한성일</span>
+        <span class="pill">XAI · Optuna · SHAP</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="s2">
+    <div class="wrap">
+      <div class="kicker">Background</div>
+      <h2>CSV는 있지만, <span class="gradient">무엇을 예측해야 하는지</span> 모르는 경우가 많다.</h2>
+      <div class="why">
+        <div class="card">
+          <div class="label">기존 상황</div>
+          <h3>데이터는 있음</h3>
+          <p>공공데이터, 건강 데이터, 업무 데이터처럼 CSV 파일은 쉽게 구할 수 있다.</p>
+        </div>
+        <div class="arrow">→</div>
+        <div class="card">
+          <div class="label">실제 어려움</div>
+          <h3>예측 문제로 바꾸기 어려움</h3>
+          <p>타겟 컬럼, 분류/회귀 문제 유형, 성능 지표, 모델 선택, 결과 해석을 사용자가 직접 판단해야 한다.</p>
+        </div>
+      </div>
+      <div class="term-row"><span class="term">Target Selection</span><span class="term">Classification / Regression</span><span class="term">Model Selection</span><span class="term">Explainability</span></div>
+    </div>
+  </section>
+
+  <section id="s3">
+    <div class="wrap">
+      <div class="kicker">Problem Definition</div>
+      <div class="big">
+        <h2>ModelMate의 문제 정의</h2>
+        <p class="lead">비전공자 또는 초급 사용자는 CSV 데이터를 가지고 있어도, 어떤 값을 예측해야 하는지, 어떤 모델이 적절한지, 결과를 어떤 근거로 믿어야 하는지 판단하기 어렵다.</p>
+      </div>
+      <div class="grid three" style="margin-top:16px">
+        <div class="card"><h3>예측 대상</h3><p>어떤 컬럼을 target으로 삼아야 할지 모른다. 예를 들어 Outcome, S3 같은 컬럼명이 실제로 무엇을 의미하는지 해석이 필요하다.</p></div>
+        <div class="card"><h3>모델 선택</h3><p>Random Forest, Gradient Boosting, LightGBM 계열처럼 모델마다 강점이 달라 교차검증 기반 비교가 필요하다.</p></div>
+        <div class="card"><h3>결과 해석</h3><p>성능 점수만으로는 부족하다. Feature Importance, SHAP 같은 XAI 정보가 있어야 결과를 설명할 수 있다.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="s4">
+    <div class="wrap">
+      <div class="kicker">Approach</div>
+      <h2>ModelMate는 예측 실험을 <span class="gradient">5단계 흐름</span>으로 안내한다.</h2>
+      <div class="process">
+        <div class="step"><div class="num">1</div><h3>CSV 업로드</h3><p class="muted">파일과 데이터 구조를 확인</p></div>
+        <div class="step"><div class="num">2</div><h3>타겟 추천</h3><p class="muted">예측할 값을 후보로 제안</p></div>
+        <div class="step"><div class="num">3</div><h3>모델 비교</h3><p class="muted">교차검증 기반 리더보드 생성</p></div>
+        <div class="step"><div class="num">4</div><h3>결과 설명</h3><p class="muted">XAI와 변수 중요도로 이유 제공</p></div>
+        <div class="step"><div class="num">5</div><h3>재사용</h3><p class="muted">새 데이터 예측과 기록 저장</p></div>
+      </div>
+      <p class="note">이 흐름은 제안서의 자동 모델링 모듈, 설명가능성 분석 모듈, 리포트 생성 모듈, 실험 로그 및 재현 모듈을 웹 서비스 화면으로 연결한 것이다.</p>
+    </div>
+  </section>
+
+  <section id="s5">
+    <div class="wrap split">
+      <div>
+        <div class="kicker">Implementation</div>
+        <h2>React/Vite와 FastAPI로 실제 접속 가능한 웹 서비스를 구현했다.</h2>
+        <p class="lead">발표 뒤에는 실제 사이트에서 CSV 업로드부터 결과 확인까지 시연한다.</p>
+      </div>
+      <div class="grid">
+        <div class="card"><h3>Frontend</h3><p>React/Vite 기반으로 업로드, 모델 선택, 결과 요약, XAI, AI 분석 코치 화면을 구성했다.</p></div>
+        <div class="card"><h3>Backend</h3><p>FastAPI 기반으로 CSV 처리, 데이터 검증, 타겟 추천, 모델 학습/비교, Optuna 하이퍼파라미터 튜닝을 수행한다.</p></div>
+        <div class="card"><h3>Deploy</h3><p>GitHub main 브랜치와 Railway production 배포를 연결하고, 데모 모드로 API 토큰 소모 없이 테스트한다.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="s6">
+    <div class="wrap">
+      <div class="kicker">Demo Preview</div>
+      <h2>시연에서는 사용자가 보는 흐름만 따라가면 된다.</h2>
+      <div class="demo-flow">
+        <div class="card"><div class="icon">1</div><h3>CSV 넣기</h3><p>분석 가능한 데이터인지 확인</p></div>
+        <div class="card"><div class="icon">2</div><h3>예측할 값 정하기</h3><p>AI 추천 타겟 확인</p></div>
+        <div class="card"><div class="icon">3</div><h3>모델 비교하기</h3><p>가장 적합한 모델 선택</p></div>
+        <div class="card"><div class="icon">4</div><h3>결과와 이유 보기</h3><p>성능과 변수 중요도 확인</p></div>
+      </div>
+      <p class="lead" style="margin-top:24px">시연에서는 라우터 이름보다 “사용자가 무엇을 하는지”를 중심으로 설명한다. 다만 내부적으로는 업로드, 타겟 설정, 모델 비교, 리포트, XAI, 예측, 히스토리 API가 연결되어 동작한다.</p>
+    </div>
+  </section>
+
+
+
+  <section id="s7-modules">
+    <div class="wrap">
+      <div class="kicker">Core Modules</div>
+      <h2>최종 구현은 네 개의 핵심 모듈로 정리할 수 있다.</h2>
+      <div class="grid four">
+        <div class="card"><h3>데이터 이해 모듈</h3><p>CSV 인코딩, 구분자, 결측값, 컬럼 타입, 도메인 추론을 처리한다.</p></div>
+        <div class="card"><h3>자동 모델링 모듈</h3><p>분류/회귀를 판별하고 여러 모델을 학습해 교차검증 점수를 비교한다.</p></div>
+        <div class="card"><h3>XAI 리포트 모듈</h3><p>변수 중요도, SHAP 또는 근사 설명, 결과 요약을 제공한다.</p></div>
+        <div class="card"><h3>실험 기록 모듈</h3><p>로그인 사용자별 분석 기록과 관리자 확인 흐름을 저장한다.</p></div>
+      </div>
+      <div class="term-row"><span class="term">AutoML</span><span class="term">Cross Validation</span><span class="term">Optuna</span><span class="term">XAI</span><span class="term">Experiment Log</span></div>
+    </div>
+  </section>
+
+  <section id="s7">
+    <div class="wrap">
+      <div class="kicker">Team</div>
+      <h2>팀원별 담당 파트</h2>
+      <div class="team">
+        <div class="card">
+          <div class="role">1번 담당</div>
+          <span class="name">23017120 오세울</span>
+          <p>데이터/AutoML: CSV 업로드, 데이터 검사, 타겟 추천, 모델 비교, Optuna 튜닝</p>
+        </div>
+        <div class="card">
+          <div class="role">2번 담당</div>
+          <span class="name">23017115 이재훈</span>
+          <p>백엔드/API/인증: FastAPI 서버, 로그인, 작업 기록, 데모 모드, API 연결</p>
+        </div>
+        <div class="card">
+          <div class="role">3번 담당</div>
+          <span class="name">23017111 문규승</span>
+          <p>프론트/UI: 홈, 업로드, 모델 선택, 결과, XAI, AI 분석 코치 화면</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="s8">
+    <div class="wrap">
+      <div class="kicker">Validation</div>
+      <h2>여러 공개 데이터셋으로 <span class="gradient">타겟 추천과 도메인 추론</span>을 확인했다.</h2>
+      <div class="grid four">
+        <div class="card"><h3>Pima Diabetes</h3><p>Outcome을 당뇨 여부로 해석</p></div>
+        <div class="card"><h3>CH2025 수면</h3><p>S3를 수면/건강 상태 분류로 설명</p></div>
+        <div class="card"><h3>공공자전거</h3><p>신규 가입자 수 예측으로 분류</p></div>
+        <div class="card"><h3>놀이시설</h3><p>한글 공공데이터 오류 처리 개선</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="s9" class="center">
+    <div class="wrap">
+      <div class="kicker">Closing</div>
+      <p class="quote">ModelMate는 CSV를 가진 사용자가 예측 실험의 목적과 결과를 이해하도록 돕는 AutoML 서비스이다.</p>
+      <div class="meta">
+        <span class="pill">문제 정의</span>
+        <span class="pill">AutoML 파이프라인</span>
+        <span class="pill">XAI 리포트</span>
+        <span class="pill">AutoML · XAI · Experiment Log</span>
+      </div>
+    </div>
+  </section>
+
+  <script>
+  const dots = Array.from(document.querySelectorAll(".deck-nav a"));
+  const sections = dots.map(a => document.querySelector(a.getAttribute("href"))).filter(Boolean);
+  const progress = document.getElementById("progress");
+  const flash = document.getElementById("flash");
+  const glow = document.getElementById("cursorGlow");
+  let currentIndex = 0;
+  let isAutoScrolling = false;
+
+  function playFlash() {
+    if (!flash) return;
+    flash.classList.remove("play");
+    void flash.offsetWidth;
+    flash.classList.add("play");
+  }
+
+  function setActive(index) {
+    currentIndex = Math.max(0, Math.min(index, sections.length - 1));
+    dots.forEach((a, i) => a.classList.toggle("active", i === currentIndex));
+    sections.forEach((section, i) => section.classList.toggle("in-view", i === currentIndex));
+    if (progress) progress.style.width = `${((currentIndex + 1) / sections.length) * 100}%`;
+  }
+
+  function goTo(index) {
+    const nextIndex = Math.max(0, Math.min(index, sections.length - 1));
+    if (nextIndex === currentIndex) return;
+    setActive(nextIndex);
+    playFlash();
+    isAutoScrolling = true;
+    sections[currentIndex].scrollIntoView({ behavior: "smooth", block: "start" });
+    window.setTimeout(() => { isAutoScrolling = false; }, 780);
+  }
+
+  dots.forEach((dot, index) => {
+    dot.addEventListener("click", (event) => {
+      event.preventDefault();
+      goTo(index);
+    });
+  });
+
+  window.addEventListener("keydown", (event) => {
+    const nextKeys = ["ArrowDown", "ArrowRight", "PageDown", " ", "Enter"];
+    const prevKeys = ["ArrowUp", "ArrowLeft", "PageUp", "Backspace"];
+    if (![...nextKeys, ...prevKeys].includes(event.key)) return;
+    if (["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement?.tagName)) return;
+    event.preventDefault();
+    if (nextKeys.includes(event.key)) goTo(currentIndex + 1);
+    if (prevKeys.includes(event.key)) goTo(currentIndex - 1);
+  });
+
+  window.addEventListener("wheel", (event) => {
+    if (Math.abs(event.deltaY) < 24 || isAutoScrolling) return;
+    event.preventDefault();
+    goTo(currentIndex + (event.deltaY > 0 ? 1 : -1));
+  }, { passive: false });
+
+  window.addEventListener("pointermove", (event) => {
+    if (!glow) return;
+    glow.style.left = `${event.clientX}px`;
+    glow.style.top = `${event.clientY}px`;
+  });
+
+  const observer = new IntersectionObserver((entries) => {
+    if (isAutoScrolling) return;
+    const active = entries.filter(e => e.isIntersecting).sort((a,b) => b.intersectionRatio - a.intersectionRatio)[0];
+    if (!active) return;
+    const index = sections.findIndex(section => section.id === active.target.id);
+    if (index >= 0) setActive(index);
+  }, { threshold: [0.35, 0.6, 0.8] });
+
+  sections.forEach(s => observer.observe(s));
+  setActive(0);
+</script>
+</body>
+</html>
+
+
+
+
