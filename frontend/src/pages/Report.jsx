@@ -46,7 +46,10 @@ const taskLabel = value => ({
   regression: '숫자 예측',
 }[value] || value || '-')
 const optStatusLabel = value => ({
-  ok: '개선 완료',
+  ok: '개선 확인',
+  improved: '개선 완료',
+  no_change: '변화 없음',
+  kept_original: '원래 모델 유지',
   skipped: '개선 생략',
   not_tunable: '개선 생략',
   failed: '개선 실패',
@@ -57,8 +60,11 @@ const reportSummaryText = (summary, dataset, opt) => {
   if (opt?.status === 'skipped' || opt?.status === 'not_tunable') {
     return `${model} 모델이 '${target}' 예측에 가장 적합한 모델로 선택되었습니다. 추가 자동 개선은 생략되었습니다.`
   }
-  if (opt?.status === 'ok') {
+  if (opt?.status === 'improved' || opt?.status === 'ok') {
     return `${model} 모델이 '${target}' 예측에 가장 적합한 모델로 선택되었고, 자동 개선도 완료되었습니다.`
+  }
+  if (opt?.status === 'no_change' || opt?.status === 'kept_original') {
+    return `${model} 모델이 '${target}' 예측에 가장 적합한 모델로 선택되었습니다. 자동 개선을 시도했지만 기존 모델보다 나은 조합은 찾지 못했습니다.`
   }
   return `${model} 모델이 '${target}' 예측에 가장 적합한 모델로 선택되었습니다.`
 }
@@ -243,13 +249,18 @@ export default function Report() {
           <Section title="성능 자동 개선" icon={Sparkles}>
             {opt.status ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <Badge variant={opt.status === 'ok' ? 'success' : 'warning'} style={{ width: 'fit-content' }}>
+                <Badge variant={opt.status === 'improved' || opt.status === 'ok' ? 'success' : 'warning'} style={{ width: 'fit-content' }}>
                   {optStatusLabel(opt.status)}
                 </Badge>
-                <MiniStat label={metricLabel(opt.metric_name) || '점수'} value={`${fmt(opt.before_score)} -> ${fmt(opt.after_score)}`} tone="green" />
+                <MiniStat label={metricLabel(opt.metric_name) || '점수'} value={`${fmt(opt.before_score)} -> ${fmt(opt.after_score)}`} tone={opt.status === 'improved' || opt.status === 'ok' ? 'green' : 'amber'} />
                 <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6 }}>
                   시도 횟수: {opt.n_trials || '-'} / 개선율: {fmt(opt.improvement)}%
                 </p>
+                {opt.reason && (
+                  <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6 }}>
+                    {opt.reason}
+                  </p>
+                )}
               </div>
             ) : (
               <p style={{ margin: 0, color: 'var(--text-2)', fontSize: 13 }}>아직 자동 개선을 실행하지 않았습니다.</p>

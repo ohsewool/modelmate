@@ -203,10 +203,21 @@ export default function ModelLab() {
               </div>
             </div>
             {optRes ? (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 12 }}>
-                <KPICard label="개선 전" value={formatScore(optRes.before_score ?? optRes.before_roc)} color="amber" />
-                <KPICard label="개선 후" value={formatScore(optRes.after_score ?? optRes.after_roc)} color="green" />
-                <KPICard label="시도 횟수" value={optRes.n_trials ?? nTrials} color="blue" />
+              <div style={{ display: 'grid', gap: 12 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 12 }}>
+                  <KPICard label="개선 전" value={formatScore(optRes.before_score ?? optRes.before_roc)} color="amber" />
+                  <KPICard label="개선 후" value={formatScore(optRes.after_score ?? optRes.after_roc)} color={optunaTone(optRes.status)} />
+                  <KPICard label="변화량" value={`${formatDelta(optRes.improvement)}%`} color={optunaTone(optRes.status)} />
+                  <KPICard label="시도 횟수" value={optRes.n_trials ?? nTrials} color="blue" />
+                </div>
+                <div style={{ padding: 14, borderRadius: 12, border: `1px solid ${optunaBorder(optRes.status)}`, background: optunaBg(optRes.status) }}>
+                  <p style={{ fontSize: 13, fontWeight: 900, color: optunaColor(optRes.status), margin: '0 0 5px' }}>
+                    {optunaStatusLabel(optRes.status)}
+                  </p>
+                  <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.6, margin: 0 }}>
+                    {optRes.reason || '자동 개선 결과를 확인했습니다.'}
+                  </p>
+                </div>
               </div>
             ) : (
               <p style={{ fontSize: 12, color: 'var(--text-label)', margin: 0 }}>
@@ -263,6 +274,38 @@ function shortModel(name) {
 function formatScore(value) {
   const num = Number(value)
   return Number.isFinite(num) ? num.toFixed(4) : '-'
+}
+
+function formatDelta(value) {
+  const num = Number(value)
+  if (!Number.isFinite(num)) return '0.00'
+  return `${num > 0 ? '+' : ''}${num.toFixed(2)}`
+}
+
+function optunaStatusLabel(status) {
+  if (status === 'improved') return '성능이 개선되었습니다'
+  if (status === 'no_change') return '더 좋은 조합을 찾지 못했습니다'
+  if (status === 'kept_original') return '점수가 낮아져 원래 모델을 유지했습니다'
+  if (status === 'skipped') return '자동 개선을 생략했습니다'
+  return '자동 개선 결과'
+}
+
+function optunaTone(status) {
+  if (status === 'improved') return 'green'
+  if (status === 'kept_original' || status === 'no_change' || status === 'skipped') return 'amber'
+  return 'blue'
+}
+
+function optunaColor(status) {
+  return status === 'improved' ? '#059669' : '#b45309'
+}
+
+function optunaBorder(status) {
+  return status === 'improved' ? 'rgba(5,150,105,0.22)' : 'rgba(245,158,11,0.26)'
+}
+
+function optunaBg(status) {
+  return status === 'improved' ? 'rgba(5,150,105,0.06)' : 'rgba(245,158,11,0.08)'
 }
 
 function barColor(score, bestScore, worstScore) {

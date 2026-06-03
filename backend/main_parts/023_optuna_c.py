@@ -9,12 +9,16 @@
             after = before
         result = optuna_result(best_params, before, after, metric_name, n_trials)
 
-    STATE.update({
-        "best_model": tuned,
-        "predictions": tuned.predict(X).tolist(),
+    state_update = {
         "optuna_result": result,
         "shap_values": None,
-    })
+    }
+    if result.get("status") == "improved":
+        state_update.update({
+            "best_model": tuned,
+            "predictions": tuned.predict(X).tolist(),
+        })
+    STATE.update(state_update)
     save_history({
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "data_shape": list(X.shape),
