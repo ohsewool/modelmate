@@ -31,6 +31,7 @@ export default function History() {
   const nav = useNavigate()
   const [profile, setProfile] = useState(null)
   const [history, setHistory] = useState([])
+  const [selectedItem, setSelectedItem] = useState(null)
   const [loading, setLoading] = useState(true)
   const [clearing, setClearing] = useState(false)
 
@@ -43,6 +44,7 @@ export default function History() {
       ])
       setProfile(profileRes.data)
       setHistory(historyRes.data || [])
+      setSelectedItem(null)
     } catch (e) {
       console.error(e)
     } finally {
@@ -156,7 +158,7 @@ export default function History() {
               <div>
                 <CardTitle>{profile?.is_admin ? '전체 실험 기록' : '최근 실험 기록'}</CardTitle>
                 <CardDescription>
-                  {profile?.is_admin ? '관리자는 모든 사용자의 실험 기록을 확인할 수 있습니다.' : '모델 비교를 실행하면 이곳에 데이터 크기, 타깃, 선택 모델, 성능이 저장됩니다.'}
+                  {profile?.is_admin ? '관리자는 모든 사용자의 실험 기록을 확인할 수 있습니다.' : '행을 클릭하면 실험 세부사항을 확인할 수 있습니다.'}
                 </CardDescription>
               </div>
               {history.length > 0 && (
@@ -193,7 +195,14 @@ export default function History() {
                     {history.map((item, idx) => {
                       const metric = getPrimaryMetric(item)
                       return (
-                        <tr key={`${item.timestamp}-${idx}`}>
+                        <tr
+                          key={`${item.timestamp}-${idx}`}
+                          onClick={() => setSelectedItem(item)}
+                          style={{
+                            cursor: 'pointer',
+                            background: selectedItem === item ? 'rgba(37,99,235,0.06)' : undefined,
+                          }}
+                        >
                           <td style={{ whiteSpace: 'nowrap' }}>
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                               <Clock size={13} color="#94a3b8" /> {item.timestamp || '-'}
@@ -219,7 +228,64 @@ export default function History() {
             )}
           </CardContent>
         </Card>
+
+        {selectedItem && (
+          <Card>
+            <CardHeader>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+                <div>
+                  <CardTitle>실험 세부사항</CardTitle>
+                  <CardDescription>
+                    {selectedItem.timestamp || '-'} / {selectedItem.owner_email || user?.email || '내 기록'}
+                  </CardDescription>
+                </div>
+                <Button variant="secondary" size="sm" onClick={() => setSelectedItem(null)}>닫기</Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 10, marginBottom: 14 }}>
+                <DetailBox label="데이터 크기" value={selectedItem.data_shape?.join(' x ') || '-'} />
+                <DetailBox label="맞히려는 값" value={selectedItem.target || '-'} />
+                <DetailBox label="선택 모델" value={selectedItem.best_model || '-'} />
+                <DetailBox label="주요 성능" value={`${getPrimaryMetric(selectedItem).label} ${fmt(getPrimaryMetric(selectedItem).value)}`} />
+              </div>
+              <div style={{ overflowX: 'auto', border: '1px solid var(--border)', borderRadius: 8 }}>
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>모델</th>
+                      <th>상태</th>
+                      <th>Accuracy/R2</th>
+                      <th>F1/RMSE</th>
+                      <th>ROC-AUC/MAE</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(selectedItem.results || []).slice(0, 8).map(row => (
+                      <tr key={row.model}>
+                        <td style={{ fontWeight: 750, color: 'var(--text)' }}>{row.model}</td>
+                        <td>{row.status === 'failed' ? '실패' : row.model === selectedItem.best_model ? '선택됨' : '완료'}</td>
+                        <td>{fmt(row.accuracy ?? row.r2)}</td>
+                        <td>{fmt(row.f1 ?? row.rmse)}</td>
+                        <td>{fmt(row.roc_auc ?? row.mae)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
+    </div>
+  )
+}
+
+function DetailBox({ label, value }) {
+  return (
+    <div className="card-elevated" style={{ padding: 12 }}>
+      <p style={{ margin: '0 0 6px', fontSize: 11, fontWeight: 750, color: 'var(--text-label)' }}>{label}</p>
+      <p style={{ margin: 0, fontSize: 14, fontWeight: 850, color: 'var(--text)' }}>{value}</p>
     </div>
   )
 }

@@ -14,9 +14,9 @@ const CORE_NAV = [
 ]
 
 const OPTIONAL_NAV = [
-  { to: '/predict', icon: PredictIcon, label: '새 데이터 예측' },
-  { to: '/deploy', icon: DeployIcon, label: 'API 공유' },
-  { to: '/history', icon: ChartIcon, label: '작업 기록' },
+  { to: '/predict', icon: PredictIcon, label: '새 데이터 예측', desc: '학습한 모델에 새 값을 넣어 결과 확인' },
+  { to: '/deploy', icon: DeployIcon, label: 'API 공유', desc: '다른 앱에서 예측을 요청할 URL 생성' },
+  { to: '/history', icon: ChartIcon, label: '작업 기록', desc: '내 실험 결과를 다시 확인' },
 ]
 
 export default function Sidebar({ isOpen, onClose }) {
@@ -96,8 +96,8 @@ export default function Sidebar({ isOpen, onClose }) {
           <p style={{ padding: '14px 10px 6px', margin: 0, fontSize: 10, fontWeight: 700, color: 'var(--text-label)', textTransform: 'uppercase', letterSpacing: '0.12em' }}>
             선택 확장 기능
           </p>
-          {OPTIONAL_NAV.map(({ to, icon: Icon, label }) => (
-            <NavItem key={to} to={to} icon={Icon} label={label} optional onClose={onClose} />
+          {OPTIONAL_NAV.map(({ to, icon: Icon, label, desc }) => (
+            <NavItem key={to} to={to} icon={Icon} label={label} desc={desc} optional onClose={onClose} />
           ))}
         </nav>
 
@@ -159,7 +159,7 @@ export default function Sidebar({ isOpen, onClose }) {
   )
 }
 
-function NavItem({ to, icon: Icon, label, done, tag, optional, onClose }) {
+function NavItem({ to, icon: Icon, label, desc, done, tag, optional, onClose }) {
   return (
     <NavLink key={to} to={to} onClick={onClose} style={{ textDecoration: 'none' }}>
       {({ isActive }) => (
@@ -175,7 +175,10 @@ function NavItem({ to, icon: Icon, label, done, tag, optional, onClose }) {
           <span style={{ width: 16, height: 16, flexShrink: 0 }}>
             {done && !isActive ? <CheckIcon /> : <Icon />}
           </span>
-          <span style={{ flex: 1 }}>{label}</span>
+          <span style={{ flex: 1, minWidth: 0 }}>
+            <span style={{ display: 'block' }}>{label}</span>
+            {desc && <span style={{ display: 'block', marginTop: 2, fontSize: 10, fontWeight: 600, color: 'var(--text-label)', lineHeight: 1.25 }}>{desc}</span>}
+          </span>
           {tag && <span style={{ fontSize: 9, fontWeight: 800, color: '#7c3aed', background: 'rgba(124,58,237,0.12)', padding: '2px 6px', borderRadius: 4 }}>{tag}</span>}
         </div>
       )}

@@ -46,21 +46,20 @@ async def html_report(autoprint: bool = False):
                         f"<td>{r.get('roc_auc','—')}</td></tr>"
                         for i, r in enumerate(cv))
 
-    # 주요 성능 지표
-    if is_reg and preds:
-        preds_arr = np.array(preds); y_arr = y.values
+    # 보고서에는 학습 데이터 재채점보다 CV 최고 성능을 보여준다.
+    best_row = next((r for r in cv if r.get("status", "ok") == "ok"), cv[0] if cv else {})
+    if is_reg:
         perf_items = [
-            ("R² Score", f"{r2_score(y_arr,preds_arr):.4f}"),
-            ("RMSE",     f"{np.sqrt(mean_squared_error(y_arr,preds_arr)):.4f}"),
-            ("MAE",      f"{mean_absolute_error(y_arr,preds_arr):.4f}"),
-        ]
-    elif preds:
-        perf_items = [
-            ("Accuracy", f"{accuracy_score(y,preds):.4f}"),
-            ("F1 Score", f"{f1_score(y,preds,average='weighted'):.4f}"),
+            ("CV 최고 모델", best_row.get("model", name)),
+            ("R²", best_row.get("r2", "—")),
+            ("RMSE", best_row.get("rmse", "—")),
         ]
     else:
-        perf_items = []
+        perf_items = [
+            ("CV 최고 모델", best_row.get("model", name)),
+            ("ROC-AUC", best_row.get("roc_auc", best_row.get("accuracy", "—"))),
+            ("Accuracy", best_row.get("accuracy", "—")),
+        ]
 
     perf_html = "".join(f"<div class='kpi'><div class='kl'>{k}</div><div class='kv'>{v}</div></div>"
                         for k, v in perf_items)

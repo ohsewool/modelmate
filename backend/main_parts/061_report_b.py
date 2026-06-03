@@ -70,7 +70,7 @@
   {"<div class='kpi'><div class='kl'>Optuna 튜닝</div><div class='kv'><span class='badge'>적용</span></div></div>" if opt else ""}
 </div>
 
-{f'<h2>📈 최종 성능 지표</h2><div class="kpis">{perf_html}</div>' if perf_html else ""}
+{f'<h2>📈 CV 최고 성능</h2><p style="font-size:.85rem;color:#64748b;margin:-6px 0 12px">같은 데이터를 3번 나눠 검증했을 때 가장 좋은 모델의 성능입니다.</p><div class="kpis">{perf_html}</div>' if perf_html else ""}
 
 <h2>🏆 모델 비교 (3-fold CV)</h2>
 <table>{thead}{tbody}</table>
