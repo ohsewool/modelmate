@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../api'
 import KPICard from '../components/KPICard'
+import { Button } from '../components/ui/button'
 
 export default function Upload() {
   const [dragging, setDragging] = useState(false)
@@ -123,7 +124,9 @@ export default function Upload() {
               <p style={{ color: 'var(--text-2)', fontSize: 13, margin: '0 0 18px' }}>
                 CSV와 TXT 파일을 지원합니다. 한글 CSV도 자동으로 읽도록 처리했습니다.
               </p>
-              <span className="btn-primary" style={{ display: 'inline-flex', pointerEvents: 'none' }}>파일 선택</span>
+              <Button asChild>
+                <span style={{ pointerEvents: 'none' }}>파일 선택</span>
+              </Button>
             </>
           )}
         </div>
@@ -145,11 +148,11 @@ export default function Upload() {
                 </p>
               </div>
               <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-                <button onClick={handleSetTarget} className="btn-primary" disabled={!!loading}>
+                <Button onClick={handleSetTarget} disabled={!!loading}>
                   {loading === 'target' && <span className="spinner" />}
                   이 설정으로 분석 준비
-                </button>
-                <button onClick={reset} className="btn-secondary">다시 올리기</button>
+                </Button>
+                <Button onClick={reset} variant="secondary">다시 올리기</Button>
               </div>
             </div>
 
@@ -212,7 +215,7 @@ export default function Upload() {
                     이제 여러 AI 모델을 비교해서 이 데이터에 가장 잘 맞는 모델을 찾을 수 있습니다.
                   </p>
                 </div>
-                <button onClick={() => nav('/model-lab')} className="btn-primary">모델 비교하러 가기</button>
+                <Button onClick={() => nav('/model-lab')}>모델 비교하러 가기</Button>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 12 }}>
                 <KPICard label="학습 데이터" value={edaInfo.n_samples?.toLocaleString?.() || edaInfo.n_samples} color="blue" />

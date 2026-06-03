@@ -10,6 +10,8 @@ import {
   Sparkles,
 } from 'lucide-react'
 import api from '../api'
+import { Badge } from '../components/ui/badge'
+import { Button } from '../components/ui/button'
 
 const fmt = value => {
   if (value === null || value === undefined || value === '') return '-'
@@ -184,13 +186,13 @@ export default function Report() {
               </p>
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
-              <button className="btn-secondary" onClick={() => window.open('/api/report/html', '_blank')}>
+              <Button variant="secondary" onClick={() => window.open('/api/report/html', '_blank')}>
                 <ExternalLink size={15} /> HTML로 열기
-              </button>
-              <button className="btn-primary" onClick={downloadReport} disabled={downloading}>
+              </Button>
+              <Button onClick={downloadReport} disabled={downloading}>
                 {downloading ? <span className="spinner" /> : <Download size={15} />}
                 내려받기
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -227,7 +229,7 @@ export default function Report() {
                 {topModels.map((row, idx) => (
                   <tr key={row.model}>
                     <td style={{ fontWeight: idx === 0 ? 800 : 600, color: 'var(--text)' }}>{row.model}</td>
-                    <td><span className={row.status === 'ok' ? 'badge badge-green' : 'badge badge-red'}>{row.status === 'ok' || !row.status ? '완료' : '실패'}</span></td>
+                    <td><Badge variant={row.status === 'ok' || !row.status ? 'success' : 'danger'}>{row.status === 'ok' || !row.status ? '완료' : '실패'}</Badge></td>
                     <td>{fmt(row[primaryMetric])}</td>
                     <td>{Object.keys(row).filter(k => ['accuracy', 'f1', 'rmse', 'mae'].includes(k)).map(k => `${metricLabel(k)}: ${fmt(row[k])}`).join(' / ')}</td>
                   </tr>
@@ -239,9 +241,9 @@ export default function Report() {
           <Section title="성능 자동 개선" icon={Sparkles}>
             {opt.status ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <span className={opt.status === 'ok' ? 'badge badge-green' : 'badge badge-amber'} style={{ width: 'fit-content' }}>
+                <Badge variant={opt.status === 'ok' ? 'success' : 'warning'} style={{ width: 'fit-content' }}>
                   {optStatusLabel(opt.status)}
-                </span>
+                </Badge>
                 <MiniStat label={metricLabel(opt.metric_name) || '점수'} value={`${fmt(opt.before_score)} -> ${fmt(opt.after_score)}`} tone="green" />
                 <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6 }}>
                   시도 횟수: {opt.n_trials || '-'} / 개선율: {fmt(opt.improvement)}%
