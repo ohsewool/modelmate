@@ -58,12 +58,15 @@
       height: 10px;
       border-radius: 999px;
       background: #cbd5e1;
-      display: block;`n      transition: transform .18s ease, background .18s ease, box-shadow .18s ease;
+      display: block;
+      transition: transform .18s ease, background .18s ease, box-shadow .18s ease;
     }
 
     .deck-nav a:hover,
     .deck-nav a.active {
-      background: linear-gradient(135deg, var(--blue-2), var(--violet));`n      transform: scale(1.22);`n      box-shadow: 0 0 0 5px rgba(37,99,235,.10);
+      background: linear-gradient(135deg, var(--blue-2), var(--violet));
+      transform: scale(1.22);
+      box-shadow: 0 0 0 5px rgba(37,99,235,.10);
     }
 
     section {
@@ -340,6 +343,12 @@
     .center .lead, .center h2 { margin-left: auto; margin-right: auto; }
     .center .meta { justify-content: center; }
 
+    .final-slide .quote {
+      margin: 0 auto;
+      max-width: 980px;
+      text-align: left;
+    }
+
 
     .progress {
       position: fixed;
@@ -495,23 +504,26 @@
     }
   </style>
 </head>
-<body>`n  <div class="progress" id="progress"></div>`n  <div class="cursor-glow" id="cursorGlow"></div>`n  <div class="flash" id="flash"></div>
+<body>
+  <div class="progress" id="progress"></div>
+  <div class="cursor-glow" id="cursorGlow"></div>
+  <div class="flash" id="flash"></div>
   <nav class="deck-nav" aria-label="slides">
     <a href="#s1" class="active"></a><a href="#s2"></a><a href="#s3"></a><a href="#s4"></a><a href="#s5"></a><a href="#s6"></a><a href="#s7-modules"></a><a href="#s7"></a><a href="#s8"></a><a href="#s9"></a>
   </nav>
 
-  <section id="s1" class="hero">`n    <div class="hero-orbit" aria-hidden="true"><span style="--inset:0%;--alpha:.13;--delay:0s"></span><span style="--inset:18%;--alpha:.18;--delay:.28s"></span><span style="--inset:36%;--alpha:.24;--delay:.56s"></span></div>
+  <section id="s1" class="hero">
+    <div class="hero-orbit" aria-hidden="true"><span style="--inset:0%;--alpha:.13;--delay:0s"></span><span style="--inset:18%;--alpha:.18;--delay:.28s"></span><span style="--inset:36%;--alpha:.24;--delay:.56s"></span></div>
     <div class="wrap">
       <div class="kicker">AI Final Project</div>
       <h1><span class="gradient">ModelMate</span></h1>
-      <p class="lead">정형 데이터 업로드 기반 Agentic AutoML 및 설명가능 리포트 생성 시스템</p>
+      <p class="lead">정형 데이터 기반 Agentic AutoML 플랫폼</p>
       <div class="meta">
         <span class="pill">23017111 문규승</span>
         <span class="pill">23017115 이재훈</span>
         <span class="pill">23017120 오세울</span>
         <span class="pill">과목명: 인공지능</span>
         <span class="pill">지도교수: 한성일</span>
-        <span class="pill">XAI · Optuna · SHAP</span>
       </div>
     </div>
   </section>
@@ -519,18 +531,18 @@
   <section id="s2">
     <div class="wrap">
       <div class="kicker">Background</div>
-      <h2>CSV는 있지만, <span class="gradient">무엇을 예측해야 하는지</span> 모르는 경우가 많다.</h2>
+      <h2>CSV 데이터와 예측 목적 사이의 <span class="gradient">간극</span></h2>
       <div class="why">
         <div class="card">
           <div class="label">기존 상황</div>
           <h3>데이터는 있음</h3>
-          <p>공공데이터, 건강 데이터, 업무 데이터처럼 CSV 파일은 쉽게 구할 수 있다.</p>
+          <p>공공데이터, 건강 데이터, 업무 데이터처럼 CSV 파일은 쉽게 확보 가능</p>
         </div>
         <div class="arrow">→</div>
         <div class="card">
           <div class="label">실제 어려움</div>
           <h3>예측 문제로 바꾸기 어려움</h3>
-          <p>타겟 컬럼, 분류/회귀 문제 유형, 성능 지표, 모델 선택, 결과 해석을 사용자가 직접 판단해야 한다.</p>
+          <p>타겟 컬럼, 분류/회귀 문제 유형, 성능 지표, 모델 선택, 결과 해석을 사용자가 직접 판단</p>
         </div>
       </div>
       <div class="term-row"><span class="term">Target Selection</span><span class="term">Classification / Regression</span><span class="term">Model Selection</span><span class="term">Explainability</span></div>
@@ -542,7 +554,7 @@
       <div class="kicker">Problem Definition</div>
       <div class="big">
         <h2>ModelMate의 문제 정의</h2>
-        <p class="lead">비전공자 또는 초급 사용자는 CSV 데이터를 가지고 있어도, 어떤 값을 예측해야 하는지, 어떤 모델이 적절한지, 결과를 어떤 근거로 믿어야 하는지 판단하기 어렵다.</p>
+        <p class="lead">비전공자 또는 초급 사용자는 CSV 데이터를 가지고 있어도 예측 대상, 모델 선택, 결과 신뢰 근거를 스스로 정하기 어렵다.</p>
       </div>
       <div class="grid three" style="margin-top:16px">
         <div class="card"><h3>예측 대상</h3><p>어떤 컬럼을 target으로 삼아야 할지 모른다. 예를 들어 Outcome, S3 같은 컬럼명이 실제로 무엇을 의미하는지 해석이 필요하다.</p></div>
@@ -555,7 +567,7 @@
   <section id="s4">
     <div class="wrap">
       <div class="kicker">Approach</div>
-      <h2>ModelMate는 예측 실험을 <span class="gradient">5단계 흐름</span>으로 안내한다.</h2>
+      <h2>예측 실험을 완성하는 <span class="gradient">5단계 AutoML 흐름</span></h2>
       <div class="process">
         <div class="step"><div class="num">1</div><h3>CSV 업로드</h3><p class="muted">파일과 데이터 구조를 확인</p></div>
         <div class="step"><div class="num">2</div><h3>타겟 추천</h3><p class="muted">예측할 값을 후보로 제안</p></div>
@@ -571,8 +583,8 @@
     <div class="wrap split">
       <div>
         <div class="kicker">Implementation</div>
-        <h2>React/Vite와 FastAPI로 실제 접속 가능한 웹 서비스를 구현했다.</h2>
-        <p class="lead">발표 뒤에는 실제 사이트에서 CSV 업로드부터 결과 확인까지 시연한다.</p>
+        <h2>React/Vite · FastAPI 기반 웹 서비스 구현</h2>
+        <p class="lead">발표 후 실제 사이트에서 CSV 업로드부터 결과 확인까지 시연</p>
       </div>
       <div class="grid">
         <div class="card"><h3>Frontend</h3><p>React/Vite 기반으로 업로드, 모델 선택, 결과 요약, XAI, AI 분석 코치 화면을 구성했다.</p></div>
@@ -585,14 +597,14 @@
   <section id="s6">
     <div class="wrap">
       <div class="kicker">Demo Preview</div>
-      <h2>시연에서는 사용자가 보는 흐름만 따라가면 된다.</h2>
+      <h2>사이트 시연에서 확인할 사용자 흐름</h2>
       <div class="demo-flow">
         <div class="card"><div class="icon">1</div><h3>CSV 넣기</h3><p>분석 가능한 데이터인지 확인</p></div>
         <div class="card"><div class="icon">2</div><h3>예측할 값 정하기</h3><p>AI 추천 타겟 확인</p></div>
         <div class="card"><div class="icon">3</div><h3>모델 비교하기</h3><p>가장 적합한 모델 선택</p></div>
         <div class="card"><div class="icon">4</div><h3>결과와 이유 보기</h3><p>성능과 변수 중요도 확인</p></div>
       </div>
-      <p class="lead" style="margin-top:24px">시연에서는 라우터 이름보다 “사용자가 무엇을 하는지”를 중심으로 설명한다. 다만 내부적으로는 업로드, 타겟 설정, 모델 비교, 리포트, XAI, 예측, 히스토리 API가 연결되어 동작한다.</p>
+      <p class="lead" style="margin-top:24px">시연 설명 기준은 라우터명이 아니라 사용자 행동 흐름. 내부적으로는 업로드, 타겟 설정, 모델 비교, 리포트, XAI, 예측, 히스토리 API가 연결된다.</p>
     </div>
   </section>
 
@@ -601,7 +613,7 @@
   <section id="s7-modules">
     <div class="wrap">
       <div class="kicker">Core Modules</div>
-      <h2>최종 구현은 네 개의 핵심 모듈로 정리할 수 있다.</h2>
+      <h2>최종 구현 핵심 모듈</h2>
       <div class="grid four">
         <div class="card"><h3>데이터 이해 모듈</h3><p>CSV 인코딩, 구분자, 결측값, 컬럼 타입, 도메인 추론을 처리한다.</p></div>
         <div class="card"><h3>자동 모델링 모듈</h3><p>분류/회귀를 판별하고 여러 모델을 학습해 교차검증 점수를 비교한다.</p></div>
@@ -639,7 +651,7 @@
   <section id="s8">
     <div class="wrap">
       <div class="kicker">Validation</div>
-      <h2>여러 공개 데이터셋으로 <span class="gradient">타겟 추천과 도메인 추론</span>을 확인했다.</h2>
+      <h2>공개 데이터셋 기반 <span class="gradient">검증 결과</span></h2>
       <div class="grid four">
         <div class="card"><h3>Pima Diabetes</h3><p>Outcome을 당뇨 여부로 해석</p></div>
         <div class="card"><h3>CH2025 수면</h3><p>S3를 수면/건강 상태 분류로 설명</p></div>
@@ -649,16 +661,11 @@
     </div>
   </section>
 
-  <section id="s9" class="center">
+  <section id="s9" class="center final-slide">
     <div class="wrap">
       <div class="kicker">Closing</div>
-      <p class="quote">ModelMate는 CSV를 가진 사용자가 예측 실험의 목적과 결과를 이해하도록 돕는 AutoML 서비스이다.</p>
-      <div class="meta">
-        <span class="pill">문제 정의</span>
-        <span class="pill">AutoML 파이프라인</span>
-        <span class="pill">XAI 리포트</span>
-        <span class="pill">AutoML · XAI · Experiment Log</span>
-      </div>
+      <p class="quote">CSV 데이터를 예측 실험으로 바꾸는 Agentic AutoML 플랫폼</p>
+
     </div>
   </section>
 
