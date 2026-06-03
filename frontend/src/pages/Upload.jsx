@@ -73,6 +73,8 @@ export default function Upload() {
   }
 
   const activeCols = uploadInfo?.columns?.filter(c => c !== target && !dropCols.includes(c)) || []
+  const targetCategory = aiAnalysis?.target_category || (aiAnalysis?.task_type === 'regression' ? '수치 예측' : '상태 분류')
+  const targetReason = aiAnalysis?.target_category_reason || '데이터 구조를 기준으로 예측 목적을 자동 분류했습니다.'
 
   return (
     <div className="animate-fade-in" style={{ padding: 32, maxWidth: 980 }}>
@@ -132,11 +134,12 @@ export default function Upload() {
         </div>
       ) : (
         <div className="animate-slide-up" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
             <KPICard label="데이터 행" value={uploadInfo.shape?.[0]?.toLocaleString?.() || uploadInfo.shape?.[0]} color="blue" />
             <KPICard label="전체 컬럼" value={uploadInfo.shape?.[1]} color="cyan" />
             <KPICard label="결측값" value={uploadInfo.missing_total ?? 0} color={(uploadInfo.missing_total ?? 0) > 0 ? 'amber' : 'green'} />
             <KPICard label="맞힐 값" value={shortName(target, colLabels)} color="violet" />
+            <KPICard label="예측 목적" value={targetCategory} color="green" />
           </div>
 
           <div className="card">
@@ -160,13 +163,18 @@ export default function Upload() {
               <div style={{ padding: 14, borderRadius: 12, border: '1px solid rgba(37,99,235,0.16)', background: 'rgba(37,99,235,0.06)', marginBottom: 14 }}>
                 <p style={{ fontSize: 12, fontWeight: 900, color: '#2563eb', margin: '0 0 6px' }}>AI 요약</p>
                 <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.7, margin: 0 }}>{aiAnalysis.dataset_summary}</p>
+                {aiAnalysis?.target_category && (
+                  <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.6, margin: '8px 0 0' }}>
+                    예측 목적: <strong style={{ color: 'var(--text)' }}>{targetCategory}</strong> · {targetReason}
+                  </p>
+                )}
               </div>
             )}
 
             <div style={{ display: 'grid', gap: 14 }}>
               <SettingPanel
                 title="AI가 맞히려는 정답"
-                desc="예측 모델이 최종적으로 맞혀야 하는 값입니다. 예: 합격 여부, 가격, 이탈 여부"
+                desc={`예측 모델이 최종적으로 맞혀야 하는 값입니다. 지금 데이터는 ${targetCategory} 문제로 보입니다.`}
                 color="#2563eb"
               >
                 <select value={target} onChange={e => { setTarget(e.target.value); setDropCols(prev => prev.filter(c => c !== e.target.value)) }} className="input" style={{ maxWidth: 360 }}>

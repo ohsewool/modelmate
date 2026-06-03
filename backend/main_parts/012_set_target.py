@@ -18,10 +18,12 @@ async def set_target(body: dict):
     # 타겟 인코딩 + task type
     y_raw = df[tgt]
     y, target_le, task_type, n_unique = encode_target(y_raw)
+    target_category = infer_target_category(df, tgt)
 
     STATE.update({
         "target_col": tgt, "X": X, "y": y,
         "task_type": task_type,
+        **target_category,
         "cat_cols": cat_cols, "encoders": encoders,
         "target_encoder": target_le,
         "n_unique_target": n_unique,
@@ -74,6 +76,7 @@ async def set_target(body: dict):
         "class_distribution": {str(k): int(v) for k, v in class_dist.items()},
         "label_map": label_map,
         "task_type": task_type,
+        **target_category,
         "n_unique_target": n_unique,
         "stats": df.describe(include="all").fillna(0).round(3).to_dict(),
         "explanations": preprocess_explanations(task_type, n_unique, len(X.columns)),
