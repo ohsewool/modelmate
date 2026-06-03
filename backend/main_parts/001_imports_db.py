@@ -58,6 +58,7 @@ def init_db():
             name TEXT,
             picture TEXT,
             password_hash TEXT,
+            role TEXT DEFAULT 'user',
             created_at TEXT
         )
     """)
@@ -65,17 +66,23 @@ def init_db():
     cols = [r[1] for r in conn.execute("PRAGMA table_info(users)").fetchall()]
     if "password_hash" not in cols:
         conn.execute("ALTER TABLE users ADD COLUMN password_hash TEXT")
+    if "role" not in cols:
+        conn.execute("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user'")
 
     # 기본 계정 자동 생성 (없을 때만)
-    admin_email = os.getenv("ADMIN_EMAIL", "qwer@gmail.com")
-    admin_pw    = os.getenv("ADMIN_PASSWORD", "qwer1234")
-    exists = conn.execute("SELECT id FROM users WHERE email=?", (admin_email,)).fetchone()
+    admin_email = os.getenv("ADMIN_EMAIL", "admin@modelmate.local")
+    admin_pw    = os.getenv("ADMIN_PASSWORD", "admin1234")
+    exists = conn.execute("SELECT id, password_hash FROM users WHERE email=?", (admin_email,)).fetchone()
     if not exists:
         import uuid
         conn.execute(
-            "INSERT INTO users (id, email, name, picture, password_hash, created_at) VALUES (?,?,?,?,?,?)",
-            (str(uuid.uuid4()), admin_email, "관리자", "", hash_password(admin_pw), datetime.now().isoformat())
+            "INSERT INTO users (id, email, name, picture, password_hash, role, created_at) VALUES (?,?,?,?,?,?,?)",
+            (str(uuid.uuid4()), admin_email, "관리자", "", hash_password(admin_pw), "admin", datetime.now().isoformat())
         )
+    else:
+        if not exists["password_hash"]:
+            conn.execute("UPDATE users SET password_hash=? WHERE email=?", (hash_password(admin_pw), admin_email))
+        conn.execute("UPDATE users SET role='admin', name=COALESCE(NULLIF(name, ''), '관리자') WHERE email=?", (admin_email,))
     conn.execute("""
         CREATE TABLE IF NOT EXISTS deployed_models (
             id TEXT PRIMARY KEY,

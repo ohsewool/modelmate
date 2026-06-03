@@ -29,27 +29,30 @@ async def auth_google(body: GoogleTokenBody):
     picture = info.get("picture", "")
 
     conn = get_db()
-    existing = conn.execute("SELECT id FROM users WHERE id=?", (user_id,)).fetchone()
+    existing = conn.execute("SELECT id, role FROM users WHERE id=?", (user_id,)).fetchone()
     if not existing:
+        role = "admin" if email == os.getenv("ADMIN_EMAIL", "admin@modelmate.local") else "user"
         conn.execute(
-            "INSERT INTO users (id, email, name, picture, created_at) VALUES (?,?,?,?,?)",
-            (user_id, email, name, picture, datetime.now().isoformat())
+            "INSERT INTO users (id, email, name, picture, role, created_at) VALUES (?,?,?,?,?,?)",
+            (user_id, email, name, picture, role, datetime.now().isoformat())
         )
         conn.commit()
+    else:
+        role = existing["role"] or "user"
     conn.close()
 
     token = jose_jwt.encode(
-        {"sub": user_id, "email": email, "name": name, "picture": picture},
+        {"sub": user_id, "email": email, "name": name, "picture": picture, "role": role},
         JWT_SECRET, algorithm=JWT_ALGORITHM
     )
-    return {"token": token, "user": {"id": user_id, "email": email, "name": name, "picture": picture}}
+    return {"token": token, "user": {"id": user_id, "email": email, "name": name, "picture": picture, "role": role}}
 
 class EmailAuthBody(BaseModel):
     email: str
     password: str
     name: str = ""
 
-def make_token(user_id, email, name, picture=""):
+def make_token(user_id, email, name, picture="", role="user"):
     return jose_jwt.encode(
-        {"sub": user_id, "email": email, "name": name, "picture": picture},
+        {"sub": user_id, "email": email, "name": name, "picture": picture, "role": role},
         JWT_SECRET, algorithm=JWT_ALGORITHM
