@@ -56,9 +56,9 @@ def validate_dataset_file(df, filename: str = ""):
 
     text_sample = df.select_dtypes(include=["object", "category"]).head(80).astype(str)
     text_values = [
-        v.strip()
+        str(v).strip()
         for v in text_sample.to_numpy().ravel().tolist()
-        if v and v.strip() and v.strip().lower() not in {"nan", "none"}
+        if pd.notna(v) and str(v).strip() and str(v).strip().lower() not in {"nan", "none"}
     ]
     long_text_ratio = 0.0
     avg_text_len = 0.0

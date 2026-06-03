@@ -17,7 +17,8 @@ async def upload(file: UploadFile = File(...)):
 
     cat_cols = df.select_dtypes(include=["object", "category"]).columns.tolist()
     num_cols = df.select_dtypes(include=["number"]).columns.tolist()
-    suggested_drop, drop_reasons = suggested_feature_drops(df, target_col=df.columns[-1])
+    default_target = infer_default_target(df)
+    suggested_drop, drop_reasons = suggested_feature_drops(df, target_col=default_target)
 
     return {
         "columns": df.columns.tolist(),
@@ -25,7 +26,7 @@ async def upload(file: UploadFile = File(...)):
         "converted": is_txt, "separator": sep,
         "encoding": encoding,
         "preview": df.head(8).fillna("").to_dict("records"),
-        "default_target": df.columns[-1],
+        "default_target": default_target,
         "missing_total": int(df.isnull().sum().sum()),
         "dataset_quality": quality,
         "cat_cols": cat_cols,

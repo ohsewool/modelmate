@@ -55,6 +55,18 @@ def infer_dataset_domain(df):
             "dataset_domain_reason": "고객, 이탈, 해지, 구독 유지와 관련된 컬럼명이 있습니다.",
             "dataset_domain_confidence": "높음",
         }
+    if has_any(["bike", "bicycle", "rental", "station", "member", "signup", "join", "transport", "공공자전거", "자전거", "따릉이", "대여", "정류장", "회원", "가입", "연령대", "성별", "가입건수"]):
+        return {
+            "dataset_domain": "공공교통/이용자 통계",
+            "dataset_domain_reason": "공공자전거, 회원, 가입, 연령대처럼 교통 서비스 이용자를 집계한 컬럼이 있습니다.",
+            "dataset_domain_confidence": "높음",
+        }
+    if has_any(["playground", "facility", "safety", "address", "zipcode", "children", "어린이", "놀이시설", "시설", "안전", "주소", "우편번호", "설치장소", "실내외", "의무시설"]):
+        return {
+            "dataset_domain": "공공시설/안전 관리",
+            "dataset_domain_reason": "어린이 놀이시설, 주소, 설치장소, 실내외 구분처럼 공공시설 관리용 컬럼이 있습니다.",
+            "dataset_domain_confidence": "높음",
+        }
     if has_any(["price", "sales", "revenue", "amount", "fare", "cost", "매출", "가격", "금액", "요금"]):
         return {
             "dataset_domain": "금액/매출",
@@ -109,6 +121,22 @@ def infer_target_category(df, target_col):
         label = "건강 지표 예측"
         reason = "전체 컬럼이 건강 진단 구조라 맞힐 값을 건강 관련 지표로 보는 것이 자연스럽습니다."
         confidence = "중간"
+    elif domain_name == "공공교통/이용자 통계" and any(word in name for word in ["count", "건수", "가입"]):
+        label = "가입자 수 예측"
+        reason = "공공자전거 가입자 통계 구조이고, 맞힐 값이 가입 건수입니다."
+        confidence = "높음"
+    elif domain_name == "공공교통/이용자 통계":
+        label = "이용자 통계 예측"
+        reason = "공공교통 서비스 이용자 집계 데이터로 보입니다."
+        confidence = "중간"
+    elif domain_name == "공공시설/안전 관리" and is_binary_like:
+        label = "시설 상태/여부 분류"
+        reason = "시설 관리 데이터이고, 맞힐 값이 두 종류의 상태 또는 여부 값입니다."
+        confidence = "중간"
+    elif domain_name == "공공시설/안전 관리":
+        label = "시설 정보 분류"
+        reason = "공공시설 관리 데이터이고, 맞힐 값이 시설의 구분 정보로 보입니다."
+        confidence = "중간"
     elif domain_name == "수면/건강 라이프로그" and is_binary_like:
         label = "수면/건강 상태 분류"
         reason = "전체 컬럼이 수면/라이프로그 구조이고, 맞힐 값은 두 종류의 상태값입니다."
@@ -160,6 +188,47 @@ def infer_target_category(df, target_col):
     }
 
 
+def infer_default_target(df):
+    rows = max(len(df), 1)
+    drop_cols, _ = suggested_feature_drops(df, target_col=None)
+    drop_set = set(drop_cols)
+    bad_tokens = ["id", "idx", "code", "번호", "주소", "우편번호", "일자", "날짜", "년월", "date", "time", "name", "명"]
+    good_tokens = [
+        "target", "label", "outcome", "result", "diabetes", "churn", "count", "amount", "score",
+        "건수", "가입건수", "여부", "구분코드명", "상태", "등급", "결과", "진단", "당뇨", "분류"
+    ]
+    best_col = df.columns[-1]
+    best_score = -10**9
+    for idx, col in enumerate(df.columns):
+        name = str(col).lower()
+        compact = name.replace(" ", "").replace("_", "").replace("-", "")
+        s = df[col]
+        unique = int(s.nunique(dropna=True))
+        unique_ratio = unique / rows
+        is_numeric = pd.api.types.is_numeric_dtype(s)
+        score = idx * 0.05
+        if col in drop_set:
+            score -= 25
+        if any(tok in compact for tok in bad_tokens):
+            score -= 12
+        if any(tok in compact for tok in good_tokens):
+            score += 25
+        if is_numeric and unique > 20:
+            score += 8
+        if 2 <= unique <= 20:
+            score += 10
+        if not is_numeric and unique_ratio > 0.85:
+            score -= 30
+        if score > best_score:
+            best_col = col
+            best_score = score
+    best_name = str(best_col)
+    readable_pair = best_name + "명"
+    if readable_pair in df.columns:
+        return readable_pair
+    return best_col
+
+
 def _rule_based_column_analysis(df, col_info, demo=False):
     n = len(df)
     suggested = [
@@ -167,7 +236,7 @@ def _rule_based_column_analysis(df, col_info, demo=False):
         if c["unique_ratio"] > 0.8
         or any(kw in c["name"].lower() for kw in ["id", "idx", "no", "uid", "serial", "code", "name"])
     ]
-    target_col = df.columns[-1]
+    target_col = infer_default_target(df)
     numeric_targets = df[target_col].dtype in [np.float64, np.int64, np.float32, np.int32]
     task_type = "regression" if numeric_targets and df[target_col].nunique() > 12 else "classification"
     target_category = infer_target_category(df, target_col)
