@@ -1,6 +1,16 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../api'
+import { Button } from '../components/ui/button'
+import { Badge } from '../components/ui/badge'
+
+const AGENT_PLAN = [
+  { title: '데이터 상태 확인', desc: '업로드된 데이터와 맞힐 값을 확인합니다.' },
+  { title: '모델 후보 비교', desc: '여러 모델을 같은 기준으로 시험합니다.' },
+  { title: '개선 여부 판단', desc: '성능이 부족하면 자동 개선을 시도합니다.' },
+  { title: '예측 근거 정리', desc: '어떤 정보가 예측에 영향을 줬는지 찾습니다.' },
+  { title: '발표용 결론 작성', desc: '결과 요약 화면에서 이해하기 쉽게 보여줍니다.' },
+]
 
 export default function Agent() {
   const [loading, setLoading] = useState(false)
@@ -23,86 +33,159 @@ export default function Agent() {
   }
 
   const steps = result?.steps || []
+  const decision = useMemo(() => buildDecision(result), [result])
 
   return (
-    <div className="animate-fade-in" style={{ padding: 32, maxWidth: 980 }}>
-      <section style={{
-        borderRadius: 10, padding: '22px 24px', marginBottom: 18,
-        background: 'var(--surface)',
-        color: 'var(--text)', border: '1px solid var(--border)',
-        boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
-      }}>
-        <p style={{ fontSize: 12, fontWeight: 800, color: '#7c3aed', margin: '0 0 8px' }}>선택 기능 · AI 한 번에 실행</p>
-        <h1 style={{ fontSize: 22, fontWeight: 900, margin: '0 0 6px', letterSpacing: 0 }}>
-          AI가 모델 비교부터 이유 분석까지 대신 실행
-        </h1>
-        <p style={{ fontSize: 13, lineHeight: 1.55, color: 'var(--text-2)', margin: 0 }}>
-          직접 2~4단계를 눌러 진행할 수도 있고, 여기서 한 번에 맡길 수도 있습니다.
-        </p>
+    <div className="animate-fade-in" style={{ padding: 32, maxWidth: 1120 }}>
+      <section className="card" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.35fr) minmax(280px, 0.65fr)', gap: 20, alignItems: 'center', marginBottom: 18 }}>
+        <div>
+          <p style={{ fontSize: 12, fontWeight: 850, color: '#7c3aed', margin: '0 0 8px' }}>선택 기능 · AI 분석 코치</p>
+          <h1 style={{ fontSize: 24, fontWeight: 950, margin: '0 0 8px', color: 'var(--text)', letterSpacing: 0 }}>
+            AI가 분석 계획을 세우고 실행 판단을 남깁니다
+          </h1>
+          <p style={{ fontSize: 13, lineHeight: 1.65, color: 'var(--text-2)', margin: 0 }}>
+            직접 모델을 고를 수도 있지만, 이 화면에서는 AI가 모델 비교, 개선 판단, 예측 근거 정리를 한 번에 진행합니다.
+          </p>
+        </div>
+        <div style={{ borderRadius: 14, padding: 16, background: 'linear-gradient(135deg, rgba(124,58,237,0.12), rgba(37,99,235,0.08))', border: '1px solid rgba(124,58,237,0.18)' }}>
+          <p style={{ fontSize: 12, fontWeight: 900, color: '#7c3aed', margin: '0 0 8px' }}>에이전트 역할</p>
+          <p style={{ fontSize: 18, fontWeight: 900, color: 'var(--text)', margin: '0 0 6px' }}>분석 코치</p>
+          <p style={{ fontSize: 12, lineHeight: 1.55, color: 'var(--text-2)', margin: 0 }}>
+            단순 자동 실행이 아니라, 왜 이 모델을 봤고 왜 개선을 시도했는지 판단 로그를 남깁니다.
+          </p>
+        </div>
       </section>
 
-      {!result && (
-        <div className="card" style={{ textAlign: 'center', padding: '56px 36px', marginBottom: 16 }}>
-          <div style={{ width: 76, height: 76, borderRadius: 22, margin: '0 auto 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(124,58,237,0.1)', color: '#7c3aed' }}>
-            <AgentIcon />
-          </div>
-          <h2 style={{ fontSize: 22, color: 'var(--text)', margin: '0 0 10px' }}>시간이 없을 때 쓰는 자동 실행 모드</h2>
-          <p style={{ fontSize: 14, color: 'var(--text-2)', lineHeight: 1.7, maxWidth: 560, margin: '0 auto 26px' }}>
-            AI 에이전트는 모델을 비교하고, 개선이 필요한지 판단하고, 어떤 정보가 예측에 중요했는지 요약합니다.
-            발표 흐름을 빠르게 만들고 싶을 때 사용하는 선택 기능입니다.
-          </p>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 10, flexWrap: 'wrap' }}>
-            <button onClick={runAgent} className="btn-primary" disabled={loading} style={{ padding: '13px 24px' }}>
-              {loading && <span className="spinner" />}
-              AI에게 한 번에 맡기기
-            </button>
-            <button onClick={() => nav('/model-lab')} className="btn-secondary" disabled={loading} style={{ padding: '13px 20px' }}>
-              직접 모델 고르기
-            </button>
+      {!result && !loading && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 320px', gap: 16, alignItems: 'start' }}>
+          <PlanBoard activeIndex={-1} />
+          <div className="card" style={{ position: 'sticky', top: 20 }}>
+            <div style={{ width: 58, height: 58, borderRadius: 16, display: 'grid', placeItems: 'center', background: 'rgba(124,58,237,0.1)', color: '#7c3aed', marginBottom: 14 }}>
+              <AgentIcon />
+            </div>
+            <h2 style={{ fontSize: 18, color: 'var(--text)', margin: '0 0 8px' }}>AI에게 맡기면 하는 일</h2>
+            <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.65, margin: '0 0 16px' }}>
+              모델 후보를 비교하고, 점수가 충분한지 판단하고, 설명에 필요한 근거를 추려냅니다.
+            </p>
+            <div style={{ display: 'grid', gap: 8 }}>
+              <Button onClick={runAgent}>AI 분석 코치 실행</Button>
+              <Button onClick={() => nav('/model-lab')} variant="secondary">직접 모델 고르기</Button>
+            </div>
           </div>
         </div>
       )}
 
       {loading && (
-        <div className="card" style={{ display: 'grid', gap: 12, marginBottom: 16 }}>
-          {['모델 성능 비교', '성능 개선 판단', '예측 이유 분석', '결과 설명 작성'].map((item, idx) => (
-            <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 12, borderRadius: 10, background: 'var(--surface-alt)' }}>
-              <span className="spinner" />
-              <div>
-                <p style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)', margin: 0 }}>{idx + 1}. {item}</p>
-                <p style={{ fontSize: 12, color: 'var(--text-label)', margin: '2px 0 0' }}>진행 중입니다.</p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 320px', gap: 16, alignItems: 'start' }}>
+          <PlanBoard activeIndex={1} />
+          <div className="card" style={{ display: 'grid', gap: 12 }}>
+            <p style={{ fontSize: 12, fontWeight: 900, color: '#7c3aed', margin: 0 }}>실행 중</p>
+            {['모델 후보를 비교합니다', '개선 필요성을 판단합니다', '예측 근거를 찾습니다', '결론을 정리합니다'].map(item => (
+              <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 10, borderRadius: 10, background: 'var(--surface-alt)' }}>
+                <span className="spinner" />
+                <span style={{ fontSize: 12, color: 'var(--text-2)', fontWeight: 750 }}>{item}</span>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
 
       {error && (
         <div className="card" style={{ borderColor: 'rgba(220,38,38,0.22)', background: 'rgba(220,38,38,0.05)', marginBottom: 16 }}>
-          <h2 style={{ fontSize: 16, color: '#dc2626', margin: '0 0 8px' }}>AI 자동 실행을 시작하지 못했습니다</h2>
+          <h2 style={{ fontSize: 16, color: '#dc2626', margin: '0 0 8px' }}>AI 분석 코치를 시작하지 못했습니다</h2>
           <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6, margin: '0 0 14px' }}>{error}</p>
-          <button onClick={() => nav('/upload')} className="btn-secondary">데이터 확인하기</button>
+          <Button onClick={() => nav('/upload')} variant="secondary">데이터 확인하기</Button>
         </div>
       )}
 
       {result && (
-        <>
-          <div style={{ display: 'grid', gap: 12, marginBottom: 16 }}>
-            {steps.map((step, idx) => (
-              <StepCard key={`${step.step}-${idx}`} step={step} idx={idx} />
-            ))}
+        <div style={{ display: 'grid', gap: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 0.9fr) minmax(0, 1.1fr)', gap: 16, alignItems: 'start' }}>
+            <PlanBoard activeIndex={AGENT_PLAN.length} completed />
+            <DecisionBoard decision={decision} />
           </div>
+
+          <div className="card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 14, alignItems: 'center', marginBottom: 14 }}>
+              <div>
+                <p style={{ fontSize: 12, fontWeight: 900, color: '#7c3aed', margin: '0 0 5px' }}>판단 로그</p>
+                <h2 style={{ fontSize: 18, color: 'var(--text)', margin: 0 }}>AI가 남긴 실행 기록</h2>
+              </div>
+              <Badge variant={result.demo_mode ? 'secondary' : 'default'}>{result.demo_mode ? '데모 모드' : 'AI 설명 사용'}</Badge>
+            </div>
+            <div style={{ display: 'grid', gap: 10 }}>
+              {steps.map((step, idx) => (
+                <StepCard key={`${step.step}-${idx}`} step={step} idx={idx} />
+              ))}
+            </div>
+          </div>
+
           <div className="card" style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center' }}>
             <div>
-              <h2 style={{ fontSize: 18, color: 'var(--text)', margin: '0 0 6px' }}>AI 자동 실행이 끝났습니다</h2>
+              <h2 style={{ fontSize: 18, color: 'var(--text)', margin: '0 0 6px' }}>AI 분석 코치가 결론을 만들었습니다</h2>
               <p style={{ fontSize: 13, color: 'var(--text-2)', margin: 0 }}>
-                이제 결과 요약에서 비전공자도 이해할 수 있는 형태로 정리된 내용을 확인하세요.
+                결과 요약에서 발표용 설명을 확인하고, 이유 보기에서 근거를 더 자세히 볼 수 있습니다.
               </p>
             </div>
-            <button onClick={() => nav('/report')} className="btn-primary">결과 요약 보기</button>
+            <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+              <Button onClick={() => nav('/report')}>결과 요약 보기</Button>
+              <Button onClick={() => nav('/xai')} variant="secondary">이유 보기</Button>
+            </div>
           </div>
-        </>
+        </div>
       )}
+    </div>
+  )
+}
+
+function PlanBoard({ activeIndex, completed }) {
+  return (
+    <div className="card">
+      <p style={{ fontSize: 12, fontWeight: 900, color: '#7c3aed', margin: '0 0 6px' }}>AI 계획</p>
+      <h2 style={{ fontSize: 18, color: 'var(--text)', margin: '0 0 14px' }}>에이전트가 진행할 순서</h2>
+      <div style={{ display: 'grid', gap: 10 }}>
+        {AGENT_PLAN.map((item, idx) => {
+          const done = completed || idx < activeIndex
+          const active = !completed && idx === activeIndex
+          return (
+            <div key={item.title} style={{
+              display: 'flex', gap: 12, padding: 12, borderRadius: 12,
+              border: `1px solid ${active ? 'rgba(124,58,237,0.32)' : done ? 'rgba(5,150,105,0.22)' : 'var(--border-sub)'}`,
+              background: active ? 'rgba(124,58,237,0.08)' : done ? 'rgba(5,150,105,0.06)' : 'var(--surface-alt)',
+            }}>
+              <span style={{
+                width: 24, height: 24, borderRadius: 8, flexShrink: 0, display: 'grid', placeItems: 'center',
+                fontSize: 12, fontWeight: 900, color: done ? '#059669' : active ? '#7c3aed' : 'var(--text-label)',
+                background: done ? 'rgba(5,150,105,0.12)' : active ? 'rgba(124,58,237,0.13)' : 'var(--surface)',
+              }}>
+                {done ? '✓' : idx + 1}
+              </span>
+              <div>
+                <p style={{ fontSize: 13, fontWeight: 850, color: 'var(--text)', margin: '0 0 3px' }}>{item.title}</p>
+                <p style={{ fontSize: 12, lineHeight: 1.45, color: 'var(--text-label)', margin: 0 }}>{item.desc}</p>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+function DecisionBoard({ decision }) {
+  return (
+    <div className="card">
+      <p style={{ fontSize: 12, fontWeight: 900, color: '#2563eb', margin: '0 0 6px' }}>AI 결정</p>
+      <h2 style={{ fontSize: 20, color: 'var(--text)', margin: '0 0 14px' }}>{decision.title}</h2>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 10, marginBottom: 14 }}>
+        <MiniScore label="추천 모델" value={decision.model} text />
+        <MiniScore label="대표 점수" value={decision.score} />
+        <MiniScore label="개선 판단" value={decision.tuning} text />
+      </div>
+      <div style={{ padding: 14, borderRadius: 12, border: '1px solid rgba(37,99,235,0.16)', background: 'rgba(37,99,235,0.06)' }}>
+        <p style={{ fontSize: 13, fontWeight: 850, color: 'var(--text)', margin: '0 0 6px' }}>다음 행동</p>
+        <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6, margin: 0 }}>{decision.next}</p>
+      </div>
     </div>
   )
 }
@@ -111,28 +194,29 @@ function StepCard({ step, idx }) {
   const rows = step.data?.results || []
   const optuna = step.data?.after_score !== undefined || step.data?.after_roc !== undefined
   const xai = step.data?.global
+  const skipped = step.decision === 'optuna_skip'
 
   return (
-    <div className="card animate-slide-up">
-      <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-        <div style={{ width: 38, height: 38, borderRadius: 11, flexShrink: 0, background: 'rgba(124,58,237,0.1)', color: '#7c3aed', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900 }}>
+    <div style={{ borderRadius: 12, border: '1px solid var(--border-sub)', background: 'var(--surface-alt)', padding: 14 }}>
+      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+        <div style={{ width: 32, height: 32, borderRadius: 10, flexShrink: 0, background: skipped ? 'rgba(245,158,11,0.12)' : 'rgba(124,58,237,0.1)', color: skipped ? '#b45309' : '#7c3aed', display: 'grid', placeItems: 'center', fontWeight: 900 }}>
           {idx + 1}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
-            <span style={{ fontSize: 12, fontWeight: 900, color: 'var(--text-label)' }}>STEP {step.step ?? idx + 1}</span>
-            <h3 style={{ fontSize: 15, color: 'var(--text)', margin: 0 }}>{step.name || 'AI 실행 단계'}</h3>
-            <span className="badge badge-green" style={{ fontSize: 10 }}>완료</span>
+            <span style={{ fontSize: 11, fontWeight: 900, color: 'var(--text-label)' }}>AI STEP {step.step ?? idx + 1}</span>
+            <h3 style={{ fontSize: 14, color: 'var(--text)', margin: 0 }}>{step.name || 'AI 실행 단계'}</h3>
+            <span className={skipped ? 'badge badge-amber' : 'badge badge-green'} style={{ fontSize: 10 }}>{skipped ? '건너뜀' : '완료'}</span>
           </div>
           {step.comment && (
-            <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.7, margin: '0 0 12px' }}>{step.comment}</p>
+            <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.65, margin: '0 0 12px' }}>{step.comment}</p>
           )}
 
           {rows.length > 0 && (
             <div style={{ display: 'grid', gap: 6 }}>
-              {rows.slice(0, 4).map(row => (
-                <div key={row.model} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8, background: 'var(--surface-alt)', border: '1px solid var(--border-sub)' }}>
-                  <span style={{ fontSize: 12, color: 'var(--text)', fontWeight: 800, flex: 1 }}>{String(row.model).split(' ')[0]}</span>
+              {rows.slice(0, 4).map((row, rowIdx) => (
+                <div key={row.model} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8, background: 'var(--surface)', border: rowIdx === 0 ? '1px solid rgba(5,150,105,0.24)' : '1px solid var(--border-sub)' }}>
+                  <span style={{ fontSize: 12, color: rowIdx === 0 ? '#059669' : 'var(--text)', fontWeight: 850, flex: 1 }}>{rowIdx === 0 ? '추천 · ' : ''}{String(row.model).split(' ')[0]}</span>
                   <span style={{ fontSize: 11, color: 'var(--text-label)' }}>점수</span>
                   <span style={{ fontSize: 12, color: '#2563eb', fontWeight: 900 }}>{formatScore(row.roc_auc ?? row.r2 ?? row.accuracy ?? row.f1)}</span>
                 </div>
@@ -165,13 +249,32 @@ function StepCard({ step, idx }) {
   )
 }
 
-function MiniScore({ label, value, strong }) {
+function MiniScore({ label, value, strong, text }) {
   return (
-    <div style={{ padding: '10px 16px', borderRadius: 10, border: '1px solid var(--border)', background: strong ? 'rgba(16,185,129,0.08)' : 'var(--surface-alt)' }}>
+    <div style={{ minWidth: 0, padding: '10px 12px', borderRadius: 10, border: '1px solid var(--border)', background: strong ? 'rgba(16,185,129,0.08)' : 'var(--surface-alt)' }}>
       <p style={{ fontSize: 11, color: 'var(--text-label)', margin: '0 0 4px' }}>{label}</p>
-      <p style={{ fontSize: 18, fontWeight: 900, color: strong ? '#059669' : 'var(--text)', margin: 0 }}>{formatScore(value)}</p>
+      <p style={{ fontSize: text ? 13 : 18, fontWeight: 900, color: strong ? '#059669' : 'var(--text)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {text ? value : formatScore(value)}
+      </p>
     </div>
   )
+}
+
+function buildDecision(result) {
+  const rows = result?.cv_results || []
+  const best = rows[0] || {}
+  const score = best.roc_auc ?? best.r2 ?? best.accuracy ?? best.f1
+  const tuned = result?.optuna_result
+  const xai = result?.shap_global?.[0]?.feature
+  return {
+    title: best.model ? `${best.model} 모델을 우선 추천합니다` : '분석 결과를 기다리는 중입니다',
+    model: best.model || '-',
+    score,
+    tuning: tuned ? '개선 적용' : '개선 생략',
+    next: xai
+      ? `${xai} 정보가 중요한 근거로 보입니다. 결과 요약을 확인한 뒤 이유 보기에서 근거를 발표용으로 정리하세요.`
+      : '결과 요약을 확인한 뒤, 필요하면 이유 보기에서 예측 근거를 확인하세요.',
+  }
 }
 
 function formatScore(value) {
@@ -180,5 +283,5 @@ function formatScore(value) {
 }
 
 function AgentIcon() {
-  return <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4" /><path d="M8 8H4a2 2 0 00-2 2v2a2 2 0 002 2h1" /><path d="M16 8h4a2 2 0 012 2v2a2 2 0 01-2 2h-1" /><path d="M9 20h6" /><path d="M12 14v6" /></svg>
+  return <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4" /><path d="M8 8H4a2 2 0 00-2 2v2a2 2 0 002 2h1" /><path d="M16 8h4a2 2 0 012 2v2a2 2 0 01-2 2h-1" /><path d="M9 20h6" /><path d="M12 14v6" /></svg>
 }
