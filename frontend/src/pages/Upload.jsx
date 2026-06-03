@@ -76,6 +76,8 @@ export default function Upload() {
   const targetCategory = aiAnalysis?.target_category || (aiAnalysis?.task_type === 'regression' ? '연속값 예측' : '목적 확인 필요')
   const targetReason = aiAnalysis?.target_category_reason || '데이터 구조만으로는 실제 업무 의미를 정확히 알기 어렵습니다.'
   const targetConfidence = aiAnalysis?.target_category_confidence || '낮음'
+  const datasetDomain = aiAnalysis?.dataset_domain || '도메인 확인 필요'
+  const domainConfidence = aiAnalysis?.dataset_domain_confidence || targetConfidence
 
   return (
     <div className="animate-fade-in" style={{ padding: 32, maxWidth: 980 }}>
@@ -140,7 +142,7 @@ export default function Upload() {
             <KPICard label="전체 컬럼" value={uploadInfo.shape?.[1]} color="cyan" />
             <KPICard label="결측값" value={uploadInfo.missing_total ?? 0} color={(uploadInfo.missing_total ?? 0) > 0 ? 'amber' : 'green'} />
             <KPICard label="맞힐 값" value={shortName(target, colLabels)} color="violet" />
-            <KPICard label="자동 추정" value={targetCategory} color={targetConfidence === '낮음' ? 'amber' : 'green'} />
+            <KPICard label="데이터 종류" value={datasetDomain} color={domainConfidence === '낮음' ? 'amber' : 'green'} />
           </div>
 
           <div className="card">
@@ -166,7 +168,8 @@ export default function Upload() {
                 <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.7, margin: 0 }}>{aiAnalysis.dataset_summary}</p>
                 {aiAnalysis?.target_category && (
                   <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.6, margin: '8px 0 0' }}>
-                    자동 추정: <strong style={{ color: 'var(--text)' }}>{targetCategory}</strong> · 확신도 {targetConfidence} · {targetReason}
+                    데이터 종류: <strong style={{ color: 'var(--text)' }}>{datasetDomain}</strong> · 맞힐 값: <strong style={{ color: 'var(--text)' }}>{targetCategory}</strong> · 확신도 {targetConfidence}
+                    <br />{targetReason}
                   </p>
                 )}
               </div>
@@ -175,7 +178,7 @@ export default function Upload() {
             <div style={{ display: 'grid', gap: 14 }}>
               <SettingPanel
                 title="AI가 맞히려는 정답"
-                desc={`예측 모델이 최종적으로 맞혀야 하는 값입니다. 자동 추정은 ${targetCategory}이며, 실제 의미는 직접 확인할 수 있습니다.`}
+                desc={`예측 모델이 최종적으로 맞혀야 하는 값입니다. 이 파일은 ${datasetDomain} 데이터로 보이며, 현재 값은 ${targetCategory}로 해석했습니다.`}
                 color="#2563eb"
               >
                 <select value={target} onChange={e => { setTarget(e.target.value); setDropCols(prev => prev.filter(c => c !== e.target.value)) }} className="input" style={{ maxWidth: 360 }}>
