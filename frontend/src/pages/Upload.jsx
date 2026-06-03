@@ -1,20 +1,43 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../api'
 import KPICard from '../components/KPICard'
 import { Button } from '../components/ui/button'
 
+const UPLOAD_DRAFT_KEY = 'mm_upload_draft'
+
+function loadUploadDraft() {
+  try {
+    return JSON.parse(sessionStorage.getItem(UPLOAD_DRAFT_KEY) || 'null')
+  } catch {
+    return null
+  }
+}
+
 export default function Upload() {
   const [dragging, setDragging] = useState(false)
-  const [uploadInfo, setUploadInfo] = useState(null)
-  const [aiAnalysis, setAiAnalysis] = useState(null)
-  const [target, setTarget] = useState('')
-  const [dropCols, setDropCols] = useState([])
-  const [colLabels, setColLabels] = useState({})
-  const [edaInfo, setEdaInfo] = useState(null)
+  const draft = useRef(loadUploadDraft())
+  const [uploadInfo, setUploadInfo] = useState(() => draft.current?.uploadInfo || null)
+  const [aiAnalysis, setAiAnalysis] = useState(() => draft.current?.aiAnalysis || null)
+  const [target, setTarget] = useState(() => draft.current?.target || '')
+  const [dropCols, setDropCols] = useState(() => draft.current?.dropCols || [])
+  const [colLabels, setColLabels] = useState(() => draft.current?.colLabels || {})
+  const [edaInfo, setEdaInfo] = useState(() => draft.current?.edaInfo || null)
   const [loading, setLoading] = useState('')
   const fileRef = useRef()
   const nav = useNavigate()
+
+  useEffect(() => {
+    if (!uploadInfo) return
+    sessionStorage.setItem(UPLOAD_DRAFT_KEY, JSON.stringify({
+      uploadInfo,
+      aiAnalysis,
+      target,
+      dropCols,
+      colLabels,
+      edaInfo,
+    }))
+  }, [uploadInfo, aiAnalysis, target, dropCols, colLabels, edaInfo])
 
   async function handleFile(file) {
     if (!file) return
@@ -70,6 +93,7 @@ export default function Upload() {
     setDropCols([])
     setColLabels({})
     setEdaInfo(null)
+    sessionStorage.removeItem(UPLOAD_DRAFT_KEY)
   }
 
   const activeCols = uploadInfo?.columns?.filter(c => c !== target && !dropCols.includes(c)) || []
