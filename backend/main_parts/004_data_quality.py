@@ -20,6 +20,85 @@ def read_table_text(raw: str, filename: str = ""):
             raise
         return df, sep
 
+def validate_dataset_file(df, filename: str = ""):
+    """Reject files that parse as text but are not useful tabular datasets."""
+    allowed_ext = (".csv", ".txt", ".tsv")
+    lowered = (filename or "").lower()
+    if lowered and not lowered.endswith(allowed_ext):
+        return False, "CSV, TSV, TXT 형식의 데이터 파일만 업로드할 수 있습니다.", {}
+
+    if df is None or df.empty:
+        return False, "데이터가 비어 있습니다. 행과 열이 있는 CSV 파일을 올려주세요.", {}
+
+    rows, cols = df.shape
+    reasons = []
+    if rows < 5:
+        reasons.append("행이 너무 적음")
+    if cols < 2:
+        reasons.append("열이 2개 미만")
+
+    col_names = [str(c).strip() for c in df.columns]
+    if any(not c or c.lower().startswith("unnamed:") for c in col_names):
+        unnamed = sum(1 for c in col_names if not c or c.lower().startswith("unnamed:"))
+        if unnamed >= max(1, cols // 2):
+            reasons.append("컬럼명이 대부분 비어 있음")
+    if len(set(col_names)) != len(col_names):
+        reasons.append("중복 컬럼명 있음")
+
+    non_empty_cols = int((df.notna().sum(axis=0) > 0).sum())
+    varying_cols = int((df.nunique(dropna=True) > 1).sum())
+    numeric_cols = len(df.select_dtypes(include=["number"]).columns)
+    object_cols = len(df.select_dtypes(include=["object", "category"]).columns)
+    if non_empty_cols < 2:
+        reasons.append("값이 있는 열이 2개 미만")
+    if varying_cols < 2:
+        reasons.append("변화가 있는 열이 2개 미만")
+
+    text_sample = df.select_dtypes(include=["object", "category"]).head(80).astype(str)
+    text_values = [
+        v.strip()
+        for v in text_sample.to_numpy().ravel().tolist()
+        if v and v.strip() and v.strip().lower() not in {"nan", "none"}
+    ]
+    long_text_ratio = 0.0
+    avg_text_len = 0.0
+    if text_values:
+        lengths = [len(v) for v in text_values]
+        avg_text_len = sum(lengths) / len(lengths)
+        long_text_ratio = sum(1 for n in lengths if n >= 60) / len(lengths)
+
+    if cols <= 2 and numeric_cols == 0 and text_values and (avg_text_len >= 40 or long_text_ratio >= 0.35):
+        reasons.append("문장형 텍스트가 대부분")
+    if object_cols == cols and numeric_cols == 0 and text_values and avg_text_len >= 80:
+        reasons.append("표 데이터보다 문서/대화 내용에 가까움")
+
+    score = 100
+    score -= 35 if rows < 5 else 0
+    score -= 30 if cols < 2 else 0
+    score -= 20 if varying_cols < 2 else 0
+    score -= 20 if non_empty_cols < 2 else 0
+    score -= 25 if "문장형 텍스트가 대부분" in reasons else 0
+    score -= 25 if "표 데이터보다 문서/대화 내용에 가까움" in reasons else 0
+    score = max(0, score)
+
+    info = {
+        "rows": int(rows),
+        "columns": int(cols),
+        "non_empty_columns": non_empty_cols,
+        "varying_columns": varying_cols,
+        "numeric_columns": int(numeric_cols),
+        "text_columns": int(object_cols),
+        "avg_text_length": round(avg_text_len, 2),
+        "long_text_ratio": round(long_text_ratio, 3),
+        "score": int(score),
+        "reasons": reasons,
+    }
+
+    if reasons:
+        msg = "데이터셋으로 보기 어렵습니다: " + ", ".join(reasons) + ". 행/열이 있는 CSV 데이터셋을 올려주세요."
+        return False, msg, info
+    return True, "업로드 가능한 데이터셋입니다.", info
+
 def looks_like_datetime(series):
     if str(series.dtype).startswith("datetime"):
         return True
