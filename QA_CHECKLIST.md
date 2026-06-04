@@ -24,6 +24,7 @@
 
 - 앱 상단의 `정상 작동` 배지를 클릭해 `데모 모드`로 바꾼다.
 - URL 방식도 가능하다: `https://web-production-5d6fa.up.railway.app/upload?demo=1`
+- 발표자용 데모 파일 안내 카드는 일반 `/upload`에는 보이지 않고, `/upload?demo=1` 또는 `/upload?presenter=1`에서만 보인다.
 
 데모 모드에서는 컬럼 분석과 자동 분석 설명에서 외부 Gemini API를 호출하지 않는다. 모델 학습, 모델 비교, 결과 요약 화면은 계속 테스트할 수 있다.
 

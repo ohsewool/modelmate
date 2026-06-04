@@ -33,6 +33,8 @@ export default function Upload() {
   const nav = useNavigate()
   const location = useLocation()
   const reanalysisDataset = location.state?.reanalysisDataset || null
+  const searchParams = new URLSearchParams(location.search)
+  const showDemoGuide = searchParams.get('demo') === '1' || searchParams.get('presenter') === '1'
 
   useEffect(() => {
     if (!uploadInfo) return
@@ -143,7 +145,7 @@ export default function Upload() {
           {reanalysisDataset && (
             <ReanalysisNotice item={reanalysisDataset} onClear={clearReanalysis} />
           )}
-          <DemoDatasetGuide />
+          {showDemoGuide && <DemoDatasetGuide />}
           <div
             onDragOver={e => { e.preventDefault(); setDragging(true) }}
             onDragLeave={() => setDragging(false)}
