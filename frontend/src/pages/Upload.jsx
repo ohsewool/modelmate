@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import api from '../api'
 import KPICard from '../components/KPICard'
 import { Button } from '../components/ui/button'
+import DatasetQualityCard from '../components/upload/DatasetQualityCard'
 
 const UPLOAD_DRAFT_KEY = 'mm_upload_draft'
 
@@ -23,6 +24,7 @@ export default function Upload() {
   const [dropCols, setDropCols] = useState(() => draft.current?.dropCols || [])
   const [colLabels, setColLabels] = useState(() => draft.current?.colLabels || {})
   const [edaInfo, setEdaInfo] = useState(() => draft.current?.edaInfo || null)
+  const [uploadError, setUploadError] = useState(null)
   const [loading, setLoading] = useState('')
   const fileRef = useRef()
   const nav = useNavigate()
@@ -41,6 +43,7 @@ export default function Upload() {
 
   async function handleFile(file) {
     if (!file) return
+    setUploadError(null)
     setLoading('upload')
     const fd = new FormData()
     fd.append('file', file)
@@ -64,7 +67,10 @@ export default function Upload() {
         setAiAnalysis(null)
       }
     } catch (e) {
-      alert('파일 업로드에 실패했습니다: ' + (e.response?.data?.detail || e.message))
+      const detail = e.response?.data?.detail
+      setUploadError(typeof detail === 'object'
+        ? detail
+        : { message: detail || e.message, tips: ['CSV 파일인지, 첫 행에 컬럼명이 있는지 확인해 주세요.'] })
     } finally {
       setLoading('')
     }
@@ -93,6 +99,7 @@ export default function Upload() {
     setDropCols([])
     setColLabels({})
     setEdaInfo(null)
+    setUploadError(null)
     sessionStorage.removeItem(UPLOAD_DRAFT_KEY)
   }
 
@@ -121,19 +128,20 @@ export default function Upload() {
       </section>
 
       {!uploadInfo ? (
-        <div
-          onDragOver={e => { e.preventDefault(); setDragging(true) }}
-          onDragLeave={() => setDragging(false)}
-          onDrop={e => { e.preventDefault(); setDragging(false); handleFile(e.dataTransfer.files[0]) }}
-          onClick={() => fileRef.current.click()}
-          style={{
-            border: `2px dashed ${dragging ? '#2563eb' : 'rgba(37,99,235,0.24)'}`,
-            borderRadius: 10, padding: '56px 32px', textAlign: 'center', cursor: 'pointer',
-            background: dragging ? 'rgba(37,99,235,0.07)' : 'var(--surface)',
-            transition: 'all 0.2s',
-          }}
-        >
-          <input ref={fileRef} type="file" accept=".csv,.txt" style={{ display: 'none' }} onChange={e => handleFile(e.target.files[0])} />
+        <div style={{ display: 'grid', gap: 14 }}>
+          <div
+            onDragOver={e => { e.preventDefault(); setDragging(true) }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={e => { e.preventDefault(); setDragging(false); handleFile(e.dataTransfer.files[0]) }}
+            onClick={() => fileRef.current.click()}
+            style={{
+              border: `2px dashed ${dragging ? '#2563eb' : 'rgba(37,99,235,0.24)'}`,
+              borderRadius: 10, padding: '56px 32px', textAlign: 'center', cursor: 'pointer',
+              background: dragging ? 'rgba(37,99,235,0.07)' : 'var(--surface)',
+              transition: 'all 0.2s',
+            }}
+          >
+          <input ref={fileRef} type="file" accept=".csv,.tsv,.txt" style={{ display: 'none' }} onChange={e => handleFile(e.target.files[0])} />
           {loading ? (
             <div style={{ display: 'grid', justifyItems: 'center', gap: 14 }}>
               <span className="spinner" />
@@ -151,13 +159,15 @@ export default function Upload() {
                 파일을 끌어오거나 클릭해서 선택하세요
               </p>
               <p style={{ color: 'var(--text-2)', fontSize: 13, margin: '0 0 18px' }}>
-                CSV와 TXT 파일을 지원합니다. 한글 CSV도 자동으로 읽도록 처리했습니다.
+                CSV, TSV, TXT 파일을 지원합니다. 한글 CSV도 자동으로 읽도록 처리했습니다.
               </p>
               <Button asChild>
                 <span style={{ pointerEvents: 'none' }}>파일 선택</span>
               </Button>
             </>
           )}
+          </div>
+          <DatasetQualityCard error={uploadError} onRetry={() => fileRef.current.click()} />
         </div>
       ) : (
         <div className="animate-slide-up" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -168,6 +178,8 @@ export default function Upload() {
             <KPICard label="맞힐 값" value={shortName(target, colLabels)} color="violet" />
             <KPICard label="데이터 종류" value={datasetDomain} color={domainConfidence === '낮음' ? 'amber' : 'green'} />
           </div>
+
+          <DatasetQualityCard quality={uploadInfo.dataset_quality} />
 
           <div className="card">
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'flex-start', marginBottom: 18 }}>
