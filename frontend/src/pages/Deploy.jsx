@@ -124,9 +124,11 @@ function ModelCard({ model, onDelete }) {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
             <h2 style={{ margin: 0, fontSize: 17, fontWeight: 850 }}>{model.name}</h2>
+            <span className="badge badge-violet">{model.version_label || 'v1'}</span>
             <span className="badge badge-blue">{model.best_model_name}</span>
             <span className="badge badge-green">{model.task_type}</span>
             <span className="badge badge-amber">{model.owner_scope || '저장 모델'}</span>
+            <span className={model.file_exists ? 'badge badge-green' : 'badge badge-amber'}>{model.storage_status || '상태 확인'}</span>
           </div>
           <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)' }}>
             ID {model.id} / 맞히려는 값 {model.target_col} / 점수 {fmt(primary)}

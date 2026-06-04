@@ -37,6 +37,12 @@ async def list_deployed(user=Depends(get_current_user)):
     else:
         rows = conn.execute("SELECT * FROM deployed_models WHERE user_id IS NULL ORDER BY created_at DESC").fetchall()
     conn.close()
+    version_counts = {}
+    version_by_id = {}
+    for r in sorted(rows, key=lambda row: row["created_at"] or ""):
+        key = (r["target_col"] or "target", r["best_model_name"] or "model")
+        version_counts[key] = version_counts.get(key, 0) + 1
+        version_by_id[r["id"]] = f"v{version_counts[key]}"
     return [{
         "id": r["id"], "name": r["name"],
         "task_type": r["task_type"], "best_model_name": r["best_model_name"],
@@ -45,8 +51,10 @@ async def list_deployed(user=Depends(get_current_user)):
         "metrics": json.loads(r["metrics"]),
         "dataset_ref": json.loads(r["dataset_ref"]) if r["dataset_ref"] else None,
         "owner_scope": "내 모델" if user and r["user_id"] == user.get("sub") else "공용 모델",
+        "version_label": version_by_id.get(r["id"], "v1"),
         "created_at": r["created_at"],
         "file_exists": os.path.exists(os.path.join(MODELS_DIR, f"{r['id']}.pkl")),
+        "storage_status": "사용 가능" if os.path.exists(os.path.join(MODELS_DIR, f"{r['id']}.pkl")) else "파일 없음",
     } for r in rows]
 
 @app.delete("/api/deployed/{model_id}")
