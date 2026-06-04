@@ -1,5 +1,7 @@
 import argparse
 import json
+import os
+import shutil
 import subprocess
 import sys
 from datetime import datetime
@@ -8,19 +10,33 @@ from pathlib import Path
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 sys.path.insert(0, str(ROOT))
 import backend.main as m  # noqa: E402
 
 
-def run_cmd(name, args, timeout=300):
+def run_cmd(name, args, timeout=300, cwd=ROOT):
     try:
-        proc = subprocess.run(args, cwd=ROOT, text=True, capture_output=True, timeout=timeout)
+        child_env = os.environ.copy()
+        child_env["PYTHONIOENCODING"] = "utf-8"
+        proc = subprocess.run(
+            args,
+            cwd=cwd,
+            env=child_env,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            capture_output=True,
+            timeout=timeout,
+        )
         return {
             "name": name,
             "status": "pass" if proc.returncode == 0 else "fail",
             "returncode": proc.returncode,
-            "stdout_tail": proc.stdout[-1600:],
-            "stderr_tail": proc.stderr[-1600:],
+            "stdout_tail": (proc.stdout or "")[-1600:],
+            "stderr_tail": (proc.stderr or "")[-1600:],
         }
     except subprocess.TimeoutExpired as e:
         return {
@@ -30,6 +46,23 @@ def run_cmd(name, args, timeout=300):
             "stdout_tail": (e.stdout or "")[-1600:] if isinstance(e.stdout, str) else "",
             "stderr_tail": f"Timed out after {timeout} seconds.",
         }
+
+
+def node_executable():
+    bundled = Path.home() / ".cache" / "codex-runtimes" / "codex-primary-runtime" / "dependencies" / "node" / "bin" / "node.exe"
+    if bundled.exists():
+        return str(bundled)
+    return shutil.which("node")
+
+
+def run_frontend_build():
+    node = node_executable()
+    if not node:
+        return {"name": "frontend_build", "status": "fail", "stderr_tail": "Node.js executable not found."}
+    args = [node, "node_modules/vite/bin/vite.js", "build"]
+    result = run_cmd("frontend_build", args, 180, cwd=ROOT / "frontend")
+    result["cwd"] = str(ROOT / "frontend")
+    return result
 
 
 def invalid_upload_cases():
@@ -63,6 +96,7 @@ def check_upload_matrix():
 
 
 def write_reports(payload):
+    workspace = payload["stages"].get("workspace_flow", {})
     lines = [
         "# Full QA Results",
         "",
@@ -73,6 +107,19 @@ def write_reports(payload):
     ]
     for name, result in payload["stages"].items():
         lines.append(f"- {name}: {result.get('status')}")
+    if workspace.get("parsed_result"):
+        result = workspace["parsed_result"].get("result", {})
+        lines += [
+            "",
+            "## Workspace And API",
+            "",
+            "| Check | Result |",
+            "|---|---|",
+            f"| Dataset linked to history | {result.get('history_dataset_id', '-')} |",
+            f"| Saved model version | {result.get('version_label', '-')} |",
+            f"| Model storage | {result.get('storage_status', '-')} |",
+            f"| Prediction API | {result.get('predict_status', '-')} |",
+        ]
     lines += ["", "## Upload Matrix", "", "| Case | Expected | Result | Note |", "|---|---|---|---|"]
     for row in payload["stages"]["upload_matrix"]["results"]:
         note = row.get("message", "").replace("|", "/")
@@ -89,7 +136,14 @@ def main():
         "domain": run_cmd("domain", [sys.executable, str(ROOT / "scripts" / "run_domain_benchmark.py")], 120),
         "upload_matrix": check_upload_matrix(),
         "workspace_flow": run_cmd("workspace_flow", [sys.executable, str(ROOT / "scripts" / "run_workspace_flow_qa.py")], 180),
+        "frontend_build": run_frontend_build(),
     }
+    workspace_path = ROOT / "workspace_flow_qa_results.json"
+    if workspace_path.exists():
+        try:
+            stages["workspace_flow"]["parsed_result"] = json.loads(workspace_path.read_text(encoding="utf-8"))
+        except Exception:
+            stages["workspace_flow"]["parsed_result"] = None
     if args.skip_slow:
         stages["training"] = {"status": "skipped", "reason": "skip-slow option"}
     else:

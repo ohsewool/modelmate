@@ -1,13 +1,23 @@
 # Full QA Results
 
-Generated: `2026-06-05T04:33:48`
+Generated: `2026-06-05T04:54:06`
 
 ## Summary
 
 - domain: pass
 - upload_matrix: pass
 - workspace_flow: pass
+- frontend_build: pass
 - training: pass
+
+## Workspace And API
+
+| Check | Result |
+|---|---|
+| Dataset linked to history | b18aaac2 |
+| Saved model version | v1 |
+| Model storage | 사용 가능 |
+| Prediction API | ok |
 
 ## Upload Matrix
 

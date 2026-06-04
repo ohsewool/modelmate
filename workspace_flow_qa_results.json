@@ -1,10 +1,12 @@
 {
   "status": "pass",
   "result": {
-    "dataset_id": "917605de",
-    "history_dataset_id": "917605de",
-    "model_id": "a6d4d016",
+    "dataset_id": "b18aaac2",
+    "history_dataset_id": "b18aaac2",
+    "model_id": "a19385a0",
     "version_label": "v1",
-    "storage_status": "사용 가능"
+    "storage_status": "사용 가능",
+    "predict_status": "ok",
+    "prediction_label": "normal"
   }
 }
