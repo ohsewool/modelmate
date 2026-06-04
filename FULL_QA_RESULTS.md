@@ -1,6 +1,6 @@
 # Full QA Results
 
-Generated: `2026-06-05T05:05:09`
+Generated: `2026-06-05T05:15:22`
 
 ## Summary
 
@@ -14,7 +14,7 @@ Generated: `2026-06-05T05:05:09`
 
 | Check | Result |
 |---|---|
-| Dataset linked to history | 9cb435bf |
+| Dataset linked to history | 432d4515 |
 | Saved model version | v1 |
 | Model storage | 사용 가능 |
 | Prediction API | ok |

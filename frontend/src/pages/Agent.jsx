@@ -129,6 +129,8 @@ export default function Agent() {
           decision={decision}
           onReport={() => nav('/report')}
           onXai={() => nav('/xai')}
+          onPredict={() => nav('/predict')}
+          onDeploy={() => nav('/deploy')}
         />
       )}
     </div>

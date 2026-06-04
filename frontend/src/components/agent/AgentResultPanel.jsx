@@ -3,10 +3,11 @@ import { Button } from '../ui/button'
 import AgentInsightCards from '../AgentInsightCards'
 import AgentDecisionBoard from './AgentDecisionBoard'
 import AgentMissionBrief from './AgentMissionBrief'
+import AgentNextActionsPanel from './AgentNextActionsPanel'
 import AgentPlanBoard, { AGENT_PLAN } from './AgentPlanBoard'
 import AgentStepCard from './AgentStepCard'
 
-export default function AgentResultPanel({ result, steps, decision, onReport, onXai }) {
+export default function AgentResultPanel({ result, steps, decision, onReport, onXai, onPredict, onDeploy }) {
   return (
     <div style={{ display: 'grid', gap: 16 }}>
       <AgentMissionBrief insights={result.agent_insights} decision={decision} />
@@ -15,6 +16,14 @@ export default function AgentResultPanel({ result, steps, decision, onReport, on
         <AgentDecisionBoard decision={decision} />
       </div>
       <AgentInsightCards insights={result.agent_insights} />
+      <AgentNextActionsPanel
+        insights={result.agent_insights}
+        decision={decision}
+        onReport={onReport}
+        onXai={onXai}
+        onPredict={onPredict}
+        onDeploy={onDeploy}
+      />
       <div className="card">
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 14, alignItems: 'center', marginBottom: 14 }}>
           <div>
