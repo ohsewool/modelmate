@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import api from '../api'
 import KPICard from '../components/KPICard'
 import { Button } from '../components/ui/button'
 import DatasetQualityCard from '../components/upload/DatasetQualityCard'
+import ReanalysisNotice from '../components/upload/ReanalysisNotice'
 
 const UPLOAD_DRAFT_KEY = 'mm_upload_draft'
 
@@ -29,6 +30,8 @@ export default function Upload() {
   const [loading, setLoading] = useState('')
   const fileRef = useRef()
   const nav = useNavigate()
+  const location = useLocation()
+  const reanalysisDataset = location.state?.reanalysisDataset || null
 
   useEffect(() => {
     if (!uploadInfo) return
@@ -106,6 +109,10 @@ export default function Upload() {
     sessionStorage.removeItem(UPLOAD_DRAFT_KEY)
   }
 
+  function clearReanalysis() {
+    nav('/upload', { replace: true, state: null })
+  }
+
   const activeCols = uploadInfo?.columns?.filter(c => c !== target && !dropCols.includes(c)) || []
   const targetCategory = aiAnalysis?.target_category || (aiAnalysis?.task_type === 'regression' ? '연속값 예측' : '목적 확인 필요')
   const targetReason = aiAnalysis?.target_category_reason || '데이터 구조만으로는 실제 업무 의미를 정확히 알기 어렵습니다.'
@@ -132,6 +139,9 @@ export default function Upload() {
 
       {!uploadInfo ? (
         <div style={{ display: 'grid', gap: 14 }}>
+          {reanalysisDataset && (
+            <ReanalysisNotice item={reanalysisDataset} onClear={clearReanalysis} />
+          )}
           <div
             onDragOver={e => { e.preventDefault(); setDragging(true) }}
             onDragLeave={() => setDragging(false)}

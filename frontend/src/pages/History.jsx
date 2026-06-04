@@ -141,7 +141,10 @@ export default function History() {
 
         <WorkspaceBanner profile={profile} />
 
-        <DatasetList datasets={datasets} onUpload={() => nav('/upload')} />
+        <DatasetList
+          datasets={datasets}
+          onUpload={item => nav('/upload', { state: item ? { reanalysisDataset: item } : null })}
+        />
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 10 }}>
           <StatCard label={profile?.is_admin ? '전체 실험 기록' : '내 실험 기록'} value={history.length} sub={profile?.is_admin ? '관리자 기준' : user ? '계정 기준' : '임시 기록'} />

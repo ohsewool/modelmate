@@ -36,7 +36,7 @@ export default function DatasetList({ datasets, onUpload }) {
                 onClick={() => setSelected(selected?.id === item.id ? null : item)}
               />
             ))}
-            {selected && <DatasetDetail item={selected} onUpload={onUpload} />}
+            {selected && <DatasetDetail item={selected} onUpload={() => onUpload(selected)} />}
           </div>
         )}
       </CardContent>
