@@ -6,6 +6,7 @@ import { useAuth } from '../AuthContext'
 import { Badge } from '../components/ui/badge'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
+import ExperimentDetail from '../components/history/ExperimentDetail'
 
 const fmt = value => {
   if (value === null || value === undefined || value === '') return '-'
@@ -184,6 +185,7 @@ export default function History() {
                       <th>시간</th>
                       {profile?.is_admin && <th>사용자</th>}
                       <th>데이터</th>
+                      <th>분야</th>
                       <th>맞히려는 값</th>
                       <th>예측 유형</th>
                       <th>선택 모델</th>
@@ -210,9 +212,12 @@ export default function History() {
                           </td>
                           {profile?.is_admin && <td>{item.owner_email || item.owner_name || '-'}</td>}
                           <td>{item.data_shape?.join(' x ') || '-'}</td>
+                          <td>{item.dataset_domain || '-'}</td>
                           <td>{item.target || '-'}</td>
                           <td>{taskLabel(item.task_type)}</td>
-                          <td style={{ fontWeight: 750, color: 'var(--text)' }}>{item.best_model || '-'}</td>
+                          <td style={{ fontWeight: 750, color: 'var(--text)' }}>
+                            {item.best_model || '-'} {item.agent_run && <Badge variant="default">AI</Badge>}
+                          </td>
                           <td style={{ fontWeight: 750, color: '#2563eb' }}>{metric.label} {fmt(metric.value)}</td>
                           <td>
                             <Badge variant={item.optuna_applied ? 'success' : 'secondary'}>
@@ -230,62 +235,13 @@ export default function History() {
         </Card>
 
         {selectedItem && (
-          <Card>
-            <CardHeader>
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-                <div>
-                  <CardTitle>실험 세부사항</CardTitle>
-                  <CardDescription>
-                    {selectedItem.timestamp || '-'} / {selectedItem.owner_email || user?.email || '내 기록'}
-                  </CardDescription>
-                </div>
-                <Button variant="secondary" size="sm" onClick={() => setSelectedItem(null)}>닫기</Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 10, marginBottom: 14 }}>
-                <DetailBox label="데이터 크기" value={selectedItem.data_shape?.join(' x ') || '-'} />
-                <DetailBox label="맞히려는 값" value={selectedItem.target || '-'} />
-                <DetailBox label="선택 모델" value={selectedItem.best_model || '-'} />
-                <DetailBox label="주요 성능" value={`${getPrimaryMetric(selectedItem).label} ${fmt(getPrimaryMetric(selectedItem).value)}`} />
-              </div>
-              <div style={{ overflowX: 'auto', border: '1px solid var(--border)', borderRadius: 8 }}>
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>모델</th>
-                      <th>상태</th>
-                      <th>Accuracy/R2</th>
-                      <th>F1/RMSE</th>
-                      <th>ROC-AUC/MAE</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(selectedItem.results || []).slice(0, 8).map(row => (
-                      <tr key={row.model}>
-                        <td style={{ fontWeight: 750, color: 'var(--text)' }}>{row.model}</td>
-                        <td>{row.status === 'failed' ? '실패' : row.model === selectedItem.best_model ? '선택됨' : '완료'}</td>
-                        <td>{fmt(row.accuracy ?? row.r2)}</td>
-                        <td>{fmt(row.f1 ?? row.rmse)}</td>
-                        <td>{fmt(row.roc_auc ?? row.mae)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
+          <ExperimentDetail
+            item={selectedItem}
+            owner={selectedItem.owner_email || user?.email || '내 기록'}
+            onClose={() => setSelectedItem(null)}
+          />
         )}
       </div>
-    </div>
-  )
-}
-
-function DetailBox({ label, value }) {
-  return (
-    <div className="card-elevated" style={{ padding: 12 }}>
-      <p style={{ margin: '0 0 6px', fontSize: 11, fontWeight: 750, color: 'var(--text-label)' }}>{label}</p>
-      <p style={{ margin: 0, fontSize: 14, fontWeight: 850, color: 'var(--text)' }}>{value}</p>
     </div>
   )
 }

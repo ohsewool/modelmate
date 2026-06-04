@@ -1,5 +1,5 @@
 @app.post("/api/run-agent")
-async def run_agent(demo: bool = False):
+async def run_agent(demo: bool = False, user=Depends(get_current_user)):
     X, y = STATE.get("X"), STATE.get("y")
     if X is None:
         raise HTTPException(400, "데이터가 없습니다. 먼저 업로드하고 맞히려는 값을 선택하세요.")
@@ -206,8 +206,11 @@ async def run_agent(demo: bool = False):
         "results": results,
         "optuna_applied": bool(optuna_result and optuna_result.get("applied")),
         "agent_run": True,
+        "dataset_domain": agent_insights.get("domain"),
+        "target_category": agent_insights.get("target_label"),
+        "presentation_conclusion": agent_insights.get("presentation_conclusion"),
         "task_type": STATE.get("task_type", "classification"),
-    })
+    }, user_id=user["sub"] if user else None)
 
     return {
         "steps": steps,

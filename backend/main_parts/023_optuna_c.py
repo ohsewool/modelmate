@@ -19,6 +19,7 @@
             "predictions": tuned.predict(X).tolist(),
         })
     STATE.update(state_update)
+    target_info = infer_target_category(STATE.get("df"), STATE["target_col"])
     save_history({
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "data_shape": list(X.shape),
@@ -28,5 +29,8 @@
         "optuna_applied": True,
         "tuned_score": after,
         "tuned_metric": metric_name,
+        "dataset_domain": target_info.get("dataset_domain"),
+        "target_category": target_info.get("target_category"),
+        "task_type": STATE.get("task_type", "classification"),
     }, user_id=user["sub"] if user else None)
     return result
