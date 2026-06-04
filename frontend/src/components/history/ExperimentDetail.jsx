@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
 import { Button } from '../ui/button'
 import { Badge } from '../ui/badge'
+import ExperimentActionPanel from './ExperimentActionPanel'
 
 const fmt = value => {
   if (value === null || value === undefined || value === '') return '-'
@@ -15,7 +16,7 @@ function primaryMetric(item) {
   return { label, value }
 }
 
-export default function ExperimentDetail({ item, owner, onClose }) {
+export default function ExperimentDetail({ item, owner, onClose, onNavigate }) {
   const metric = primaryMetric(item)
   const rows = [
     ['데이터 분야', item.dataset_domain || '기록 없음'],
@@ -45,6 +46,7 @@ export default function ExperimentDetail({ item, owner, onClose }) {
             <p style={{ margin: 0, fontSize: 13, color: 'var(--text)', lineHeight: 1.65 }}>{item.presentation_conclusion}</p>
           </div>
         )}
+        <ExperimentActionPanel item={item} onNavigate={onNavigate} />
         <div style={{ overflowX: 'auto', border: '1px solid var(--border)', borderRadius: 8 }}>
           <table className="data-table">
             <thead><tr><th>모델</th><th>상태</th><th>Accuracy/R2</th><th>F1/RMSE</th><th>ROC-AUC/MAE</th></tr></thead>

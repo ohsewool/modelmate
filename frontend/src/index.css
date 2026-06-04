@@ -166,6 +166,12 @@ html.dark {
   .tab-item-inactive { color: var(--text-3); }
   .tab-item-inactive:hover { color: var(--text-2); background: var(--surface-alt); }
 
+  .experiment-action-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+  }
+
   /* ── Empty state ──────────────────────────────────────── */
   .empty-state { @apply flex flex-col items-center justify-center py-24 text-center; }
   .empty-title { font-weight: 600; font-size: 15px; color: var(--text-2); margin-bottom: 4px; }
@@ -262,7 +268,8 @@ html.dark .banner-danger  { background: rgba(244,63,94,0.1);   border-color: rgb
   .admin-stat-grid,
   .admin-detail-grid,
   .recent-summary-grid,
-  .dataset-detail-grid {
+  .dataset-detail-grid,
+  .experiment-action-grid {
     grid-template-columns: 1fr !important;
   }
 
