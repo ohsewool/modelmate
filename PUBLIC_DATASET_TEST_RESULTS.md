@@ -55,3 +55,19 @@ Both the manual model comparison path and the AI analysis coach path completed w
 - Playground facility data used a Korean string target with pandas string dtype. Target encoding now handles object and string dtype safely.
 - `의무시설여부코드명` had a near-duplicate leakage feature `의무시설여부코드`. The auto-drop logic now removes target-code/code-name pairs before training.
 - Small or imbalanced classification data now chooses a safe fold count instead of forcing 3-fold StratifiedKFold.
+
+## Domain Benchmark Pass - 2026-06-04
+
+Added `scripts/run_domain_benchmark.py` to repeatedly verify dataset-domain and target-purpose inference.
+This is the base for adding more public datasets from UCI, Dacon, public data portals, and Kaggle-style CSVs.
+
+| Benchmark | Expected Domain | Expected Purpose | Result |
+|---|---|---|---|
+| heart_health | 의료/건강 진단 | 질병/진단 여부 | pass |
+| manufacturing_quality | 제조/설비 품질 | 고장 여부 | pass |
+| customer_churn | 고객 이탈/CRM | 이탈 여부 | pass |
+| sales_amount | 금액/매출 | 금액 예측 | pass |
+| unknown_table | 도메인 확인 필요 | 두 값 분류 | pass |
+
+The same script also summarizes the four real CSV files used in the project:
+`ch2025.csv`, `pima.csv`, `playground.csv`, and `seoul_bike.csv`.

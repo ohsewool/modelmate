@@ -37,19 +37,19 @@ def infer_dataset_domain(df):
             "dataset_domain_reason": "사람 ID와 수면 날짜, 라이프로그 날짜처럼 개인별 건강 기록을 나타내는 컬럼이 있습니다.",
             "dataset_domain_confidence": "높음",
         }
-    if has_any(["diabetes", "glucose", "plasma", "insulin", "bmi", "pregnant", "pregnancy", "patient", "diagnosis", "disease", "medical", "혈당", "당뇨", "진단", "환자", "질병"]):
+    if has_any(["diabetes", "glucose", "plasma", "insulin", "bmi", "pregnant", "pregnancy", "patient", "diagnosis", "disease", "medical", "cancer", "tumor", "cholesterol", "혈당", "당뇨", "진단", "환자", "질병", "암"]):
         return {
             "dataset_domain": "의료/건강 진단",
             "dataset_domain_reason": "혈당, 인슐린, BMI, 진단 결과처럼 건강 상태를 판단하는 컬럼이 있습니다.",
             "dataset_domain_confidence": "높음",
         }
-    if has_any(["fault", "failure", "defect", "machine", "sensor", "temperature", "vibration", "불량", "고장", "설비"]):
+    if has_any(["fault", "failure", "defect", "machine", "sensor", "temperature", "vibration", "torque", "tool_wear", "quality", "불량", "고장", "설비", "품질"]):
         return {
             "dataset_domain": "제조/설비 품질",
             "dataset_domain_reason": "고장, 불량, 센서, 설비 상태와 관련된 컬럼명이 있습니다.",
             "dataset_domain_confidence": "높음",
         }
-    if has_any(["churn", "customer", "retention", "subscription", "cancel", "고객", "이탈", "해지"]):
+    if has_any(["churn", "customer", "retention", "subscription", "cancel", "tenure", "contract", "monthlycharges", "고객", "이탈", "해지"]):
         return {
             "dataset_domain": "고객 이탈/CRM",
             "dataset_domain_reason": "고객, 이탈, 해지, 구독 유지와 관련된 컬럼명이 있습니다.",
@@ -67,7 +67,7 @@ def infer_dataset_domain(df):
             "dataset_domain_reason": "어린이 놀이시설, 주소, 설치장소, 실내외 구분처럼 공공시설 관리용 컬럼이 있습니다.",
             "dataset_domain_confidence": "높음",
         }
-    if has_any(["price", "sales", "revenue", "amount", "fare", "cost", "매출", "가격", "금액", "요금"]):
+    if has_any(["price", "sales", "revenue", "amount", "fare", "cost", "profit", "quantity", "order", "매출", "가격", "금액", "요금", "수량", "주문"]):
         return {
             "dataset_domain": "금액/매출",
             "dataset_domain_reason": "가격, 금액, 매출처럼 수치 규모를 다루는 컬럼명이 있습니다.",
@@ -149,6 +149,10 @@ def infer_target_category(df, target_col):
         label = "고장/불량 분류" if not is_binary_like else "고장 여부"
         reason = "컬럼명이나 값에 고장, 불량, 이상 상태와 관련된 표현이 보입니다."
         confidence = "높음"
+    elif any(word in text for word in churn_words):
+        label = "이탈 여부"
+        reason = "고객 이탈이나 해지 여부를 나타내는 표현이 보입니다."
+        confidence = "높음"
     elif any(word in text for word in pass_words) or is_binary_like:
         if any(word in text for word in pass_words):
             label = "합격 여부" if is_binary_like else "상태 분류"
@@ -158,10 +162,6 @@ def infer_target_category(df, target_col):
             label = "두 값 분류"
             reason = "정답 값이 두 종류라 분류 문제로 보이지만, 업무 의미는 컬럼명만으로 단정하기 어렵습니다."
             confidence = "낮음"
-    elif any(word in text for word in churn_words):
-        label = "이탈 여부"
-        reason = "고객 이탈이나 해지 여부를 나타내는 표현이 보입니다."
-        confidence = "높음"
     elif any(word in text for word in price_words):
         label = "금액 예측"
         reason = "가격, 금액, 매출처럼 숫자 크기를 예측하는 컬럼으로 보입니다."
