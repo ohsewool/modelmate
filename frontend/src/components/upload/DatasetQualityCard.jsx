@@ -4,6 +4,7 @@ export default function DatasetQualityCard({ quality, error, onRetry }) {
   const info = quality || error?.quality || {}
   const tips = error?.tips || []
   const reasons = info.reasons || []
+  const advice = buildAdvice(error, info)
 
   return (
     <div className="card" style={{
@@ -42,6 +43,12 @@ export default function DatasetQualityCard({ quality, error, onRetry }) {
           {tips.map(tip => <p key={tip} style={{ margin: '0 0 4px', fontSize: 12, color: 'var(--text-2)' }}>해결: {tip}</p>)}
         </div>
       )}
+
+      {advice.length > 0 && (
+        <div style={{ display: 'grid', gap: 6, marginTop: tips.length ? 10 : 0, borderTop: '1px solid rgba(148,163,184,0.25)', paddingTop: 10 }}>
+          {advice.map(item => <p key={item} style={{ margin: 0, fontSize: 12, color: 'var(--text-2)' }}>다음 행동: {item}</p>)}
+        </div>
+      )}
     </div>
   )
 }
@@ -53,4 +60,16 @@ function Metric({ label, value }) {
       <p style={{ margin: 0, fontSize: 15, color: 'var(--text)', fontWeight: 900 }}>{value}</p>
     </div>
   )
+}
+
+function buildAdvice(error, info) {
+  if (!error) return []
+  const rows = Number(info.rows || 0)
+  const cols = Number(info.columns || 0)
+  const varying = Number(info.varying_columns || 0)
+  if (rows === 0 || cols === 0) return ['엑셀에서 CSV로 다시 저장한 뒤 첫 행에 컬럼명이 있는지 확인하세요.']
+  if (cols < 2) return ['예측할 값과 참고할 정보가 최소 2개 열 이상 필요합니다.']
+  if (rows < 10) return ['데모 분석은 가능하지만 모델 비교에는 행이 더 많은 CSV가 안정적입니다.']
+  if (varying < 2) return ['모든 행이 거의 같은 값이면 학습할 패턴이 부족하므로 다른 열을 포함하세요.']
+  return ['구분자, 인코딩, 숫자/문자 컬럼이 표 형태로 정리되어 있는지 확인하세요.']
 }
