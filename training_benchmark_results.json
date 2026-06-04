@@ -1,7 +1,7 @@
 {
   "summary": {
-    "total_cases": 11,
-    "passed_cases": 11,
+    "total_cases": 14,
+    "passed_cases": 14,
     "failed_cases": 0
   },
   "results": [
@@ -157,6 +157,48 @@
       "task_type": "regression",
       "best_model": "Gradient Boosting",
       "score": 0.9449,
+      "status": "pass"
+    },
+    {
+      "name": "seoul_subway_151",
+      "shape": [
+        17280,
+        6
+      ],
+      "target": "하차총승객수",
+      "domain": "공공교통/이용자 통계",
+      "purpose": "승객 수 예측",
+      "task_type": "regression",
+      "best_model": "Ridge Regression",
+      "score": 0.0023,
+      "status": "pass"
+    },
+    {
+      "name": "seoul_subway_152",
+      "shape": [
+        19134,
+        6
+      ],
+      "target": "하차총승객수",
+      "domain": "공공교통/이용자 통계",
+      "purpose": "승객 수 예측",
+      "task_type": "regression",
+      "best_model": "Ridge Regression",
+      "score": -0.0007,
+      "status": "pass"
+    },
+    {
+      "name": "seoul_subway_153",
+      "shape": [
+        18522,
+        6
+      ],
+      "target": "하차총승객수",
+      "domain": "공공교통/이용자 통계",
+      "purpose": "승객 수 예측",
+      "task_type": "regression",
+      "best_model": "Ridge Regression",
+      "score": 0.0005,
       "status": "pass"
     }
   ]

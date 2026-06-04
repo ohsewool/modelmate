@@ -55,7 +55,7 @@ def infer_dataset_domain(df):
             "dataset_domain_reason": "고객, 이탈, 해지, 구독 유지와 관련된 컬럼명이 있습니다.",
             "dataset_domain_confidence": "높음",
         }
-    if has_any(["bike", "bicycle", "rental", "station", "member", "signup", "join", "transport", "공공자전거", "자전거", "따릉이", "대여", "정류장", "회원", "가입", "연령대", "성별", "가입건수"]):
+    if has_any(["bike", "bicycle", "rental", "station", "member", "signup", "join", "transport", "subway", "passenger", "공공자전거", "자전거", "따릉이", "대여", "정류장", "지하철", "노선", "역명", "승객", "승차", "하차", "회원", "가입", "연령대", "성별", "가입건수"]):
         return {
             "dataset_domain": "공공교통/이용자 통계",
             "dataset_domain_reason": "공공자전거, 회원, 가입, 연령대처럼 교통 서비스 이용자를 집계한 컬럼이 있습니다.",
@@ -121,9 +121,13 @@ def infer_target_category(df, target_col):
         label = "건강 지표 예측"
         reason = "전체 컬럼이 건강 진단 구조라 맞힐 값을 건강 관련 지표로 보는 것이 자연스럽습니다."
         confidence = "중간"
+    elif domain_name == "공공교통/이용자 통계" and any(word in name for word in ["승객", "승차", "하차", "passenger"]):
+        label = "승객 수 예측"
+        reason = "공공교통 이용자 통계 구조이고, 맞힐 값이 승객 수입니다."
+        confidence = "높음"
     elif domain_name == "공공교통/이용자 통계" and any(word in name for word in ["count", "건수", "가입"]):
         label = "가입자 수 예측"
-        reason = "공공자전거 가입자 통계 구조이고, 맞힐 값이 가입 건수입니다."
+        reason = "공공교통 이용자 통계 구조이고, 맞힐 값이 가입 또는 이용 건수입니다."
         confidence = "높음"
     elif domain_name == "공공교통/이용자 통계":
         label = "이용자 통계 예측"

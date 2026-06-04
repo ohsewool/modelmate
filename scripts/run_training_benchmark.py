@@ -39,10 +39,11 @@ def sklearn_cases():
 
 def real_csv_cases():
     rows = []
-    for path in sorted((ROOT / "tmp_datasets").glob("*.csv")):
-        raw, _ = m.decode_upload_bytes(path.read_bytes())
-        df, _ = m.read_table_text(raw, path.name)
-        rows.append((path.stem, df, m.infer_default_target(df)))
+    for folder in ["tmp_datasets", "tmp_public_downloads"]:
+        for path in sorted((ROOT / folder).glob("*.csv")):
+            raw, _ = m.decode_upload_bytes(path.read_bytes())
+            df, _ = m.read_table_text(raw, path.name)
+            rows.append((path.stem, df, m.infer_default_target(df)))
     return rows
 
 

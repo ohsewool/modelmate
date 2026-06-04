@@ -78,16 +78,20 @@ The same script also summarizes the four real CSV files used in the project:
 Added `scripts/run_training_benchmark.py` to run end-to-end training checks without using external AI tokens.
 The script prepares each dataset, selects the target, runs preprocessing, trains candidate models, and records the best model/score.
 
-Current result: 11 / passed: 11 / failed: 0.
+Current result: 14 / passed: 14 / failed: 0.
 
 | Group | Cases |
 |---|---|
 | scikit-learn public datasets | iris, wine, breast cancer, diabetes regression, linnerud weight |
 | synthetic representative CSVs | fault/failure classification, sales regression |
 | real project CSVs | CH2025, Pima diabetes, playground facility, Seoul bike signup |
+| public institution CSVs | Seoul subway monthly passenger files from Seoul Open Data Plaza |
 
 Fixes found during this pass:
 
 - Numeric column names now work in feature-drop checks.
 - Numeric targets with mostly unique values are treated as regression instead of small-code classification.
 - Benchmark scripts disable history writes so QA runs do not pollute user experiment history.
+- Subway passenger-count files are recognized as public transport/user statistics and passenger-count regression.
+
+Downloaded public institution files used during the benchmark are kept in `tmp_public_downloads/` and ignored by Git.
