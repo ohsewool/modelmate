@@ -61,6 +61,7 @@ async def html_report(autoprint: bool = False):
             ("Accuracy", best_row.get("accuracy", "—")),
         ]
 
+    best_score = best_row.get("r2") if is_reg else best_row.get("roc_auc", best_row.get("accuracy"))
     perf_html = "".join(f"<div class='kpi'><div class='kl'>{k}</div><div class='kv'>{v}</div></div>"
                         for k, v in perf_items)
 
@@ -75,8 +76,10 @@ async def html_report(autoprint: bool = False):
 
     # 피처 중요도
     fi_html = ""
+    top_feature = None
     if model and hasattr(model, "feature_importances_") and X is not None:
         fi = sorted(zip(X.columns, model.feature_importances_), key=lambda x: x[1], reverse=True)[:8]
+        top_feature = fi[0][0] if fi else None
         max_fi = fi[0][1] if fi else 1
         bars = "".join(
             f"<div style='display:flex;align-items:center;gap:10px;margin-bottom:6px'>"
@@ -87,3 +90,16 @@ async def html_report(autoprint: bool = False):
             f"<span style='font-size:.83rem;width:44px;text-align:right;color:#6366f1'>{imp*100:.1f}%</span></div>"
             for i,(col,imp) in enumerate(fi))
         fi_html = f"<h2>📊 피처 중요도 Top 8</h2>{bars}"
+
+    opt_for_insights = opt if opt and opt.get("status") else None
+    insights = build_agent_insights(name, best_score, opt_for_insights, top_feature)
+    risk_html = "".join(f"<li>{note}</li>" for note in insights.get("risk_notes", [])[:3])
+    action_html = "".join(f"<li>{action}</li>" for action in insights.get("next_actions", [])[:3])
+    business_html = (
+        f"<h2>💼 의사결정 요약</h2>"
+        f"<div class='decision-box'><b>{insights.get('presentation_conclusion')}</b>"
+        f"<p>{insights.get('domain')} 데이터에서 {insights.get('target_label')} 판단을 보조하는 모델로 활용할 수 있습니다.</p>"
+        f"<p>{insights.get('score_comment')} {insights.get('model_reason')}</p>"
+        f"<div class='decision-grid'><div><b>주의할 점</b><ul>{risk_html}</ul></div>"
+        f"<div><b>다음 행동</b><ul>{action_html}</ul></div></div></div>"
+    )

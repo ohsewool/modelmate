@@ -31,6 +31,12 @@
   code{{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:.8rem;color:#4f46e5}}
   .badge{{display:inline-block;background:#dcfce7;color:#059669;border-radius:6px;
            padding:2px 10px;font-size:.75rem;font-weight:700}}
+  .decision-box{{background:white;border:1px solid #dbeafe;border-radius:14px;
+                  padding:18px 20px;box-shadow:0 1px 6px rgba(37,99,235,.08)}}
+  .decision-box p{{font-size:.86rem;color:#475569;margin-top:8px}}
+  .decision-grid{{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}}
+  .decision-grid div{{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px}}
+  .decision-grid ul{{margin:8px 0 0 16px;font-size:.8rem;color:#475569}}
   .footer{{margin-top:40px;color:#94a3b8;font-size:.75rem;text-align:center;
             border-top:1px solid #e2e8f0;padding-top:20px}}
   .no-print{{text-align:center;margin-bottom:20px}}
@@ -59,6 +65,8 @@
   <p>생성일시: {now} &nbsp;·&nbsp; 작업 유형: {'회귀 (Regression)' if is_reg else '분류 (Classification)'}
      &nbsp;·&nbsp; 타깃: {STATE.get('target_col','—')}</p>
 </div>
+
+{business_html}
 
 <h2>📋 데이터 요약</h2>
 <div class="kpis">
