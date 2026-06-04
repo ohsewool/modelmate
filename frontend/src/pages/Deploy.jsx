@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import api from '../api'
 import WorkspaceBanner from '../components/workspace/WorkspaceBanner'
+import ApiReadinessPanel from '../components/deploy/ApiReadinessPanel'
 import ShareValuePanel from '../components/deploy/ShareValuePanel'
 
 const fmt = value => {
@@ -268,6 +269,8 @@ export default function Deploy() {
         </section>
 
         <ShareValuePanel models={models} hasModel={hasModel} />
+
+        <ApiReadinessPanel models={models} hasModel={hasModel} />
 
         <ShareFlow hasModel={hasModel} modelCount={models.length} />
 
