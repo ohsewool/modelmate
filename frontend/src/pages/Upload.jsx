@@ -4,6 +4,7 @@ import api from '../api'
 import KPICard from '../components/KPICard'
 import { Button } from '../components/ui/button'
 import DatasetQualityCard from '../components/upload/DatasetQualityCard'
+import DemoDatasetGuide from '../components/upload/DemoDatasetGuide'
 import ReanalysisNotice from '../components/upload/ReanalysisNotice'
 
 const UPLOAD_DRAFT_KEY = 'mm_upload_draft'
@@ -142,6 +143,7 @@ export default function Upload() {
           {reanalysisDataset && (
             <ReanalysisNotice item={reanalysisDataset} onClear={clearReanalysis} />
           )}
+          <DemoDatasetGuide />
           <div
             onDragOver={e => { e.preventDefault(); setDragging(true) }}
             onDragLeave={() => setDragging(false)}
