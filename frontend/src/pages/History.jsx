@@ -12,6 +12,7 @@ import ExperimentDetail from '../components/history/ExperimentDetail'
 import RecentExperimentSummary from '../components/history/RecentExperimentSummary'
 import DatasetList from '../components/workspace/DatasetList'
 import WorkspaceBanner from '../components/workspace/WorkspaceBanner'
+import WorkspaceValuePanel from '../components/workspace/WorkspaceValuePanel'
 
 const fmt = value => {
   if (value === null || value === undefined || value === '') return '-'
@@ -178,6 +179,15 @@ export default function History() {
         </Card>
 
         <WorkspaceBanner profile={profile} />
+
+        <WorkspaceValuePanel
+          user={user}
+          profile={profile}
+          datasets={datasets}
+          history={history}
+          onStart={() => nav('/upload')}
+          onLogin={() => nav('/login')}
+        />
 
         {profile?.is_admin && <AdminDashboard summary={adminSummary} />}
 
