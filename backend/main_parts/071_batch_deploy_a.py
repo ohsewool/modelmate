@@ -48,7 +48,7 @@ async def predict_batch(file: UploadFile = File(...)):
 
 # ── 모델 배포 ─────────────────────────────────────────────
 @app.post("/api/deploy")
-async def deploy_model(body: dict):
+async def deploy_model(body: dict, user=Depends(get_current_user)):
     import uuid
     model = STATE.get("best_model"); X = STATE.get("X")
     if model is None: raise HTTPException(400, "학습된 모델 없음")

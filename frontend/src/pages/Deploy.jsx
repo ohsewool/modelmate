@@ -117,6 +117,7 @@ function ModelCard({ model, onDelete }) {
   const [confirming, setConfirming] = useState(false)
   const metric = model.metrics?.best_cv || model.metrics || {}
   const primary = model.task_type === 'regression' ? metric.r2 : metric.roc_auc
+  const source = model.dataset_ref?.filename || '원본 데이터셋 정보 없음'
   return (
     <section className="card animate-slide-up" style={{ display: 'grid', gap: 16 }}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 14 }}>
@@ -125,9 +126,13 @@ function ModelCard({ model, onDelete }) {
             <h2 style={{ margin: 0, fontSize: 17, fontWeight: 850 }}>{model.name}</h2>
             <span className="badge badge-blue">{model.best_model_name}</span>
             <span className="badge badge-green">{model.task_type}</span>
+            <span className="badge badge-amber">{model.owner_scope || '저장 모델'}</span>
           </div>
           <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)' }}>
             ID {model.id} / 맞히려는 값 {model.target_col} / 점수 {fmt(primary)}
+          </p>
+          <p style={{ margin: '6px 0 0', fontSize: 12, color: 'var(--text-label)' }}>
+            원본 {source}
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>

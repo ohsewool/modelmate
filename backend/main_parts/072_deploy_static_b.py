@@ -11,21 +11,31 @@
 
     conn = get_db()
     conn.execute(
-        "INSERT INTO deployed_models (id,name,task_type,best_model_name,target_col,features,metrics,created_at)"
-        " VALUES (?,?,?,?,?,?,?,?)",
+        "INSERT INTO deployed_models (id,name,task_type,best_model_name,target_col,features,metrics,created_at,user_id,dataset_ref)"
+        " VALUES (?,?,?,?,?,?,?,?,?,?)",
         (model_id, name, task_type, STATE.get("best_model_name"),
          STATE.get("target_col"),
          json.dumps(features_meta, ensure_ascii=False),
          json.dumps(metrics, ensure_ascii=False),
-         datetime.now().isoformat())
+         datetime.now().isoformat(),
+         user["sub"] if user else None,
+         json.dumps(STATE.get("current_dataset"), ensure_ascii=False))
     )
     conn.commit(); conn.close()
     return {"model_id": model_id, "name": name}
 
 @app.get("/api/deployed")
-async def list_deployed():
+async def list_deployed(user=Depends(get_current_user)):
     conn = get_db()
-    rows = conn.execute("SELECT * FROM deployed_models ORDER BY created_at DESC").fetchall()
+    if user and user.get("role") == "admin":
+        rows = conn.execute("SELECT * FROM deployed_models ORDER BY created_at DESC").fetchall()
+    elif user:
+        rows = conn.execute(
+            "SELECT * FROM deployed_models WHERE user_id=? OR user_id IS NULL ORDER BY created_at DESC",
+            (user["sub"],),
+        ).fetchall()
+    else:
+        rows = conn.execute("SELECT * FROM deployed_models WHERE user_id IS NULL ORDER BY created_at DESC").fetchall()
     conn.close()
     return [{
         "id": r["id"], "name": r["name"],
@@ -33,15 +43,21 @@ async def list_deployed():
         "target_col": r["target_col"],
         "features": json.loads(r["features"]),
         "metrics": json.loads(r["metrics"]),
+        "dataset_ref": json.loads(r["dataset_ref"]) if r["dataset_ref"] else None,
+        "owner_scope": "내 모델" if user and r["user_id"] == user.get("sub") else "공용 모델",
         "created_at": r["created_at"],
         "file_exists": os.path.exists(os.path.join(MODELS_DIR, f"{r['id']}.pkl")),
     } for r in rows]
 
 @app.delete("/api/deployed/{model_id}")
-async def delete_deployed(model_id: str):
+async def delete_deployed(model_id: str, user=Depends(get_current_user)):
     fp = os.path.join(MODELS_DIR, f"{model_id}.pkl")
     if os.path.exists(fp): os.remove(fp)
     conn = get_db()
+    row = conn.execute("SELECT user_id FROM deployed_models WHERE id=?", (model_id,)).fetchone()
+    if row and row["user_id"] and (not user or (user.get("role") != "admin" and row["user_id"] != user.get("sub"))):
+        conn.close()
+        raise HTTPException(403, "이 모델을 삭제할 권한이 없습니다.")
     conn.execute("DELETE FROM deployed_models WHERE id=?", (model_id,))
     conn.commit(); conn.close()
     return {"ok": True}

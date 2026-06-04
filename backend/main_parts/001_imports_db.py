@@ -95,6 +95,11 @@ def init_db():
             created_at TEXT
         )
     """)
+    deploy_cols = [r[1] for r in conn.execute("PRAGMA table_info(deployed_models)").fetchall()]
+    if "user_id" not in deploy_cols:
+        conn.execute("ALTER TABLE deployed_models ADD COLUMN user_id TEXT")
+    if "dataset_ref" not in deploy_cols:
+        conn.execute("ALTER TABLE deployed_models ADD COLUMN dataset_ref TEXT")
     conn.execute("""
         CREATE TABLE IF NOT EXISTS projects (
             id TEXT PRIMARY KEY,

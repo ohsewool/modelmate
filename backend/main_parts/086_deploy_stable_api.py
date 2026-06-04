@@ -9,7 +9,7 @@
 
 
 @app.post("/api/deploy/stable")
-async def deploy_model_stable(body: dict):
+async def deploy_model_stable(body: dict, user=Depends(get_current_user)):
     import uuid
     model, X = STATE.get("best_model"), STATE.get("X")
     if model is None or X is None:
@@ -34,15 +34,18 @@ async def deploy_model_stable(body: dict):
         "target_col": STATE.get("target_col"),
         "best_model_name": STATE.get("best_model_name"),
         "metrics": metrics,
+        "dataset_ref": STATE.get("current_dataset"),
     }
     joblib.dump(bundle, deployed_model_path(model_id))
     conn = get_db()
     conn.execute(
-        "INSERT INTO deployed_models (id,name,task_type,best_model_name,target_col,features,metrics,created_at)"
-        " VALUES (?,?,?,?,?,?,?,?)",
+        "INSERT INTO deployed_models (id,name,task_type,best_model_name,target_col,features,metrics,created_at,user_id,dataset_ref)"
+        " VALUES (?,?,?,?,?,?,?,?,?,?)",
         (model_id, name, task_type, STATE.get("best_model_name"), STATE.get("target_col"),
          json.dumps(features_meta, ensure_ascii=False), json.dumps(metrics, ensure_ascii=False),
-         datetime.now().isoformat())
+         datetime.now().isoformat(),
+         user["sub"] if user else None,
+         json.dumps(STATE.get("current_dataset"), ensure_ascii=False))
     )
     conn.commit()
     conn.close()
@@ -51,6 +54,7 @@ async def deploy_model_stable(body: dict):
         "model_id": model_id,
         "name": name,
         "task_type": task_type,
+        "dataset_ref": STATE.get("current_dataset"),
         "features": features_meta,
         "predict_url": f"/api/v2/{model_id}/predict",
     }
