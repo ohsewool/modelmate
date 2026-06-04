@@ -49,6 +49,15 @@ export default function AgentInsightCards({ insights }) {
         <p style={{ fontSize: 12, fontWeight: 900, color: 'var(--text)', margin: '0 0 6px' }}>발표용 한 문장</p>
         <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6, margin: 0 }}>{insights.presentation_conclusion}</p>
       </div>
+      {!!insights.next_actions?.length && (
+        <div style={{ display: 'grid', gap: 7, marginTop: 10 }}>
+          {insights.next_actions.map(action => (
+            <div key={action} style={{ fontSize: 12, color: '#1d4ed8', padding: '8px 10px', borderRadius: 10, background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.18)' }}>
+              다음 행동 · {action}
+            </div>
+          ))}
+        </div>
+      )}
       <div style={{ display: 'grid', gap: 7, marginTop: 10 }}>
         {(insights.risk_notes || []).map(note => (
           <div key={note} style={{ fontSize: 12, color: 'var(--text-2)', padding: '8px 10px', borderRadius: 10, background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.18)' }}>

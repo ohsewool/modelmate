@@ -42,6 +42,25 @@ def _risk_notes(df, X, score, target_info):
     return notes[:4] or ["현재 흐름에서는 큰 위험 신호가 보이지 않습니다."]
 
 
+def _next_actions(df, X, score, optuna_result, target_info, top_feature):
+    actions = []
+    if df is not None and len(df) < 100:
+        actions.append("발표 전 같은 형식의 데이터를 더 모아 모델 안정성을 다시 확인하세요.")
+    if score is not None and score < 0.65:
+        actions.append("맞힐 값과 제외 컬럼을 다시 점검한 뒤 모델 비교를 한 번 더 실행하세요.")
+    if target_info.get("target_category_confidence") == "낮음":
+        actions.append("맞힐 값이 실제 업무에서 무엇을 의미하는지 발표자가 직접 한 문장으로 보강하세요.")
+    if optuna_result and optuna_result.get("applied"):
+        actions.append("개선된 모델을 기준으로 이유 보기와 결과 요약을 발표 자료에 반영하세요.")
+    elif optuna_result:
+        actions.append("튜닝으로 큰 개선이 없었으므로 현재 모델을 안정적인 기준 모델로 설명하세요.")
+    if top_feature:
+        actions.append(f"{top_feature}가 왜 중요한지 실제 데이터 의미와 연결해 설명하세요.")
+    if X is not None and X.shape[1] < 3:
+        actions.append("참고 정보가 적으므로 추가 컬럼을 넣었을 때 성능이 달라지는지 확인하세요.")
+    return actions[:4] or ["현재 결과 요약을 저장하고, 새 데이터 예측 화면에서 같은 흐름을 시연하세요."]
+
+
 def build_agent_insights(best_name=None, best_score=None, optuna_result=None, top_feature=None):
     df = STATE.get("df")
     X = STATE.get("X")
@@ -66,5 +85,6 @@ def build_agent_insights(best_name=None, best_score=None, optuna_result=None, to
         "score_comment": _score_comment(best_score),
         "tuning_status": tuning_status,
         "risk_notes": _risk_notes(df, X, best_score, target_info),
+        "next_actions": _next_actions(df, X, best_score, optuna_result, target_info, top_feature),
         "presentation_conclusion": conclusion,
     }

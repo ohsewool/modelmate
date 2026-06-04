@@ -209,6 +209,7 @@ async def run_agent(demo: bool = False, user=Depends(get_current_user)):
         "dataset_domain": agent_insights.get("domain"),
         "target_category": agent_insights.get("target_label"),
         "presentation_conclusion": agent_insights.get("presentation_conclusion"),
+        "next_actions": agent_insights.get("next_actions", []),
         "task_type": STATE.get("task_type", "classification"),
     }, user_id=user["sub"] if user else None)
 
