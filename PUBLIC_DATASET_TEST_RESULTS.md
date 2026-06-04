@@ -36,3 +36,22 @@ This file records the first AutoML robustness pass for the Part 1 backend owner.
 - ID-like, datetime-like, and constant columns are now filtered more conservatively.
 - Model failures are represented with `status: failed` and `error_message` instead of fake `0.0` metrics.
 - Next recommended step: test real uploaded CSV files from UCI/Kaggle-style sources and verify the frontend rendering of failed model rows.
+
+## Real CSV Regression Pass - 2026-06-04
+
+The overnight enhancement pass tested real CSV files previously used in the project discussion.
+Both the manual model comparison path and the AI analysis coach path completed without errors.
+
+| Dataset | Inferred Domain | Target Purpose | Task | Target | Best Model | Score | Result |
+|---|---|---|---|---|---|---:|---|
+| pima.csv | 의료/건강 진단 | 당뇨 여부 | classification | diabetes | Logistic Regression | 0.8314 ROC-AUC | pass |
+| ch2025.csv | 수면/건강 라이프로그 | 수면/건강 상태 분류 | classification | S3 | Logistic Regression | 0.7336 ROC-AUC | pass |
+| seoul_bike.csv | 공공교통/이용자 통계 | 가입자 수 예측 | regression | 가입건수 | Gradient Boosting | 0.9449 R2 | pass |
+| playground.csv | 공공시설/안전 관리 | 시설 상태/여부 분류 | classification | 의무시설여부코드명 | Random Forest | 0.9535 ROC-AUC | pass |
+
+### Fixes Found During This Pass
+
+- Public bicycle signup data was a numeric regression target, but the agent path previously used classification CV. It now uses regression models and KFold when the target is a continuous numeric value.
+- Playground facility data used a Korean string target with pandas string dtype. Target encoding now handles object and string dtype safely.
+- `의무시설여부코드명` had a near-duplicate leakage feature `의무시설여부코드`. The auto-drop logic now removes target-code/code-name pairs before training.
+- Small or imbalanced classification data now chooses a safe fold count instead of forcing 3-fold StratifiedKFold.

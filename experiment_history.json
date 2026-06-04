@@ -108,5 +108,665 @@
       }
     ],
     "optuna_applied": false
+  },
+  {
+    "timestamp": "2026-06-04 12:27:23",
+    "data_shape": [
+      768,
+      8
+    ],
+    "target": "diabetes",
+    "best_model": "Logistic Regression",
+    "results": [
+      {
+        "model": "Logistic Regression",
+        "accuracy": 0.7708,
+        "f1": 0.7644,
+        "roc_auc": 0.8314
+      },
+      {
+        "model": "Random Forest",
+        "accuracy": 0.75,
+        "f1": 0.7462,
+        "roc_auc": 0.8267
+      },
+      {
+        "model": "Gradient Boosting",
+        "accuracy": 0.7552,
+        "f1": 0.7519,
+        "roc_auc": 0.8176
+      },
+      {
+        "model": "Decision Tree",
+        "accuracy": 0.7031,
+        "f1": 0.704,
+        "roc_auc": 0.6769
+      }
+    ],
+    "optuna_applied": true,
+    "agent_run": true,
+    "task_type": "classification"
+  },
+  {
+    "timestamp": "2026-06-04 12:28:08",
+    "data_shape": [
+      450,
+      5
+    ],
+    "target": "S3",
+    "best_model": "Logistic Regression",
+    "results": [
+      {
+        "model": "Logistic Regression",
+        "accuracy": 0.7133,
+        "f1": 0.7005,
+        "roc_auc": 0.7336
+      },
+      {
+        "model": "Gradient Boosting",
+        "accuracy": 0.7022,
+        "f1": 0.682,
+        "roc_auc": 0.6921
+      },
+      {
+        "model": "Random Forest",
+        "accuracy": 0.6956,
+        "f1": 0.6828,
+        "roc_auc": 0.6696
+      },
+      {
+        "model": "Decision Tree",
+        "accuracy": 0.7,
+        "f1": 0.6923,
+        "roc_auc": 0.6659
+      }
+    ],
+    "optuna_applied": true,
+    "agent_run": true,
+    "task_type": "classification"
+  },
+  {
+    "timestamp": "2026-06-04 12:35:29",
+    "data_shape": [
+      768,
+      8
+    ],
+    "target": "diabetes",
+    "best_model": "Logistic Regression",
+    "results": [
+      {
+        "model": "Logistic Regression",
+        "status": "ok",
+        "accuracy": 0.7708,
+        "f1": 0.7644,
+        "roc_auc": 0.8314
+      },
+      {
+        "model": "Random Forest",
+        "status": "ok",
+        "accuracy": 0.75,
+        "f1": 0.7462,
+        "roc_auc": 0.8267
+      },
+      {
+        "model": "Gradient Boosting",
+        "status": "ok",
+        "accuracy": 0.7552,
+        "f1": 0.7519,
+        "roc_auc": 0.8176
+      },
+      {
+        "model": "Decision Tree",
+        "status": "ok",
+        "accuracy": 0.7031,
+        "f1": 0.704,
+        "roc_auc": 0.6769
+      }
+    ],
+    "optuna_applied": false,
+    "agent_run": true,
+    "task_type": "classification"
+  },
+  {
+    "timestamp": "2026-06-04 12:35:33",
+    "data_shape": [
+      450,
+      5
+    ],
+    "target": "S3",
+    "best_model": "Logistic Regression",
+    "results": [
+      {
+        "model": "Logistic Regression",
+        "status": "ok",
+        "accuracy": 0.7133,
+        "f1": 0.7005,
+        "roc_auc": 0.7336
+      },
+      {
+        "model": "Gradient Boosting",
+        "status": "ok",
+        "accuracy": 0.7022,
+        "f1": 0.682,
+        "roc_auc": 0.6921
+      },
+      {
+        "model": "Random Forest",
+        "status": "ok",
+        "accuracy": 0.6956,
+        "f1": 0.6828,
+        "roc_auc": 0.6696
+      },
+      {
+        "model": "Decision Tree",
+        "status": "ok",
+        "accuracy": 0.7,
+        "f1": 0.6923,
+        "roc_auc": 0.6659
+      }
+    ],
+    "optuna_applied": false,
+    "agent_run": true,
+    "task_type": "classification"
+  },
+  {
+    "timestamp": "2026-06-04 12:35:35",
+    "data_shape": [
+      96,
+      3
+    ],
+    "target": "가입건수",
+    "best_model": "Gradient Boosting",
+    "results": [
+      {
+        "model": "Gradient Boosting",
+        "status": "ok",
+        "r2": 0.9449,
+        "rmse": 377.6831,
+        "mae": 287.013
+      },
+      {
+        "model": "Random Forest",
+        "status": "ok",
+        "r2": 0.8954,
+        "rmse": 512.6106,
+        "mae": 395.2661
+      },
+      {
+        "model": "Decision Tree",
+        "status": "ok",
+        "r2": 0.8493,
+        "rmse": 619.4101,
+        "mae": 413.2812
+      },
+      {
+        "model": "Ridge Regression",
+        "status": "ok",
+        "r2": 0.2659,
+        "rmse": 1392.8038,
+        "mae": 1168.6713
+      }
+    ],
+    "optuna_applied": false,
+    "agent_run": true,
+    "task_type": "regression"
+  },
+  {
+    "timestamp": "2026-06-04 12:35:48",
+    "data_shape": [
+      4804,
+      14
+    ],
+    "target": "의무시설여부코드명",
+    "best_model": "Random Forest",
+    "results": [
+      {
+        "model": "Random Forest",
+        "status": "ok",
+        "accuracy": 1.0,
+        "f1": 1.0,
+        "roc_auc": 1.0
+      },
+      {
+        "model": "Gradient Boosting",
+        "status": "ok",
+        "accuracy": 1.0,
+        "f1": 1.0,
+        "roc_auc": 1.0
+      },
+      {
+        "model": "Logistic Regression",
+        "status": "ok",
+        "accuracy": 0.9998,
+        "f1": 0.9998,
+        "roc_auc": 1.0
+      },
+      {
+        "model": "Decision Tree",
+        "status": "ok",
+        "accuracy": 1.0,
+        "f1": 1.0,
+        "roc_auc": 1.0
+      }
+    ],
+    "optuna_applied": false,
+    "agent_run": true,
+    "task_type": "classification"
+  },
+  {
+    "timestamp": "2026-06-04 12:37:30",
+    "data_shape": [
+      4804,
+      13
+    ],
+    "target": "의무시설여부코드명",
+    "best_model": "Random Forest",
+    "results": [
+      {
+        "model": "Random Forest",
+        "status": "ok",
+        "accuracy": 0.8968,
+        "f1": 0.8968,
+        "roc_auc": 0.9535
+      },
+      {
+        "model": "Gradient Boosting",
+        "status": "ok",
+        "accuracy": 0.8876,
+        "f1": 0.8874,
+        "roc_auc": 0.9376
+      },
+      {
+        "model": "Decision Tree",
+        "status": "ok",
+        "accuracy": 0.8647,
+        "f1": 0.8647,
+        "roc_auc": 0.8652
+      },
+      {
+        "model": "Logistic Regression",
+        "status": "ok",
+        "accuracy": 0.8006,
+        "f1": 0.7989,
+        "roc_auc": 0.8539
+      }
+    ],
+    "optuna_applied": false,
+    "agent_run": true,
+    "task_type": "classification"
+  },
+  {
+    "timestamp": "2026-06-04 12:37:33",
+    "data_shape": [
+      96,
+      3
+    ],
+    "target": "가입건수",
+    "best_model": "Gradient Boosting",
+    "results": [
+      {
+        "model": "Gradient Boosting",
+        "status": "ok",
+        "r2": 0.9449,
+        "rmse": 377.6831,
+        "mae": 287.013
+      },
+      {
+        "model": "Random Forest",
+        "status": "ok",
+        "r2": 0.8954,
+        "rmse": 512.6106,
+        "mae": 395.2661
+      },
+      {
+        "model": "Decision Tree",
+        "status": "ok",
+        "r2": 0.8493,
+        "rmse": 619.4101,
+        "mae": 413.2812
+      },
+      {
+        "model": "Ridge Regression",
+        "status": "ok",
+        "r2": 0.2659,
+        "rmse": 1392.8038,
+        "mae": 1168.6713
+      }
+    ],
+    "optuna_applied": false,
+    "agent_run": true,
+    "task_type": "regression"
+  },
+  {
+    "timestamp": "2026-06-04 12:47:56",
+    "data_shape": [
+      768,
+      8
+    ],
+    "target": "diabetes",
+    "best_model": "Logistic Regression",
+    "results": [
+      {
+        "model": "Logistic Regression",
+        "status": "ok",
+        "accuracy": 0.7708,
+        "f1": 0.7644,
+        "roc_auc": 0.8314
+      },
+      {
+        "model": "Random Forest",
+        "status": "ok",
+        "accuracy": 0.75,
+        "f1": 0.7462,
+        "roc_auc": 0.8267
+      },
+      {
+        "model": "Gradient Boosting",
+        "status": "ok",
+        "accuracy": 0.7552,
+        "f1": 0.7519,
+        "roc_auc": 0.8176
+      },
+      {
+        "model": "Decision Tree",
+        "status": "ok",
+        "accuracy": 0.7031,
+        "f1": 0.704,
+        "roc_auc": 0.6769
+      }
+    ],
+    "optuna_applied": false,
+    "task_type": "classification"
+  },
+  {
+    "timestamp": "2026-06-04 12:48:09",
+    "data_shape": [
+      768,
+      8
+    ],
+    "target": "diabetes",
+    "best_model": "Logistic Regression",
+    "results": [
+      {
+        "model": "Logistic Regression",
+        "status": "ok",
+        "accuracy": 0.7708,
+        "f1": 0.7644,
+        "roc_auc": 0.8314
+      },
+      {
+        "model": "Random Forest",
+        "status": "ok",
+        "accuracy": 0.75,
+        "f1": 0.7462,
+        "roc_auc": 0.8267
+      },
+      {
+        "model": "Gradient Boosting",
+        "status": "ok",
+        "accuracy": 0.7552,
+        "f1": 0.7519,
+        "roc_auc": 0.8176
+      },
+      {
+        "model": "Decision Tree",
+        "status": "ok",
+        "accuracy": 0.7031,
+        "f1": 0.704,
+        "roc_auc": 0.6769
+      }
+    ],
+    "optuna_applied": false,
+    "agent_run": true,
+    "task_type": "classification"
+  },
+  {
+    "timestamp": "2026-06-04 12:48:17",
+    "data_shape": [
+      450,
+      5
+    ],
+    "target": "S3",
+    "best_model": "Logistic Regression",
+    "results": [
+      {
+        "model": "Logistic Regression",
+        "status": "ok",
+        "accuracy": 0.7133,
+        "f1": 0.7005,
+        "roc_auc": 0.7336
+      },
+      {
+        "model": "Gradient Boosting",
+        "status": "ok",
+        "accuracy": 0.7022,
+        "f1": 0.682,
+        "roc_auc": 0.6921
+      },
+      {
+        "model": "Random Forest",
+        "status": "ok",
+        "accuracy": 0.6956,
+        "f1": 0.6828,
+        "roc_auc": 0.6696
+      },
+      {
+        "model": "Decision Tree",
+        "status": "ok",
+        "accuracy": 0.7,
+        "f1": 0.6923,
+        "roc_auc": 0.6659
+      }
+    ],
+    "optuna_applied": false,
+    "task_type": "classification"
+  },
+  {
+    "timestamp": "2026-06-04 12:48:25",
+    "data_shape": [
+      450,
+      5
+    ],
+    "target": "S3",
+    "best_model": "Logistic Regression",
+    "results": [
+      {
+        "model": "Logistic Regression",
+        "status": "ok",
+        "accuracy": 0.7133,
+        "f1": 0.7005,
+        "roc_auc": 0.7336
+      },
+      {
+        "model": "Gradient Boosting",
+        "status": "ok",
+        "accuracy": 0.7022,
+        "f1": 0.682,
+        "roc_auc": 0.6921
+      },
+      {
+        "model": "Random Forest",
+        "status": "ok",
+        "accuracy": 0.6956,
+        "f1": 0.6828,
+        "roc_auc": 0.6696
+      },
+      {
+        "model": "Decision Tree",
+        "status": "ok",
+        "accuracy": 0.7,
+        "f1": 0.6923,
+        "roc_auc": 0.6659
+      }
+    ],
+    "optuna_applied": false,
+    "agent_run": true,
+    "task_type": "classification"
+  },
+  {
+    "timestamp": "2026-06-04 12:48:31",
+    "data_shape": [
+      96,
+      3
+    ],
+    "target": "가입건수",
+    "best_model": "Gradient Boosting",
+    "results": [
+      {
+        "model": "Gradient Boosting",
+        "status": "ok",
+        "r2": 0.9449,
+        "rmse": 377.6831,
+        "mae": 287.013
+      },
+      {
+        "model": "Random Forest",
+        "status": "ok",
+        "r2": 0.8954,
+        "rmse": 512.6106,
+        "mae": 395.2661
+      },
+      {
+        "model": "Decision Tree",
+        "status": "ok",
+        "r2": 0.8493,
+        "rmse": 619.4101,
+        "mae": 413.2812
+      },
+      {
+        "model": "Ridge Regression",
+        "status": "ok",
+        "r2": 0.2659,
+        "rmse": 1392.8038,
+        "mae": 1168.6713
+      }
+    ],
+    "optuna_applied": false,
+    "task_type": "regression"
+  },
+  {
+    "timestamp": "2026-06-04 12:48:37",
+    "data_shape": [
+      96,
+      3
+    ],
+    "target": "가입건수",
+    "best_model": "Gradient Boosting",
+    "results": [
+      {
+        "model": "Gradient Boosting",
+        "status": "ok",
+        "r2": 0.9449,
+        "rmse": 377.6831,
+        "mae": 287.013
+      },
+      {
+        "model": "Random Forest",
+        "status": "ok",
+        "r2": 0.8954,
+        "rmse": 512.6106,
+        "mae": 395.2661
+      },
+      {
+        "model": "Decision Tree",
+        "status": "ok",
+        "r2": 0.8493,
+        "rmse": 619.4101,
+        "mae": 413.2812
+      },
+      {
+        "model": "Ridge Regression",
+        "status": "ok",
+        "r2": 0.2659,
+        "rmse": 1392.8038,
+        "mae": 1168.6713
+      }
+    ],
+    "optuna_applied": false,
+    "agent_run": true,
+    "task_type": "regression"
+  },
+  {
+    "timestamp": "2026-06-04 12:49:23",
+    "data_shape": [
+      4804,
+      13
+    ],
+    "target": "의무시설여부코드명",
+    "best_model": "Random Forest",
+    "results": [
+      {
+        "model": "Random Forest",
+        "status": "ok",
+        "accuracy": 0.8968,
+        "f1": 0.8968,
+        "roc_auc": 0.9535
+      },
+      {
+        "model": "Gradient Boosting",
+        "status": "ok",
+        "accuracy": 0.8876,
+        "f1": 0.8874,
+        "roc_auc": 0.9376
+      },
+      {
+        "model": "Decision Tree",
+        "status": "ok",
+        "accuracy": 0.8647,
+        "f1": 0.8647,
+        "roc_auc": 0.8652
+      },
+      {
+        "model": "Logistic Regression",
+        "status": "ok",
+        "accuracy": 0.8006,
+        "f1": 0.7989,
+        "roc_auc": 0.8539
+      }
+    ],
+    "optuna_applied": false,
+    "task_type": "classification"
+  },
+  {
+    "timestamp": "2026-06-04 12:50:06",
+    "data_shape": [
+      4804,
+      13
+    ],
+    "target": "의무시설여부코드명",
+    "best_model": "Random Forest",
+    "results": [
+      {
+        "model": "Random Forest",
+        "status": "ok",
+        "accuracy": 0.8968,
+        "f1": 0.8968,
+        "roc_auc": 0.9535
+      },
+      {
+        "model": "Gradient Boosting",
+        "status": "ok",
+        "accuracy": 0.8876,
+        "f1": 0.8874,
+        "roc_auc": 0.9376
+      },
+      {
+        "model": "Decision Tree",
+        "status": "ok",
+        "accuracy": 0.8647,
+        "f1": 0.8647,
+        "roc_auc": 0.8652
+      },
+      {
+        "model": "Logistic Regression",
+        "status": "ok",
+        "accuracy": 0.8006,
+        "f1": 0.7989,
+        "roc_auc": 0.8539
+      }
+    ],
+    "optuna_applied": false,
+    "agent_run": true,
+    "task_type": "classification"
   }
 ]

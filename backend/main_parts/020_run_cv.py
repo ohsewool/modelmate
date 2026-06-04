@@ -4,16 +4,14 @@ async def run_cv(user=Depends(get_current_user)):
     if X is None: raise HTTPException(400, "데이터 없음")
     task_type = STATE.get("task_type", "classification")
     if task_type == "regression":
-        kf = KFold(n_splits=3, shuffle=True, random_state=42)
+        kf = make_cv_for_target(y, "regression")
         results = []
         for name, fn in REGRESSION_MODELS.items():
             m = fn()
             try:
-                r2   = float(cross_val_score(m, X, y, cv=kf, scoring="r2").mean())
-                rmse = float(-cross_val_score(m, X, y, cv=kf, scoring="neg_root_mean_squared_error").mean())
-                mae  = float(-cross_val_score(m, X, y, cv=kf, scoring="neg_mean_absolute_error").mean())
+                scores = run_regression_scores(m, X, y, kf)
                 results.append({"model": name, "status": "ok",
-                                "r2": round(r2, 4), "rmse": round(rmse, 4), "mae": round(mae, 4)})
+                                **scores})
             except Exception as e:
                 results.append(make_cv_failure(name, "regression", e))
         ok_results = [r for r in results if r.get("status") == "ok"]
@@ -44,20 +42,15 @@ async def run_cv(user=Depends(get_current_user)):
 
     n_unique = STATE.get("n_unique_target", 2)
     is_binary = n_unique == 2
-    cv = StratifiedKFold(n_splits=3, shuffle=True, random_state=42)
-    scoring = "roc_auc" if is_binary else "roc_auc_ovr_weighted"
+    cv = make_cv_for_target(y, "classification")
+    scoring = classification_scoring(n_unique)
     results = []
     for name, fn in MODELS.items():
         try:
             m = fn()
-            acc = float(cross_val_score(m, X, y, cv=cv, scoring="accuracy").mean())
-            f1  = float(cross_val_score(m, X, y, cv=cv, scoring="f1_weighted").mean())
-            try:
-                roc = float(cross_val_score(m, X, y, cv=cv, scoring=scoring).mean())
-            except:
-                roc = acc
+            scores = run_classification_scores(m, X, y, cv, scoring)
             results.append({"model": name, "status": "ok",
-                            "accuracy": round(acc, 4), "f1": round(f1, 4), "roc_auc": round(roc, 4)})
+                            **scores})
         except Exception as e:
             print(f"[CV SKIP] {name}: {e}")
             results.append(make_cv_failure(name, "classification", e))

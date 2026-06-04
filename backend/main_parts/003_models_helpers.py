@@ -73,13 +73,14 @@ def encode_features(df, tgt):
 def encode_target(y_raw):
     """타겟 컬럼 인코딩 및 task type 판별"""
     n_unique = y_raw.nunique()
-    is_cls = y_raw.dtype == "object" or n_unique <= 20
+    is_text = pd.api.types.is_object_dtype(y_raw) or pd.api.types.is_string_dtype(y_raw)
+    is_cls = is_text or n_unique <= 20
     le = None
-    if y_raw.dtype == "object":
+    if is_text:
         le = LabelEncoder()
         y = pd.Series(le.fit_transform(y_raw.fillna("missing").astype(str)), name=y_raw.name)
     else:
-        y = y_raw.copy()
+        y = pd.to_numeric(y_raw, errors="coerce").fillna(y_raw.median() if pd.api.types.is_numeric_dtype(y_raw) else 0)
     return y, le, "classification" if is_cls else "regression", n_unique
 
 # ── 업로드 ────────────────────────────────────────────────

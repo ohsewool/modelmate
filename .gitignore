@@ -8,6 +8,8 @@ __pycache__/
 *.pyo
 .venv/
 venv/
+modelmate.db
+tmp_datasets/
 
 # Jupyter
 .ipynb_checkpoints/

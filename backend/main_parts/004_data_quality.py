@@ -117,6 +117,11 @@ def suggested_feature_drops(df, target_col=None):
     drops, reasons = [], {}
     id_words = {"id", "idx", "index", "no", "num", "code", "key",
                 "name", "uuid", "uid", "serial", "number"}
+    target_compact = str(target_col or "").lower().replace(" ", "").replace("_", "").replace("-", "")
+    target_base = target_compact
+    for suffix in ["코드명", "codename", "labelname", "name", "명", "label"]:
+        if target_base.endswith(suffix):
+            target_base = target_base[:-len(suffix)]
     for col in df.columns:
         if col == target_col:
             continue
@@ -131,6 +136,8 @@ def suggested_feature_drops(df, target_col=None):
             reason = "identifier-like column"
         elif compact.endswith("id") and len(compact) <= 7:
             reason = "identifier-like column"
+        elif target_base and compact in {target_base, target_base + "코드", target_base + "code", target_base + "id"}:
+            reason = "target-leakage-like column"
         elif looks_like_datetime(s):
             reason = "datetime column"
         elif n >= 20 and unique_ratio > 0.95 and (s.dtype == "object" or not pd.api.types.is_numeric_dtype(s)):

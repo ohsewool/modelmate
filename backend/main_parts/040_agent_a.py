@@ -4,31 +4,26 @@ async def run_agent(demo: bool = False):
     if X is None:
         raise HTTPException(400, "데이터가 없습니다. 먼저 업로드하고 맞히려는 값을 선택하세요.")
 
+    task_type = STATE.get("task_type", "classification")
     n_unique = STATE.get("n_unique_target", 2)
-    is_binary = n_unique == 2
-    scoring = "roc_auc" if is_binary else "roc_auc_ovr_weighted"
-    cv = StratifiedKFold(n_splits=3, shuffle=True, random_state=42)
+    cv = make_cv_for_target(y, task_type)
 
     results = []
-    for name, fn in MODELS.items():
+    model_map = REGRESSION_MODELS if task_type == "regression" else MODELS
+    scoring = classification_scoring(n_unique)
+    for name, fn in model_map.items():
         model = fn()
-        acc = float(cross_val_score(model, X, y, cv=cv, scoring="accuracy").mean())
-        f1 = float(cross_val_score(model, X, y, cv=cv, scoring="f1_weighted").mean())
-        try:
-            roc = float(cross_val_score(model, X, y, cv=cv, scoring=scoring).mean())
-        except Exception:
-            roc = acc
-        results.append({
-            "model": name,
-            "accuracy": round(acc, 4),
-            "f1": round(f1, 4),
-            "roc_auc": round(roc, 4),
-        })
+        if task_type == "regression":
+            scores = run_regression_scores(model, X, y, cv)
+            results.append({"model": name, "status": "ok", **scores})
+        else:
+            scores = run_classification_scores(model, X, y, cv, scoring)
+            results.append({"model": name, "status": "ok", **scores})
 
-    results.sort(key=lambda x: x["roc_auc"], reverse=True)
+    results.sort(key=lambda x: x["r2"] if task_type == "regression" else x["roc_auc"], reverse=True)
     best_name = results[0]["model"]
-    best_score = results[0]["roc_auc"]
-    best_model = MODELS[best_name]()
+    best_score = results[0]["r2"] if task_type == "regression" else results[0]["roc_auc"]
+    best_model = model_map[best_name]()
     best_model.fit(X, y)
     preds = best_model.predict(X).tolist()
 
@@ -50,28 +45,44 @@ async def run_agent(demo: bool = False):
         "shap_values": None,
     })
 
+    score_name = "R2" if task_type == "regression" else "ROC-AUC"
     cv_comment = await ask_gemini(
-        f"최고 모델은 {best_name}, ROC-AUC는 {best_score}입니다. "
+        f"최고 모델은 {best_name}, {score_name}는 {best_score}입니다. "
         f"결과를 비전공자에게 2문장으로 설명하세요: {json.dumps(results, ensure_ascii=False)}",
         demo=demo,
-    ) or f"{best_name} 모델이 가장 좋은 성능을 보였습니다. 테스트 모드에서는 외부 AI 호출 없이 결과만 요약합니다."
+    ) or f"{best_name} 모델이 가장 좋은 {score_name} 점수를 보였습니다. 테스트 모드에서는 외부 AI 호출 없이 결과만 요약합니다."
 
+    target_info = infer_target_category(STATE.get("df"), STATE["target_col"])
     steps = [{
         "step": 1,
+        "name": "데이터 의미 판단",
+        "status": "done",
+        "data": {
+            "domain": target_info.get("dataset_domain"),
+            "target_label": target_info.get("target_category"),
+            "target_reason": target_info.get("target_category_reason"),
+        },
+        "comment": (
+            f"이 데이터는 {target_info.get('dataset_domain')}에 가까우며, "
+            f"맞힐 값은 {target_info.get('target_category')}로 해석했습니다."
+        ),
+    }, {
+        "step": 2,
         "name": "모델 비교",
         "status": "done",
         "data": {"results": results, "feature_importance": feature_importance[:5]},
         "comment": cv_comment,
     }]
 
-    run_optuna = best_score < 0.85 and OPTUNA_OK
+    tunable = task_type == "classification" and best_name in ["Random Forest", "Gradient Boosting"]
+    run_optuna = best_score < 0.85 and OPTUNA_OK and tunable
     decision_comment = await ask_gemini(
-        f"{best_name} 모델의 ROC-AUC {best_score} 기준으로 Optuna 진행 여부를 짧게 설명하세요.",
+        f"{best_name} 모델의 {score_name} {best_score} 기준으로 Optuna 진행 여부를 짧게 설명하세요.",
         demo=demo,
-    ) or ("성능을 더 확인하기 위해 자동 개선을 진행합니다." if run_optuna else "현재 성능이 충분하거나 선택된 모델이 개선 대상이 아니라 자동 개선은 생략합니다.")
+    ) or ("성능을 더 확인하기 위해 자동 개선을 진행합니다." if run_optuna else "현재 모델은 자동 개선보다 기존 결과를 확인하는 것이 더 안정적이라 개선은 생략합니다.")
 
     steps.append({
-        "step": 2,
+        "step": 3,
         "name": "성능 개선 판단",
         "status": "done",
         "decision": "optuna_run" if run_optuna else "optuna_skip",
@@ -107,19 +118,28 @@ async def run_agent(demo: bool = False):
         study = optuna.create_study(direction="maximize")
         await asyncio.to_thread(study.optimize, objective, n_trials=10, show_progress_bar=False)
         after = round(float(study.best_value), 4)
+        improved = after > round(float(before), 4)
         optuna_result = {
             "best_params": study.best_params,
             "before_roc": before,
             "after_roc": after,
             "improvement": round((after - before) * 100, 2),
+            "applied": improved,
+            "status": "improved" if improved else "kept_original",
+            "status_label": "개선 적용" if improved else "기존 모델 유지",
+            "reason": (
+                "자동 개선 후 점수가 더 좋아져 개선 결과를 참고합니다."
+                if improved else
+                "자동 개선을 시도했지만 기존 모델 점수가 더 안정적이라 기존 결과를 유지합니다."
+            ),
         }
         STATE["optuna_result"] = optuna_result
         steps.append({
-            "step": 3,
+            "step": 4,
             "name": "성능 자동 개선",
             "status": "done",
             "data": optuna_result,
-            "comment": f"자동 개선 결과 점수가 {before}에서 {after}로 변경되었습니다.",
+            "comment": optuna_result["reason"],
         })
 
     shap_global = []
@@ -157,21 +177,22 @@ async def run_agent(demo: bool = False):
     ) or f"{top_feature}가 예측에 가장 큰 영향을 준 정보로 확인되었습니다."
 
     steps.append({
-        "step": 4,
+        "step": 5,
         "name": "예측 이유 분석",
         "status": "done",
         "data": {"global": shap_global[:6]},
         "comment": shap_comment,
     })
 
-    final_score = optuna_result["after_roc"] if optuna_result else best_score
+    final_score = optuna_result["after_roc"] if optuna_result and optuna_result.get("applied") else best_score
+    agent_insights = build_agent_insights(best_name, final_score, optuna_result, top_feature)
     final_comment = await ask_gemini(
         f"최종 모델 {best_name}, 점수 {final_score}, 주요 정보 {top_feature}. 발표용 한글 요약 2문장.",
         demo=demo,
-    ) or f"분석이 완료되었습니다. {best_name} 모델을 사용하면 현재 데이터에서 예측과 근거 확인이 가능합니다."
+    ) or agent_insights["presentation_conclusion"]
 
     steps.append({
-        "step": 5,
+        "step": 6,
         "name": "분석 완료",
         "status": "done",
         "comment": final_comment,
@@ -183,7 +204,7 @@ async def run_agent(demo: bool = False):
         "target": STATE["target_col"],
         "best_model": best_name,
         "results": results,
-        "optuna_applied": bool(optuna_result),
+        "optuna_applied": bool(optuna_result and optuna_result.get("applied")),
         "agent_run": True,
         "task_type": STATE.get("task_type", "classification"),
     })
@@ -194,6 +215,7 @@ async def run_agent(demo: bool = False):
         "best_model": best_name,
         "optuna_result": optuna_result,
         "shap_global": shap_global[:8],
+        "agent_insights": agent_insights,
         "gemini_used": GEMINI_OK and not demo,
         "demo_mode": demo,
     }
