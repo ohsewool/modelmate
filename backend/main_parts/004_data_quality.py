@@ -126,8 +126,9 @@ def suggested_feature_drops(df, target_col=None):
         if col == target_col:
             continue
         s = df[col]
-        compact = col.lower().replace(" ", "").replace("_", "").replace("-", "")
-        parts = [p for p in re.split(r"[^a-zA-Z0-9]+", col.lower()) if p]
+        col_text = str(col).lower()
+        compact = col_text.replace(" ", "").replace("_", "").replace("-", "")
+        parts = [p for p in re.split(r"[^a-zA-Z0-9]+", col_text) if p]
         unique_ratio = s.nunique(dropna=True) / n
         reason = None
         if s.nunique(dropna=True) <= 1:

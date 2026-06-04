@@ -73,8 +73,10 @@ def encode_features(df, tgt):
 def encode_target(y_raw):
     """타겟 컬럼 인코딩 및 task type 판별"""
     n_unique = y_raw.nunique()
+    n_rows = max(len(y_raw), 1)
     is_text = pd.api.types.is_object_dtype(y_raw) or pd.api.types.is_string_dtype(y_raw)
-    is_cls = is_text or n_unique <= 20
+    is_small_numeric_code = pd.api.types.is_numeric_dtype(y_raw) and n_unique <= 20 and (n_unique / n_rows) < 0.6
+    is_cls = is_text or is_small_numeric_code
     le = None
     if is_text:
         le = LabelEncoder()

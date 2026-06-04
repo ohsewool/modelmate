@@ -72,3 +72,22 @@ Current checked cases: 5 / passed: 5 / failed: 0. The script exits with failure 
 
 The same script also summarizes the four real CSV files used in the project:
 `ch2025.csv`, `pima.csv`, `playground.csv`, and `seoul_bike.csv`.
+
+## Training Benchmark Pass - 2026-06-04
+
+Added `scripts/run_training_benchmark.py` to run end-to-end training checks without using external AI tokens.
+The script prepares each dataset, selects the target, runs preprocessing, trains candidate models, and records the best model/score.
+
+Current result: 11 / passed: 11 / failed: 0.
+
+| Group | Cases |
+|---|---|
+| scikit-learn public datasets | iris, wine, breast cancer, diabetes regression, linnerud weight |
+| synthetic representative CSVs | fault/failure classification, sales regression |
+| real project CSVs | CH2025, Pima diabetes, playground facility, Seoul bike signup |
+
+Fixes found during this pass:
+
+- Numeric column names now work in feature-drop checks.
+- Numeric targets with mostly unique values are treated as regression instead of small-code classification.
+- Benchmark scripts disable history writes so QA runs do not pollute user experiment history.
