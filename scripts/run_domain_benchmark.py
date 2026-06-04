@@ -65,9 +65,19 @@ def main():
     rows = [check_fixture(*case) for case in FIXTURES]
     for path in sorted((ROOT / "tmp_datasets").glob("*.csv")):
         rows.append(check_real_csv(path))
+    checked = [r for r in rows if "domain_pass" in r]
+    failed = [r for r in checked if not (r["domain_pass"] and r["purpose_pass"])]
+    summary = {
+        "checked_cases": len(checked),
+        "passed_cases": len(checked) - len(failed),
+        "failed_cases": len(failed),
+    }
     out = ROOT / "domain_benchmark_results.json"
-    out.write_text(json.dumps(rows, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(json.dumps(rows, ensure_ascii=False, indent=2))
+    payload = {"summary": summary, "results": rows}
+    out.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(json.dumps(payload, ensure_ascii=False, indent=2))
+    if failed:
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":

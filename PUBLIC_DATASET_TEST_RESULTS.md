@@ -60,6 +60,7 @@ Both the manual model comparison path and the AI analysis coach path completed w
 
 Added `scripts/run_domain_benchmark.py` to repeatedly verify dataset-domain and target-purpose inference.
 This is the base for adding more public datasets from UCI, Dacon, public data portals, and Kaggle-style CSVs.
+Current checked cases: 5 / passed: 5 / failed: 0. The script exits with failure if a checked domain or purpose expectation breaks.
 
 | Benchmark | Expected Domain | Expected Purpose | Result |
 |---|---|---|---|

@@ -1,82 +1,89 @@
-[
-  {
-    "name": "heart_health",
-    "target": "disease",
-    "domain": "의료/건강 진단",
-    "purpose": "질병/진단 여부",
-    "domain_pass": true,
-    "purpose_pass": true
+{
+  "summary": {
+    "checked_cases": 5,
+    "passed_cases": 5,
+    "failed_cases": 0
   },
-  {
-    "name": "manufacturing_quality",
-    "target": "defect",
-    "domain": "제조/설비 품질",
-    "purpose": "고장 여부",
-    "domain_pass": true,
-    "purpose_pass": true
-  },
-  {
-    "name": "customer_churn",
-    "target": "churn",
-    "domain": "고객 이탈/CRM",
-    "purpose": "이탈 여부",
-    "domain_pass": true,
-    "purpose_pass": true
-  },
-  {
-    "name": "sales_amount",
-    "target": "sales",
-    "domain": "금액/매출",
-    "purpose": "금액 예측",
-    "domain_pass": true,
-    "purpose_pass": true
-  },
-  {
-    "name": "unknown_table",
-    "target": "gamma",
-    "domain": "도메인 확인 필요",
-    "purpose": "두 값 분류",
-    "domain_pass": true,
-    "purpose_pass": true
-  },
-  {
-    "name": "ch2025.csv",
-    "target": "S3",
-    "shape": [
-      450,
-      9
-    ],
-    "domain": "수면/건강 라이프로그",
-    "purpose": "수면/건강 상태 분류"
-  },
-  {
-    "name": "pima.csv",
-    "target": "diabetes",
-    "shape": [
-      768,
-      9
-    ],
-    "domain": "의료/건강 진단",
-    "purpose": "당뇨 여부"
-  },
-  {
-    "name": "playground.csv",
-    "target": "의무시설여부코드명",
-    "shape": [
-      4804,
-      16
-    ],
-    "domain": "공공시설/안전 관리",
-    "purpose": "시설 상태/여부 분류"
-  },
-  {
-    "name": "seoul_bike.csv",
-    "target": "가입건수",
-    "shape": [
-      96,
-      5
-    ],
-    "domain": "공공교통/이용자 통계",
-    "purpose": "가입자 수 예측"
-  }
-]
+  "results": [
+    {
+      "name": "heart_health",
+      "target": "disease",
+      "domain": "의료/건강 진단",
+      "purpose": "질병/진단 여부",
+      "domain_pass": true,
+      "purpose_pass": true
+    },
+    {
+      "name": "manufacturing_quality",
+      "target": "defect",
+      "domain": "제조/설비 품질",
+      "purpose": "고장 여부",
+      "domain_pass": true,
+      "purpose_pass": true
+    },
+    {
+      "name": "customer_churn",
+      "target": "churn",
+      "domain": "고객 이탈/CRM",
+      "purpose": "이탈 여부",
+      "domain_pass": true,
+      "purpose_pass": true
+    },
+    {
+      "name": "sales_amount",
+      "target": "sales",
+      "domain": "금액/매출",
+      "purpose": "금액 예측",
+      "domain_pass": true,
+      "purpose_pass": true
+    },
+    {
+      "name": "unknown_table",
+      "target": "gamma",
+      "domain": "도메인 확인 필요",
+      "purpose": "두 값 분류",
+      "domain_pass": true,
+      "purpose_pass": true
+    },
+    {
+      "name": "ch2025.csv",
+      "target": "S3",
+      "shape": [
+        450,
+        9
+      ],
+      "domain": "수면/건강 라이프로그",
+      "purpose": "수면/건강 상태 분류"
+    },
+    {
+      "name": "pima.csv",
+      "target": "diabetes",
+      "shape": [
+        768,
+        9
+      ],
+      "domain": "의료/건강 진단",
+      "purpose": "당뇨 여부"
+    },
+    {
+      "name": "playground.csv",
+      "target": "의무시설여부코드명",
+      "shape": [
+        4804,
+        16
+      ],
+      "domain": "공공시설/안전 관리",
+      "purpose": "시설 상태/여부 분류"
+    },
+    {
+      "name": "seoul_bike.csv",
+      "target": "가입건수",
+      "shape": [
+        96,
+        5
+      ],
+      "domain": "공공교통/이용자 통계",
+      "purpose": "가입자 수 예측"
+    }
+  ]
+}
