@@ -84,6 +84,8 @@ async def profile_summary(user=Depends(get_current_user)):
             "logged_in": False,
             "user": None,
             "workspace": {"name": "임시 작업공간", "scope": "브라우저 임시 기록"},
+            "project_count": 0,
+            "dataset_count": 0,
             "history_count": len(load_history()),
             "best_score": None,
             "last_experiment_at": None,
@@ -106,6 +108,12 @@ async def profile_summary(user=Depends(get_current_user)):
             (user["sub"],)
         ).fetchall()
     user_count = conn.execute("SELECT COUNT(*) AS n FROM users").fetchone()["n"]
+    project_count = conn.execute(
+        "SELECT COUNT(*) AS n FROM projects WHERE user_id=?", (user["sub"],)
+    ).fetchone()["n"]
+    dataset_count = conn.execute(
+        "SELECT COUNT(*) AS n FROM datasets WHERE user_id=?", (user["sub"],)
+    ).fetchone()["n"]
     conn.close()
 
     history = [json.loads(r["data"]) for r in rows]
@@ -133,6 +141,9 @@ async def profile_summary(user=Depends(get_current_user)):
         "role": user.get("role", "user"),
         "created_at": None,
     }
+    if user.get("role") != "admin":
+        ensure_default_project(user["sub"])
+        project_count = max(project_count, 1)
     return {
         "logged_in": True,
         "user": profile,
@@ -142,6 +153,8 @@ async def profile_summary(user=Depends(get_current_user)):
             "scope": "전체 사용자 관리" if user.get("role") == "admin" else "내 분석 자산",
         },
         "user_count": int(user_count),
+        "project_count": int(project_count),
+        "dataset_count": int(dataset_count),
         "history_count": len(history),
         "best_score": round(best_score, 4) if best_score is not None else None,
         "last_experiment_at": rows[0]["created_at"] if rows else None,

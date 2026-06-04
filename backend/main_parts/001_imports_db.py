@@ -95,3 +95,30 @@ def init_db():
             created_at TEXT
         )
     """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS projects (
+            id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
+            name TEXT NOT NULL,
+            description TEXT,
+            created_at TEXT,
+            updated_at TEXT,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+    """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS datasets (
+            id TEXT PRIMARY KEY,
+            project_id TEXT NOT NULL,
+            user_id TEXT NOT NULL,
+            filename TEXT NOT NULL,
+            rows INTEGER,
+            columns INTEGER,
+            target_col TEXT,
+            domain TEXT,
+            quality TEXT,
+            created_at TEXT,
+            FOREIGN KEY (project_id) REFERENCES projects(id),
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+    """)

@@ -1,5 +1,5 @@
 @app.post("/api/upload")
-async def upload(file: UploadFile = File(...)):
+async def upload(file: UploadFile = File(...), user=Depends(get_current_user)):
     raw, encoding = decode_upload_bytes(await file.read())
     is_txt = file.filename.lower().endswith(".txt")
     try:
@@ -31,6 +31,8 @@ async def upload(file: UploadFile = File(...)):
     num_cols = df.select_dtypes(include=["number"]).columns.tolist()
     default_target = infer_default_target(df)
     suggested_drop, drop_reasons = suggested_feature_drops(df, target_col=default_target)
+    domain_info = infer_target_category(df, default_target)
+    saved_dataset = save_dataset_record(user, file.filename, df, default_target, quality, domain_info)
 
     return {
         "columns": df.columns.tolist(),
@@ -41,6 +43,7 @@ async def upload(file: UploadFile = File(...)):
         "default_target": default_target,
         "missing_total": int(df.isnull().sum().sum()),
         "dataset_quality": quality,
+        "saved_dataset": saved_dataset,
         "cat_cols": cat_cols,
         "num_cols": num_cols,
         "suggested_drop": suggested_drop,

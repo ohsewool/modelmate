@@ -7,9 +7,9 @@ export default function WorkspaceBanner({ profile, summary, action }) {
     scope: profile?.is_admin ? '전체 사용자 관리' : '내 분석 자산',
   }
   const items = summary || [
+    ['데이터셋', profile?.dataset_count ?? 0],
     ['실험 기록', profile?.history_count ?? 0],
     ['최고 성능', profile?.best_score ?? '-'],
-    ['최근 실행', profile?.last_experiment_at || '기록 없음'],
   ]
 
   return (

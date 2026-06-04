@@ -183,6 +183,13 @@ export default function Upload() {
           </div>
 
           <DatasetQualityCard quality={uploadInfo.dataset_quality} />
+          {uploadInfo.saved_dataset && (
+            <div className="banner-success">
+              <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)' }}>
+                {uploadInfo.saved_dataset.project_name}에 데이터셋 메타가 저장되었습니다.
+              </p>
+            </div>
+          )}
 
           <div className="card">
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'flex-start', marginBottom: 18 }}>
