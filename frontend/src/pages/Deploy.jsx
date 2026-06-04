@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import api from '../api'
 import WorkspaceBanner from '../components/workspace/WorkspaceBanner'
+import ShareValuePanel from '../components/deploy/ShareValuePanel'
 
 const fmt = value => {
   if (value === null || value === undefined || value === '') return '-'
@@ -158,7 +159,7 @@ function ModelCard({ model, onDelete }) {
             ID {model.id} / 맞히려는 값 {model.target_col} / 점수 {fmt(primary)}
           </p>
           <p style={{ margin: '6px 0 0', fontSize: 12, color: 'var(--text-label)' }}>
-            원본 {source}
+            저장 모델은 같은 입력 형식으로 반복 예측할 수 있습니다. 원본 {source}
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
@@ -265,6 +266,8 @@ export default function Deploy() {
             </div>
           )}
         </section>
+
+        <ShareValuePanel models={models} hasModel={hasModel} />
 
         <ShareFlow hasModel={hasModel} modelCount={models.length} />
 
