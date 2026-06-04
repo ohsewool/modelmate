@@ -7,6 +7,7 @@ import { Badge } from '../components/ui/badge'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
 import ExperimentDetail from '../components/history/ExperimentDetail'
+import RecentExperimentSummary from '../components/history/RecentExperimentSummary'
 import DatasetList from '../components/workspace/DatasetList'
 import WorkspaceBanner from '../components/workspace/WorkspaceBanner'
 
@@ -152,6 +153,15 @@ export default function History() {
           <StatCard label="자동 개선" value={optunaCount} sub="Optuna 적용" />
           <StatCard label={profile?.is_admin ? '사용자 수' : '최근 실행'} value={profile?.is_admin ? profile.user_count ?? '-' : latest ? taskLabel(latest.task_type) : '-'} sub={profile?.is_admin ? '등록 계정' : latest?.timestamp || profile?.last_experiment_at || '기록 없음'} />
         </div>
+
+        {latest && (
+          <RecentExperimentSummary
+            item={latest}
+            metric={getPrimaryMetric(latest)}
+            onOpen={() => setSelectedItem(latest)}
+            onModelLab={() => nav('/model-lab')}
+          />
+        )}
 
         {!user && (
           <Card style={{ borderColor: '#fde68a', background: '#fffbeb' }}>
