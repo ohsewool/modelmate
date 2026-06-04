@@ -6,6 +6,7 @@ import { Button } from '../components/ui/button'
 import DatasetQualityCard from '../components/upload/DatasetQualityCard'
 import DemoDatasetGuide from '../components/upload/DemoDatasetGuide'
 import ReanalysisNotice from '../components/upload/ReanalysisNotice'
+import UploadJudgmentBrief from '../components/upload/UploadJudgmentBrief'
 
 const UPLOAD_DRAFT_KEY = 'mm_upload_draft'
 
@@ -195,6 +196,16 @@ export default function Upload() {
             <KPICard label="맞힐 값" value={shortName(target, colLabels)} color="violet" />
             <KPICard label="데이터 종류" value={datasetDomain} color={domainConfidence === '낮음' ? 'amber' : 'green'} />
           </div>
+
+          <UploadJudgmentBrief
+            domain={datasetDomain}
+            domainConfidence={domainConfidence}
+            targetName={shortName(target, colLabels)}
+            targetCategory={targetCategory}
+            targetReason={targetReason}
+            activeCount={activeCols.length}
+            dropCount={dropCols.length}
+          />
 
           <DatasetQualityCard quality={uploadInfo.dataset_quality} />
           {uploadInfo.saved_dataset && (
