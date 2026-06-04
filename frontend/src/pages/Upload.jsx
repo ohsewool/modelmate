@@ -25,6 +25,7 @@ export default function Upload() {
   const [colLabels, setColLabels] = useState(() => draft.current?.colLabels || {})
   const [edaInfo, setEdaInfo] = useState(() => draft.current?.edaInfo || null)
   const [uploadError, setUploadError] = useState(null)
+  const [targetError, setTargetError] = useState('')
   const [loading, setLoading] = useState('')
   const fileRef = useRef()
   const nav = useNavigate()
@@ -78,11 +79,12 @@ export default function Upload() {
 
   async function handleSetTarget() {
     setLoading('target')
+    setTargetError('')
     try {
       const { data } = await api.post('/set-target', { target_col: target, drop_cols: dropCols, col_labels: colLabels })
       setEdaInfo(data)
     } catch (e) {
-      alert(e.response?.data?.detail || e.message)
+      setTargetError(e.response?.data?.detail || e.message)
     } finally {
       setLoading('')
     }
@@ -100,6 +102,7 @@ export default function Upload() {
     setColLabels({})
     setEdaInfo(null)
     setUploadError(null)
+    setTargetError('')
     sessionStorage.removeItem(UPLOAD_DRAFT_KEY)
   }
 
@@ -208,6 +211,12 @@ export default function Upload() {
                     <br />{targetReason}
                   </p>
                 )}
+              </div>
+            )}
+
+            {targetError && (
+              <div className="banner-warning" style={{ marginBottom: 14 }}>
+                <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)' }}>{targetError}</p>
               </div>
             )}
 

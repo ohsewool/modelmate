@@ -36,6 +36,8 @@ export default function History() {
   const [selectedItem, setSelectedItem] = useState(null)
   const [loading, setLoading] = useState(true)
   const [clearing, setClearing] = useState(false)
+  const [confirmClear, setConfirmClear] = useState(false)
+  const [message, setMessage] = useState('')
 
   async function load() {
     setLoading(true)
@@ -57,13 +59,15 @@ export default function History() {
   useEffect(() => { load() }, [])
 
   async function clearMyHistory() {
-    if (!confirm(user ? '내 실험 기록을 삭제할까요?' : '비로그인 실험 기록을 삭제할까요?')) return
     setClearing(true)
+    setMessage('')
     try {
       await api.delete('/history')
+      setConfirmClear(false)
+      setMessage(profile?.is_admin ? '전체 실험 기록을 삭제했습니다.' : '내 실험 기록을 삭제했습니다.')
       await load()
     } catch (e) {
-      alert(e.response?.data?.detail || e.message)
+      setMessage(e.response?.data?.detail || e.message)
     } finally {
       setClearing(false)
     }
@@ -166,13 +170,31 @@ export default function History() {
                 </CardDescription>
               </div>
               {history.length > 0 && (
-                <Button variant="danger" size="sm" onClick={clearMyHistory} disabled={clearing}>
+                <Button variant="danger" size="sm" onClick={() => setConfirmClear(true)} disabled={clearing}>
                   <Trash2 size={14} /> 기록 삭제
                 </Button>
               )}
             </div>
           </CardHeader>
           <CardContent>
+            {confirmClear && (
+              <div className="banner-warning" style={{ marginBottom: 12, justifyContent: 'space-between', gap: 12 }}>
+                <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)' }}>
+                  {profile?.is_admin ? '관리자는 모든 사용자의 실험 기록을 삭제합니다.' : '현재 작업공간의 실험 기록을 삭제합니다.'}
+                </p>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <Button variant="secondary" size="sm" onClick={() => setConfirmClear(false)}>취소</Button>
+                  <Button variant="danger" size="sm" onClick={clearMyHistory} disabled={clearing}>
+                    {clearing && <span className="spinner" />} 삭제 확인
+                  </Button>
+                </div>
+              </div>
+            )}
+            {message && (
+              <div className={message.includes('삭제했습니다') ? 'banner-success' : 'banner-warning'} style={{ marginBottom: 12 }}>
+                <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)' }}>{message}</p>
+              </div>
+            )}
             {history.length === 0 ? (
               <div className="empty-state" style={{ padding: '52px 20px' }}>
                 <BarChart3 size={36} color="#94a3b8" />
