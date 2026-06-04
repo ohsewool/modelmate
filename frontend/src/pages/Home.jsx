@@ -3,6 +3,7 @@ import { BarChart3, CheckCircle2, Moon, Play, ShieldCheck, Sparkles, Sun, Upload
 import { useTheme } from '../ThemeContext'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
+import ValidationProof from '../components/ValidationProof'
 
 const steps = [
   ['CSV 업로드', '파일을 넣으면 데이터 형태를 먼저 확인합니다.'],
@@ -113,6 +114,7 @@ export default function Home() {
             ))}
           </div>
         </section>
+        <ValidationProof />
       </main>
     </div>
   )
