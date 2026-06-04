@@ -7,6 +7,7 @@ import { Badge } from '../components/ui/badge'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
 import ExperimentDetail from '../components/history/ExperimentDetail'
+import DatasetList from '../components/workspace/DatasetList'
 import WorkspaceBanner from '../components/workspace/WorkspaceBanner'
 
 const fmt = value => {
@@ -33,6 +34,7 @@ export default function History() {
   const nav = useNavigate()
   const [profile, setProfile] = useState(null)
   const [history, setHistory] = useState([])
+  const [datasets, setDatasets] = useState([])
   const [selectedItem, setSelectedItem] = useState(null)
   const [loading, setLoading] = useState(true)
   const [clearing, setClearing] = useState(false)
@@ -42,12 +44,14 @@ export default function History() {
   async function load() {
     setLoading(true)
     try {
-      const [profileRes, historyRes] = await Promise.all([
+      const [profileRes, historyRes, datasetsRes] = await Promise.all([
         api.get('/profile/summary'),
         api.get('/history'),
+        api.get('/datasets').catch(() => ({ data: [] })),
       ])
       setProfile(profileRes.data)
       setHistory(historyRes.data || [])
+      setDatasets(datasetsRes.data || [])
       setSelectedItem(null)
     } catch (e) {
       console.error(e)
@@ -136,6 +140,8 @@ export default function History() {
         </Card>
 
         <WorkspaceBanner profile={profile} />
+
+        <DatasetList datasets={datasets} onUpload={() => nav('/upload')} />
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 10 }}>
           <StatCard label={profile?.is_admin ? '전체 실험 기록' : '내 실험 기록'} value={history.length} sub={profile?.is_admin ? '관리자 기준' : user ? '계정 기준' : '임시 기록'} />
