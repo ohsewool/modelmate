@@ -7,6 +7,7 @@ import DatasetQualityCard from '../components/upload/DatasetQualityCard'
 import DemoDatasetGuide from '../components/upload/DemoDatasetGuide'
 import ReanalysisNotice from '../components/upload/ReanalysisNotice'
 import UploadJudgmentBrief from '../components/upload/UploadJudgmentBrief'
+import UploadReadinessChecklist from '../components/upload/UploadReadinessChecklist'
 
 const UPLOAD_DRAFT_KEY = 'mm_upload_draft'
 
@@ -203,6 +204,18 @@ export default function Upload() {
             targetName={shortName(target, colLabels)}
             targetCategory={targetCategory}
             targetReason={targetReason}
+            activeCount={activeCols.length}
+            dropCount={dropCols.length}
+          />
+
+          <UploadReadinessChecklist
+            rows={uploadInfo.shape?.[0]}
+            cols={uploadInfo.shape?.[1]}
+            missingTotal={uploadInfo.missing_total || 0}
+            domain={datasetDomain}
+            domainConfidence={domainConfidence}
+            target={shortName(target, colLabels)}
+            targetConfidence={targetConfidence}
             activeCount={activeCols.length}
             dropCount={dropCols.length}
           />
