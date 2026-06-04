@@ -274,6 +274,21 @@ export default function Report() {
               <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)' }}>
                 원본 크기: {dataset.raw_shape?.join(' x ') || '-'} / 학습에 사용한 크기: {dataset.training_shape?.join(' x ') || '-'}
               </p>
+              {summary.preprocessing?.summary && (
+                <div className="banner-success" style={{ alignItems: 'flex-start' }}>
+                  <FileText size={16} />
+                  <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6 }}>
+                    {summary.preprocessing.summary}
+                  </p>
+                </div>
+              )}
+              {(summary.preprocessing?.notes || []).length > 0 && (
+                <div style={{ display: 'grid', gap: 7 }}>
+                  {summary.preprocessing.notes.map(note => (
+                    <p key={note} style={{ margin: 0, fontSize: 12, color: 'var(--text-2)' }}>- {note}</p>
+                  ))}
+                </div>
+              )}
               <div>
                 <p className="section-title" style={{ marginBottom: 8 }}>자동으로 제외한 정보</p>
                 {(summary.preprocessing?.auto_drop_cols || []).length ? (

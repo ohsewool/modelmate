@@ -31,15 +31,35 @@ def summarize_preprocessing_state():
     manual = STATE.get("drop_cols", [])
     auto = STATE.get("auto_drop_cols", [])
     reasons = STATE.get("auto_drop_reasons", {})
+    cat_cols = STATE.get("cat_cols", [])
+    df = STATE.get("df")
+    X = STATE.get("X")
+    missing = int(df.isnull().sum().sum()) if df is not None else 0
+    training_cols = int(X.shape[1]) if X is not None else 0
+    notes = []
+    if auto:
+        notes.append(f"ID, 날짜, 고유값이 많은 정보 등 {len(auto)}개 컬럼은 예측을 방해할 수 있어 자동 제외했습니다.")
+    if manual:
+        notes.append(f"사용자가 직접 제외한 정보 {len(manual)}개를 학습에서 뺐습니다.")
+    if cat_cols:
+        notes.append(f"문자형 정보 {len(cat_cols)}개는 모델이 읽을 수 있는 숫자 코드로 바꿨습니다.")
+    if missing:
+        notes.append(f"비어 있는 값 {missing}개는 학습이 멈추지 않도록 대표값으로 보정했습니다.")
+    if not notes:
+        notes.append("추가 제외나 보정 없이 바로 모델 비교가 가능한 형태였습니다.")
     return {
         "manual_drop_cols": manual,
         "auto_drop_cols": auto,
         "auto_drop_reasons": reasons,
-        "encoded_categorical_cols": STATE.get("cat_cols", []),
+        "encoded_categorical_cols": cat_cols,
+        "missing_filled": missing,
+        "training_feature_count": training_cols,
+        "summary": f"최종적으로 모델은 {training_cols}개의 정보를 사용해 학습했습니다.",
+        "notes": notes,
         "steps": [
-            "Dropped selected or unsafe columns",
-            "Encoded categorical features",
-            "Filled missing numeric values",
+            "예측을 방해할 수 있는 정보 제외",
+            "문자형 정보를 숫자로 변환",
+            "비어 있는 값 자동 보정",
         ],
     }
 

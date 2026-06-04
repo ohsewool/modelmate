@@ -63,9 +63,9 @@ async def report_summary():
         "final_metrics": final_metrics,
         "feature_evidence": feature_evidence,
         "presentation_points": [
-            "The system accepts a general CSV dataset.",
-            "It removes risky identifier/date columns before training.",
-            "It compares multiple models with cross-validation.",
-            "It exposes tuning and explanation results through APIs.",
+            "CSV를 올리면 데이터 성격과 맞힐 값을 자동으로 판단합니다.",
+            "ID, 날짜처럼 예측을 방해할 수 있는 정보는 학습 전에 정리합니다.",
+            "여러 모델을 교차검증으로 비교해 데이터에 맞는 모델을 고릅니다.",
+            "결과 요약, 이유 보기, 새 데이터 예측, 공유 API까지 이어집니다.",
         ],
     }
