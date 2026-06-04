@@ -40,8 +40,8 @@
         31
       ],
       "target": "target",
-      "domain": "도메인 확인 필요",
-      "purpose": "두 값 분류",
+      "domain": "의료/건강 진단",
+      "purpose": "질병/진단 여부",
       "task_type": "classification",
       "best_model": "Gradient Boosting",
       "score": 0.9899,

@@ -37,7 +37,7 @@ def infer_dataset_domain(df):
             "dataset_domain_reason": "사람 ID와 수면 날짜, 라이프로그 날짜처럼 개인별 건강 기록을 나타내는 컬럼이 있습니다.",
             "dataset_domain_confidence": "높음",
         }
-    if has_any(["diabetes", "glucose", "plasma", "insulin", "bmi", "pregnant", "pregnancy", "patient", "diagnosis", "disease", "medical", "cancer", "tumor", "cholesterol", "혈당", "당뇨", "진단", "환자", "질병", "암"]):
+    if has_any(["diabetes", "glucose", "plasma", "insulin", "bmi", "pregnant", "pregnancy", "patient", "diagnosis", "disease", "medical", "cancer", "tumor", "cholesterol", "radius", "perimeter", "concavity", "concave", "compactness", "fractal", "혈당", "당뇨", "진단", "환자", "질병", "암"]):
         return {
             "dataset_domain": "의료/건강 진단",
             "dataset_domain_reason": "혈당, 인슐린, BMI, 진단 결과처럼 건강 상태를 판단하는 컬럼이 있습니다.",
@@ -97,7 +97,7 @@ def infer_dataset_domain(df):
             "dataset_domain_reason": "학생, 출석, 시험, 성적처럼 학습 성과를 나타내는 컬럼명이 있습니다.",
             "dataset_domain_confidence": "높음",
         }
-    if has_any(["house", "housing", "rent", "apartment", "area", "rooms", "floor", "estate", "property", "부동산", "아파트", "주택", "임대료", "면적", "방수", "층"]):
+    if has_any(["house", "housing", "rent", "apartment", "rooms", "floor", "estate", "property", "real_estate", "living_area", "land_area", "부동산", "아파트", "주택", "임대료", "면적", "방수", "층"]):
         return {
             "dataset_domain": "부동산/가격 예측",
             "dataset_domain_reason": "주택, 면적, 방수, 임대료처럼 부동산 가격과 관련된 컬럼명이 있습니다.",
