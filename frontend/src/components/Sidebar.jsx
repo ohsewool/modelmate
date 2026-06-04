@@ -16,7 +16,7 @@ const OPTIONAL_NAV = [
   { to: '/agent', icon: AgentIcon, label: 'AI 한 번에 실행', desc: '모델 비교부터 이유 분석까지 자동 진행', tag: 'AI' },
   { to: '/predict', icon: PredictIcon, label: '새 데이터 예측', desc: '학습한 모델에 새 값을 넣어 결과 확인' },
   { to: '/deploy', icon: DeployIcon, label: '모델 공유', desc: '예측 요청 URL 생성' },
-  { to: '/history', icon: ChartIcon, label: '작업 기록', desc: '내 실험 결과를 다시 확인' },
+  { to: '/history', icon: ChartIcon, label: '내 작업공간', desc: '실험과 공유 모델 관리' },
 ]
 
 export default function Sidebar({ isOpen, onClose }) {

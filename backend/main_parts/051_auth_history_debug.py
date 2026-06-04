@@ -83,6 +83,7 @@ async def profile_summary(user=Depends(get_current_user)):
         return {
             "logged_in": False,
             "user": None,
+            "workspace": {"name": "임시 작업공간", "scope": "브라우저 임시 기록"},
             "history_count": len(load_history()),
             "best_score": None,
             "last_experiment_at": None,
@@ -136,6 +137,10 @@ async def profile_summary(user=Depends(get_current_user)):
         "logged_in": True,
         "user": profile,
         "is_admin": user.get("role") == "admin",
+        "workspace": {
+            "name": "관리자 작업공간" if user.get("role") == "admin" else "기본 작업공간",
+            "scope": "전체 사용자 관리" if user.get("role") == "admin" else "내 분석 자산",
+        },
         "user_count": int(user_count),
         "history_count": len(history),
         "best_score": round(best_score, 4) if best_score is not None else None,

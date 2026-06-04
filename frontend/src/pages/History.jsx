@@ -7,6 +7,7 @@ import { Badge } from '../components/ui/badge'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
 import ExperimentDetail from '../components/history/ExperimentDetail'
+import WorkspaceBanner from '../components/workspace/WorkspaceBanner'
 
 const fmt = value => {
   if (value === null || value === undefined || value === '') return '-'
@@ -129,6 +130,8 @@ export default function History() {
             </div>
           </CardContent>
         </Card>
+
+        <WorkspaceBanner profile={profile} />
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 10 }}>
           <StatCard label={profile?.is_admin ? '전체 실험 기록' : '내 실험 기록'} value={history.length} sub={profile?.is_admin ? '관리자 기준' : user ? '계정 기준' : '임시 기록'} />

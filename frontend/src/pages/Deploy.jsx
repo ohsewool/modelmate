@@ -9,6 +9,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import api from '../api'
+import WorkspaceBanner from '../components/workspace/WorkspaceBanner'
 
 const fmt = value => {
   if (value === null || value === undefined || value === '') return '-'
@@ -153,18 +154,21 @@ function ModelCard({ model, onDelete }) {
 export default function Deploy() {
   const [models, setModels] = useState([])
   const [hasModel, setHasModel] = useState(false)
+  const [profile, setProfile] = useState(null)
   const [modelName, setModelName] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
 
   async function load() {
-    const [listRes, stateRes] = await Promise.all([
+    const [listRes, stateRes, profileRes] = await Promise.all([
       api.get('/deployed').catch(() => ({ data: [] })),
       api.get('/state').catch(() => ({ data: {} })),
+      api.get('/profile/summary').catch(() => ({ data: null })),
     ])
     setModels(listRes.data)
     setHasModel(Boolean(stateRes.data.has_model))
+    setProfile(profileRes.data)
   }
 
   useEffect(() => { load() }, [])
@@ -230,6 +234,15 @@ export default function Deploy() {
             </div>
           )}
         </section>
+
+        <WorkspaceBanner
+          profile={profile}
+          summary={[
+            ['공유 모델', `${models.length}개`],
+            ['현재 모델', hasModel ? '준비됨' : '학습 필요'],
+            ['요청 방식', 'REST URL'],
+          ]}
+        />
 
         {models.length ? (
           <div style={{ display: 'grid', gap: 16 }}>
