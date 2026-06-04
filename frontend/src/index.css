@@ -171,6 +171,17 @@ html.dark {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 10px;
   }
+  .report-story-flow {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 28px minmax(0, 1fr) 28px minmax(0, 1fr) 28px minmax(0, 1fr);
+    gap: 8px;
+    align-items: stretch;
+  }
+  .report-story-arrow {
+    display: grid;
+    place-items: center;
+    color: var(--text-label);
+  }
 
   /* ── Empty state ──────────────────────────────────────── */
   .empty-state { @apply flex flex-col items-center justify-center py-24 text-center; }
@@ -269,8 +280,13 @@ html.dark .banner-danger  { background: rgba(244,63,94,0.1);   border-color: rgb
   .admin-detail-grid,
   .recent-summary-grid,
   .dataset-detail-grid,
-  .experiment-action-grid {
+  .experiment-action-grid,
+  .report-story-flow {
     grid-template-columns: 1fr !important;
+  }
+
+  .report-story-arrow {
+    min-height: 20px;
   }
 
   .recent-summary-side {

@@ -13,6 +13,7 @@ import {
 import api from '../api'
 import { Badge } from '../components/ui/badge'
 import { Button } from '../components/ui/button'
+import ReportStoryPanel from '../components/report/ReportStoryPanel'
 
 const fmt = value => {
   if (value === null || value === undefined || value === '') return '-'
@@ -252,6 +253,11 @@ export default function Report() {
         </div>
 
         <BusinessSummary data={business} />
+
+        <ReportStoryPanel
+          points={summary.presentation_points}
+          summary={summary.executive_summary}
+        />
 
         <Section title="분석 진행 상태" icon={CheckCircle2}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: 10 }}>
