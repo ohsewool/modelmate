@@ -10,12 +10,12 @@ export default function AgentStartPanel({ fileRef, dragging, setDragging, onFile
         <div style={{ width: 58, height: 58, borderRadius: 16, display: 'grid', placeItems: 'center', background: 'rgba(124,58,237,0.1)', color: '#7c3aed', marginBottom: 14 }}>
           <AgentIcon />
         </div>
-        <h2 style={{ fontSize: 18, color: 'var(--text)', margin: '0 0 8px' }}>AI에게 맡기면 하는 일</h2>
+        <h2 style={{ fontSize: 18, color: 'var(--text)', margin: '0 0 8px' }}>AI에게 CSV 맡기기</h2>
         <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.65, margin: '0 0 16px' }}>
-          모델 후보를 비교하고, 점수가 충분한지 판단하고, 설명에 필요한 근거를 추려냅니다.
+          업로드된 데이터를 보고 목적을 정한 뒤 모델 비교와 결론 작성을 이어서 진행합니다.
         </p>
         <div style={{ display: 'grid', gap: 8 }}>
-          <Button onClick={onRun}>AI 분석 코치 실행</Button>
+          <Button onClick={onRun}>에이전트 실행</Button>
           <Button onClick={onManual} variant="secondary">직접 모델 고르기</Button>
         </div>
       </div>

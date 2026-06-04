@@ -2,12 +2,14 @@ import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'
 import AgentInsightCards from '../AgentInsightCards'
 import AgentDecisionBoard from './AgentDecisionBoard'
+import AgentMissionBrief from './AgentMissionBrief'
 import AgentPlanBoard, { AGENT_PLAN } from './AgentPlanBoard'
 import AgentStepCard from './AgentStepCard'
 
 export default function AgentResultPanel({ result, steps, decision, onReport, onXai }) {
   return (
     <div style={{ display: 'grid', gap: 16 }}>
+      <AgentMissionBrief insights={result.agent_insights} decision={decision} />
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 0.9fr) minmax(0, 1.1fr)', gap: 16, alignItems: 'start' }}>
         <AgentPlanBoard activeIndex={AGENT_PLAN.length} completed />
         <AgentDecisionBoard decision={decision} />
