@@ -26,7 +26,18 @@ def ensure_default_project(user_id, name="기본 프로젝트"):
 
 
 def save_dataset_record(user, filename, df, target_col, quality, domain_info):
+    dataset_meta = {
+        "id": None,
+        "project_id": None,
+        "project_name": None,
+        "filename": filename,
+        "target_col": str(target_col),
+        "rows": int(df.shape[0]),
+        "columns": int(df.shape[1]),
+        "domain": domain_info.get("dataset_domain"),
+    }
     if not user:
+        STATE["current_dataset"] = dataset_meta
         return None
     import uuid
     project = ensure_default_project(user["sub"])
@@ -45,7 +56,13 @@ def save_dataset_record(user, filename, df, target_col, quality, domain_info):
     conn.execute("UPDATE projects SET updated_at=? WHERE id=?", (now, project["id"]))
     conn.commit()
     conn.close()
-    return {"id": dataset_id, "project_id": project["id"], "project_name": project["name"]}
+    dataset_meta.update({
+        "id": dataset_id,
+        "project_id": project["id"],
+        "project_name": project["name"],
+    })
+    STATE["current_dataset"] = dataset_meta
+    return dataset_meta
 
 
 @app.get("/api/projects")

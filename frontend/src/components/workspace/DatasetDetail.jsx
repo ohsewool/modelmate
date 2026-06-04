@@ -1,7 +1,8 @@
 import { Upload } from 'lucide-react'
 import { Button } from '../ui/button'
+import DatasetExperimentLinks from './DatasetExperimentLinks'
 
-export default function DatasetDetail({ item, onUpload }) {
+export default function DatasetDetail({ item, onUpload, experiments = [], onSelectExperiment }) {
   const quality = parseQuality(item.quality)
   const reasons = quality.reasons || []
   const score = quality.score == null ? '-' : `${Math.round(quality.score * 100)}점`
@@ -24,6 +25,7 @@ export default function DatasetDetail({ item, onUpload }) {
           </div>
         </div>
       )}
+      <DatasetExperimentLinks experiments={experiments} onSelect={onSelectExperiment} />
       <div className="dataset-detail-actions" style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', marginTop: 12 }}>
         <p style={{ margin: 0, fontSize: 12, color: 'var(--text-label)' }}>
           원본 CSV는 저장하지 않습니다. 다시 학습하려면 같은 파일을 다시 업로드하세요.

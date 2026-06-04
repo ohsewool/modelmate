@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { Badge } from '../ui/badge'
 import DatasetDetail from './DatasetDetail'
 
-export default function DatasetList({ datasets, onUpload }) {
+export default function DatasetList({ datasets, onUpload, getExperiments, onSelectExperiment }) {
   const [selected, setSelected] = useState(null)
 
   return (
@@ -36,7 +36,14 @@ export default function DatasetList({ datasets, onUpload }) {
                 onClick={() => setSelected(selected?.id === item.id ? null : item)}
               />
             ))}
-            {selected && <DatasetDetail item={selected} onUpload={() => onUpload(selected)} />}
+            {selected && (
+              <DatasetDetail
+                item={selected}
+                experiments={getExperiments?.(selected) || []}
+                onSelectExperiment={onSelectExperiment}
+                onUpload={() => onUpload(selected)}
+              />
+            )}
           </div>
         )}
       </CardContent>

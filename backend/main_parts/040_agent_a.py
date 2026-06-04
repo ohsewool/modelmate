@@ -205,6 +205,7 @@ async def run_agent(demo: bool = False, user=Depends(get_current_user)):
         "best_model": best_name,
         "results": results,
         "optuna_applied": bool(optuna_result and optuna_result.get("applied")),
+        "dataset_ref": STATE.get("current_dataset"),
         "agent_run": True,
         "dataset_domain": agent_insights.get("domain"),
         "target_category": agent_insights.get("target_label"),

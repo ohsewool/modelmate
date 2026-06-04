@@ -31,6 +31,18 @@ function taskLabel(task) {
   return '분석'
 }
 
+function datasetMatchesExperiment(dataset, item) {
+  if (item.dataset_ref?.id && dataset.id) return item.dataset_ref.id === dataset.id
+  const sameTarget = String(item.target || '') === String(dataset.target_col || '')
+  const sameRows = Number(item.data_shape?.[0]) === Number(dataset.rows)
+  const sameDomain = !dataset.domain || !item.dataset_domain || item.dataset_domain === dataset.domain
+  return sameTarget && sameRows && sameDomain
+}
+
+function experimentsForDataset(dataset, history) {
+  return history.filter(item => datasetMatchesExperiment(dataset, item)).slice(0, 5)
+}
+
 export default function History() {
   const { user, logout } = useAuth()
   const nav = useNavigate()
@@ -154,6 +166,8 @@ export default function History() {
 
         <DatasetList
           datasets={datasets}
+          getExperiments={item => experimentsForDataset(item, history)}
+          onSelectExperiment={setSelectedItem}
           onUpload={item => nav('/upload', { state: item ? { reanalysisDataset: item } : null })}
         />
 
