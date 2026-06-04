@@ -106,6 +106,44 @@ function Section({ title, icon: Icon, children, action }) {
   )
 }
 
+function BusinessSummary({ data }) {
+  if (!data) return null
+  return (
+    <section className="card" style={{ borderColor: 'rgba(37,99,235,0.18)' }}>
+      <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 900, color: '#2563eb' }}>의사결정 요약</p>
+      <h2 style={{ margin: '0 0 8px', fontSize: 20, fontWeight: 900, color: 'var(--text)' }}>
+        {data.headline || '이 모델을 어디에 쓸지 정리했습니다'}
+      </h2>
+      <p style={{ margin: '0 0 14px', fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6 }}>
+        {data.use_case}
+      </p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 12 }}>
+        <div className="banner-success" style={{ alignItems: 'flex-start' }}>
+          <CheckCircle2 size={16} />
+          <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)', lineHeight: 1.55 }}>
+            {data.recommended_decision}
+          </p>
+        </div>
+        <div className="banner-warning" style={{ alignItems: 'flex-start' }}>
+          <AlertCircle size={16} />
+          <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)', lineHeight: 1.55 }}>
+            {(data.risk_notes || [])[0] || '현재 흐름에서는 큰 위험 신호가 보이지 않습니다.'}
+          </p>
+        </div>
+      </div>
+      {!!data.next_actions?.length && (
+        <div style={{ display: 'grid', gap: 8, marginTop: 12 }}>
+          {data.next_actions.slice(0, 3).map(action => (
+            <div key={action} style={{ padding: '8px 10px', borderRadius: 10, background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.18)', color: '#4f46e5', fontSize: 12, lineHeight: 1.5 }}>
+              다음 행동 · {action}
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  )
+}
+
 export default function Report() {
   const nav = useNavigate()
   const [summary, setSummary] = useState(null)
@@ -150,6 +188,7 @@ export default function Report() {
   const opt = summary?.optimization || {}
   const dataset = summary?.dataset || {}
   const features = summary?.feature_evidence?.items || []
+  const business = summary?.business_summary
 
   if (loading) {
     return (
@@ -211,6 +250,8 @@ export default function Report() {
           <MiniStat label="예측 유형" value={taskLabel(dataset.task_type)} tone="amber" />
           <MiniStat label="사용한 정보" value={dataset.training_shape?.[1] ?? '-'} />
         </div>
+
+        <BusinessSummary data={business} />
 
         <Section title="분석 진행 상태" icon={CheckCircle2}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: 10 }}>

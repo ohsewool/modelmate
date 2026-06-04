@@ -13,6 +13,18 @@ async def report_summary():
     optimization = summarize_optuna_state()
     feature_evidence = summarize_feature_evidence()
     task_type = STATE.get("task_type", "classification")
+    primary_metric = model_selection.get("score_info", {}).get("primary")
+    best_score = None
+    best_model = STATE.get("best_model_name")
+    for row in model_selection.get("models", []):
+        if row.get("model") == best_model and primary_metric:
+            best_score = row.get(primary_metric)
+            break
+    top_feature = None
+    if feature_evidence.get("items"):
+        top_feature = feature_evidence["items"][0].get("feature")
+    opt_for_insights = optimization if optimization.get("status") else None
+    agent_insights = build_agent_insights(best_model, best_score, opt_for_insights, top_feature)
 
     final_metrics = {}
     if model is not None and preds is not None and STATE.get("y") is not None:
@@ -40,15 +52,14 @@ async def report_summary():
     completed = sum(1 for ok in readiness.values() if ok)
     total = len(readiness)
 
-    best_model = STATE.get("best_model_name")
     target = STATE.get("target_col")
-    summary_line = "Dataset is loaded."
+    summary_line = "데이터가 준비되었습니다."
     if best_model and target:
-        summary_line = f"{best_model} was selected for target '{target}'."
+        summary_line = f"{best_model} 모델이 '{target}' 예측에 가장 적합한 모델로 선택되었습니다."
     if optimization.get("status") == "ok":
-        summary_line += f" Optuna tuning used {optimization.get('n_trials')} trials."
+        summary_line += f" 자동 개선은 {optimization.get('n_trials')}회 시도했습니다."
     elif optimization.get("status") == "skipped":
-        summary_line += " Optuna was skipped because the selected model is not tunable."
+        summary_line += " 선택 모델은 튜닝 대상이 아니어서 기존 결과를 유지했습니다."
 
     return {
         "status": "ok",
@@ -60,6 +71,18 @@ async def report_summary():
         "preprocessing": preprocessing,
         "model_selection": model_selection,
         "optimization": optimization,
+        "business_summary": {
+            "headline": agent_insights.get("presentation_conclusion"),
+            "use_case": (
+                f"{agent_insights.get('domain')} 데이터에서 "
+                f"{agent_insights.get('target_label')} 판단을 보조하는 예측 모델로 활용할 수 있습니다."
+            ),
+            "recommended_decision": (
+                f"{agent_insights.get('score_comment')} {agent_insights.get('model_reason')}"
+            ),
+            "risk_notes": agent_insights.get("risk_notes", []),
+            "next_actions": agent_insights.get("next_actions", []),
+        },
         "final_metrics": final_metrics,
         "feature_evidence": feature_evidence,
         "presentation_points": [
