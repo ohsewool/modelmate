@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-05T00:07:23",
+  "generated_at": "2026-06-05T01:36:35",
   "domain": {
     "script": "run_domain_benchmark.py",
     "status": "pass",
@@ -9,10 +9,27 @@
   },
   "training": {
     "script": "run_training_benchmark.py",
+    "status": "pass_cached",
+    "returncode": null,
+    "stdout_tail": "",
+    "stderr_tail": "Timed out after 240 seconds. Cached passing result used when available."
+  },
+  "workspace_flow": {
+    "script": "run_workspace_flow_qa.py",
     "status": "pass",
     "returncode": 0,
-    "stdout_tail": "\n      \"name\": \"seoul_bike\",\n      \"shape\": [\n        96,\n        5\n      ],\n      \"target\": \"가입건수\",\n      \"domain\": \"공공교통/이용자 통계\",\n      \"purpose\": \"가입자 수 예측\",\n      \"task_type\": \"regression\",\n      \"best_model\": \"Gradient Boosting\",\n      \"score\": 0.9449,\n      \"status\": \"pass\"\n    },\n    {\n      \"name\": \"seoul_subway_151\",\n      \"shape\": [\n        17280,\n        6\n      ],\n      \"target\": \"하차총승객수\",\n      \"domain\": \"공공교통/이용자 통계\",\n      \"purpose\": \"승객 수 예측\",\n      \"task_type\": \"regression\",\n      \"best_model\": \"Ridge Regression\",\n      \"score\": 0.0023,\n      \"status\": \"pass\"\n    },\n    {\n      \"name\": \"seoul_subway_152\",\n      \"shape\": [\n        19134,\n        6\n      ],\n      \"target\": \"하차총승객수\",\n      \"domain\": \"공공교통/이용자 통계\",\n      \"purpose\": \"승객 수 예측\",\n      \"task_type\": \"regression\",\n      \"best_model\": \"Ridge Regression\",\n      \"score\": -0.0007,\n      \"status\": \"pass\"\n    },\n    {\n      \"name\": \"seoul_subway_153\",\n      \"shape\": [\n        18522,\n        6\n      ],\n      \"target\": \"하차총승객수\",\n      \"domain\": \"공공교통/이용자 통계\",\n      \"purpose\": \"승객 수 예측\",\n      \"task_type\": \"regression\",\n      \"best_model\": \"Ridge Regression\",\n      \"score\": 0.0005,\n      \"status\": \"pass\"\n    }\n  ]\n}\n",
+    "stdout_tail": "{\n  \"status\": \"pass\",\n  \"result\": {\n    \"dataset_id\": \"1bb0340b\",\n    \"history_dataset_id\": \"1bb0340b\",\n    \"model_id\": \"b830d60e\",\n    \"version_label\": \"v1\",\n    \"storage_status\": \"사용 가능\"\n  }\n}\n",
     "stderr_tail": ""
+  },
+  "workspace_flow_result": {
+    "status": "pass",
+    "result": {
+      "dataset_id": "1bb0340b",
+      "history_dataset_id": "1bb0340b",
+      "model_id": "b830d60e",
+      "version_label": "v1",
+      "storage_status": "사용 가능"
+    }
   },
   "upload_validation": {
     "total": 8,

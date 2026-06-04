@@ -1,12 +1,21 @@
 # Final QA Results
 
-Generated: `2026-06-05T00:07:23`
+Generated: `2026-06-05T01:36:35`
 
 ## Summary
 
 - Domain benchmark: pass
-- Training benchmark: pass
+- Training benchmark: pass_cached
+- Workspace flow: pass
 - Upload validation: 8 / 8 pass
+
+## Workspace Flow
+
+| Check | Result |
+|---|---|
+| Dataset linked to history | 1bb0340b |
+| Saved model version | v1 |
+| Saved model storage | 사용 가능 |
 
 ## Upload Validation Cases
 

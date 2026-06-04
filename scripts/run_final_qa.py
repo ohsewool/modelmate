@@ -105,6 +105,7 @@ def check_valid_real_csv():
 
 
 def write_report(payload):
+    workspace_result = payload.get("workspace_flow_result", {}).get("result", {})
     lines = [
         "# Final QA Results",
         "",
@@ -114,7 +115,16 @@ def write_report(payload):
         "",
         f"- Domain benchmark: {payload['domain']['status']}",
         f"- Training benchmark: {payload['training']['status']}",
+        f"- Workspace flow: {payload['workspace_flow']['status']}",
         f"- Upload validation: {payload['upload_validation']['passed']} / {payload['upload_validation']['total']} pass",
+        "",
+        "## Workspace Flow",
+        "",
+        "| Check | Result |",
+        "|---|---|",
+        f"| Dataset linked to history | {workspace_result.get('history_dataset_id', '-')} |",
+        f"| Saved model version | {workspace_result.get('version_label', '-')} |",
+        f"| Saved model storage | {workspace_result.get('storage_status', '-')} |",
         "",
         "## Upload Validation Cases",
         "",
@@ -130,6 +140,11 @@ def write_report(payload):
 def main():
     domain = run_script("run_domain_benchmark.py")
     training = run_script("run_training_benchmark.py")
+    workspace_flow = run_script("run_workspace_flow_qa.py")
+    workspace_flow_result = {}
+    workspace_path = ROOT / "workspace_flow_qa_results.json"
+    if workspace_path.exists():
+        workspace_flow_result = json.loads(workspace_path.read_text(encoding="utf-8"))
     upload_rows = check_invalid_uploads() + check_valid_real_csv()
     upload = {
         "total": len(upload_rows),
@@ -141,13 +156,20 @@ def main():
         "generated_at": datetime.now().isoformat(timespec="seconds"),
         "domain": domain,
         "training": training,
+        "workspace_flow": workspace_flow,
+        "workspace_flow_result": workspace_flow_result,
         "upload_validation": upload,
     }
     (ROOT / "final_qa_results.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     write_report(payload)
     print(json.dumps(payload, ensure_ascii=False, indent=2))
     ok_status = {"pass", "pass_cached"}
-    if domain["status"] not in ok_status or training["status"] not in ok_status or upload["failed"]:
+    if (
+        domain["status"] not in ok_status
+        or training["status"] not in ok_status
+        or workspace_flow["status"] not in ok_status
+        or upload["failed"]
+    ):
         raise SystemExit(1)
 
 
