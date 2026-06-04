@@ -1,0 +1,314 @@
+{
+  "generated_at": "2026-06-05T04:33:48",
+  "stages": {
+    "domain": {
+      "name": "domain",
+      "status": "pass",
+      "returncode": 0,
+      "stdout_tail": "attrition\",\n      \"target\": \"attrition\",\n      \"domain\": \"인사/HR\",\n      \"purpose\": \"퇴사/이직 여부\",\n      \"domain_pass\": true,\n      \"purpose_pass\": true\n    },\n    {\n      \"name\": \"weather_environment\",\n      \"target\": \"rainfall\",\n      \"domain\": \"날씨/환경\",\n      \"purpose\": \"환경 지표 예측\",\n      \"domain_pass\": true,\n      \"purpose_pass\": true\n    },\n    {\n      \"name\": \"logistics_delay\",\n      \"target\": \"delivery_delay\",\n      \"domain\": \"물류/배송\",\n      \"purpose\": \"배송 지연 여부\",\n      \"domain_pass\": true,\n      \"purpose_pass\": true\n    },\n    {\n      \"name\": \"security_fraud\",\n      \"target\": \"fraud\",\n      \"domain\": \"보안/이상 탐지\",\n      \"purpose\": \"사기/이상 여부\",\n      \"domain_pass\": true,\n      \"purpose_pass\": true\n    },\n    {\n      \"name\": \"unknown_table\",\n      \"target\": \"gamma\",\n      \"domain\": \"도메인 확인 필요\",\n      \"purpose\": \"두 값 분류\",\n      \"domain_pass\": true,\n      \"purpose_pass\": true\n    },\n    {\n      \"name\": \"ch2025.csv\",\n      \"target\": \"S3\",\n      \"shape\": [\n        450,\n        9\n      ],\n      \"domain\": \"수면/건강 라이프로그\",\n      \"purpose\": \"수면/건강 상태 분류\"\n    },\n    {\n      \"name\": \"pima.csv\",\n      \"target\": \"diabetes\",\n      \"shape\": [\n        768,\n        9\n      ],\n      \"domain\": \"의료/건강 진단\",\n      \"purpose\": \"당뇨 여부\"\n    },\n    {\n      \"name\": \"playground.csv\",\n      \"target\": \"의무시설여부코드명\",\n      \"shape\": [\n        4804,\n        16\n      ],\n      \"domain\": \"공공시설/안전 관리\",\n      \"purpose\": \"시설 상태/여부 분류\"\n    },\n    {\n      \"name\": \"seoul_bike.csv\",\n      \"target\": \"가입건수\",\n      \"shape\": [\n        96,\n        5\n      ],\n      \"domain\": \"공공교통/이용자 통계\",\n      \"purpose\": \"가입자 수 예측\"\n    }\n  ]\n}\n",
+      "stderr_tail": ""
+    },
+    "upload_matrix": {
+      "status": "pass",
+      "results": [
+        {
+          "name": "empty",
+          "expected": "reject",
+          "status": "pass",
+          "message": "데이터가 비어 있습니다. 행과 열이 있는 CSV 파일을 올려주세요.",
+          "quality": {}
+        },
+        {
+          "name": "one_column",
+          "expected": "reject",
+          "status": "pass",
+          "message": "데이터셋으로 보기 어렵습니다: 열이 2개 미만, 값이 있는 열이 2개 미만, 변화가 있는 열이 2개 미만. 행/열이 있는 CSV 데이터셋을 올려주세요.",
+          "quality": {
+            "rows": 6,
+            "columns": 1,
+            "non_empty_columns": 1,
+            "varying_columns": 1,
+            "numeric_columns": 0,
+            "text_columns": 1,
+            "avg_text_length": 1.0,
+            "long_text_ratio": 0.0,
+            "score": 30,
+            "reasons": [
+              "열이 2개 미만",
+              "값이 있는 열이 2개 미만",
+              "변화가 있는 열이 2개 미만"
+            ]
+          }
+        },
+        {
+          "name": "constant",
+          "expected": "reject",
+          "status": "pass",
+          "message": "데이터셋으로 보기 어렵습니다: 변화가 있는 열이 2개 미만. 행/열이 있는 CSV 데이터셋을 올려주세요.",
+          "quality": {
+            "rows": 8,
+            "columns": 2,
+            "non_empty_columns": 2,
+            "varying_columns": 0,
+            "numeric_columns": 2,
+            "text_columns": 0,
+            "avg_text_length": 0.0,
+            "long_text_ratio": 0.0,
+            "score": 80,
+            "reasons": [
+              "변화가 있는 열이 2개 미만"
+            ]
+          }
+        },
+        {
+          "name": "long_text",
+          "expected": "reject",
+          "status": "pass",
+          "message": "데이터셋으로 보기 어렵습니다: 변화가 있는 열이 2개 미만. 행/열이 있는 CSV 데이터셋을 올려주세요.",
+          "quality": {
+            "rows": 6,
+            "columns": 2,
+            "non_empty_columns": 2,
+            "varying_columns": 0,
+            "numeric_columns": 0,
+            "text_columns": 2,
+            "avg_text_length": 26.5,
+            "long_text_ratio": 0.0,
+            "score": 80,
+            "reasons": [
+              "변화가 있는 열이 2개 미만"
+            ]
+          }
+        },
+        {
+          "name": "duplicate_columns",
+          "expected": "reject",
+          "status": "pass",
+          "message": "데이터셋으로 보기 어렵습니다: 중복 컬럼명 있음. 행/열이 있는 CSV 데이터셋을 올려주세요.",
+          "quality": {
+            "rows": 5,
+            "columns": 2,
+            "non_empty_columns": 2,
+            "varying_columns": 2,
+            "numeric_columns": 2,
+            "text_columns": 0,
+            "avg_text_length": 0.0,
+            "long_text_ratio": 0.0,
+            "score": 100,
+            "reasons": [
+              "중복 컬럼명 있음"
+            ]
+          }
+        },
+        {
+          "name": "unnamed_columns",
+          "expected": "reject",
+          "status": "pass",
+          "message": "데이터셋으로 보기 어렵습니다: 컬럼명이 대부분 비어 있음. 행/열이 있는 CSV 데이터셋을 올려주세요.",
+          "quality": {
+            "rows": 5,
+            "columns": 2,
+            "non_empty_columns": 2,
+            "varying_columns": 2,
+            "numeric_columns": 2,
+            "text_columns": 0,
+            "avg_text_length": 0.0,
+            "long_text_ratio": 0.0,
+            "score": 100,
+            "reasons": [
+              "컬럼명이 대부분 비어 있음"
+            ]
+          }
+        },
+        {
+          "name": "dates_only",
+          "expected": "reject",
+          "status": "pass",
+          "message": "데이터셋으로 보기 어렵습니다: 날짜 컬럼만 있음. 행/열이 있는 CSV 데이터셋을 올려주세요.",
+          "quality": {
+            "rows": 8,
+            "columns": 2,
+            "non_empty_columns": 2,
+            "varying_columns": 2,
+            "numeric_columns": 0,
+            "text_columns": 0,
+            "avg_text_length": 0.0,
+            "long_text_ratio": 0.0,
+            "score": 75,
+            "reasons": [
+              "날짜 컬럼만 있음"
+            ]
+          }
+        },
+        {
+          "name": "tmp_datasets/ch2025.csv",
+          "expected": "accept",
+          "status": "pass",
+          "shape": [
+            450,
+            9
+          ],
+          "message": "업로드 가능한 데이터셋입니다.",
+          "quality": {
+            "rows": 450,
+            "columns": 9,
+            "non_empty_columns": 9,
+            "varying_columns": 9,
+            "numeric_columns": 6,
+            "text_columns": 3,
+            "avg_text_length": 8.0,
+            "long_text_ratio": 0.0,
+            "score": 100,
+            "reasons": []
+          }
+        },
+        {
+          "name": "tmp_datasets/pima.csv",
+          "expected": "accept",
+          "status": "pass",
+          "shape": [
+            768,
+            9
+          ],
+          "message": "업로드 가능한 데이터셋입니다.",
+          "quality": {
+            "rows": 768,
+            "columns": 9,
+            "non_empty_columns": 9,
+            "varying_columns": 9,
+            "numeric_columns": 9,
+            "text_columns": 0,
+            "avg_text_length": 0.0,
+            "long_text_ratio": 0.0,
+            "score": 100,
+            "reasons": []
+          }
+        },
+        {
+          "name": "tmp_datasets/playground.csv",
+          "expected": "accept",
+          "status": "pass",
+          "shape": [
+            4804,
+            16
+          ],
+          "message": "업로드 가능한 데이터셋입니다.",
+          "quality": {
+            "rows": 4804,
+            "columns": 16,
+            "non_empty_columns": 16,
+            "varying_columns": 16,
+            "numeric_columns": 2,
+            "text_columns": 14,
+            "avg_text_length": 7.7,
+            "long_text_ratio": 0.0,
+            "score": 100,
+            "reasons": []
+          }
+        },
+        {
+          "name": "tmp_datasets/seoul_bike.csv",
+          "expected": "accept",
+          "status": "pass",
+          "shape": [
+            96,
+            5
+          ],
+          "message": "업로드 가능한 데이터셋입니다.",
+          "quality": {
+            "rows": 96,
+            "columns": 5,
+            "non_empty_columns": 5,
+            "varying_columns": 4,
+            "numeric_columns": 2,
+            "text_columns": 3,
+            "avg_text_length": 3.42,
+            "long_text_ratio": 0.0,
+            "score": 100,
+            "reasons": []
+          }
+        },
+        {
+          "name": "tmp_public_downloads/seoul_subway_151.csv",
+          "expected": "accept",
+          "status": "pass",
+          "shape": [
+            17280,
+            6
+          ],
+          "message": "업로드 가능한 데이터셋입니다.",
+          "quality": {
+            "rows": 17280,
+            "columns": 6,
+            "non_empty_columns": 5,
+            "varying_columns": 5,
+            "numeric_columns": 4,
+            "text_columns": 2,
+            "avg_text_length": 3.56,
+            "long_text_ratio": 0.0,
+            "score": 100,
+            "reasons": []
+          }
+        },
+        {
+          "name": "tmp_public_downloads/seoul_subway_152.csv",
+          "expected": "accept",
+          "status": "pass",
+          "shape": [
+            19134,
+            6
+          ],
+          "message": "업로드 가능한 데이터셋입니다.",
+          "quality": {
+            "rows": 19134,
+            "columns": 6,
+            "non_empty_columns": 5,
+            "varying_columns": 5,
+            "numeric_columns": 4,
+            "text_columns": 2,
+            "avg_text_length": 3.58,
+            "long_text_ratio": 0.0,
+            "score": 100,
+            "reasons": []
+          }
+        },
+        {
+          "name": "tmp_public_downloads/seoul_subway_153.csv",
+          "expected": "accept",
+          "status": "pass",
+          "shape": [
+            18522,
+            6
+          ],
+          "message": "업로드 가능한 데이터셋입니다.",
+          "quality": {
+            "rows": 18522,
+            "columns": 6,
+            "non_empty_columns": 5,
+            "varying_columns": 5,
+            "numeric_columns": 4,
+            "text_columns": 2,
+            "avg_text_length": 3.95,
+            "long_text_ratio": 0.0,
+            "score": 100,
+            "reasons": []
+          }
+        }
+      ]
+    },
+    "workspace_flow": {
+      "name": "workspace_flow",
+      "status": "pass",
+      "returncode": 0,
+      "stdout_tail": "{\n  \"status\": \"pass\",\n  \"result\": {\n    \"dataset_id\": \"917605de\",\n    \"history_dataset_id\": \"917605de\",\n    \"model_id\": \"a6d4d016\",\n    \"version_label\": \"v1\",\n    \"storage_status\": \"사용 가능\"\n  }\n}\n",
+      "stderr_tail": ""
+    },
+    "training": {
+      "name": "training",
+      "status": "pass",
+      "returncode": 0,
+      "stdout_tail": "  \"best_model\": \"Logistic Regression\",\n      \"score\": 0.8314,\n      \"status\": \"pass\"\n    },\n    {\n      \"name\": \"playground\",\n      \"shape\": [\n        4804,\n        16\n      ],\n      \"target\": \"의무시설여부코드명\",\n      \"domain\": \"공공시설/안전 관리\",\n      \"purpose\": \"시설 상태/여부 분류\",\n      \"task_type\": \"classification\",\n      \"best_model\": \"Random Forest\",\n      \"score\": 0.9535,\n      \"status\": \"pass\"\n    },\n    {\n      \"name\": \"seoul_bike\",\n      \"shape\": [\n        96,\n        5\n      ],\n      \"target\": \"가입건수\",\n      \"domain\": \"공공교통/이용자 통계\",\n      \"purpose\": \"가입자 수 예측\",\n      \"task_type\": \"regression\",\n      \"best_model\": \"Gradient Boosting\",\n      \"score\": 0.9449,\n      \"status\": \"pass\"\n    },\n    {\n      \"name\": \"seoul_subway_151\",\n      \"shape\": [\n        17280,\n        6\n      ],\n      \"target\": \"하차총승객수\",\n      \"domain\": \"공공교통/이용자 통계\",\n      \"purpose\": \"승객 수 예측\",\n      \"task_type\": \"regression\",\n      \"best_model\": \"Ridge Regression\",\n      \"score\": 0.0023,\n      \"status\": \"pass\"\n    },\n    {\n      \"name\": \"seoul_subway_152\",\n      \"shape\": [\n        19134,\n        6\n      ],\n      \"target\": \"하차총승객수\",\n      \"domain\": \"공공교통/이용자 통계\",\n      \"purpose\": \"승객 수 예측\",\n      \"task_type\": \"regression\",\n      \"best_model\": \"Ridge Regression\",\n      \"score\": -0.0007,\n      \"status\": \"pass\"\n    },\n    {\n      \"name\": \"seoul_subway_153\",\n      \"shape\": [\n        18522,\n        6\n      ],\n      \"target\": \"하차총승객수\",\n      \"domain\": \"공공교통/이용자 통계\",\n      \"purpose\": \"승객 수 예측\",\n      \"task_type\": \"regression\",\n      \"best_model\": \"Ridge Regression\",\n      \"score\": 0.0005,\n      \"status\": \"pass\"\n    }\n  ]\n}\n",
+      "stderr_tail": ""
+    }
+  }
+}

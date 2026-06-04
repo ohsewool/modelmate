@@ -30,6 +30,12 @@ export function buildDiagnosis(failed, info, reasons) {
       body: '모든 값이 거의 같으면 모델이 차이를 배울 수 없습니다.',
     }
   }
+  if (reasons.includes('날짜 컬럼만 있음')) {
+    return {
+      title: '날짜만 있어 예측할 값이 없습니다',
+      body: '날짜는 좋은 참고 정보가 될 수 있지만, 맞힐 값이나 측정값이 함께 있어야 합니다.',
+    }
+  }
   return {
     title: '이 파일은 바로 분석하기 어렵습니다',
     body: 'CSV처럼 열렸지만 AutoML 학습용 표 데이터 조건을 충분히 만족하지 못했습니다.',
@@ -46,5 +52,6 @@ export function translateReason(reason) {
     '변화가 있는 열이 2개 미만': '값이 변하는 열이 부족합니다',
     '문장형 텍스트가 대부분': '긴 문장 위주라 표 데이터로 보기 어렵습니다',
     '표 데이터보다 문서/대화 내용에 가까움': '문서나 대화 내용에 가까운 파일입니다',
+    '날짜 컬럼만 있음': '날짜 정보만 있고 예측할 값이 없습니다',
   })[reason] || reason
 }
