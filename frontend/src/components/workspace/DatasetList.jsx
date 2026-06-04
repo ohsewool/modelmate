@@ -1,9 +1,13 @@
+import { useState } from 'react'
 import { Database, Upload } from 'lucide-react'
 import { Button } from '../ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
 import { Badge } from '../ui/badge'
+import DatasetDetail from './DatasetDetail'
 
 export default function DatasetList({ datasets, onUpload }) {
+  const [selected, setSelected] = useState(null)
+
   return (
     <Card>
       <CardHeader>
@@ -24,7 +28,15 @@ export default function DatasetList({ datasets, onUpload }) {
           </div>
         ) : (
           <div style={{ display: 'grid', gap: 10 }}>
-            {datasets.slice(0, 6).map(item => <DatasetRow key={item.id} item={item} />)}
+            {datasets.slice(0, 6).map(item => (
+              <DatasetRow
+                key={item.id}
+                item={item}
+                active={selected?.id === item.id}
+                onClick={() => setSelected(selected?.id === item.id ? null : item)}
+              />
+            ))}
+            {selected && <DatasetDetail item={selected} />}
           </div>
         )}
       </CardContent>
@@ -32,9 +44,13 @@ export default function DatasetList({ datasets, onUpload }) {
   )
 }
 
-function DatasetRow({ item }) {
+function DatasetRow({ item, active, onClick }) {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 12, padding: 13, borderRadius: 12, border: '1px solid var(--border-sub)', background: 'var(--surface-alt)' }}>
+    <button
+      type="button"
+      onClick={onClick}
+      style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 12, padding: 13, borderRadius: 12, border: active ? '1px solid var(--primary)' : '1px solid var(--border-sub)', background: active ? '#eff6ff' : 'var(--surface-alt)', textAlign: 'left', cursor: 'pointer' }}
+    >
       <div style={{ minWidth: 0 }}>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 6 }}>
           <p style={{ margin: 0, fontSize: 14, fontWeight: 900, color: 'var(--text)' }}>{item.filename}</p>
@@ -47,6 +63,6 @@ function DatasetRow({ item }) {
       <p style={{ margin: 0, fontSize: 12, color: 'var(--text-label)', whiteSpace: 'nowrap' }}>
         {String(item.created_at || '').slice(0, 10)}
       </p>
-    </div>
+    </button>
   )
 }
