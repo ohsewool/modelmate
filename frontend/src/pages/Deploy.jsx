@@ -112,6 +112,30 @@ function ModelTester({ model }) {
   )
 }
 
+function ShareFlow({ hasModel, modelCount }) {
+  const steps = [
+    ['학습 모델 준비', hasModel ? '완료' : '필요', hasModel],
+    ['공유 모델 생성', modelCount > 0 ? '생성됨' : '대기', modelCount > 0],
+    ['URL 복사와 테스트', modelCount > 0 ? '가능' : '생성 후 가능', modelCount > 0],
+  ]
+  return (
+    <section className="card" style={{ display: 'grid', gap: 12 }}>
+      <p className="section-title">공유 준비 흐름</p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 10 }}>
+        {steps.map(([title, status, done]) => (
+          <div key={title} style={{ padding: 12, borderRadius: 12, border: '1px solid var(--border-sub)', background: done ? '#f0fdf4' : 'var(--surface-alt)' }}>
+            <p style={{ margin: '0 0 6px', fontSize: 13, fontWeight: 850, color: 'var(--text)' }}>{title}</p>
+            <span className={done ? 'badge badge-green' : 'badge badge-amber'}>{status}</span>
+          </div>
+        ))}
+      </div>
+      <p style={{ margin: 0, fontSize: 12, color: 'var(--text-2)', lineHeight: 1.6 }}>
+        공유 모델을 만들면 고정된 예측 URL이 생기고, 다른 화면이나 외부 서비스에서 같은 모델로 예측을 요청할 수 있습니다.
+      </p>
+    </section>
+  )
+}
+
 function ModelCard({ model, onDelete }) {
   const [open, setOpen] = useState(false)
   const [confirming, setConfirming] = useState(false)
@@ -241,6 +265,8 @@ export default function Deploy() {
             </div>
           )}
         </section>
+
+        <ShareFlow hasModel={hasModel} modelCount={models.length} />
 
         <WorkspaceBanner
           profile={profile}
