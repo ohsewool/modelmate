@@ -38,15 +38,27 @@
 
 - 도메인 벤치마크: 13 / 13 통과
 - 학습 벤치마크: 14 / 14 통과
+- 작업공간 흐름: 데이터셋 저장 -> 실험 기록 -> 모델 저장 -> 버전/저장상태 통과
 - 업로드 검증: 8 / 8 통과
 
 결과 파일:
 
 - `FINAL_QA_RESULTS.md`
 - `final_qa_results.json`
+- `workspace_flow_qa_results.json`
+
+## 대표 데모 데이터셋
+
+- 메인: `tmp_datasets/pima.csv`
+- 보조: `tmp_datasets/ch2025.csv`
+- 확장: `tmp_datasets/seoul_bike.csv`
+- 선택: `tmp_datasets/playground.csv`
+
+상세 흐름은 `DEMO_DATASET_PLAYBOOK.md`를 따른다.
 
 ## 발표 중 주의
 
 - ROC-AUC, Optuna, Feature importance 같은 용어를 먼저 설명하지 않는다.
 - 먼저 "CSV만 넣으면 모델 비교와 결과 설명까지 된다"고 말한다.
 - 6번 새 데이터 예측과 7번 API 공유는 시간이 남을 때만 보여준다.
+- 작업공간과 실험 비교는 "상용 서비스처럼 기록이 남는다"는 보조 근거로 보여준다.
