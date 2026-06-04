@@ -13,7 +13,7 @@ async def deploy_model_stable(body: dict):
     import uuid
     model, X = STATE.get("best_model"), STATE.get("X")
     if model is None or X is None:
-        raise HTTPException(400, "Run cross-validation first")
+        raise HTTPException(400, "먼저 모델 비교를 실행한 뒤 공유 모델을 만들어주세요.")
     model_id = str(uuid.uuid4())[:8]
     task_type = STATE.get("task_type", "classification")
     name = body.get("name") or f"ModelMate {STATE.get('best_model_name', 'model')}"
@@ -64,7 +64,7 @@ async def v2_predict(model_id: str, body: dict):
     bundle = joblib.load(fp)
     features = body.get("features", body)
     if not isinstance(features, dict):
-        raise HTTPException(400, "features must be an object")
+        raise HTTPException(400, "예측 요청은 features 객체 형태로 보내야 합니다.")
     X_in, warnings_out = build_deployed_row(bundle, features)
     result = deployed_prediction_payload(bundle, X_in)
     result.update({

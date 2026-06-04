@@ -5,7 +5,7 @@ const PAGE_META = {
   '/report': { title: '결과 요약', desc: '분석 결과 확인' },
   '/xai': { title: '이유 보기', desc: '예측 근거 확인' },
   '/predict': { title: '새 데이터 예측', desc: '추가 도구' },
-  '/deploy': { title: 'API 공유', desc: '추가 도구' },
+  '/deploy': { title: '모델 공유', desc: '예측 URL 관리' },
   '/history': { title: '작업 기록', desc: '분석 이력' },
 }
 

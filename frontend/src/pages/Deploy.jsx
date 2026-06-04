@@ -44,6 +44,7 @@ function CodeBlock({ model }) {
 function ModelTester({ model }) {
   const [values, setValues] = useState({})
   const [result, setResult] = useState(null)
+  const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -56,11 +57,12 @@ function ModelTester({ model }) {
   async function testPredict() {
     setLoading(true)
     setResult(null)
+    setMessage('')
     try {
       const { data } = await api.post(`/v2/${model.id}/predict`, { features: values })
       setResult(data)
     } catch (e) {
-      alert(e.response?.data?.detail || e.message)
+      setMessage(e.response?.data?.detail || e.message)
     } finally {
       setLoading(false)
     }
@@ -99,12 +101,19 @@ function ModelTester({ model }) {
           </div>
         </div>
       )}
+      {message && (
+        <div className="banner-warning" style={{ alignItems: 'flex-start' }}>
+          <AlertCircle size={16} />
+          <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)' }}>{message}</p>
+        </div>
+      )}
     </div>
   )
 }
 
 function ModelCard({ model, onDelete }) {
   const [open, setOpen] = useState(false)
+  const [confirming, setConfirming] = useState(false)
   const metric = model.metrics?.best_cv || model.metrics || {}
   const primary = model.task_type === 'regression' ? metric.r2 : metric.roc_auc
   return (
@@ -122,9 +131,19 @@ function ModelCard({ model, onDelete }) {
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button className="btn-secondary" onClick={() => setOpen(v => !v)}><Play size={14} /> {open ? '닫기' : '테스트'}</button>
-          <button className="btn-secondary" onClick={() => onDelete(model.id)}><Trash2 size={14} /> 삭제</button>
+          {confirming ? (
+            <button className="btn-secondary" onClick={() => onDelete(model.id)}><Trash2 size={14} /> 삭제 확인</button>
+          ) : (
+            <button className="btn-secondary" onClick={() => setConfirming(true)}><Trash2 size={14} /> 삭제</button>
+          )}
         </div>
       </div>
+      {confirming && (
+        <div className="banner-warning" style={{ justifyContent: 'space-between', gap: 12 }}>
+          <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)' }}>이 공유 URL은 삭제 후 사용할 수 없습니다.</p>
+          <button className="btn-secondary" onClick={() => setConfirming(false)}>취소</button>
+        </div>
+      )}
       <CodeBlock model={model} />
       {open && <ModelTester model={model} />}
     </section>
@@ -137,6 +156,7 @@ export default function Deploy() {
   const [modelName, setModelName] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
 
   async function load() {
     const [listRes, stateRes] = await Promise.all([
@@ -152,11 +172,12 @@ export default function Deploy() {
   async function deployStable() {
     setLoading(true)
     setError('')
+    setNotice('')
     try {
       const { data } = await api.post('/deploy/stable', { name: modelName || undefined })
       setModelName('')
       await load()
-      setError(`공유 API를 만들었습니다: ${data.name} (${data.model_id})`)
+      setNotice(`공유 모델을 만들었습니다: ${data.name} (${data.model_id})`)
     } catch (e) {
       setError(e.response?.data?.detail || e.message)
     } finally {
@@ -165,9 +186,11 @@ export default function Deploy() {
   }
 
   async function deleteModel(id) {
-    if (!confirm('이 공유 모델을 삭제할까요?')) return
-    await api.delete(`/deployed/${id}`).catch(() => {})
+    setError('')
+    setNotice('')
+    await api.delete(`/deployed/${id}`).catch(e => setError(e.response?.data?.detail || e.message))
     await load()
+    setNotice('공유 모델을 삭제했습니다.')
   }
 
   const countLabel = useMemo(() => `공유된 모델 ${models.length}개`, [models.length])
@@ -183,7 +206,7 @@ export default function Deploy() {
               </div>
               <div>
                 <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 800, color: '#4f46e5', textTransform: 'uppercase' }}>모델 공유</p>
-                <h1 style={{ margin: '0 0 6px', fontSize: 26, fontWeight: 900, color: '#0f172a', letterSpacing: 0 }}>예측 모델을 API로 공유하기</h1>
+                <h1 style={{ margin: '0 0 6px', fontSize: 26, fontWeight: 900, color: '#0f172a', letterSpacing: 0 }}>예측 모델 공유 관리</h1>
                 <p style={{ margin: 0, color: '#475569', fontSize: 14 }}>{countLabel}</p>
               </div>
             </div>
@@ -192,18 +215,18 @@ export default function Deploy() {
         </div>
 
         <section className="card">
-          <p className="section-title">현재 모델 공유하기</p>
+          <p className="section-title">현재 학습 모델 공유하기</p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 10 }}>
             <input className="input" value={modelName} onChange={e => setModelName(e.target.value)} placeholder="표시 이름, 선택 사항" />
             <button className="btn-primary" onClick={deployStable} disabled={!hasModel || loading}>
               {loading ? <span className="spinner" /> : <Rocket size={15} />}
-              공유 API 만들기
+              공유 모델 만들기
             </button>
           </div>
-          {error && (
-            <div className={error.startsWith('공유 API') ? 'banner-success' : 'banner-warning'} style={{ marginTop: 12 }}>
-              {error.startsWith('공유 API') ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
-              <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)' }}>{error}</p>
+          {(notice || error) && (
+            <div className={notice ? 'banner-success' : 'banner-warning'} style={{ marginTop: 12 }}>
+              {notice ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+              <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)' }}>{notice || error}</p>
             </div>
           )}
         </section>
