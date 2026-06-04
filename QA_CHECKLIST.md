@@ -48,12 +48,13 @@
 - `final_qa_results.json`
 - `workspace_flow_qa_results.json`
 
-## 대표 데모 데이터셋
+## 즉석 데모와 백업 데이터셋
 
-- 메인: `tmp_datasets/pima.csv`
-- 보조: `tmp_datasets/ch2025.csv`
-- 확장: `tmp_datasets/seoul_bike.csv`
-- 선택: `tmp_datasets/playground.csv`
+- 기본은 즉석 CSV 업로드 시연이다.
+- 백업: `tmp_datasets/pima.csv`
+- 백업: `tmp_datasets/ch2025.csv`
+- 백업: `tmp_datasets/seoul_bike.csv`
+- 선택 백업: `tmp_datasets/playground.csv`
 
 상세 흐름은 `DEMO_DATASET_PLAYBOOK.md`를 따른다.
 
