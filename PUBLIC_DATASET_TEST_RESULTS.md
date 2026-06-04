@@ -60,7 +60,7 @@ Both the manual model comparison path and the AI analysis coach path completed w
 
 Added `scripts/run_domain_benchmark.py` to repeatedly verify dataset-domain and target-purpose inference.
 This is the base for adding more public datasets from UCI, Dacon, public data portals, and Kaggle-style CSVs.
-Current checked cases: 5 / passed: 5 / failed: 0. The script exits with failure if a checked domain or purpose expectation breaks.
+Current checked cases: 13 / passed: 13 / failed: 0. The script exits with failure if a checked domain or purpose expectation breaks.
 
 | Benchmark | Expected Domain | Expected Purpose | Result |
 |---|---|---|---|
@@ -68,6 +68,14 @@ Current checked cases: 5 / passed: 5 / failed: 0. The script exits with failure 
 | manufacturing_quality | 제조/설비 품질 | 고장 여부 | pass |
 | customer_churn | 고객 이탈/CRM | 이탈 여부 | pass |
 | sales_amount | 금액/매출 | 금액 예측 | pass |
+| education_performance | 교육/학습 성과 | 합격/수료 여부 | pass |
+| finance_credit | 금융/신용 리스크 | 대출/연체 위험 판단 | pass |
+| real_estate_price | 부동산/가격 예측 | 부동산 가격 예측 | pass |
+| marketing_conversion | 마케팅/구매 전환 | 구매/전환 여부 | pass |
+| hr_attrition | 인사/HR | 퇴사/이직 여부 | pass |
+| weather_environment | 날씨/환경 | 환경 지표 예측 | pass |
+| logistics_delay | 물류/배송 | 배송 지연 여부 | pass |
+| security_fraud | 보안/이상 탐지 | 사기/이상 여부 | pass |
 | unknown_table | 도메인 확인 필요 | 두 값 분류 | pass |
 
 The same script also summarizes the four real CSV files used in the project:

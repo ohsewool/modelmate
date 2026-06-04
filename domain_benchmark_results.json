@@ -1,7 +1,7 @@
 {
   "summary": {
-    "checked_cases": 5,
-    "passed_cases": 5,
+    "checked_cases": 13,
+    "passed_cases": 13,
     "failed_cases": 0
   },
   "results": [
@@ -34,6 +34,70 @@
       "target": "sales",
       "domain": "금액/매출",
       "purpose": "금액 예측",
+      "domain_pass": true,
+      "purpose_pass": true
+    },
+    {
+      "name": "education_performance",
+      "target": "pass",
+      "domain": "교육/학습 성과",
+      "purpose": "합격/수료 여부",
+      "domain_pass": true,
+      "purpose_pass": true
+    },
+    {
+      "name": "finance_credit",
+      "target": "loan_default",
+      "domain": "금융/신용 리스크",
+      "purpose": "대출/연체 위험 판단",
+      "domain_pass": true,
+      "purpose_pass": true
+    },
+    {
+      "name": "real_estate_price",
+      "target": "rent_price",
+      "domain": "부동산/가격 예측",
+      "purpose": "부동산 가격 예측",
+      "domain_pass": true,
+      "purpose_pass": true
+    },
+    {
+      "name": "marketing_conversion",
+      "target": "purchase",
+      "domain": "마케팅/구매 전환",
+      "purpose": "구매/전환 여부",
+      "domain_pass": true,
+      "purpose_pass": true
+    },
+    {
+      "name": "hr_attrition",
+      "target": "attrition",
+      "domain": "인사/HR",
+      "purpose": "퇴사/이직 여부",
+      "domain_pass": true,
+      "purpose_pass": true
+    },
+    {
+      "name": "weather_environment",
+      "target": "rainfall",
+      "domain": "날씨/환경",
+      "purpose": "환경 지표 예측",
+      "domain_pass": true,
+      "purpose_pass": true
+    },
+    {
+      "name": "logistics_delay",
+      "target": "delivery_delay",
+      "domain": "물류/배송",
+      "purpose": "배송 지연 여부",
+      "domain_pass": true,
+      "purpose_pass": true
+    },
+    {
+      "name": "security_fraud",
+      "target": "fraud",
+      "domain": "보안/이상 탐지",
+      "purpose": "사기/이상 여부",
       "domain_pass": true,
       "purpose_pass": true
     },

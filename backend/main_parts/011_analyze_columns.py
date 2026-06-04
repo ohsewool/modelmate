@@ -43,6 +43,18 @@ def infer_dataset_domain(df):
             "dataset_domain_reason": "혈당, 인슐린, BMI, 진단 결과처럼 건강 상태를 판단하는 컬럼이 있습니다.",
             "dataset_domain_confidence": "높음",
         }
+    if has_any(["fraud", "anomaly", "attack", "login", "security", "malware", "intrusion", "device_risk", "사기", "이상거래", "공격", "로그인", "보안", "침입"]):
+        return {
+            "dataset_domain": "보안/이상 탐지",
+            "dataset_domain_reason": "사기, 이상거래, 공격, 로그인처럼 보안 이상 탐지와 관련된 컬럼명이 있습니다.",
+            "dataset_domain_confidence": "높음",
+        }
+    if has_any(["loan", "credit", "default", "debt", "income", "balance", "bank", "delinquency", "대출", "신용", "연체", "부채", "소득", "은행"]):
+        return {
+            "dataset_domain": "금융/신용 리스크",
+            "dataset_domain_reason": "대출, 신용, 연체, 소득처럼 금융 위험 판단과 관련된 컬럼명이 있습니다.",
+            "dataset_domain_confidence": "높음",
+        }
     if has_any(["fault", "failure", "defect", "machine", "sensor", "temperature", "vibration", "torque", "tool_wear", "quality", "불량", "고장", "설비", "품질"]):
         return {
             "dataset_domain": "제조/설비 품질",
@@ -53,6 +65,60 @@ def infer_dataset_domain(df):
         return {
             "dataset_domain": "고객 이탈/CRM",
             "dataset_domain_reason": "고객, 이탈, 해지, 구독 유지와 관련된 컬럼명이 있습니다.",
+            "dataset_domain_confidence": "높음",
+        }
+    if has_any(["playground", "facility", "safety", "address", "zipcode", "children", "어린이", "놀이시설", "시설", "안전", "주소", "우편번호", "설치장소", "실내외", "의무시설"]):
+        return {
+            "dataset_domain": "공공시설/안전 관리",
+            "dataset_domain_reason": "어린이 놀이시설, 주소, 설치장소, 실내외 구분처럼 공공시설 관리용 컬럼이 있습니다.",
+            "dataset_domain_confidence": "높음",
+        }
+    if has_any(["fraud", "anomaly", "attack", "login", "security", "malware", "intrusion", "device_risk", "사기", "이상거래", "공격", "로그인", "보안", "침입"]):
+        return {
+            "dataset_domain": "보안/이상 탐지",
+            "dataset_domain_reason": "사기, 이상거래, 공격, 로그인처럼 보안 이상 탐지와 관련된 컬럼명이 있습니다.",
+            "dataset_domain_confidence": "높음",
+        }
+    if has_any(["loan", "credit", "default", "debt", "income", "balance", "bank", "delinquency", "대출", "신용", "연체", "부채", "소득", "은행"]):
+        return {
+            "dataset_domain": "금융/신용 리스크",
+            "dataset_domain_reason": "대출, 신용, 연체, 소득처럼 금융 위험 판단과 관련된 컬럼명이 있습니다.",
+            "dataset_domain_confidence": "높음",
+        }
+    if has_any(["delivery", "shipment", "warehouse", "delay", "distance", "logistics", "courier", "배송", "물류", "창고", "지연", "거리", "택배"]):
+        return {
+            "dataset_domain": "물류/배송",
+            "dataset_domain_reason": "배송, 물류, 창고, 지연, 거리처럼 배송 운영과 관련된 컬럼명이 있습니다.",
+            "dataset_domain_confidence": "높음",
+        }
+    if has_any(["student", "school", "course", "exam", "attendance", "study", "homework", "gpa", "education", "학습", "학생", "학교", "성적", "출석", "시험", "수강", "과제"]):
+        return {
+            "dataset_domain": "교육/학습 성과",
+            "dataset_domain_reason": "학생, 출석, 시험, 성적처럼 학습 성과를 나타내는 컬럼명이 있습니다.",
+            "dataset_domain_confidence": "높음",
+        }
+    if has_any(["house", "housing", "rent", "apartment", "area", "rooms", "floor", "estate", "property", "부동산", "아파트", "주택", "임대료", "면적", "방수", "층"]):
+        return {
+            "dataset_domain": "부동산/가격 예측",
+            "dataset_domain_reason": "주택, 면적, 방수, 임대료처럼 부동산 가격과 관련된 컬럼명이 있습니다.",
+            "dataset_domain_confidence": "높음",
+        }
+    if has_any(["purchase", "conversion", "click", "campaign", "ad", "marketing", "impression", "lead", "구매", "전환", "클릭", "캠페인", "광고"]):
+        return {
+            "dataset_domain": "마케팅/구매 전환",
+            "dataset_domain_reason": "구매, 전환, 클릭, 캠페인처럼 마케팅 반응을 나타내는 컬럼명이 있습니다.",
+            "dataset_domain_confidence": "높음",
+        }
+    if has_any(["employee", "attrition", "salary", "department", "performance", "hr", "hire", "promotion", "직원", "퇴사", "인사", "급여", "부서", "성과", "채용"]):
+        return {
+            "dataset_domain": "인사/HR",
+            "dataset_domain_reason": "직원, 부서, 급여, 성과, 퇴사처럼 인사 관리와 관련된 컬럼명이 있습니다.",
+            "dataset_domain_confidence": "높음",
+        }
+    if has_any(["weather", "rainfall", "humidity", "pm10", "pm2", "air_quality", "wind", "climate", "날씨", "강수", "습도", "미세먼지", "대기", "기후", "풍속"]):
+        return {
+            "dataset_domain": "날씨/환경",
+            "dataset_domain_reason": "날씨, 강수, 습도, 미세먼지처럼 환경 상태를 나타내는 컬럼명이 있습니다.",
             "dataset_domain_confidence": "높음",
         }
     if has_any(["bike", "bicycle", "rental", "station", "member", "signup", "join", "transport", "subway", "passenger", "공공자전거", "자전거", "따릉이", "대여", "정류장", "지하철", "노선", "역명", "승객", "승차", "하차", "회원", "가입", "연령대", "성별", "가입건수"]):
@@ -108,6 +174,11 @@ def infer_target_category(df, target_col):
     churn_words = ["churn", "leave", "cancel", "retention", "탈퇴", "이탈", "해지"]
     price_words = ["price", "cost", "amount", "sales", "revenue", "fare", "요금", "가격", "금액", "매출"]
     score_words = ["score", "grade", "rating", "rank", "점수", "등급", "평점"]
+    loan_words = ["loan", "approve", "approval", "default", "delinquency", "대출", "승인", "연체"]
+    purchase_words = ["purchase", "conversion", "click", "buy", "구매", "전환", "클릭"]
+    attrition_words = ["attrition", "resign", "turnover", "퇴사", "이직"]
+    delay_words = ["delay", "late", "지연", "연착"]
+    fraud_words = ["fraud", "anomaly", "attack", "사기", "이상", "공격"]
 
     if domain_name == "의료/건강 진단" and "diabetes" in name and is_binary_like:
         label = "당뇨 여부"
@@ -149,6 +220,62 @@ def infer_target_category(df, target_col):
         label = "수면/건강 상태 예측"
         reason = "전체 컬럼이 수면/라이프로그 구조라 맞힐 값을 건강 상태 지표로 보는 것이 자연스럽습니다."
         confidence = "중간"
+    elif domain_name == "교육/학습 성과" and any(word in text for word in ["pass", "fail", "합격", "수료"]):
+        label = "합격/수료 여부"
+        reason = "교육 데이터이고 맞힐 값이 합격, 실패, 수료 여부를 나타냅니다."
+        confidence = "높음"
+    elif domain_name == "교육/학습 성과":
+        label = "성적/학습 성과 예측"
+        reason = "학생, 출석, 시험 정보로 학습 결과를 예측하는 문제로 보입니다."
+        confidence = "높음"
+    elif domain_name == "금융/신용 리스크" and any(word in text for word in loan_words):
+        label = "대출/연체 위험 판단"
+        reason = "금융 데이터이고 맞힐 값이 대출 승인, 연체, 부도 위험과 관련되어 보입니다."
+        confidence = "높음"
+    elif domain_name == "금융/신용 리스크":
+        label = "신용 리스크 예측"
+        reason = "소득, 부채, 신용 정보로 금융 위험을 예측하는 문제로 보입니다."
+        confidence = "높음"
+    elif domain_name == "부동산/가격 예측":
+        label = "부동산 가격 예측"
+        reason = "주택, 면적, 방수 등 부동산 정보로 가격이나 임대료를 예측하는 문제로 보입니다."
+        confidence = "높음"
+    elif domain_name == "마케팅/구매 전환" and any(word in text for word in purchase_words):
+        label = "구매/전환 여부"
+        reason = "마케팅 데이터이고 맞힐 값이 구매, 클릭, 전환 행동을 나타냅니다."
+        confidence = "높음"
+    elif domain_name == "마케팅/구매 전환":
+        label = "마케팅 반응 예측"
+        reason = "광고, 캠페인 정보로 사용자 반응을 예측하는 문제로 보입니다."
+        confidence = "높음"
+    elif domain_name == "인사/HR" and any(word in text for word in attrition_words):
+        label = "퇴사/이직 여부"
+        reason = "인사 데이터이고 맞힐 값이 퇴사나 이직 여부를 나타냅니다."
+        confidence = "높음"
+    elif domain_name == "인사/HR":
+        label = "직원 성과/상태 예측"
+        reason = "직원, 부서, 급여, 성과 정보로 인사 상태를 예측하는 문제로 보입니다."
+        confidence = "높음"
+    elif domain_name == "날씨/환경":
+        label = "환경 지표 예측"
+        reason = "날씨, 강수, 미세먼지 같은 환경 상태값을 예측하는 문제로 보입니다."
+        confidence = "높음"
+    elif domain_name == "물류/배송" and any(word in text for word in delay_words):
+        label = "배송 지연 여부"
+        reason = "물류 데이터이고 맞힐 값이 배송 지연 또는 도착 지연을 나타냅니다."
+        confidence = "높음"
+    elif domain_name == "물류/배송":
+        label = "배송 시간/상태 예측"
+        reason = "배송 거리, 창고, 물류 정보로 배송 결과를 예측하는 문제로 보입니다."
+        confidence = "높음"
+    elif domain_name == "보안/이상 탐지" and any(word in text for word in fraud_words):
+        label = "사기/이상 여부"
+        reason = "보안 데이터이고 맞힐 값이 사기, 공격, 이상 상태를 나타냅니다."
+        confidence = "높음"
+    elif domain_name == "보안/이상 탐지":
+        label = "보안 이상 탐지"
+        reason = "로그인, 거래, 보안 기록으로 이상 여부를 예측하는 문제로 보입니다."
+        confidence = "높음"
     elif any(word in text for word in fault_words):
         label = "고장/불량 분류" if not is_binary_like else "고장 여부"
         reason = "컬럼명이나 값에 고장, 불량, 이상 상태와 관련된 표현이 보입니다."
@@ -199,7 +326,10 @@ def infer_default_target(df):
     bad_tokens = ["id", "idx", "code", "번호", "주소", "우편번호", "일자", "날짜", "년월", "date", "time", "name", "명"]
     good_tokens = [
         "target", "label", "outcome", "result", "diabetes", "churn", "count", "amount", "score",
-        "건수", "가입건수", "여부", "구분코드명", "상태", "등급", "결과", "진단", "당뇨", "분류"
+        "grade", "pass", "loan", "default", "price", "rent", "purchase", "conversion",
+        "attrition", "rainfall", "air_quality", "delay", "fraud", "anomaly",
+        "건수", "가입건수", "여부", "구분코드명", "상태", "등급", "결과", "진단", "당뇨", "분류",
+        "성적", "합격", "대출", "연체", "가격", "임대료", "구매", "전환", "퇴사", "강수", "대기질", "지연", "사기"
     ]
     best_col = df.columns[-1]
     best_score = -10**9
