@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { BarChart3, Clock, LogIn, RefreshCw, Trash2, UserRound } from 'lucide-react'
+import { BarChart3, Clock, GitCompare, LogIn, RefreshCw, Trash2, UserRound } from 'lucide-react'
 import api from '../api'
 import { useAuth } from '../AuthContext'
 import { Badge } from '../components/ui/badge'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
 import AdminDashboard from '../components/admin/AdminDashboard'
+import ExperimentComparePanel from '../components/history/ExperimentComparePanel'
 import ExperimentDetail from '../components/history/ExperimentDetail'
 import RecentExperimentSummary from '../components/history/RecentExperimentSummary'
 import DatasetList from '../components/workspace/DatasetList'
@@ -43,6 +44,10 @@ function experimentsForDataset(dataset, history) {
   return history.filter(item => datasetMatchesExperiment(dataset, item)).slice(0, 5)
 }
 
+function experimentKey(item) {
+  return `${item.timestamp || ''}-${item.owner_email || ''}-${item.best_model || ''}-${item.target || ''}`
+}
+
 export default function History() {
   const { user, logout } = useAuth()
   const nav = useNavigate()
@@ -51,6 +56,7 @@ export default function History() {
   const [datasets, setDatasets] = useState([])
   const [adminSummary, setAdminSummary] = useState(null)
   const [selectedItem, setSelectedItem] = useState(null)
+  const [compareItems, setCompareItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [clearing, setClearing] = useState(false)
   const [confirmClear, setConfirmClear] = useState(false)
@@ -74,6 +80,7 @@ export default function History() {
         setAdminSummary(null)
       }
       setSelectedItem(null)
+      setCompareItems([])
     } catch (e) {
       console.error(e)
     } finally {
@@ -96,6 +103,16 @@ export default function History() {
     } finally {
       setClearing(false)
     }
+  }
+
+  function toggleCompare(item) {
+    setCompareItems(prev => {
+      const key = experimentKey(item)
+      if (prev.some(row => experimentKey(row) === key)) {
+        return prev.filter(row => experimentKey(row) !== key)
+      }
+      return [item, ...prev].slice(0, 3)
+    })
   }
 
   const latest = history[0]
@@ -187,6 +204,15 @@ export default function History() {
           />
         )}
 
+        {compareItems.length > 0 && (
+          <ExperimentComparePanel
+            items={compareItems}
+            onRemove={toggleCompare}
+            onClear={() => setCompareItems([])}
+            onOpen={setSelectedItem}
+          />
+        )}
+
         {!user && (
           <Card style={{ borderColor: '#fde68a', background: '#fffbeb' }}>
             <CardContent className="pt-5">
@@ -259,11 +285,13 @@ export default function History() {
                       <th>선택 모델</th>
                       <th>성능</th>
                       <th>개선</th>
+                      <th>비교</th>
                     </tr>
                   </thead>
                   <tbody>
                     {history.map((item, idx) => {
                       const metric = getPrimaryMetric(item)
+                      const inCompare = compareItems.some(row => experimentKey(row) === experimentKey(item))
                       return (
                         <tr
                           key={`${item.timestamp}-${idx}`}
@@ -291,6 +319,18 @@ export default function History() {
                             <Badge variant={item.optuna_applied ? 'success' : 'secondary'}>
                               {item.optuna_applied ? '적용됨' : '기본'}
                             </Badge>
+                          </td>
+                          <td>
+                            <Button
+                              variant={inCompare ? 'default' : 'secondary'}
+                              size="sm"
+                              onClick={event => {
+                                event.stopPropagation()
+                                toggleCompare(item)
+                              }}
+                            >
+                              <GitCompare size={13} /> {inCompare ? '선택됨' : '비교'}
+                            </Button>
                           </td>
                         </tr>
                       )
