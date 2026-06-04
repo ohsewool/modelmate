@@ -14,14 +14,14 @@ export default function AdminDashboard({ summary }) {
         <CardDescription>사용자, 데이터셋, 실험 흐름을 운영자 관점에서 확인합니다.</CardDescription>
       </CardHeader>
       <CardContent>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: 10, marginBottom: 14 }}>
+        <div className="admin-stat-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: 10, marginBottom: 14 }}>
           <AdminStat label="사용자" value={summary.user_count} />
           <AdminStat label="프로젝트" value={summary.project_count} />
           <AdminStat label="데이터셋" value={summary.dataset_count} />
           <AdminStat label="실험" value={summary.experiment_count} />
           <AdminStat label="최고 성능" value={summary.best_score ?? '-'} />
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.25fr', gap: 12 }}>
+        <div className="admin-detail-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1.25fr', gap: 12 }}>
           <div className="card-elevated" style={{ padding: 14 }}>
             <p style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 900 }}>도메인 분포</p>
             <div style={{ display: 'grid', gap: 8 }}>
@@ -69,7 +69,7 @@ function DomainBar({ row, max }) {
 
 function DatasetLine({ item }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center', padding: 10, borderRadius: 10, background: 'var(--surface-alt)' }}>
+    <div className="admin-dataset-line" style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center', padding: 10, borderRadius: 10, background: 'var(--surface-alt)' }}>
       <div style={{ minWidth: 0 }}>
         <p style={{ margin: 0, fontSize: 13, fontWeight: 900, color: 'var(--text)' }}>{item.filename}</p>
         <p style={{ margin: '4px 0 0', fontSize: 11, color: 'var(--text-label)' }}>

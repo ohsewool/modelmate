@@ -258,4 +258,21 @@ html.dark .banner-danger  { background: rgba(244,63,94,0.1);   border-color: rgb
   .home-hero-grid h1 {
     font-size: 48px !important;
   }
+
+  .admin-stat-grid,
+  .admin-detail-grid,
+  .recent-summary-grid,
+  .dataset-detail-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .recent-summary-side {
+    min-width: 0 !important;
+  }
+
+  .admin-dataset-line,
+  .dataset-detail-actions {
+    align-items: flex-start !important;
+    flex-direction: column;
+  }
 }

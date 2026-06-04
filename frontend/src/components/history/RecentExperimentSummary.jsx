@@ -16,7 +16,7 @@ export default function RecentExperimentSummary({ item, metric, onOpen, onModelL
   return (
     <Card style={{ borderColor: 'rgba(37,99,235,0.20)', background: 'linear-gradient(135deg, #f8fbff, #f6fefb)' }}>
       <CardContent className="pt-5">
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 18, alignItems: 'center' }}>
+        <div className="recent-summary-grid" style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 18, alignItems: 'center' }}>
           <div>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 10 }}>
               <Badge variant="default"><Sparkles size={13} /> 최근 분석 요약</Badge>
@@ -30,7 +30,7 @@ export default function RecentExperimentSummary({ item, metric, onOpen, onModelL
             </h2>
             <p style={{ margin: 0, fontSize: 13, lineHeight: 1.65, color: 'var(--text-2)' }}>{conclusion}</p>
           </div>
-          <div style={{ display: 'grid', gap: 10, minWidth: 190 }}>
+          <div className="recent-summary-side" style={{ display: 'grid', gap: 10, minWidth: 190 }}>
             <MiniStat label="예측 유형" value={task} />
             <MiniStat label="대표 성능" value={`${metric.label} ${fmt(metric.value)}`} />
             <div style={{ display: 'flex', gap: 8 }}>
