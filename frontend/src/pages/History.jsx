@@ -6,6 +6,7 @@ import { useAuth } from '../AuthContext'
 import { Badge } from '../components/ui/badge'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
+import AdminDashboard from '../components/admin/AdminDashboard'
 import ExperimentDetail from '../components/history/ExperimentDetail'
 import RecentExperimentSummary from '../components/history/RecentExperimentSummary'
 import DatasetList from '../components/workspace/DatasetList'
@@ -36,6 +37,7 @@ export default function History() {
   const [profile, setProfile] = useState(null)
   const [history, setHistory] = useState([])
   const [datasets, setDatasets] = useState([])
+  const [adminSummary, setAdminSummary] = useState(null)
   const [selectedItem, setSelectedItem] = useState(null)
   const [loading, setLoading] = useState(true)
   const [clearing, setClearing] = useState(false)
@@ -53,6 +55,12 @@ export default function History() {
       setProfile(profileRes.data)
       setHistory(historyRes.data || [])
       setDatasets(datasetsRes.data || [])
+      if (profileRes.data?.is_admin) {
+        const adminRes = await api.get('/admin/summary').catch(() => ({ data: null }))
+        setAdminSummary(adminRes.data)
+      } else {
+        setAdminSummary(null)
+      }
       setSelectedItem(null)
     } catch (e) {
       console.error(e)
@@ -141,6 +149,8 @@ export default function History() {
         </Card>
 
         <WorkspaceBanner profile={profile} />
+
+        {profile?.is_admin && <AdminDashboard summary={adminSummary} />}
 
         <DatasetList
           datasets={datasets}
