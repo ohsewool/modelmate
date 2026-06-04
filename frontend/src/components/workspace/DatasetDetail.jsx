@@ -1,4 +1,7 @@
-export default function DatasetDetail({ item }) {
+import { Upload } from 'lucide-react'
+import { Button } from '../ui/button'
+
+export default function DatasetDetail({ item, onUpload }) {
   const quality = parseQuality(item.quality)
   const reasons = quality.reasons || []
   const score = quality.score == null ? '-' : `${Math.round(quality.score * 100)}점`
@@ -21,9 +24,12 @@ export default function DatasetDetail({ item }) {
           </div>
         </div>
       )}
-      <p style={{ margin: '12px 0 0', fontSize: 12, color: 'var(--text-label)' }}>
-        원본 CSV는 저장하지 않고 메타데이터만 보관합니다. 다시 학습하려면 같은 파일을 다시 업로드하세요.
-      </p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', marginTop: 12 }}>
+        <p style={{ margin: 0, fontSize: 12, color: 'var(--text-label)' }}>
+          원본 CSV는 저장하지 않습니다. 다시 학습하려면 같은 파일을 다시 업로드하세요.
+        </p>
+        <Button variant="secondary" size="sm" onClick={onUpload}><Upload size={14} /> 다시 분석</Button>
+      </div>
     </div>
   )
 }
