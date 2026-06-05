@@ -5,10 +5,10 @@ const actions = [
   {
     key: 'rerun',
     icon: RefreshCw,
-    title: '같은 데이터로 다시 개선',
-    desc: '모델 비교와 자동 개선을 다시 실행해 최신 기준으로 점수를 확인합니다.',
-    label: '모델 고르기',
-    to: '/model-lab',
+    title: '같은 설정으로 다시 분석',
+    desc: '원본 CSV를 다시 올리고 이전 타겟, 도메인, 모델 판단을 참고해 이어갑니다.',
+    label: 'CSV 다시 올리기',
+    to: '/upload',
   },
   {
     key: 'predict',
@@ -38,6 +38,17 @@ const actions = [
 
 export default function ExperimentActionPanel({ item, onNavigate }) {
   const hasModel = Boolean(item?.best_model)
+  const reanalysisState = {
+    reanalysisExperiment: {
+      filename: item?.dataset_ref?.filename || '이전 실험 CSV',
+      domain: item?.dataset_domain || item?.dataset_ref?.domain,
+      target_col: item?.target,
+      target_category: item?.target_category,
+      rows: item?.data_shape?.[0] || item?.dataset_ref?.rows,
+      columns: item?.data_shape?.[1] || item?.dataset_ref?.columns,
+      best_model: item?.best_model,
+    },
+  }
   return (
     <div className="card-elevated" style={{ padding: 14, marginBottom: 14 }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 12 }}>
@@ -62,9 +73,11 @@ export default function ExperimentActionPanel({ item, onNavigate }) {
               key={action.key}
               role="button"
               tabIndex={disabled ? -1 : 0}
-              onClick={() => !disabled && onNavigate?.(action.to)}
+              onClick={() => !disabled && onNavigate?.(action.to, action.key === 'rerun' ? reanalysisState : undefined)}
               onKeyDown={event => {
-                if (!disabled && (event.key === 'Enter' || event.key === ' ')) onNavigate?.(action.to)
+                if (!disabled && (event.key === 'Enter' || event.key === ' ')) {
+                  onNavigate?.(action.to, action.key === 'rerun' ? reanalysisState : undefined)
+                }
               }}
               className="card-elevated"
               style={{

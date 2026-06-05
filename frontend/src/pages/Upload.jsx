@@ -37,6 +37,8 @@ export default function Upload() {
   const nav = useNavigate()
   const location = useLocation()
   const reanalysisDataset = location.state?.reanalysisDataset || null
+  const reanalysisExperiment = location.state?.reanalysisExperiment || null
+  const reanalysisItem = reanalysisDataset || reanalysisExperiment
   const searchParams = new URLSearchParams(location.search)
   const showDemoGuide = searchParams.get('demo') === '1' || searchParams.get('presenter') === '1'
 
@@ -154,8 +156,8 @@ export default function Upload() {
 
       {!uploadInfo ? (
         <div style={{ display: 'grid', gap: 14 }}>
-          {reanalysisDataset && (
-            <ReanalysisNotice item={reanalysisDataset} onClear={clearReanalysis} />
+          {reanalysisItem && (
+            <ReanalysisNotice item={reanalysisItem} onClear={clearReanalysis} />
           )}
           {showDemoGuide && <DemoDatasetGuide />}
           <div

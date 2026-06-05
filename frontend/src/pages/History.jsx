@@ -356,7 +356,7 @@ export default function History() {
           <ExperimentDetail
             item={selectedItem}
             owner={selectedItem.owner_email || user?.email || '내 기록'}
-            onNavigate={path => nav(path)}
+            onNavigate={(path, state) => nav(path, state ? { state } : undefined)}
             onClose={() => setSelectedItem(null)}
           />
         )}
