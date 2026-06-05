@@ -1,6 +1,6 @@
 # Full QA Results
 
-Generated: `2026-06-05T09:06:55`
+Generated: `2026-06-05T11:35:11`
 
 ## Summary
 
@@ -8,13 +8,13 @@ Generated: `2026-06-05T09:06:55`
 - upload_matrix: pass
 - workspace_flow: pass
 - frontend_build: pass
-- training: pass
+- training: skipped
 
 ## Workspace And API
 
 | Check | Result |
 |---|---|
-| Dataset linked to history | 6c216bb4 |
+| Dataset linked to history | 556ba2f7 |
 | Saved model version | v1 |
 | Model storage | 사용 가능 |
 | Prediction API | ok |

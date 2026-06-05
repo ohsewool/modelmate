@@ -5,8 +5,8 @@
 - 배포 URL: https://web-production-5d6fa.up.railway.app/
 - GitHub: https://github.com/ohsewool/-
 - Branch: `main`
-- 최신 확인 커밋: `dfea369 feat: add api readiness panel`
-- 최신 배포 번들: `assets/index-VfRge5CU.js`
+- 최신 확인 커밋: `167a15b feat: add admin risk overview` 이후 공개 데모 노출 제한 작업 진행
+- 최신 빌드 번들: `assets/index-BTrufB_4.js`
 - 11월 졸업프로젝트 방향: 고정 샘플 데모가 아니라 임의 CSV를 즉석 업로드해 판단, 학습, 설명, 예측, API 공유까지 이어지는 범용 AutoML SaaS처럼 보이게 만든다.
 
 ## 핵심 데모 스토리
@@ -36,6 +36,9 @@
 - 공유/API
   - API 공개 준비도 패널
   - 공유 URL, 예측 테스트, 운영 관리, 외부 서비스 활용 시나리오
+- 관리자/상용성
+  - 관리자 화면에 도메인 불확실, 타겟 미정, 소형 데이터, 업로드 후 실험 미진행 같은 운영 위험 신호 추가
+  - 일반 공개 화면에서는 데모 모드 토글을 숨기고, `?presenter=1` 발표자 세션에서만 데모 토글/API 파라미터 허용
 - QA
   - 풀 QA 하네스에 도메인, 업로드, 워크스페이스, 공유 API 예측, 프론트 빌드, 학습 벤치마크 포함
 
@@ -44,7 +47,7 @@
 - `python scripts/run_full_qa.py`: pass
 - `python scripts/run_full_qa.py --skip-slow`: pass
 - `python scripts/run_workspace_flow_qa.py`: 데이터셋 저장, 실험 기록, 저장 모델, 버전, 저장 상태, 공유 API 예측 pass
-- Railway 확인: 공개 URL 200, 최신 번들 `assets/index-VfRge5CU.js`
+- Railway 확인: 공개 URL 200, 최신 번들 확인 루틴 사용
 - 최신 결과 파일:
   - `FULL_QA_RESULTS.md`
   - `full_qa_results.json`
@@ -78,5 +81,5 @@
 ## 주의
 
 - 기본 시연은 즉석 CSV 업로드다. Pima, CH2025, 제조/품질, 공공자전거, 공공시설 데이터는 백업 QA 세트다.
-- 외부 AI 토큰을 아끼려면 데모 모드 또는 no-token QA를 우선 사용한다.
+- 외부 AI 토큰을 아끼려면 `?presenter=1` 발표자 세션의 데모 모드 또는 no-token QA를 우선 사용한다. 일반 공개 URL에는 데모 토글을 노출하지 않는다.
 - 큰 리팩터보다 100줄 안팎의 작은 컴포넌트/헬퍼 단위로 계속 고도화한다.

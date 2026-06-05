@@ -174,7 +174,7 @@ function ProductPreview() {
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           <ActionPill icon={<Sparkles size={15} />} text="AI 자동 실행" />
-          <ActionPill icon={<ShieldCheck size={15} />} text="데모 모드" />
+          <ActionPill icon={<ShieldCheck size={15} />} text="검증 흐름" />
           <ActionPill icon={<CheckCircle2 size={15} />} text="이유 보기" />
           <ActionPill icon={<Play size={15} />} text="새 예측" />
         </div>

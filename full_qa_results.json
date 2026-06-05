@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-05T09:06:55",
+  "generated_at": "2026-06-05T11:35:11",
   "stages": {
     "domain": {
       "name": "domain",
@@ -300,14 +300,14 @@
       "name": "workspace_flow",
       "status": "pass",
       "returncode": 0,
-      "stdout_tail": "{\n  \"status\": \"pass\",\n  \"result\": {\n    \"dataset_id\": \"6c216bb4\",\n    \"history_dataset_id\": \"6c216bb4\",\n    \"model_id\": \"4baa0333\",\n    \"version_label\": \"v1\",\n    \"storage_status\": \"사용 가능\",\n    \"predict_status\": \"ok\",\n    \"prediction_label\": \"normal\"\n  }\n}\n",
+      "stdout_tail": "{\n  \"status\": \"pass\",\n  \"result\": {\n    \"dataset_id\": \"556ba2f7\",\n    \"history_dataset_id\": \"556ba2f7\",\n    \"model_id\": \"0f2a4c12\",\n    \"version_label\": \"v1\",\n    \"storage_status\": \"사용 가능\",\n    \"predict_status\": \"ok\",\n    \"prediction_label\": \"normal\"\n  }\n}\n",
       "stderr_tail": "",
       "parsed_result": {
         "status": "pass",
         "result": {
-          "dataset_id": "6c216bb4",
-          "history_dataset_id": "6c216bb4",
-          "model_id": "4baa0333",
+          "dataset_id": "556ba2f7",
+          "history_dataset_id": "556ba2f7",
+          "model_id": "0f2a4c12",
           "version_label": "v1",
           "storage_status": "사용 가능",
           "predict_status": "ok",
@@ -319,16 +319,13 @@
       "name": "frontend_build",
       "status": "pass",
       "returncode": 0,
-      "stdout_tail": "\u001b[36mvite v5.4.21 \u001b[32mbuilding for production...\u001b[36m\u001b[39m\ntransforming...\n\u001b[32m✓\u001b[39m 2315 modules transformed.\nrendering chunks...\ncomputing gzip size...\n\u001b[2mdist/\u001b[22m\u001b[32mindex.html                 \u001b[39m\u001b[1m\u001b[2m  0.82 kB\u001b[22m\u001b[1m\u001b[22m\u001b[2m │ gzip:   0.52 kB\u001b[22m\n\u001b[2mdist/\u001b[22m\u001b[35massets/index-C9Vym5ho.css  \u001b[39m\u001b[1m\u001b[2m 21.99 kB\u001b[22m\u001b[1m\u001b[22m\u001b[2m │ gzip:   5.20 kB\u001b[22m\n\u001b[2mdist/\u001b[22m\u001b[36massets/index-DuahEgE9.js   \u001b[39m\u001b[1m\u001b[33m795.39 kB\u001b[39m\u001b[22m\u001b[2m │ gzip: 233.23 kB\u001b[22m\n\u001b[32m✓ built in 8.00s\u001b[39m\n",
+      "stdout_tail": "\u001b[36mvite v5.4.21 \u001b[32mbuilding for production...\u001b[36m\u001b[39m\ntransforming...\n\u001b[32m✓\u001b[39m 2315 modules transformed.\nrendering chunks...\ncomputing gzip size...\n\u001b[2mdist/\u001b[22m\u001b[32mindex.html                 \u001b[39m\u001b[1m\u001b[2m  0.82 kB\u001b[22m\u001b[1m\u001b[22m\u001b[2m │ gzip:   0.53 kB\u001b[22m\n\u001b[2mdist/\u001b[22m\u001b[35massets/index-C9Vym5ho.css  \u001b[39m\u001b[1m\u001b[2m 21.99 kB\u001b[22m\u001b[1m\u001b[22m\u001b[2m │ gzip:   5.20 kB\u001b[22m\n\u001b[2mdist/\u001b[22m\u001b[36massets/index-BTrufB_4.js   \u001b[39m\u001b[1m\u001b[33m796.21 kB\u001b[39m\u001b[22m\u001b[2m │ gzip: 233.36 kB\u001b[22m\n\u001b[32m✓ built in 9.99s\u001b[39m\n",
       "stderr_tail": "\u001b[33m\n(!) Some chunks are larger than 500 kB after minification. Consider:\n- Using dynamic import() to code-split the application\n- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks\n- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.\u001b[39m\n",
       "cwd": "C:\\Users\\82105\\Documents\\Codex\\2026-06-02\\https-web-production-5d6fa-up-railway\\work\\github-repo\\frontend"
     },
     "training": {
-      "name": "training",
-      "status": "pass",
-      "returncode": 0,
-      "stdout_tail": "  \"best_model\": \"Logistic Regression\",\n      \"score\": 0.8314,\n      \"status\": \"pass\"\n    },\n    {\n      \"name\": \"playground\",\n      \"shape\": [\n        4804,\n        16\n      ],\n      \"target\": \"의무시설여부코드명\",\n      \"domain\": \"공공시설/안전 관리\",\n      \"purpose\": \"시설 상태/여부 분류\",\n      \"task_type\": \"classification\",\n      \"best_model\": \"Random Forest\",\n      \"score\": 0.9535,\n      \"status\": \"pass\"\n    },\n    {\n      \"name\": \"seoul_bike\",\n      \"shape\": [\n        96,\n        5\n      ],\n      \"target\": \"가입건수\",\n      \"domain\": \"공공교통/이용자 통계\",\n      \"purpose\": \"가입자 수 예측\",\n      \"task_type\": \"regression\",\n      \"best_model\": \"Gradient Boosting\",\n      \"score\": 0.9449,\n      \"status\": \"pass\"\n    },\n    {\n      \"name\": \"seoul_subway_151\",\n      \"shape\": [\n        17280,\n        6\n      ],\n      \"target\": \"하차총승객수\",\n      \"domain\": \"공공교통/이용자 통계\",\n      \"purpose\": \"승객 수 예측\",\n      \"task_type\": \"regression\",\n      \"best_model\": \"Ridge Regression\",\n      \"score\": 0.0023,\n      \"status\": \"pass\"\n    },\n    {\n      \"name\": \"seoul_subway_152\",\n      \"shape\": [\n        19134,\n        6\n      ],\n      \"target\": \"하차총승객수\",\n      \"domain\": \"공공교통/이용자 통계\",\n      \"purpose\": \"승객 수 예측\",\n      \"task_type\": \"regression\",\n      \"best_model\": \"Ridge Regression\",\n      \"score\": -0.0007,\n      \"status\": \"pass\"\n    },\n    {\n      \"name\": \"seoul_subway_153\",\n      \"shape\": [\n        18522,\n        6\n      ],\n      \"target\": \"하차총승객수\",\n      \"domain\": \"공공교통/이용자 통계\",\n      \"purpose\": \"승객 수 예측\",\n      \"task_type\": \"regression\",\n      \"best_model\": \"Ridge Regression\",\n      \"score\": 0.0005,\n      \"status\": \"pass\"\n    }\n  ]\n}\n",
-      "stderr_tail": ""
+      "status": "skipped",
+      "reason": "skip-slow option"
     }
   }
 }
