@@ -1,6 +1,7 @@
 import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'
 import AgentInsightCards from '../AgentInsightCards'
+import AgentAutonomyPanel from './AgentAutonomyPanel'
 import AgentDecisionBoard from './AgentDecisionBoard'
 import AgentMissionBrief from './AgentMissionBrief'
 import AgentNextActionsPanel from './AgentNextActionsPanel'
@@ -15,6 +16,7 @@ export default function AgentResultPanel({ result, steps, decision, onReport, on
         <AgentPlanBoard activeIndex={AGENT_PLAN.length} completed />
         <AgentDecisionBoard decision={decision} />
       </div>
+      <AgentAutonomyPanel insights={result.agent_insights} />
       <AgentInsightCards insights={result.agent_insights} />
       <AgentNextActionsPanel
         insights={result.agent_insights}
