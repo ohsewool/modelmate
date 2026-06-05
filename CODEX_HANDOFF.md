@@ -6,7 +6,7 @@
 - GitHub: https://github.com/ohsewool/-
 - Branch: `main`
 - 최신 확인 커밋: `main` 최신 커밋 기준
-- 최신 배포 번들: JS `assets/index-Fyqm55a6.js`, CSS `assets/index-1pRMGAvu.css`
+- 최신 배포 번들: JS `assets/index-BQ0l-Scc.js`, CSS `assets/index-1pRMGAvu.css`
 - 11월 졸업프로젝트 방향: 고정 샘플 데모가 아니라 임의 CSV를 즉석 업로드해 판단, 학습, 설명, 예측, API 공유까지 이어지는 범용 AutoML SaaS처럼 보이게 만든다.
 
 ## 핵심 데모 스토리
@@ -29,6 +29,7 @@
   - 빈 파일, 단일 열, 상수값, 긴 문장형 파일, 긴 설명 열 위주 파일, 중복 컬럼, 컬럼명 없음, 날짜만 있는 파일 친절한 거절
 - AI 에이전트
   - 다음 행동 보드
+  - 에이전트 우선 판단: 바로 진행/검토 후 진행/보류 후 재점검과 확인 포인트 표시
   - 모델 추천 이유, 1/2위 모델 비교 근거, 위험 메모, 판단 신뢰도, 보고서/이유/예측/API 바로가기
 - 작업공간
   - 실험 상세에서 다시 분석, 새 예측, API 공유, 결과 요약으로 이어지는 재사용 액션
@@ -51,7 +52,7 @@
 - `python scripts/run_full_qa.py`: pass
 - `python scripts/run_full_qa.py --skip-slow`: pass
 - `python scripts/run_workspace_flow_qa.py`: 데이터셋 저장, 실험 기록, 저장 모델, 버전, 저장 상태, 공유 API 예측 pass
-- Railway 확인: 공개 URL 200, 최신 번들 `assets/index-Fyqm55a6.js`
+- Railway 확인: 공개 URL 200, 최신 번들 `assets/index-BQ0l-Scc.js`
 - 최신 결과 파일:
   - `FULL_QA_RESULTS.md`
   - `full_qa_results.json`

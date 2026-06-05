@@ -142,6 +142,19 @@ function BusinessSummary({ data }) {
           </p>
         </div>
       )}
+      {data.agent_priority?.level && (
+        <div style={{ marginTop: 12, padding: 12, borderRadius: 12, background: 'rgba(37,99,235,0.07)', border: '1px solid rgba(37,99,235,0.18)' }}>
+          <p style={{ margin: '0 0 5px', fontSize: 12, fontWeight: 900, color: '#2563eb' }}>
+            에이전트 우선 판단 · {data.agent_priority.level}
+          </p>
+          <p style={{ margin: '0 0 8px', fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6 }}>
+            {data.agent_priority.summary}
+          </p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {(data.agent_priority.focus || []).slice(0, 4).map(item => <Badge key={item} variant="secondary">{item}</Badge>)}
+          </div>
+        </div>
+      )}
       {!!data.next_actions?.length && (
         <div style={{ display: 'grid', gap: 8, marginTop: 12 }}>
           {data.next_actions.slice(0, 3).map(action => (

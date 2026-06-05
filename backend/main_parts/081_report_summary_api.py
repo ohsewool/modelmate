@@ -81,6 +81,7 @@ async def report_summary():
                 f"{agent_insights.get('score_comment')} {agent_insights.get('model_reason')}"
             ),
             "model_evidence": agent_insights.get("model_evidence", {}),
+            "agent_priority": agent_insights.get("agent_priority", {}),
             "risk_notes": agent_insights.get("risk_notes", []),
             "next_actions": agent_insights.get("next_actions", []),
         },

@@ -61,6 +61,37 @@ def _next_actions(df, X, score, optuna_result, target_info, top_feature):
     return actions[:4] or ["현재 결과 요약을 저장하고, 새 데이터 예측 화면에서 같은 흐름을 시연하세요."]
 
 
+def _agent_priority(df, X, score, target_info, evidence):
+    focus = []
+    if target_info.get("target_category_confidence") == "낮음":
+        focus.append("맞힐 값 의미 확인")
+    if df is not None and len(df) < 100:
+        focus.append("데이터 수 보강")
+    if X is not None and X.shape[1] < 3:
+        focus.append("참고 정보 추가")
+    if score is not None and score < 0.65:
+        focus.append("모델 비교 재실행")
+    if evidence.get("gap_label") == "접전":
+        focus.append("1위/2위 모델 차이 설명")
+    if score is not None and score >= 0.8 and len(focus) <= 1:
+        return {
+            "level": "바로 진행",
+            "summary": "현재 결과는 발표 흐름에 바로 사용할 수 있습니다.",
+            "focus": focus or ["결과 요약 저장", "새 데이터 예측 시연"],
+        }
+    if len(focus) <= 2:
+        return {
+            "level": "검토 후 진행",
+            "summary": "분석은 가능하지만 발표 전에 핵심 확인 사항을 짚는 것이 좋습니다.",
+            "focus": focus or ["맞힐 값과 제외 컬럼 확인"],
+        }
+    return {
+        "level": "보류 후 재점검",
+        "summary": "결과를 바로 쓰기보다 데이터 의미와 입력 정보를 먼저 보강하는 편이 안전합니다.",
+        "focus": focus[:4],
+    }
+
+
 def _model_evidence(cv_results, task_type):
     rows = [r for r in (cv_results or []) if r.get("status") == "ok"]
     metric = "r2" if task_type == "regression" else "roc_auc"
@@ -112,12 +143,15 @@ def build_agent_insights(best_name=None, best_score=None, optuna_result=None, to
         f"이 데이터는 {domain}에 가까우며, {target_label} 문제로 분석했습니다. "
         f"{best_name or '선택 모델'}은 {top_feature or '주요 정보'}를 근거로 예측 결과를 설명할 수 있습니다."
     )
+    evidence = _model_evidence(cv_results, task_type)
+    priority = _agent_priority(df, X, best_score, target_info, evidence)
     return {
         "domain": domain,
         "target_label": target_label,
         "target_reason": target_reason,
         "model_reason": _model_comment(best_name, task_type),
-        "model_evidence": _model_evidence(cv_results, task_type),
+        "model_evidence": evidence,
+        "agent_priority": priority,
         "score_comment": _score_comment(best_score),
         "tuning_status": tuning_status,
         "risk_notes": _risk_notes(df, X, best_score, target_info),

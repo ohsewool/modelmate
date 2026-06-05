@@ -19,6 +19,7 @@ function fallbackActions(insights) {
 export default function AgentNextActionsPanel({ insights, decision, onReport, onXai, onPredict, onDeploy }) {
   const actions = insights?.next_actions?.length ? insights.next_actions : fallbackActions(insights)
   const risks = insights?.risk_notes || []
+  const priority = insights?.agent_priority
   const confidence = confidenceText(insights)
   const quickLinks = [
     ['보고서', FileText, onReport],
@@ -43,6 +44,21 @@ export default function AgentNextActionsPanel({ insights, decision, onReport, on
         <p style={{ margin: '0 0 5px', fontSize: 13, fontWeight: 850, color: 'var(--text)' }}>{decision?.title}</p>
         <p style={{ margin: 0, fontSize: 12, color: 'var(--text-2)', lineHeight: 1.55 }}>{decision?.next}</p>
       </div>
+
+      {priority && (
+        <div style={{ display: 'grid', gap: 8, padding: 13, borderRadius: 12, border: '1px solid rgba(37,99,235,0.18)', background: 'rgba(37,99,235,0.06)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center' }}>
+            <p style={{ margin: 0, fontSize: 13, fontWeight: 900, color: 'var(--text)' }}>우선 판단 · {priority.level}</p>
+            <span className={priority.level === '바로 진행' ? 'badge badge-green' : priority.level === '검토 후 진행' ? 'badge badge-blue' : 'badge badge-amber'}>
+              에이전트 권고
+            </span>
+          </div>
+          <p style={{ margin: 0, fontSize: 12, color: 'var(--text-2)', lineHeight: 1.55 }}>{priority.summary}</p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {(priority.focus || []).slice(0, 4).map(item => <span key={item} className="badge badge-blue">{item}</span>)}
+          </div>
+        </div>
+      )}
 
       <div style={{ display: 'grid', gap: 8 }}>
         {actions.slice(0, 4).map((action, idx) => (
