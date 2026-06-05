@@ -12,6 +12,7 @@ import api from '../api'
 import WorkspaceBanner from '../components/workspace/WorkspaceBanner'
 import ApiReadinessPanel from '../components/deploy/ApiReadinessPanel'
 import ShareValuePanel from '../components/deploy/ShareValuePanel'
+import ApiOpsPanel from '../components/deploy/ApiOpsPanel'
 
 const fmt = value => {
   if (value === null || value === undefined || value === '') return '-'
@@ -269,6 +270,8 @@ export default function Deploy() {
         </section>
 
         <ShareValuePanel models={models} hasModel={hasModel} />
+
+        <ApiOpsPanel models={models} />
 
         <ApiReadinessPanel models={models} hasModel={hasModel} />
 
