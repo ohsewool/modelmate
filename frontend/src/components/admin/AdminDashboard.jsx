@@ -1,6 +1,7 @@
 import { ShieldCheck } from 'lucide-react'
 import { Badge } from '../ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
+import AdminRiskPanel from './AdminRiskPanel'
 
 export default function AdminDashboard({ summary }) {
   if (!summary) return null
@@ -20,6 +21,9 @@ export default function AdminDashboard({ summary }) {
           <AdminStat label="데이터셋" value={summary.dataset_count} />
           <AdminStat label="실험" value={summary.experiment_count} />
           <AdminStat label="최고 성능" value={summary.best_score ?? '-'} />
+        </div>
+        <div style={{ marginBottom: 14 }}>
+          <AdminRiskPanel summary={summary} />
         </div>
         <div className="admin-detail-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1.25fr', gap: 12 }}>
           <div className="card-elevated" style={{ padding: 14 }}>
