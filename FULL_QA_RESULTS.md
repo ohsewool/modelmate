@@ -1,6 +1,6 @@
 # Full QA Results
 
-Generated: `2026-06-05T12:32:58`
+Generated: `2026-06-05T13:05:56`
 
 ## Summary
 
@@ -14,7 +14,7 @@ Generated: `2026-06-05T12:32:58`
 
 | Check | Result |
 |---|---|
-| Dataset linked to history | 4780d94e |
+| Dataset linked to history | bcb358a9 |
 | Saved model version | v1 |
 | Model storage | 사용 가능 |
 | Prediction API | ok |
@@ -27,6 +27,7 @@ Generated: `2026-06-05T12:32:58`
 | one_column | reject | pass | 데이터셋으로 보기 어렵습니다: 열이 2개 미만, 값이 있는 열이 2개 미만, 변화가 있는 열이 2개 미만. 행/열이 있는 CSV 데이터셋을 올려주세요. |
 | constant | reject | pass | 데이터셋으로 보기 어렵습니다: 변화가 있는 열이 2개 미만. 행/열이 있는 CSV 데이터셋을 올려주세요. |
 | long_text | reject | pass | 데이터셋으로 보기 어렵습니다: 변화가 있는 열이 2개 미만. 행/열이 있는 CSV 데이터셋을 올려주세요. |
+| multi_note_text | reject | pass | 데이터셋으로 보기 어렵습니다: 긴 설명 열이 대부분. 행/열이 있는 CSV 데이터셋을 올려주세요. |
 | duplicate_columns | reject | pass | 데이터셋으로 보기 어렵습니다: 중복 컬럼명 있음. 행/열이 있는 CSV 데이터셋을 올려주세요. |
 | unnamed_columns | reject | pass | 데이터셋으로 보기 어렵습니다: 컬럼명이 대부분 비어 있음. 행/열이 있는 CSV 데이터셋을 올려주세요. |
 | dates_only | reject | pass | 데이터셋으로 보기 어렵습니다: 날짜 컬럼만 있음. 행/열이 있는 CSV 데이터셋을 올려주세요. |

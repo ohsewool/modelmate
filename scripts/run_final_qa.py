@@ -56,6 +56,7 @@ def cached_training_status(script):
 
 
 def invalid_cases():
+    memo = "고객이 남긴 자유 서술형 메모라서 값이 행과 열로 정리된 예측 데이터라고 보기 어렵습니다."
     return [
         ("empty_table", pd.DataFrame(), "empty.csv"),
         ("one_column", pd.DataFrame({"memo": ["a", "b", "c", "d", "e"]}), "one.csv"),
@@ -70,6 +71,12 @@ def invalid_cases():
             ],
             "reply": ["네"] * 5,
         }), "chat.csv"),
+        ("multi_note_text", pd.DataFrame({
+            "question": [memo + str(i) for i in range(8)],
+            "answer": ["긴 설명과 대화 내용이 이어져 있어 표 데이터 학습용으로 보기 어렵습니다." + str(i) for i in range(8)],
+            "comment": [memo + " 추가 설명" + str(i) for i in range(8)],
+            "label": ["검토"] * 8,
+        }), "notes.csv"),
     ]
 
 

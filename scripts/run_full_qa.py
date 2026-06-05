@@ -67,11 +67,18 @@ def run_frontend_build():
 
 def invalid_upload_cases():
     long = "이 파일은 예측용 표 데이터가 아니라 발표 준비 대화와 긴 설명 문장으로 이루어진 내용입니다."
+    memo = "고객이 남긴 자유 서술형 메모라서 값이 행과 열로 정리된 예측 데이터라고 보기 어렵습니다."
     return [
         ("empty", pd.DataFrame(), "empty.csv"),
         ("one_column", pd.DataFrame({"memo": list("abcdef")}), "one.csv"),
         ("constant", pd.DataFrame({"a": [1] * 8, "b": [1] * 8}), "constant.csv"),
         ("long_text", pd.DataFrame({"text": [long] * 6, "reply": ["네"] * 6}), "chat.csv"),
+        ("multi_note_text", pd.DataFrame({
+            "question": [memo + str(i) for i in range(8)],
+            "answer": [long + str(i) for i in range(8)],
+            "comment": [memo + " 추가 설명" + str(i) for i in range(8)],
+            "label": ["검토"] * 8,
+        }), "notes.csv"),
         ("duplicate_columns", pd.DataFrame([[1, 2], [3, 4], [5, 6], [7, 8], [9, 10]], columns=["x", "x"]), "dup.csv"),
         ("unnamed_columns", pd.DataFrame([[1, 0], [2, 1], [3, 0], [4, 1], [5, 0]], columns=["Unnamed: 0", ""]), "unnamed.csv"),
         ("dates_only", pd.DataFrame({

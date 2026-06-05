@@ -12,7 +12,7 @@ export function buildAdvice(error, info) {
 
 export function buildDiagnosis(failed, info, reasons) {
   if (!failed) return { title: '', body: '' }
-  if (reasons.includes('문장형 텍스트가 대부분') || reasons.includes('표 데이터보다 문서/대화 내용에 가까움')) {
+  if (reasons.includes('문장형 텍스트가 대부분') || reasons.includes('표 데이터보다 문서/대화 내용에 가까움') || reasons.includes('긴 설명 열이 대부분')) {
     return {
       title: '대화나 문서에 가까운 파일입니다',
       body: 'ModelMate는 행마다 하나의 사례가 있고 열마다 정보가 나뉜 표 데이터를 학습합니다.',
@@ -52,6 +52,7 @@ export function translateReason(reason) {
     '변화가 있는 열이 2개 미만': '값이 변하는 열이 부족합니다',
     '문장형 텍스트가 대부분': '긴 문장 위주라 표 데이터로 보기 어렵습니다',
     '표 데이터보다 문서/대화 내용에 가까움': '문서나 대화 내용에 가까운 파일입니다',
+    '긴 설명 열이 대부분': '설명/메모처럼 긴 텍스트 열이 대부분입니다',
     '날짜 컬럼만 있음': '날짜 정보만 있고 예측할 값이 없습니다',
   })[reason] || reason
 }
