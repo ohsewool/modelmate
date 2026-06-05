@@ -1,6 +1,6 @@
 # Full QA Results
 
-Generated: `2026-06-05T15:03:19`
+Generated: `2026-06-05T15:35:30`
 
 ## Summary
 
@@ -14,7 +14,7 @@ Generated: `2026-06-05T15:03:19`
 
 | Check | Result |
 |---|---|
-| Dataset linked to history | 2ea66122 |
+| Dataset linked to history | 7a003649 |
 | Saved model version | v1 |
 | Model storage | 사용 가능 |
 | Prediction API | ok |
@@ -31,6 +31,7 @@ Generated: `2026-06-05T15:03:19`
 | duplicate_columns | reject | pass | 데이터셋으로 보기 어렵습니다: 중복 컬럼명 있음. 행/열이 있는 CSV 데이터셋을 올려주세요. |
 | unnamed_columns | reject | pass | 데이터셋으로 보기 어렵습니다: 컬럼명이 대부분 비어 있음. 행/열이 있는 CSV 데이터셋을 올려주세요. |
 | dates_only | reject | pass | 데이터셋으로 보기 어렵습니다: 날짜 컬럼만 있음. 행/열이 있는 CSV 데이터셋을 올려주세요. |
+| public_facility_lookup | accept_with_warning | pass | 업로드 가능한 데이터셋입니다. |
 | tmp_datasets/ch2025.csv | accept | pass | 업로드 가능한 데이터셋입니다. |
 | tmp_datasets/pima.csv | accept | pass | 업로드 가능한 데이터셋입니다. |
 | tmp_datasets/playground.csv | accept | pass | 업로드 가능한 데이터셋입니다. |

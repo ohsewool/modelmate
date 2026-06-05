@@ -107,11 +107,51 @@ def validate_dataset_file(df, filename: str = ""):
         "score": int(score),
         "reasons": reasons,
     }
+    info.update(prediction_readiness_profile(df, info))
 
     if reasons:
         msg = "데이터셋으로 보기 어렵습니다: " + ", ".join(reasons) + ". 행/열이 있는 CSV 데이터셋을 올려주세요."
         return False, msg, info
     return True, "업로드 가능한 데이터셋입니다.", info
+
+def prediction_readiness_profile(df, info):
+    rows = int(info.get("rows") or 0)
+    cols = int(info.get("columns") or 0)
+    numeric = int(info.get("numeric_columns") or 0)
+    text_cols = int(info.get("text_columns") or 0)
+    varying = int(info.get("varying_columns") or 0)
+    warnings_list = []
+    if rows < 30:
+        warnings_list.append("행 수가 적어 점수 변동이 클 수 있습니다.")
+    if numeric == 0 and text_cols >= max(2, cols - 1):
+        warnings_list.append("숫자 정보가 없어 분류는 가능하지만 근거가 약할 수 있습니다.")
+    if varying <= max(2, cols // 2):
+        warnings_list.append("변화 있는 열이 적어 모델이 배울 패턴이 제한적입니다.")
+    high_id_like = 0
+    for col in df.columns:
+        s = df[col]
+        if isinstance(s, pd.DataFrame):
+            continue
+        unique_ratio = s.nunique(dropna=True) / max(rows, 1)
+        name = str(col).lower()
+        if unique_ratio > 0.9 and any(tok in name for tok in ["id", "code", "번호", "명", "주소", "name"]):
+            high_id_like += 1
+    if high_id_like >= max(2, cols // 3):
+        warnings_list.append("식별자나 이름처럼 외우기 쉬운 열이 많아 제외 확인이 필요합니다.")
+    if not warnings_list:
+        label = "학습 가능"
+        guide = "예측할 값과 참고 정보가 있어 모델 비교를 진행할 수 있습니다."
+    elif len(warnings_list) <= 2:
+        label = "검토 권장"
+        guide = "분석은 가능하지만 맞힐 값과 제외 열을 한 번 확인하는 것이 좋습니다."
+    else:
+        label = "주의 필요"
+        guide = "업로드는 가능하지만 발표에서는 데이터 의미와 한계를 먼저 설명하세요."
+    return {
+        "readiness_label": label,
+        "readiness_guide": guide,
+        "warnings": warnings_list,
+    }
 
 def looks_like_datetime(series):
     if str(series.dtype).startswith("datetime"):

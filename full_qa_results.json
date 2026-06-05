@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-05T15:03:19",
+  "generated_at": "2026-06-05T15:35:30",
   "stages": {
     "domain": {
       "name": "domain",
@@ -37,6 +37,12 @@
               "열이 2개 미만",
               "값이 있는 열이 2개 미만",
               "변화가 있는 열이 2개 미만"
+            ],
+            "readiness_label": "검토 권장",
+            "readiness_guide": "분석은 가능하지만 맞힐 값과 제외 열을 한 번 확인하는 것이 좋습니다.",
+            "warnings": [
+              "행 수가 적어 점수 변동이 클 수 있습니다.",
+              "변화 있는 열이 적어 모델이 배울 패턴이 제한적입니다."
             ]
           }
         },
@@ -57,6 +63,12 @@
             "score": 80,
             "reasons": [
               "변화가 있는 열이 2개 미만"
+            ],
+            "readiness_label": "검토 권장",
+            "readiness_guide": "분석은 가능하지만 맞힐 값과 제외 열을 한 번 확인하는 것이 좋습니다.",
+            "warnings": [
+              "행 수가 적어 점수 변동이 클 수 있습니다.",
+              "변화 있는 열이 적어 모델이 배울 패턴이 제한적입니다."
             ]
           }
         },
@@ -77,6 +89,13 @@
             "score": 80,
             "reasons": [
               "변화가 있는 열이 2개 미만"
+            ],
+            "readiness_label": "주의 필요",
+            "readiness_guide": "업로드는 가능하지만 발표에서는 데이터 의미와 한계를 먼저 설명하세요.",
+            "warnings": [
+              "행 수가 적어 점수 변동이 클 수 있습니다.",
+              "숫자 정보가 없어 분류는 가능하지만 근거가 약할 수 있습니다.",
+              "변화 있는 열이 적어 모델이 배울 패턴이 제한적입니다."
             ]
           }
         },
@@ -97,6 +116,12 @@
             "score": 80,
             "reasons": [
               "긴 설명 열이 대부분"
+            ],
+            "readiness_label": "검토 권장",
+            "readiness_guide": "분석은 가능하지만 맞힐 값과 제외 열을 한 번 확인하는 것이 좋습니다.",
+            "warnings": [
+              "행 수가 적어 점수 변동이 클 수 있습니다.",
+              "숫자 정보가 없어 분류는 가능하지만 근거가 약할 수 있습니다."
             ]
           }
         },
@@ -117,6 +142,12 @@
             "score": 100,
             "reasons": [
               "중복 컬럼명 있음"
+            ],
+            "readiness_label": "검토 권장",
+            "readiness_guide": "분석은 가능하지만 맞힐 값과 제외 열을 한 번 확인하는 것이 좋습니다.",
+            "warnings": [
+              "행 수가 적어 점수 변동이 클 수 있습니다.",
+              "변화 있는 열이 적어 모델이 배울 패턴이 제한적입니다."
             ]
           }
         },
@@ -137,6 +168,12 @@
             "score": 100,
             "reasons": [
               "컬럼명이 대부분 비어 있음"
+            ],
+            "readiness_label": "검토 권장",
+            "readiness_guide": "분석은 가능하지만 맞힐 값과 제외 열을 한 번 확인하는 것이 좋습니다.",
+            "warnings": [
+              "행 수가 적어 점수 변동이 클 수 있습니다.",
+              "변화 있는 열이 적어 모델이 배울 패턴이 제한적입니다."
             ]
           }
         },
@@ -157,6 +194,37 @@
             "score": 75,
             "reasons": [
               "날짜 컬럼만 있음"
+            ],
+            "readiness_label": "검토 권장",
+            "readiness_guide": "분석은 가능하지만 맞힐 값과 제외 열을 한 번 확인하는 것이 좋습니다.",
+            "warnings": [
+              "행 수가 적어 점수 변동이 클 수 있습니다.",
+              "변화 있는 열이 적어 모델이 배울 패턴이 제한적입니다."
+            ]
+          }
+        },
+        {
+          "name": "public_facility_lookup",
+          "expected": "accept_with_warning",
+          "status": "pass",
+          "message": "업로드 가능한 데이터셋입니다.",
+          "quality": {
+            "rows": 12,
+            "columns": 5,
+            "non_empty_columns": 5,
+            "varying_columns": 5,
+            "numeric_columns": 0,
+            "text_columns": 5,
+            "avg_text_length": 5.07,
+            "long_text_ratio": 0.0,
+            "score": 100,
+            "reasons": [],
+            "readiness_label": "주의 필요",
+            "readiness_guide": "업로드는 가능하지만 발표에서는 데이터 의미와 한계를 먼저 설명하세요.",
+            "warnings": [
+              "행 수가 적어 점수 변동이 클 수 있습니다.",
+              "숫자 정보가 없어 분류는 가능하지만 근거가 약할 수 있습니다.",
+              "식별자나 이름처럼 외우기 쉬운 열이 많아 제외 확인이 필요합니다."
             ]
           }
         },
@@ -179,7 +247,10 @@
             "avg_text_length": 8.0,
             "long_text_ratio": 0.0,
             "score": 100,
-            "reasons": []
+            "reasons": [],
+            "readiness_label": "학습 가능",
+            "readiness_guide": "예측할 값과 참고 정보가 있어 모델 비교를 진행할 수 있습니다.",
+            "warnings": []
           }
         },
         {
@@ -201,7 +272,10 @@
             "avg_text_length": 0.0,
             "long_text_ratio": 0.0,
             "score": 100,
-            "reasons": []
+            "reasons": [],
+            "readiness_label": "학습 가능",
+            "readiness_guide": "예측할 값과 참고 정보가 있어 모델 비교를 진행할 수 있습니다.",
+            "warnings": []
           }
         },
         {
@@ -223,7 +297,10 @@
             "avg_text_length": 7.7,
             "long_text_ratio": 0.0,
             "score": 100,
-            "reasons": []
+            "reasons": [],
+            "readiness_label": "학습 가능",
+            "readiness_guide": "예측할 값과 참고 정보가 있어 모델 비교를 진행할 수 있습니다.",
+            "warnings": []
           }
         },
         {
@@ -245,7 +322,10 @@
             "avg_text_length": 3.42,
             "long_text_ratio": 0.0,
             "score": 100,
-            "reasons": []
+            "reasons": [],
+            "readiness_label": "학습 가능",
+            "readiness_guide": "예측할 값과 참고 정보가 있어 모델 비교를 진행할 수 있습니다.",
+            "warnings": []
           }
         },
         {
@@ -267,7 +347,10 @@
             "avg_text_length": 3.56,
             "long_text_ratio": 0.0,
             "score": 100,
-            "reasons": []
+            "reasons": [],
+            "readiness_label": "학습 가능",
+            "readiness_guide": "예측할 값과 참고 정보가 있어 모델 비교를 진행할 수 있습니다.",
+            "warnings": []
           }
         },
         {
@@ -289,7 +372,10 @@
             "avg_text_length": 3.58,
             "long_text_ratio": 0.0,
             "score": 100,
-            "reasons": []
+            "reasons": [],
+            "readiness_label": "학습 가능",
+            "readiness_guide": "예측할 값과 참고 정보가 있어 모델 비교를 진행할 수 있습니다.",
+            "warnings": []
           }
         },
         {
@@ -311,7 +397,10 @@
             "avg_text_length": 3.95,
             "long_text_ratio": 0.0,
             "score": 100,
-            "reasons": []
+            "reasons": [],
+            "readiness_label": "학습 가능",
+            "readiness_guide": "예측할 값과 참고 정보가 있어 모델 비교를 진행할 수 있습니다.",
+            "warnings": []
           }
         }
       ]
@@ -320,14 +409,14 @@
       "name": "workspace_flow",
       "status": "pass",
       "returncode": 0,
-      "stdout_tail": "{\n  \"status\": \"pass\",\n  \"result\": {\n    \"dataset_id\": \"2ea66122\",\n    \"history_dataset_id\": \"2ea66122\",\n    \"model_id\": \"02b28307\",\n    \"version_label\": \"v1\",\n    \"storage_status\": \"사용 가능\",\n    \"predict_status\": \"ok\",\n    \"prediction_label\": \"normal\"\n  }\n}\n",
+      "stdout_tail": "{\n  \"status\": \"pass\",\n  \"result\": {\n    \"dataset_id\": \"7a003649\",\n    \"history_dataset_id\": \"7a003649\",\n    \"model_id\": \"0e1c579a\",\n    \"version_label\": \"v1\",\n    \"storage_status\": \"사용 가능\",\n    \"predict_status\": \"ok\",\n    \"prediction_label\": \"normal\"\n  }\n}\n",
       "stderr_tail": "",
       "parsed_result": {
         "status": "pass",
         "result": {
-          "dataset_id": "2ea66122",
-          "history_dataset_id": "2ea66122",
-          "model_id": "02b28307",
+          "dataset_id": "7a003649",
+          "history_dataset_id": "7a003649",
+          "model_id": "0e1c579a",
           "version_label": "v1",
           "storage_status": "사용 가능",
           "predict_status": "ok",
@@ -339,7 +428,7 @@
       "name": "frontend_build",
       "status": "pass",
       "returncode": 0,
-      "stdout_tail": "\u001b[36mvite v5.4.21 \u001b[32mbuilding for production...\u001b[36m\u001b[39m\ntransforming...\n\u001b[32m✓\u001b[39m 2317 modules transformed.\nrendering chunks...\ncomputing gzip size...\n\u001b[2mdist/\u001b[22m\u001b[32mindex.html                 \u001b[39m\u001b[1m\u001b[2m  0.82 kB\u001b[22m\u001b[1m\u001b[22m\u001b[2m │ gzip:   0.53 kB\u001b[22m\n\u001b[2mdist/\u001b[22m\u001b[35massets/index-1pRMGAvu.css  \u001b[39m\u001b[1m\u001b[2m 22.24 kB\u001b[22m\u001b[1m\u001b[22m\u001b[2m │ gzip:   5.28 kB\u001b[22m\n\u001b[2mdist/\u001b[22m\u001b[36massets/index-BVZdNjdY.js   \u001b[39m\u001b[1m\u001b[33m804.72 kB\u001b[39m\u001b[22m\u001b[2m │ gzip: 235.45 kB\u001b[22m\n\u001b[32m✓ built in 9.47s\u001b[39m\n",
+      "stdout_tail": "\u001b[36mvite v5.4.21 \u001b[32mbuilding for production...\u001b[36m\u001b[39m\ntransforming...\n\u001b[32m✓\u001b[39m 2317 modules transformed.\nrendering chunks...\ncomputing gzip size...\n\u001b[2mdist/\u001b[22m\u001b[32mindex.html                 \u001b[39m\u001b[1m\u001b[2m  0.82 kB\u001b[22m\u001b[1m\u001b[22m\u001b[2m │ gzip:   0.53 kB\u001b[22m\n\u001b[2mdist/\u001b[22m\u001b[35massets/index-1pRMGAvu.css  \u001b[39m\u001b[1m\u001b[2m 22.24 kB\u001b[22m\u001b[1m\u001b[22m\u001b[2m │ gzip:   5.28 kB\u001b[22m\n\u001b[2mdist/\u001b[22m\u001b[36massets/index-Fyqm55a6.js   \u001b[39m\u001b[1m\u001b[33m804.96 kB\u001b[39m\u001b[22m\u001b[2m │ gzip: 235.52 kB\u001b[22m\n\u001b[32m✓ built in 9.21s\u001b[39m\n",
       "stderr_tail": "\u001b[33m\n(!) Some chunks are larger than 500 kB after minification. Consider:\n- Using dynamic import() to code-split the application\n- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks\n- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.\u001b[39m\n",
       "cwd": "C:\\Users\\82105\\Documents\\Codex\\2026-06-02\\https-web-production-5d6fa-up-railway\\work\\github-repo\\frontend"
     },

@@ -88,11 +88,28 @@ def invalid_upload_cases():
     ]
 
 
+def caution_upload_cases():
+    return [
+        ("public_facility_lookup", pd.DataFrame({
+            "시설번호": [f"F{i:03d}" for i in range(12)],
+            "시설명": [f"어린이놀이시설{i}" for i in range(12)],
+            "주소": [f"충청남도 예시로 {i}" for i in range(12)],
+            "실내외구분": ["실외", "실내"] * 6,
+            "의무시설여부": ["Y", "N"] * 6,
+        }), "facility_lookup.csv"),
+    ]
+
+
 def check_upload_matrix():
     rows = []
     for name, df, filename in invalid_upload_cases():
         ok, message, quality = m.validate_dataset_file(df, filename)
         rows.append({"name": name, "expected": "reject", "status": "pass" if not ok else "fail", "message": message, "quality": quality})
+    for name, df, filename in caution_upload_cases():
+        ok, message, quality = m.validate_dataset_file(df, filename)
+        warned = bool(quality.get("warnings"))
+        status = "pass" if ok and warned else "fail"
+        rows.append({"name": name, "expected": "accept_with_warning", "status": status, "message": message, "quality": quality})
     for folder in ["tmp_datasets", "tmp_public_downloads"]:
         for path in sorted((ROOT / folder).glob("*.csv")):
             raw, _ = m.decode_upload_bytes(path.read_bytes())

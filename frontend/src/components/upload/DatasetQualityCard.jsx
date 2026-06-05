@@ -6,8 +6,10 @@ export default function DatasetQualityCard({ quality, error, onRetry }) {
   const info = quality || error?.quality || {}
   const tips = error?.tips || []
   const reasons = info.reasons || []
+  const warnings = info.warnings || []
   const advice = buildAdvice(error, info)
   const diagnosis = buildDiagnosis(failed, info, reasons)
+  const readiness = info.readiness_label || '학습 가능'
 
   return (
     <div className="card" style={{
@@ -20,10 +22,10 @@ export default function DatasetQualityCard({ quality, error, onRetry }) {
             업로드 진단
           </p>
           <h2 style={{ margin: 0, fontSize: 18, color: 'var(--text)' }}>
-            {failed ? diagnosis.title : '분석 가능한 CSV 데이터입니다'}
+            {failed ? diagnosis.title : `분석 가능한 CSV입니다 · ${readiness}`}
           </h2>
           <p style={{ margin: '6px 0 0', fontSize: 12, color: 'var(--text-2)', lineHeight: 1.55 }}>
-            {failed ? diagnosis.body : '행과 열, 변화 있는 값이 있어 모델 비교를 시작할 수 있습니다.'}
+            {failed ? diagnosis.body : info.readiness_guide || '행과 열, 변화 있는 값이 있어 모델 비교를 시작할 수 있습니다.'}
           </p>
         </div>
         {onRetry && <button onClick={onRetry} className="btn-secondary" style={{ fontSize: 12 }}>다시 선택</button>}
@@ -45,6 +47,14 @@ export default function DatasetQualityCard({ quality, error, onRetry }) {
       {reasons.length > 0 && (
         <div style={{ display: 'grid', gap: 6, marginBottom: tips.length ? 12 : 0 }}>
           {reasons.map(reason => <p key={reason} style={{ margin: 0, fontSize: 12, color: '#b91c1c' }}>막힌 이유: {translateReason(reason)}</p>)}
+        </div>
+      )}
+
+      {!failed && warnings.length > 0 && (
+        <div style={{ display: 'grid', gap: 6, marginBottom: 12 }}>
+          {warnings.map(item => (
+            <p key={item} style={{ margin: 0, fontSize: 12, color: '#92400e' }}>주의: {item}</p>
+          ))}
         </div>
       )}
 
