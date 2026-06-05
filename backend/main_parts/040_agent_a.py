@@ -206,6 +206,8 @@ async def run_agent(demo: bool = False, user=Depends(get_current_user)):
         "results": results,
         "optuna_applied": bool(optuna_result and optuna_result.get("applied")),
         "dataset_ref": STATE.get("current_dataset"),
+        "drop_cols": STATE.get("drop_cols", []),
+        "auto_drop_cols": STATE.get("auto_drop_cols", []),
         "agent_run": True,
         "dataset_domain": agent_insights.get("domain"),
         "target_category": agent_insights.get("target_label"),

@@ -62,10 +62,16 @@ export default function Upload() {
     fd.append('file', file)
     try {
       const { data } = await api.post('/upload', fd)
+      const reuseTarget = reanalysisItem?.target_col || reanalysisItem?.target
+      const canReuseTarget = reuseTarget && data.columns?.includes(reuseTarget)
+      const reuseDrops = [
+        ...(reanalysisItem?.drop_cols || []),
+        ...(reanalysisItem?.auto_drop_cols || []),
+      ].filter(c => data.columns?.includes(c) && c !== reuseTarget)
       setUploadInfo(data)
       setNeedsReupload(false)
-      setTarget(data.default_target || data.columns?.at(-1) || '')
-      setDropCols(data.suggested_drop || [])
+      setTarget(canReuseTarget ? reuseTarget : data.default_target || data.columns?.at(-1) || '')
+      setDropCols(reuseDrops.length ? [...new Set(reuseDrops)] : data.suggested_drop || [])
       setEdaInfo(null)
 
       setLoading('ai')
@@ -73,8 +79,8 @@ export default function Upload() {
         const { data: ai } = await api.post('/analyze-columns')
         setAiAnalysis(ai)
         if (ai.col_labels) setColLabels(ai.col_labels)
-        if (ai.target_suggestion && data.columns.includes(ai.target_suggestion)) setTarget(ai.target_suggestion)
-        if (ai.drop_suggestions?.length) {
+        if (!canReuseTarget && ai.target_suggestion && data.columns.includes(ai.target_suggestion)) setTarget(ai.target_suggestion)
+        if (!reuseDrops.length && ai.drop_suggestions?.length) {
           setDropCols(ai.drop_suggestions.map(d => d.col).filter(c => data.columns.includes(c)))
         }
       } catch (_) {

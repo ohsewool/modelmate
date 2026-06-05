@@ -44,6 +44,8 @@ export default function ExperimentActionPanel({ item, onNavigate }) {
       domain: item?.dataset_domain || item?.dataset_ref?.domain,
       target_col: item?.target,
       target_category: item?.target_category,
+      drop_cols: item?.drop_cols || [],
+      auto_drop_cols: item?.auto_drop_cols || [],
       rows: item?.data_shape?.[0] || item?.dataset_ref?.rows,
       columns: item?.data_shape?.[1] || item?.dataset_ref?.columns,
       best_model: item?.best_model,

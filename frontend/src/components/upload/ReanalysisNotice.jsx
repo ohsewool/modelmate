@@ -6,6 +6,7 @@ export default function ReanalysisNotice({ item, onClear }) {
   const target = item.target_col || item.target || '-'
   const rows = item.rows?.toLocaleString?.() || item.rows || '-'
   const columns = item.columns || '-'
+  const dropCount = (item.drop_cols || []).length + (item.auto_drop_cols || []).length
   return (
     <div style={{ display: 'grid', gap: 10, padding: 16, borderRadius: 12, border: '1px solid #bfdbfe', background: '#f8fbff' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' }}>
@@ -24,6 +25,7 @@ export default function ReanalysisNotice({ item, onClear }) {
         <Badge variant="secondary">맞힐 값 {target}</Badge>
         <Badge variant="secondary">{rows}행 / {columns}열</Badge>
         {item.best_model && <Badge variant="success">이전 모델 {item.best_model}</Badge>}
+        {dropCount > 0 && <Badge variant="warning">제외 정보 {dropCount}개</Badge>}
       </div>
       <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)', lineHeight: 1.55 }}>
         보안과 저장 공간을 위해 원본 CSV는 보관하지 않습니다. 같은 파일을 다시 올리면 이전 판단을 참고해서 이어서 분석할 수 있습니다.

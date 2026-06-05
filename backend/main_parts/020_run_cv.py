@@ -35,6 +35,8 @@ async def run_cv(user=Depends(get_current_user)):
                       "data_shape": list(X.shape), "target": STATE["target_col"],
                       "best_model": best_name, "results": results, "optuna_applied": False,
                       "dataset_ref": STATE.get("current_dataset"),
+                      "drop_cols": STATE.get("drop_cols", []),
+                      "auto_drop_cols": STATE.get("auto_drop_cols", []),
                       "dataset_domain": target_info.get("dataset_domain"),
                       "target_category": target_info.get("target_category"),
                       "task_type": "regression"}, user_id=user["sub"] if user else None)
@@ -90,6 +92,8 @@ async def run_cv(user=Depends(get_current_user)):
                   "data_shape": list(X.shape), "target": STATE["target_col"],
                   "best_model": best_name, "results": results, "optuna_applied": False,
                   "dataset_ref": STATE.get("current_dataset"),
+                  "drop_cols": STATE.get("drop_cols", []),
+                  "auto_drop_cols": STATE.get("auto_drop_cols", []),
                   "dataset_domain": target_info.get("dataset_domain"),
                   "target_category": target_info.get("target_category"),
                   "task_type": "classification"}, user_id=user["sub"] if user else None)
