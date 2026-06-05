@@ -5,8 +5,8 @@
 - 배포 URL: https://web-production-5d6fa.up.railway.app/
 - GitHub: https://github.com/ohsewool/-
 - Branch: `main`
-- 최신 확인 커밋: `4eed5cc feat: add upload agent trace`
-- 최신 배포 번들: JS `assets/index-BuY1w_P3.js`, CSS `assets/index-1pRMGAvu.css`
+- 최신 확인 커밋: `main` 최신 커밋 기준
+- 최신 배포 번들: JS `assets/index-BVZdNjdY.js`, CSS `assets/index-1pRMGAvu.css`
 - 11월 졸업프로젝트 방향: 고정 샘플 데모가 아니라 임의 CSV를 즉석 업로드해 판단, 학습, 설명, 예측, API 공유까지 이어지는 범용 AutoML SaaS처럼 보이게 만든다.
 
 ## 핵심 데모 스토리
@@ -33,6 +33,7 @@
   - 실험 상세에서 다시 분석, 새 예측, API 공유, 결과 요약으로 이어지는 재사용 액션
 - 결과 요약
   - 의사결정 요약
+  - 모델 선택 근거: 1위/2위 모델 점수 차이와 선택 판단을 결과 화면과 HTML 보고서에 표시
   - CSV 업로드부터 업무 활용까지 이어지는 서비스 흐름 패널
 - 공유/API
   - API 공개 준비도 패널
@@ -49,7 +50,7 @@
 - `python scripts/run_full_qa.py`: pass
 - `python scripts/run_full_qa.py --skip-slow`: pass
 - `python scripts/run_workspace_flow_qa.py`: 데이터셋 저장, 실험 기록, 저장 모델, 버전, 저장 상태, 공유 API 예측 pass
-- Railway 확인: 공개 URL 200, 최신 번들 `assets/index-BuY1w_P3.js`
+- Railway 확인: 공개 URL 200, 최신 번들 `assets/index-BVZdNjdY.js`
 - 최신 결과 파일:
   - `FULL_QA_RESULTS.md`
   - `full_qa_results.json`

@@ -24,7 +24,7 @@ async def report_summary():
     if feature_evidence.get("items"):
         top_feature = feature_evidence["items"][0].get("feature")
     opt_for_insights = optimization if optimization.get("status") else None
-    agent_insights = build_agent_insights(best_model, best_score, opt_for_insights, top_feature)
+    agent_insights = build_agent_insights(best_model, best_score, opt_for_insights, top_feature, model_selection.get("models", []))
 
     final_metrics = {}
     if model is not None and preds is not None and STATE.get("y") is not None:
@@ -80,6 +80,7 @@ async def report_summary():
             "recommended_decision": (
                 f"{agent_insights.get('score_comment')} {agent_insights.get('model_reason')}"
             ),
+            "model_evidence": agent_insights.get("model_evidence", {}),
             "risk_notes": agent_insights.get("risk_notes", []),
             "next_actions": agent_insights.get("next_actions", []),
         },

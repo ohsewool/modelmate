@@ -132,6 +132,16 @@ function BusinessSummary({ data }) {
           </p>
         </div>
       </div>
+      {data.model_evidence?.summary && (
+        <div style={{ marginTop: 12, padding: 12, borderRadius: 12, background: 'rgba(15,118,110,0.07)', border: '1px solid rgba(15,118,110,0.18)' }}>
+          <p style={{ margin: '0 0 5px', fontSize: 12, fontWeight: 900, color: '#0f766e' }}>
+            모델 선택 근거 · {data.model_evidence.gap_label || '검증 점수 기준'}
+          </p>
+          <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6 }}>
+            {data.model_evidence.summary}
+          </p>
+        </div>
+      )}
       {!!data.next_actions?.length && (
         <div style={{ display: 'grid', gap: 8, marginTop: 12 }}>
           {data.next_actions.slice(0, 3).map(action => (

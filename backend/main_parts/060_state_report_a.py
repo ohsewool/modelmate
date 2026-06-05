@@ -92,14 +92,20 @@ async def html_report(autoprint: bool = False):
         fi_html = f"<h2>📊 피처 중요도 Top 8</h2>{bars}"
 
     opt_for_insights = opt if opt and opt.get("status") else None
-    insights = build_agent_insights(name, best_score, opt_for_insights, top_feature)
+    insights = build_agent_insights(name, best_score, opt_for_insights, top_feature, cv)
     risk_html = "".join(f"<li>{note}</li>" for note in insights.get("risk_notes", [])[:3])
     action_html = "".join(f"<li>{action}</li>" for action in insights.get("next_actions", [])[:3])
+    evidence = insights.get("model_evidence", {})
+    evidence_html = (
+        f"<p><b>모델 선택 근거:</b> {evidence.get('summary')}</p>"
+        f"<p><b>비교 상태:</b> {evidence.get('gap_label', '검증 점수 기준')}</p>"
+    ) if evidence else ""
     business_html = (
         f"<h2>💼 의사결정 요약</h2>"
         f"<div class='decision-box'><b>{insights.get('presentation_conclusion')}</b>"
         f"<p>{insights.get('domain')} 데이터에서 {insights.get('target_label')} 판단을 보조하는 모델로 활용할 수 있습니다.</p>"
         f"<p>{insights.get('score_comment')} {insights.get('model_reason')}</p>"
+        f"{evidence_html}"
         f"<div class='decision-grid'><div><b>주의할 점</b><ul>{risk_html}</ul></div>"
         f"<div><b>다음 행동</b><ul>{action_html}</ul></div></div></div>"
     )
