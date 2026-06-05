@@ -82,6 +82,7 @@ async def report_summary():
             ),
             "model_evidence": agent_insights.get("model_evidence", {}),
             "agent_priority": agent_insights.get("agent_priority", {}),
+            "commercial_readiness": agent_insights.get("commercial_readiness", {}),
             "risk_notes": agent_insights.get("risk_notes", []),
             "next_actions": agent_insights.get("next_actions", []),
         },

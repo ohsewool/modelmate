@@ -355,6 +355,29 @@ html.dark {
     font-size: 12px;
     color: var(--text-2);
   }
+  .report-side-commercial {
+    display: grid;
+    gap: 5px;
+    padding: 12px;
+    border: 1px solid rgba(37, 99, 235, 0.18);
+    border-radius: 12px;
+    background: rgba(37, 99, 235, 0.06);
+  }
+  .report-side-commercial p {
+    margin: 0;
+    color: #2563eb;
+    font-size: 11px;
+    font-weight: 900;
+  }
+  .report-side-commercial b {
+    color: var(--text);
+    font-size: 15px;
+  }
+  .report-side-commercial span {
+    color: var(--text-2);
+    font-size: 12px;
+    line-height: 1.5;
+  }
   .report-story-flow {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 28px minmax(0, 1fr) 28px minmax(0, 1fr) 28px minmax(0, 1fr);

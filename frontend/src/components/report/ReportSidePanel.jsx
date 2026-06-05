@@ -19,6 +19,7 @@ const tabs = [
 ]
 
 export default function ReportSidePanel({ open, setOpen, tab, setTab, summary, models, primaryMetric, opt, features }) {
+  const commercial = summary.business_summary?.commercial_readiness || {}
   return (
     <aside className={`report-side-panel ${open ? 'report-side-open' : ''}`}>
       <button type="button" className="report-side-toggle" onClick={() => setOpen(!open)}>
@@ -36,11 +37,24 @@ export default function ReportSidePanel({ open, setOpen, tab, setTab, summary, m
         <div className="report-side-content">
           {tab === 'status' && (
             <Panel title="분석 진행 상태">
+              {commercial.level && (
+                <div className="report-side-commercial">
+                  <p>상용 시연 판단</p>
+                  <b>{commercial.level}</b>
+                  <span>{commercial.summary}</span>
+                </div>
+              )}
               {Object.entries(summary.readiness || {}).map(([key, ok]) => (
                 <div key={key} className={ok ? 'banner-success' : 'banner-warning'} style={{ justifyContent: 'space-between' }}>
                   <span style={{ fontSize: 12, fontWeight: 800 }}>{statusLabel(key)}</span>
                   <span>{ok ? '완료' : '대기'}</span>
                 </div>
+              ))}
+              {(commercial.strengths || []).slice(0, 3).map(item => (
+                <p key={item} className="report-side-note">좋은 점 · {item}</p>
+              ))}
+              {(commercial.blockers || []).slice(0, 3).map(item => (
+                <p key={item} className="report-side-note">보완점 · {item}</p>
               ))}
             </Panel>
           )}

@@ -92,6 +92,40 @@ def _agent_priority(df, X, score, target_info, evidence):
     }
 
 
+def _commercial_readiness(df, X, score, target_info, evidence):
+    blockers = []
+    strengths = []
+    if df is not None and len(df) >= 300:
+        strengths.append("시연에 충분한 데이터 행을 확보했습니다.")
+    elif df is not None and len(df) < 100:
+        blockers.append("데이터 행이 적어 상용 설명에는 보강이 필요합니다.")
+    if X is not None and X.shape[1] >= 4:
+        strengths.append("모델이 참고할 입력 정보가 여러 개 있습니다.")
+    elif X is not None:
+        blockers.append("입력 정보가 적어 예측 근거가 약해 보일 수 있습니다.")
+    if score is not None and score >= 0.75:
+        strengths.append("대표 성능이 발표 시연에 무리 없는 수준입니다.")
+    elif score is not None and score < 0.65:
+        blockers.append("대표 성능이 낮아 결과 신뢰 설명이 필요합니다.")
+    if target_info.get("target_category_confidence") == "높음":
+        strengths.append("맞힐 값의 업무 의미가 비교적 명확합니다.")
+    elif target_info.get("target_category_confidence") == "낮음":
+        blockers.append("맞힐 값의 업무 의미를 사람이 확인해야 합니다.")
+    if evidence.get("gap_label") == "접전":
+        blockers.append("상위 모델 점수 차이가 작아 선택 이유를 함께 설명해야 합니다.")
+    level = "상용 시연 가능"
+    if len(blockers) >= 3:
+        level = "검증 후 시연"
+    elif blockers:
+        level = "보완 후 시연"
+    return {
+        "level": level,
+        "strengths": strengths[:3] or ["CSV 업로드부터 모델 선택까지 한 흐름으로 이어집니다."],
+        "blockers": blockers[:3],
+        "summary": "실제 서비스처럼 보여주려면 데이터 의미, 성능, 재사용 흐름을 함께 설명하는 것이 좋습니다.",
+    }
+
+
 def _model_evidence(cv_results, task_type):
     rows = [r for r in (cv_results or []) if r.get("status") == "ok"]
     metric = "r2" if task_type == "regression" else "roc_auc"
@@ -145,6 +179,7 @@ def build_agent_insights(best_name=None, best_score=None, optuna_result=None, to
     )
     evidence = _model_evidence(cv_results, task_type)
     priority = _agent_priority(df, X, best_score, target_info, evidence)
+    readiness = _commercial_readiness(df, X, best_score, target_info, evidence)
     return {
         "domain": domain,
         "target_label": target_label,
@@ -152,6 +187,7 @@ def build_agent_insights(best_name=None, best_score=None, optuna_result=None, to
         "model_reason": _model_comment(best_name, task_type),
         "model_evidence": evidence,
         "agent_priority": priority,
+        "commercial_readiness": readiness,
         "score_comment": _score_comment(best_score),
         "tuning_status": tuning_status,
         "risk_notes": _risk_notes(df, X, best_score, target_info),
