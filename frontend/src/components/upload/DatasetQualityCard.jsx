@@ -10,6 +10,7 @@ export default function DatasetQualityCard({ quality, error, onRetry }) {
   const advice = buildAdvice(error, info)
   const diagnosis = buildDiagnosis(failed, info, reasons)
   const readiness = info.readiness_label || '학습 가능'
+  const demo = demoReadiness(failed, info, warnings)
 
   return (
     <div className="card" style={{
@@ -29,6 +30,19 @@ export default function DatasetQualityCard({ quality, error, onRetry }) {
           </p>
         </div>
         {onRetry && <button onClick={onRetry} className="btn-secondary" style={{ fontSize: 12 }}>다시 선택</button>}
+      </div>
+
+      <div style={{
+        display: 'grid',
+        gap: 5,
+        padding: 11,
+        borderRadius: 10,
+        border: `1px solid ${demo.color}33`,
+        background: demo.bg,
+        marginBottom: 12,
+      }}>
+        <p style={{ margin: 0, fontSize: 11, fontWeight: 900, color: demo.color }}>시연 적합도 · {demo.label}</p>
+        <p style={{ margin: 0, fontSize: 12, lineHeight: 1.55, color: 'var(--text-2)' }}>{demo.message}</p>
       </div>
 
       {error?.message && (
@@ -71,6 +85,40 @@ export default function DatasetQualityCard({ quality, error, onRetry }) {
       )}
     </div>
   )
+}
+
+function demoReadiness(failed, info, warnings) {
+  if (failed) {
+    return {
+      label: '사용 어려움',
+      color: '#dc2626',
+      bg: 'rgba(220,38,38,0.06)',
+      message: '이 파일은 AutoML 데이터셋보다 문서나 불완전한 표에 가까워, 발표 시에는 다른 CSV를 쓰는 편이 안전합니다.',
+    }
+  }
+  const score = Number(info.score ?? 0)
+  if (score >= 85 && !warnings?.length) {
+    return {
+      label: '바로 사용 가능',
+      color: '#059669',
+      bg: 'rgba(5,150,105,0.07)',
+      message: '데이터 구조가 안정적이라 바로 모델 비교와 결과 요약까지 이어가기 좋습니다.',
+    }
+  }
+  if (score >= 65) {
+    return {
+      label: '검토 후 사용',
+      color: '#d97706',
+      bg: 'rgba(245,158,11,0.08)',
+      message: '분석은 가능하지만 맞힐 값, 제외 열, 데이터 의미를 한 번 확인하면 발표 설득력이 좋아집니다.',
+    }
+  }
+  return {
+    label: '보완 권장',
+    color: '#dc2626',
+    bg: 'rgba(220,38,38,0.06)',
+    message: '학습은 될 수 있지만 결과가 흔들릴 수 있어 행 수나 참고 정보를 보강하는 것이 좋습니다.',
+  }
 }
 
 function Metric({ label, value }) {
