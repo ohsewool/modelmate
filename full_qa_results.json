@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-05T19:49:25",
+  "generated_at": "2026-06-05T20:10:15",
   "stages": {
     "domain": {
       "name": "domain",
@@ -409,14 +409,14 @@
       "name": "workspace_flow",
       "status": "pass",
       "returncode": 0,
-      "stdout_tail": "{\n  \"status\": \"pass\",\n  \"result\": {\n    \"dataset_id\": \"69e6d551\",\n    \"history_dataset_id\": \"69e6d551\",\n    \"model_id\": \"1b64d7b2\",\n    \"version_label\": \"v1\",\n    \"storage_status\": \"사용 가능\",\n    \"predict_status\": \"ok\",\n    \"prediction_label\": \"normal\"\n  }\n}\n",
+      "stdout_tail": "{\n  \"status\": \"pass\",\n  \"result\": {\n    \"dataset_id\": \"73f888e2\",\n    \"history_dataset_id\": \"73f888e2\",\n    \"model_id\": \"08e86863\",\n    \"version_label\": \"v1\",\n    \"storage_status\": \"사용 가능\",\n    \"predict_status\": \"ok\",\n    \"prediction_label\": \"normal\"\n  }\n}\n",
       "stderr_tail": "",
       "parsed_result": {
         "status": "pass",
         "result": {
-          "dataset_id": "69e6d551",
-          "history_dataset_id": "69e6d551",
-          "model_id": "1b64d7b2",
+          "dataset_id": "73f888e2",
+          "history_dataset_id": "73f888e2",
+          "model_id": "08e86863",
           "version_label": "v1",
           "storage_status": "사용 가능",
           "predict_status": "ok",
@@ -428,7 +428,7 @@
       "name": "frontend_build",
       "status": "pass",
       "returncode": 0,
-      "stdout_tail": "\u001b[36mvite v5.4.21 \u001b[32mbuilding for production...\u001b[36m\u001b[39m\ntransforming...\n\u001b[32m✓\u001b[39m 2318 modules transformed.\nrendering chunks...\ncomputing gzip size...\n\u001b[2mdist/\u001b[22m\u001b[32mindex.html                 \u001b[39m\u001b[1m\u001b[2m  0.82 kB\u001b[22m\u001b[1m\u001b[22m\u001b[2m │ gzip:   0.53 kB\u001b[22m\n\u001b[2mdist/\u001b[22m\u001b[35massets/index-BEoH98hY.css  \u001b[39m\u001b[1m\u001b[2m 23.35 kB\u001b[22m\u001b[1m\u001b[22m\u001b[2m │ gzip:   5.51 kB\u001b[22m\n\u001b[2mdist/\u001b[22m\u001b[36massets/index-C9bwvItP.js   \u001b[39m\u001b[1m\u001b[33m807.91 kB\u001b[39m\u001b[22m\u001b[2m │ gzip: 236.23 kB\u001b[22m\n\u001b[32m✓ built in 18.79s\u001b[39m\n",
+      "stdout_tail": "\u001b[36mvite v5.4.21 \u001b[32mbuilding for production...\u001b[36m\u001b[39m\ntransforming...\n\u001b[32m✓\u001b[39m 2319 modules transformed.\nrendering chunks...\ncomputing gzip size...\n\u001b[2mdist/\u001b[22m\u001b[32mindex.html                 \u001b[39m\u001b[1m\u001b[2m  0.82 kB\u001b[22m\u001b[1m\u001b[22m\u001b[2m │ gzip:   0.53 kB\u001b[22m\n\u001b[2mdist/\u001b[22m\u001b[35massets/index-R_u0nnb1.css  \u001b[39m\u001b[1m\u001b[2m 25.24 kB\u001b[22m\u001b[1m\u001b[22m\u001b[2m │ gzip:   5.75 kB\u001b[22m\n\u001b[2mdist/\u001b[22m\u001b[36massets/index-9XOAT_AU.js   \u001b[39m\u001b[1m\u001b[33m805.89 kB\u001b[39m\u001b[22m\u001b[2m │ gzip: 236.05 kB\u001b[22m\n\u001b[32m✓ built in 10.96s\u001b[39m\n",
       "stderr_tail": "\u001b[33m\n(!) Some chunks are larger than 500 kB after minification. Consider:\n- Using dynamic import() to code-split the application\n- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks\n- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.\u001b[39m\n",
       "cwd": "C:\\Users\\82105\\Documents\\Codex\\2026-06-02\\https-web-production-5d6fa-up-railway\\work\\github-repo\\frontend"
     },

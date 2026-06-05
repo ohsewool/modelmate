@@ -238,6 +238,123 @@ html.dark {
     display: grid;
     gap: 12px;
   }
+  .report-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 74px;
+    gap: 16px;
+    align-items: start;
+  }
+  .report-workspace-open {
+    grid-template-columns: minmax(0, 1fr) 360px;
+  }
+  .report-main-flow {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    min-width: 0;
+  }
+  .report-side-panel {
+    position: sticky;
+    top: 20px;
+    display: grid;
+    gap: 12px;
+    max-height: calc(100vh - 40px);
+    overflow: auto;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px;
+    box-shadow: 0 1px 2px rgba(15,23,42,0.035);
+  }
+  .report-side-open {
+    padding: 14px;
+  }
+  .report-side-toggle {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    padding: 8px 6px;
+    font-size: 12px;
+    font-weight: 900;
+    cursor: pointer;
+  }
+  .report-side-tabs {
+    display: grid;
+    gap: 7px;
+  }
+  .report-side-tab {
+    min-height: 42px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface-alt);
+    color: var(--text-2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 850;
+    cursor: pointer;
+  }
+  .report-side-open .report-side-tab {
+    justify-content: flex-start;
+    padding: 0 11px;
+  }
+  .report-side-tab-active {
+    border-color: #bfdbfe;
+    background: #eff6ff;
+    color: #1d4ed8;
+  }
+  .report-side-content {
+    display: grid;
+    gap: 12px;
+  }
+  .report-side-section {
+    display: grid;
+    gap: 10px;
+  }
+  .report-side-section h3 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 900;
+    color: var(--text);
+  }
+  .report-side-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: flex-start;
+    border: 1px solid var(--border-sub);
+    border-radius: 10px;
+    padding: 10px;
+    background: var(--surface-alt);
+  }
+  .report-side-row p,
+  .report-side-note {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.55;
+    color: var(--text-2);
+  }
+  .report-side-row p {
+    font-weight: 900;
+    color: var(--text);
+  }
+  .report-side-row span {
+    font-size: 11px;
+    color: var(--text-label);
+  }
+  .report-side-feature {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    border-top: 1px solid var(--border-sub);
+    padding-top: 8px;
+    font-size: 12px;
+    color: var(--text-2);
+  }
   .report-story-flow {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 28px minmax(0, 1fr) 28px minmax(0, 1fr) 28px minmax(0, 1fr);
@@ -349,6 +466,7 @@ html.dark .banner-danger  { background: rgba(244,63,94,0.1);   border-color: rgb
     .dataset-detail-grid,
     .experiment-action-grid,
     .upload-workspace,
+    .report-workspace,
     .report-story-flow,
   .api-ops-detail-grid,
   .deploy-hero-grid,
@@ -361,6 +479,11 @@ html.dark .banner-danger  { background: rgba(244,63,94,0.1);   border-color: rgb
   }
 
   .upload-side-panel {
+    position: static;
+    max-height: none;
+  }
+
+  .report-side-panel {
     position: static;
     max-height: none;
   }

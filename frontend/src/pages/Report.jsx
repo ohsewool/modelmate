@@ -6,14 +6,13 @@ import {
   CheckCircle2,
   Download,
   ExternalLink,
-  FileText,
   Loader2,
-  Sparkles,
 } from 'lucide-react'
 import api from '../api'
 import { Badge } from '../components/ui/badge'
 import { Button } from '../components/ui/button'
 import ReportStoryPanel from '../components/report/ReportStoryPanel'
+import ReportSidePanel from '../components/report/ReportSidePanel'
 
 const fmt = value => {
   if (value === null || value === undefined || value === '') return '-'
@@ -34,26 +33,9 @@ const statusLabel = key => ({
   model_ready: '모델 준비 완료',
   optuna_checked: '성능 개선 확인',
 }[key] || key.replaceAll('_', ' '))
-const metricLabel = key => ({
-  accuracy: '정확도',
-  f1: 'F1',
-  rmse: '오차',
-  mae: '평균 오차',
-  roc_auc: 'ROC-AUC',
-  r2: 'R2',
-}[key] || key)
 const taskLabel = value => ({
   classification: '분류 예측',
   regression: '숫자 예측',
-}[value] || value || '-')
-const optStatusLabel = value => ({
-  ok: '개선 확인',
-  improved: '개선 완료',
-  no_change: '변화 없음',
-  kept_original: '원래 모델 유지',
-  skipped: '개선 생략',
-  not_tunable: '개선 생략',
-  failed: '개선 실패',
 }[value] || value || '-')
 const reportSummaryText = (summary, dataset, opt) => {
   const model = summary?.model_selection?.best_model || '선택된 모델'
@@ -174,6 +156,8 @@ export default function Report() {
   const [loading, setLoading] = useState(true)
   const [downloading, setDownloading] = useState(false)
   const [error, setError] = useState('')
+  const [sideOpen, setSideOpen] = useState(false)
+  const [sideTab, setSideTab] = useState('status')
 
   async function loadSummary() {
     setLoading(true)
@@ -238,8 +222,9 @@ export default function Report() {
   }
 
   return (
-    <div className="animate-fade-in" style={{ padding: 32, maxWidth: 1120 }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+    <div className="animate-fade-in" style={{ padding: 32, maxWidth: 1280 }}>
+      <div className={`report-workspace ${sideOpen ? 'report-workspace-open' : ''}`}>
+      <div className="report-main-flow">
         <div className="card">
           <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 20, alignItems: 'center' }}>
             <div>
@@ -282,111 +267,6 @@ export default function Report() {
           summary={summary.executive_summary}
         />
 
-        <Section title="분석 진행 상태" icon={CheckCircle2}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: 10 }}>
-            {Object.entries(summary.readiness || {}).map(([key, ok]) => (
-              <div key={key} className={ok ? 'banner-success' : 'banner-warning'} style={{ padding: 10, justifyContent: 'center' }}>
-                <span style={{ fontSize: 12, fontWeight: 750 }}>{statusLabel(key)}</span>
-              </div>
-            ))}
-          </div>
-        </Section>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: 18 }}>
-          <Section title="모델 비교 결과" icon={BarChart3}>
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>모델</th>
-                  <th>상태</th>
-                  <th>{primaryMetric || 'Score'}</th>
-                  <th>보조 점수</th>
-                </tr>
-              </thead>
-              <tbody>
-                {topModels.map((row, idx) => (
-                  <tr key={row.model}>
-                    <td style={{ fontWeight: idx === 0 ? 800 : 600, color: 'var(--text)' }}>{row.model}</td>
-                    <td><Badge variant={row.status === 'ok' || !row.status ? 'success' : 'danger'}>{row.status === 'ok' || !row.status ? '완료' : '실패'}</Badge></td>
-                    <td>{fmt(row[primaryMetric])}</td>
-                    <td>{Object.keys(row).filter(k => ['accuracy', 'f1', 'rmse', 'mae'].includes(k)).map(k => `${metricLabel(k)}: ${fmt(row[k])}`).join(' / ')}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </Section>
-
-          <Section title="성능 자동 개선" icon={Sparkles}>
-            {opt.status ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <Badge variant={opt.status === 'improved' || opt.status === 'ok' ? 'success' : 'warning'} style={{ width: 'fit-content' }}>
-                  {optStatusLabel(opt.status)}
-                </Badge>
-                <MiniStat label={metricLabel(opt.metric_name) || '점수'} value={`${fmt(opt.before_score)} -> ${fmt(opt.after_score)}`} tone={opt.status === 'improved' || opt.status === 'ok' ? 'green' : 'amber'} />
-                <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6 }}>
-                  시도 횟수: {opt.n_trials || '-'} / 개선율: {fmt(opt.improvement)}%
-                </p>
-                {opt.reason && (
-                  <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6 }}>
-                    {opt.reason}
-                  </p>
-                )}
-              </div>
-            ) : (
-              <p style={{ margin: 0, color: 'var(--text-2)', fontSize: 13 }}>아직 자동 개선을 실행하지 않았습니다.</p>
-            )}
-          </Section>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '0.9fr 1.1fr', gap: 18 }}>
-          <Section title="데이터 정리 내용" icon={FileText}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)' }}>
-                원본 크기: {dataset.raw_shape?.join(' x ') || '-'} / 학습에 사용한 크기: {dataset.training_shape?.join(' x ') || '-'}
-              </p>
-              {summary.preprocessing?.summary && (
-                <div className="banner-success" style={{ alignItems: 'flex-start' }}>
-                  <FileText size={16} />
-                  <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6 }}>
-                    {summary.preprocessing.summary}
-                  </p>
-                </div>
-              )}
-              {(summary.preprocessing?.notes || []).length > 0 && (
-                <div style={{ display: 'grid', gap: 7 }}>
-                  {summary.preprocessing.notes.map(note => (
-                    <p key={note} style={{ margin: 0, fontSize: 12, color: 'var(--text-2)' }}>- {note}</p>
-                  ))}
-                </div>
-              )}
-              <div>
-                <p className="section-title" style={{ marginBottom: 8 }}>자동으로 제외한 정보</p>
-                {(summary.preprocessing?.auto_drop_cols || []).length ? (
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                    {summary.preprocessing.auto_drop_cols.map(col => (
-                      <span className="badge badge-violet" key={col}>{col}</span>
-                    ))}
-                  </div>
-                ) : <p style={{ margin: 0, fontSize: 13, color: 'var(--text-label)' }}>자동으로 제외한 정보가 없습니다.</p>}
-              </div>
-            </div>
-          </Section>
-
-          <Section title="예측에 영향을 준 정보" icon={BarChart3}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {features.slice(0, 6).map(item => (
-                <div key={item.feature} style={{ display: 'grid', gridTemplateColumns: '150px 1fr 64px', gap: 12, alignItems: 'center' }}>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.feature}</span>
-                  <div className="progress-bar">
-                    <div className="progress-fill" style={{ width: `${Math.min(100, Math.max(3, (item.importance || 0) * 100))}%` }} />
-                  </div>
-                  <span style={{ fontSize: 12, color: 'var(--text-2)', textAlign: 'right' }}>{fmt(item.importance)}</span>
-                </div>
-              ))}
-            </div>
-          </Section>
-        </div>
-
         <div className="card" style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           gap: 16, background: 'var(--surface-alt)',
@@ -403,6 +283,18 @@ export default function Report() {
             이유 보기로 이동
           </Button>
         </div>
+      </div>
+      <ReportSidePanel
+        open={sideOpen}
+        setOpen={setSideOpen}
+        tab={sideTab}
+        setTab={setSideTab}
+        summary={summary}
+        models={topModels}
+        primaryMetric={primaryMetric}
+        opt={opt}
+        features={features}
+      />
       </div>
     </div>
   )
