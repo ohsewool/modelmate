@@ -16,8 +16,14 @@ export default function AgentInsightCards({ insights }) {
     {
       label: '모델 추천 이유',
       title: insights.score_comment || '모델 비교 완료',
-      body: insights.model_reason || '가장 높은 검증 점수를 보인 모델을 우선 추천합니다.',
+      body: insights.model_evidence?.summary || insights.model_reason || '가장 높은 검증 점수를 보인 모델을 우선 추천합니다.',
       color: '#7c3aed',
+    },
+    {
+      label: '비교 근거',
+      title: insights.model_evidence?.gap_label || '검증 점수 기준',
+      body: insights.model_reason || '성능과 설명 가능성을 함께 보고 추천 모델을 골랐습니다.',
+      color: '#0f766e',
     },
     {
       label: '개선 판단',

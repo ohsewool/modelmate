@@ -61,7 +61,42 @@ def _next_actions(df, X, score, optuna_result, target_info, top_feature):
     return actions[:4] or ["현재 결과 요약을 저장하고, 새 데이터 예측 화면에서 같은 흐름을 시연하세요."]
 
 
-def build_agent_insights(best_name=None, best_score=None, optuna_result=None, top_feature=None):
+def _model_evidence(cv_results, task_type):
+    rows = [r for r in (cv_results or []) if r.get("status") == "ok"]
+    metric = "r2" if task_type == "regression" else "roc_auc"
+    rows = [r for r in rows if r.get(metric) is not None]
+    if not rows:
+        return {
+            "summary": "검증 점수를 기준으로 추천 모델을 선택했습니다.",
+            "gap_label": "비교 정보 없음",
+            "runner_up": None,
+        }
+    rows = sorted(rows, key=lambda r: r.get(metric), reverse=True)
+    best = rows[0]
+    runner = rows[1] if len(rows) > 1 else None
+    if not runner:
+        return {
+            "summary": f"{best['model']}이 현재 비교 가능한 모델 중 가장 높은 점수를 보였습니다.",
+            "gap_label": "단일 후보",
+            "runner_up": None,
+        }
+    gap = round(float(best.get(metric)) - float(runner.get(metric)), 4)
+    if gap >= 0.05:
+        gap_label = "차이 큼"
+    elif gap >= 0.01:
+        gap_label = "차이 있음"
+    else:
+        gap_label = "접전"
+    return {
+        "summary": f"{best['model']}이 {runner['model']}보다 {metric.upper()} 기준 {gap:.4f} 앞섰습니다.",
+        "gap_label": gap_label,
+        "runner_up": runner.get("model"),
+        "metric": metric.upper(),
+        "gap": gap,
+    }
+
+
+def build_agent_insights(best_name=None, best_score=None, optuna_result=None, top_feature=None, cv_results=None):
     df = STATE.get("df")
     X = STATE.get("X")
     target_col = STATE.get("target_col")
@@ -82,6 +117,7 @@ def build_agent_insights(best_name=None, best_score=None, optuna_result=None, to
         "target_label": target_label,
         "target_reason": target_reason,
         "model_reason": _model_comment(best_name, task_type),
+        "model_evidence": _model_evidence(cv_results, task_type),
         "score_comment": _score_comment(best_score),
         "tuning_status": tuning_status,
         "risk_notes": _risk_notes(df, X, best_score, target_info),

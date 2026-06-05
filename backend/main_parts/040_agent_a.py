@@ -185,7 +185,7 @@ async def run_agent(demo: bool = False, user=Depends(get_current_user)):
     })
 
     final_score = optuna_result["after_roc"] if optuna_result and optuna_result.get("applied") else best_score
-    agent_insights = build_agent_insights(best_name, final_score, optuna_result, top_feature)
+    agent_insights = build_agent_insights(best_name, final_score, optuna_result, top_feature, results)
     final_comment = await ask_gemini(
         f"최종 모델 {best_name}, 점수 {final_score}, 주요 정보 {top_feature}. 발표용 한글 요약 2문장.",
         demo=demo,
