@@ -31,6 +31,7 @@ export default function Upload() {
   const [edaInfo, setEdaInfo] = useState(() => draft.current?.edaInfo || null)
   const [uploadError, setUploadError] = useState(null)
   const [targetError, setTargetError] = useState('')
+  const [needsReupload, setNeedsReupload] = useState(false)
   const [loading, setLoading] = useState('')
   const fileRef = useRef()
   const nav = useNavigate()
@@ -60,6 +61,7 @@ export default function Upload() {
     try {
       const { data } = await api.post('/upload', fd)
       setUploadInfo(data)
+      setNeedsReupload(false)
       setTarget(data.default_target || data.columns?.at(-1) || '')
       setDropCols(data.suggested_drop || [])
       setEdaInfo(null)
@@ -93,7 +95,13 @@ export default function Upload() {
       const { data } = await api.post('/set-target', { target_col: target, drop_cols: dropCols, col_labels: colLabels })
       setEdaInfo(data)
     } catch (e) {
-      setTargetError(e.response?.data?.detail || e.message)
+      const detail = e.response?.data?.detail || e.message
+      if (String(detail).includes('파일 없음') || String(detail).includes('데이터가 없습니다') || String(detail).includes('업로드 원본')) {
+        setNeedsReupload(true)
+        setTargetError('서버 재시작 또는 배포로 업로드 원본이 사라졌습니다. 같은 CSV를 다시 올리면 이어서 분석할 수 있습니다.')
+      } else {
+        setTargetError(detail)
+      }
     } finally {
       setLoading('')
     }
@@ -112,6 +120,7 @@ export default function Upload() {
     setEdaInfo(null)
     setUploadError(null)
     setTargetError('')
+    setNeedsReupload(false)
     sessionStorage.removeItem(UPLOAD_DRAFT_KEY)
   }
 
@@ -247,11 +256,11 @@ export default function Upload() {
               <div>
                 <h2 style={{ fontSize: 18, color: 'var(--text)', margin: '0 0 6px' }}>AI가 먼저 정리한 데이터 사용 방법</h2>
                 <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6, margin: 0 }}>
-                  아래 설정은 모델이 무엇을 예측하고 어떤 정보를 참고할지 정하는 단계입니다. 필요하면 직접 바꿀 수 있습니다.
+                  {uploadInfo.filename ? `${uploadInfo.filename} 기준으로 ` : ''}모델이 무엇을 예측하고 어떤 정보를 참고할지 정하는 단계입니다. 필요하면 직접 바꿀 수 있습니다.
                 </p>
               </div>
               <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-                <Button onClick={handleSetTarget} disabled={!!loading}>
+                <Button onClick={handleSetTarget} disabled={!!loading || needsReupload}>
                   {loading === 'target' && <span className="spinner" />}
                   이 설정으로 분석 준비
                 </Button>

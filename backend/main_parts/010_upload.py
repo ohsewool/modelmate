@@ -35,6 +35,7 @@ async def upload(file: UploadFile = File(...), user=Depends(get_current_user)):
     saved_dataset = save_dataset_record(user, file.filename, df, default_target, quality, domain_info)
 
     return {
+        "filename": file.filename,
         "columns": df.columns.tolist(),
         "shape": list(df.shape),
         "converted": is_txt, "separator": sep,

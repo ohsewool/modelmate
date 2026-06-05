@@ -1,7 +1,8 @@
 @app.post("/api/set-target")
 async def set_target(body: dict):
     df = STATE.get("df")
-    if df is None: raise HTTPException(400, "파일 없음")
+    if df is None:
+        raise HTTPException(400, "업로드 원본이 없습니다. 서버 재시작 또는 배포 후에는 같은 CSV를 다시 올려주세요.")
     tgt = body["target_col"]
     if tgt not in df.columns: raise HTTPException(400, f"컬럼 없음: {tgt}")
 
