@@ -49,7 +49,7 @@ export default function ApiOpsPanel({ models }) {
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(260px, 0.75fr)', gap: 10 }}>
+      <div className="api-ops-detail-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(260px, 0.75fr)', gap: 10 }}>
         <div className="card-elevated" style={{ padding: 13 }}>
           <p style={{ margin: '0 0 9px', fontSize: 13, fontWeight: 900, color: 'var(--text)' }}>
             <Activity size={15} style={{ verticalAlign: -3, marginRight: 6 }} /> 최신 공유 모델

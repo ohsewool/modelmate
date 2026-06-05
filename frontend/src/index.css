@@ -281,8 +281,19 @@ html.dark .banner-danger  { background: rgba(244,63,94,0.1);   border-color: rgb
   .recent-summary-grid,
   .dataset-detail-grid,
   .experiment-action-grid,
-  .report-story-flow {
+  .report-story-flow,
+  .api-ops-detail-grid,
+  .deploy-hero-grid,
+  .deploy-create-grid,
+  .model-card-head,
+  .model-tester-grid,
+  .share-flow-grid {
     grid-template-columns: 1fr !important;
+  }
+
+  .model-card-head > div:last-child,
+  .deploy-create-grid > button {
+    width: 100%;
   }
 
   .report-story-arrow {

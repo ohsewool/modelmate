@@ -74,7 +74,7 @@ function ModelTester({ model }) {
 
   return (
     <div className="card-elevated" style={{ display: 'grid', gap: 14 }}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10 }}>
+      <div className="model-tester-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10 }}>
         {(model.features || []).slice(0, 6).map(feature => (
           <label key={feature.name} style={{ display: 'grid', gap: 5 }}>
             <span style={{ fontSize: 12, fontWeight: 750, color: 'var(--text)' }}>{feature.label || feature.name}</span>
@@ -124,7 +124,7 @@ function ShareFlow({ hasModel, modelCount }) {
   return (
     <section className="card" style={{ display: 'grid', gap: 12 }}>
       <p className="section-title">공유 준비 흐름</p>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 10 }}>
+      <div className="share-flow-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 10 }}>
         {steps.map(([title, status, done]) => (
           <div key={title} style={{ padding: 12, borderRadius: 12, border: '1px solid var(--border-sub)', background: done ? '#f0fdf4' : 'var(--surface-alt)' }}>
             <p style={{ margin: '0 0 6px', fontSize: 13, fontWeight: 850, color: 'var(--text)' }}>{title}</p>
@@ -147,7 +147,7 @@ function ModelCard({ model, onDelete }) {
   const source = model.dataset_ref?.filename || '원본 데이터셋 정보 없음'
   return (
     <section className="card animate-slide-up" style={{ display: 'grid', gap: 16 }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 14 }}>
+      <div className="model-card-head" style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 14 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
             <h2 style={{ margin: 0, fontSize: 17, fontWeight: 850 }}>{model.name}</h2>
@@ -237,7 +237,7 @@ export default function Deploy() {
     <div className="animate-fade-in" style={{ padding: 32, maxWidth: 1080 }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
         <div className="card" style={{ border: 'none', background: 'linear-gradient(135deg,#eef2ff,#f8fafc 54%,#ecfeff)' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 18, alignItems: 'center' }}>
+          <div className="deploy-hero-grid" style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 18, alignItems: 'center' }}>
             <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
               <div style={{ width: 54, height: 54, borderRadius: 16, display: 'grid', placeItems: 'center', background: 'rgba(99,102,241,0.12)', color: '#4f46e5' }}>
                 <Rocket size={27} />
@@ -254,7 +254,7 @@ export default function Deploy() {
 
         <section className="card">
           <p className="section-title">현재 학습 모델 공유하기</p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 10 }}>
+          <div className="deploy-create-grid" style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 10 }}>
             <input className="input" value={modelName} onChange={e => setModelName(e.target.value)} placeholder="표시 이름, 선택 사항" />
             <button className="btn-primary" onClick={deployStable} disabled={!hasModel || loading}>
               {loading ? <span className="spinner" /> : <Rocket size={15} />}
