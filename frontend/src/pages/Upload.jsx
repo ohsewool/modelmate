@@ -7,8 +7,7 @@ import DatasetQualityCard from '../components/upload/DatasetQualityCard'
 import DemoDatasetGuide from '../components/upload/DemoDatasetGuide'
 import ReanalysisNotice from '../components/upload/ReanalysisNotice'
 import UploadJudgmentBrief from '../components/upload/UploadJudgmentBrief'
-import UploadReadinessChecklist from '../components/upload/UploadReadinessChecklist'
-import UploadAgentTrace from '../components/upload/UploadAgentTrace'
+import UploadSidePanel from '../components/upload/UploadSidePanel'
 
 const UPLOAD_DRAFT_KEY = 'mm_upload_draft'
 
@@ -32,6 +31,7 @@ export default function Upload() {
   const [uploadError, setUploadError] = useState(null)
   const [targetError, setTargetError] = useState('')
   const [needsReupload, setNeedsReupload] = useState(false)
+  const [sideTab, setSideTab] = useState('readiness')
   const [loading, setLoading] = useState('')
   const fileRef = useRef()
   const nav = useNavigate()
@@ -136,7 +136,7 @@ export default function Upload() {
   const domainConfidence = aiAnalysis?.dataset_domain_confidence || targetConfidence
 
   return (
-    <div className="animate-fade-in" style={{ padding: 32, maxWidth: 980 }}>
+    <div className="animate-fade-in" style={{ padding: 32, maxWidth: 1240 }}>
       <section style={{
         borderRadius: 10, padding: '22px 24px', marginBottom: 18,
         background: 'var(--surface)',
@@ -199,59 +199,35 @@ export default function Upload() {
           <DatasetQualityCard error={uploadError} onRetry={() => fileRef.current.click()} />
         </div>
       ) : (
-        <div className="animate-slide-up" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
-            <KPICard label="데이터 행" value={uploadInfo.shape?.[0]?.toLocaleString?.() || uploadInfo.shape?.[0]} color="blue" />
-            <KPICard label="전체 컬럼" value={uploadInfo.shape?.[1]} color="cyan" />
-            <KPICard label="결측값" value={uploadInfo.missing_total ?? 0} color={(uploadInfo.missing_total ?? 0) > 0 ? 'amber' : 'green'} />
-            <KPICard label="맞힐 값" value={shortName(target, colLabels)} color="violet" />
-            <KPICard label="데이터 종류" value={datasetDomain} color={domainConfidence === '낮음' ? 'amber' : 'green'} />
-          </div>
-
-          <UploadJudgmentBrief
-            domain={datasetDomain}
-            domainConfidence={domainConfidence}
-            targetName={shortName(target, colLabels)}
-            targetCategory={targetCategory}
-            targetReason={targetReason}
-            activeCount={activeCols.length}
-            dropCount={dropCols.length}
-          />
-
-          <UploadReadinessChecklist
-            rows={uploadInfo.shape?.[0]}
-            cols={uploadInfo.shape?.[1]}
-            missingTotal={uploadInfo.missing_total || 0}
-            domain={datasetDomain}
-            domainConfidence={domainConfidence}
-            target={shortName(target, colLabels)}
-            targetConfidence={targetConfidence}
-            activeCount={activeCols.length}
-            dropCount={dropCols.length}
-          />
-
-          <UploadAgentTrace
-            domain={datasetDomain}
-            domainReason={aiAnalysis?.dataset_domain_reason}
-            domainConfidence={domainConfidence}
-            target={shortName(target, colLabels)}
-            targetCategory={targetCategory}
-            targetReason={targetReason}
-            targetConfidence={targetConfidence}
-            activeCount={activeCols.length}
-            dropCount={dropCols.length}
-          />
-
-          <DatasetQualityCard quality={uploadInfo.dataset_quality} />
-          {uploadInfo.saved_dataset && (
-            <div className="banner-success">
-              <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)' }}>
-                {uploadInfo.saved_dataset.project_name}에 데이터셋 메타가 저장되었습니다.
-              </p>
+        <div className="animate-slide-up upload-workspace">
+          <div className="upload-main-flow">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
+              <KPICard label="데이터 행" value={uploadInfo.shape?.[0]?.toLocaleString?.() || uploadInfo.shape?.[0]} color="blue" />
+              <KPICard label="전체 컬럼" value={uploadInfo.shape?.[1]} color="cyan" />
+              <KPICard label="결측값" value={uploadInfo.missing_total ?? 0} color={(uploadInfo.missing_total ?? 0) > 0 ? 'amber' : 'green'} />
+              <KPICard label="맞힐 값" value={shortName(target, colLabels)} color="violet" />
+              <KPICard label="데이터 종류" value={datasetDomain} color={domainConfidence === '낮음' ? 'amber' : 'green'} />
             </div>
-          )}
 
-          <div className="card">
+            <UploadJudgmentBrief
+              domain={datasetDomain}
+              domainConfidence={domainConfidence}
+              targetName={shortName(target, colLabels)}
+              targetCategory={targetCategory}
+              targetReason={targetReason}
+              activeCount={activeCols.length}
+              dropCount={dropCols.length}
+            />
+
+            {uploadInfo.saved_dataset && (
+              <div className="banner-success">
+                <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)' }}>
+                  {uploadInfo.saved_dataset.project_name}에 데이터셋 메타가 저장되었습니다.
+                </p>
+              </div>
+            )}
+
+            <div className="card">
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'flex-start', marginBottom: 18 }}>
               <div>
                 <h2 style={{ fontSize: 18, color: 'var(--text)', margin: '0 0 6px' }}>AI가 먼저 정리한 데이터 사용 방법</h2>
@@ -314,40 +290,45 @@ export default function Upload() {
                 <ChipList items={dropCols} colLabels={colLabels} empty="제외할 컬럼이 없습니다." onClick={toggleDrop} tone="red" />
               </SettingPanel>
             </div>
+            </div>
+
+            {edaInfo && (
+              <div className="card animate-fade-in">
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, marginBottom: 16 }}>
+                  <div>
+                    <h2 style={{ fontSize: 18, color: 'var(--text)', margin: '0 0 6px' }}>분석 준비가 끝났습니다</h2>
+                    <p style={{ fontSize: 13, color: 'var(--text-2)', margin: 0 }}>
+                      이제 여러 AI 모델을 비교해서 이 데이터에 가장 잘 맞는 모델을 찾을 수 있습니다.
+                    </p>
+                  </div>
+                  <Button onClick={() => nav('/model-lab')}>모델 비교하러 가기</Button>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 12 }}>
+                  <KPICard label="학습 데이터" value={edaInfo.n_samples?.toLocaleString?.() || edaInfo.n_samples} color="blue" />
+                  <KPICard label="사용 정보" value={edaInfo.n_features} color="cyan" />
+                  <KPICard label="정답 비율" value={edaInfo.failure_rate != null ? `${edaInfo.failure_rate}%` : '-'} color="green" />
+                </div>
+              </div>
+            )}
           </div>
 
-          {aiAnalysis?.drop_suggestions?.length > 0 && (
-            <div className="card">
-              <h2 style={{ fontSize: 16, color: 'var(--text)', margin: '0 0 12px' }}>AI가 제외를 추천한 이유</h2>
-              <div style={{ display: 'grid', gap: 8 }}>
-                {aiAnalysis.drop_suggestions.map((item, idx) => (
-                  <div key={`${item.col}-${idx}`} style={{ padding: 12, borderRadius: 10, background: 'rgba(220,38,38,0.05)', border: '1px solid rgba(220,38,38,0.14)' }}>
-                    <p style={{ fontSize: 13, fontWeight: 800, color: '#dc2626', margin: '0 0 4px' }}>{labelFor(item.col, colLabels)}</p>
-                    <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.55, margin: 0 }}>{item.reason}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {edaInfo && (
-            <div className="card animate-fade-in">
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, marginBottom: 16 }}>
-                <div>
-                  <h2 style={{ fontSize: 18, color: 'var(--text)', margin: '0 0 6px' }}>분석 준비가 끝났습니다</h2>
-                  <p style={{ fontSize: 13, color: 'var(--text-2)', margin: 0 }}>
-                    이제 여러 AI 모델을 비교해서 이 데이터에 가장 잘 맞는 모델을 찾을 수 있습니다.
-                  </p>
-                </div>
-                <Button onClick={() => nav('/model-lab')}>모델 비교하러 가기</Button>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 12 }}>
-                <KPICard label="학습 데이터" value={edaInfo.n_samples?.toLocaleString?.() || edaInfo.n_samples} color="blue" />
-                <KPICard label="사용 정보" value={edaInfo.n_features} color="cyan" />
-                <KPICard label="정답 비율" value={edaInfo.failure_rate != null ? `${edaInfo.failure_rate}%` : '-'} color="green" />
-              </div>
-            </div>
-          )}
+          <UploadSidePanel
+            activeTab={sideTab}
+            setActiveTab={setSideTab}
+            uploadInfo={uploadInfo}
+            aiAnalysis={aiAnalysis}
+            domain={datasetDomain}
+            domainConfidence={domainConfidence}
+            target={shortName(target, colLabels)}
+            targetCategory={targetCategory}
+            targetReason={targetReason}
+            targetConfidence={targetConfidence}
+            activeCount={activeCols.length}
+            dropCount={dropCols.length}
+            dropSuggestions={aiAnalysis?.drop_suggestions || []}
+            colLabels={colLabels}
+            labelFor={labelFor}
+          />
         </div>
       )}
     </div>
