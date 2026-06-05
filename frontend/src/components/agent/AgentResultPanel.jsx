@@ -12,7 +12,7 @@ export default function AgentResultPanel({ result, steps, decision, onReport, on
   return (
     <div style={{ display: 'grid', gap: 16 }}>
       <AgentMissionBrief insights={result.agent_insights} decision={decision} />
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 0.9fr) minmax(0, 1.1fr)', gap: 16, alignItems: 'start' }}>
+      <div className="agent-result-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 0.9fr) minmax(0, 1.1fr)', gap: 16, alignItems: 'start' }}>
         <AgentPlanBoard activeIndex={AGENT_PLAN.length} completed />
         <AgentDecisionBoard decision={decision} />
       </div>
