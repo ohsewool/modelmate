@@ -8,6 +8,7 @@ import DemoDatasetGuide from '../components/upload/DemoDatasetGuide'
 import ReanalysisNotice from '../components/upload/ReanalysisNotice'
 import UploadJudgmentBrief from '../components/upload/UploadJudgmentBrief'
 import UploadReadinessChecklist from '../components/upload/UploadReadinessChecklist'
+import UploadAgentTrace from '../components/upload/UploadAgentTrace'
 
 const UPLOAD_DRAFT_KEY = 'mm_upload_draft'
 
@@ -215,6 +216,18 @@ export default function Upload() {
             domain={datasetDomain}
             domainConfidence={domainConfidence}
             target={shortName(target, colLabels)}
+            targetConfidence={targetConfidence}
+            activeCount={activeCols.length}
+            dropCount={dropCols.length}
+          />
+
+          <UploadAgentTrace
+            domain={datasetDomain}
+            domainReason={aiAnalysis?.dataset_domain_reason}
+            domainConfidence={domainConfidence}
+            target={shortName(target, colLabels)}
+            targetCategory={targetCategory}
+            targetReason={targetReason}
             targetConfidence={targetConfidence}
             activeCount={activeCols.length}
             dropCount={dropCols.length}

@@ -287,8 +287,13 @@ html.dark .banner-danger  { background: rgba(244,63,94,0.1);   border-color: rgb
   .deploy-create-grid,
   .model-card-head,
   .model-tester-grid,
-  .share-flow-grid {
+  .share-flow-grid,
+  .upload-agent-trace {
     grid-template-columns: 1fr !important;
+  }
+
+  .upload-agent-arrow {
+    display: none !important;
   }
 
   .model-card-head > div:last-child,
