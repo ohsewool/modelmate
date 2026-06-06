@@ -496,6 +496,7 @@ html.dark .banner-danger  { background: rgba(244,63,94,0.1);   border-color: rgb
   .deploy-hero-grid,
   .deploy-create-grid,
   .model-asset-grid,
+  .api-usage-grid,
   .model-card-head,
   .model-tester-grid,
   .share-flow-grid,
