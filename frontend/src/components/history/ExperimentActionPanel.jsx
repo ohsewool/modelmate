@@ -51,6 +51,12 @@ export default function ExperimentActionPanel({ item, onNavigate }) {
       best_model: item?.best_model,
     },
   }
+  const reportState = { historyReport: item }
+  const getActionState = key => {
+    if (key === 'rerun') return reanalysisState
+    if (key === 'report') return reportState
+    return undefined
+  }
   return (
     <div className="card-elevated" style={{ padding: 14, marginBottom: 14 }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 12 }}>
@@ -75,10 +81,10 @@ export default function ExperimentActionPanel({ item, onNavigate }) {
               key={action.key}
               role="button"
               tabIndex={disabled ? -1 : 0}
-              onClick={() => !disabled && onNavigate?.(action.to, action.key === 'rerun' ? reanalysisState : undefined)}
+              onClick={() => !disabled && onNavigate?.(action.to, getActionState(action.key))}
               onKeyDown={event => {
                 if (!disabled && (event.key === 'Enter' || event.key === ' ')) {
-                  onNavigate?.(action.to, action.key === 'rerun' ? reanalysisState : undefined)
+                  onNavigate?.(action.to, getActionState(action.key))
                 }
               }}
               className="card-elevated"

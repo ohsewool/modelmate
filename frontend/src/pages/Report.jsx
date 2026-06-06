@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import {
   AlertCircle,
   BarChart3,
@@ -50,6 +50,62 @@ const reportSummaryText = (summary, dataset, opt) => {
     return `${model} 모델이 '${target}' 예측에 가장 적합한 모델로 선택되었습니다. 자동 개선을 시도했지만 기존 모델보다 나은 조합은 찾지 못했습니다.`
   }
   return `${model} 모델이 '${target}' 예측에 가장 적합한 모델로 선택되었습니다.`
+}
+
+function summaryFromExperiment(item) {
+  const results = item?.results || []
+  const first = results[0] || {}
+  const primary = item?.tuned_metric || (item?.task_type === 'regression' ? 'r2' : 'roc_auc')
+  const score = item?.tuned_score ?? first[primary] ?? first.roc_auc ?? first.r2 ?? first.accuracy
+  return {
+    generated_at: item?.timestamp || new Date().toISOString(),
+    readiness_score: item?.best_model ? 1 : 0.6,
+    readiness: {
+      dataset_uploaded: true,
+      target_selected: Boolean(item?.target),
+      cv_completed: results.length > 0,
+      model_ready: Boolean(item?.best_model),
+      optuna_checked: item?.optuna_status !== undefined || item?.optuna_applied !== undefined,
+    },
+    dataset: {
+      target_col: item?.target,
+      task_type: item?.task_type,
+      training_shape: item?.data_shape,
+      domain: item?.dataset_domain,
+    },
+    model_selection: {
+      best_model: item?.best_model,
+      models: results,
+      score_info: { primary },
+    },
+    optimization: {
+      status: item?.optuna_status || (item?.optuna_applied ? 'improved' : 'skipped'),
+      metric_name: primary,
+      before_score: score,
+      after_score: item?.tuned_score ?? score,
+      improvement: item?.optuna_improvement ?? 0,
+      n_trials: item?.optuna_trials,
+      reason: item?.optuna_reason || '저장된 실험 기록 기준으로 복원한 요약입니다.',
+    },
+    preprocessing: {
+      summary: `${(item?.drop_cols || []).length + (item?.auto_drop_cols || []).length}개 컬럼을 제외하고 실험했습니다.`,
+      auto_drop_cols: [...(item?.drop_cols || []), ...(item?.auto_drop_cols || [])],
+    },
+    business_summary: {
+      headline: `${item?.best_model || '선택 모델'}로 ${item?.target || '목표값'} 예측 결과를 저장했습니다.`,
+      use_case: '작업 기록에서 다시 연 저장 보고서입니다. 같은 설정 재분석, 새 데이터 예측, 공유/API 흐름으로 이어갈 수 있습니다.',
+      recommended_decision: '같은 CSV를 다시 올리면 이전 타겟과 제외 컬럼을 참고해 분석을 이어갈 수 있습니다.',
+      risk_notes: ['원본 CSV는 보안을 위해 저장하지 않으므로 재분석하려면 같은 파일을 다시 올려야 합니다.'],
+      next_actions: ['같은 설정으로 재분석', '저장 모델로 새 데이터 예측', '공유/API 흐름 확인'],
+    },
+    presentation_points: [
+      `데이터 분야: ${item?.dataset_domain || '기록 없음'}`,
+      `맞힐 값: ${item?.target || '-'}`,
+      `선택 모델: ${item?.best_model || '-'}`,
+    ],
+    executive_summary: item?.presentation_conclusion || '저장된 실험 기록을 바탕으로 복원한 결과 요약입니다.',
+    feature_evidence: { items: item?.feature_importance || [] },
+  }
 }
 
 function MiniStat({ label, value, tone = 'blue' }) {
@@ -152,6 +208,8 @@ function BusinessSummary({ data }) {
 
 export default function Report() {
   const nav = useNavigate()
+  const location = useLocation()
+  const historyReport = location.state?.historyReport
   const [summary, setSummary] = useState(null)
   const [loading, setLoading] = useState(true)
   const [downloading, setDownloading] = useState(false)
@@ -160,6 +218,12 @@ export default function Report() {
   const [sideTab, setSideTab] = useState('status')
 
   async function loadSummary() {
+    if (historyReport) {
+      setSummary(summaryFromExperiment(historyReport))
+      setLoading(false)
+      setError('')
+      return
+    }
     setLoading(true)
     setError('')
     try {
@@ -172,7 +236,7 @@ export default function Report() {
     }
   }
 
-  useEffect(() => { loadSummary() }, [])
+  useEffect(() => { loadSummary() }, [historyReport])
 
   async function downloadReport() {
     setDownloading(true)
@@ -252,6 +316,15 @@ export default function Report() {
             </div>
           </div>
         </div>
+
+        {historyReport && (
+          <div className="banner-success">
+            <CheckCircle2 size={16} />
+            <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)', lineHeight: 1.55 }}>
+              작업 기록에서 다시 연 저장 보고서입니다. 현재 서버 상태가 아니라 선택한 과거 실험 기준으로 보여줍니다.
+            </p>
+          </div>
+        )}
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 14 }}>
           <MiniStat label="준비도" value={pct(summary.readiness_score)} tone="green" />
