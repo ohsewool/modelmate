@@ -5,9 +5,9 @@
 - 배포 URL: https://web-production-5d6fa.up.railway.app/
 - GitHub: https://github.com/ohsewool/-
 - Branch: `main`
-- 최신 확인 커밋: `6aefc08 chore: trigger Railway deploy for model versions`
-- 최신 기능 커밋: `159238c feat: add saved model version overview`
-- 최신 배포 번들 확인: JS `assets/index-atxHjWWC.js`, CSS `assets/index-CIPPNQvk.css`
+- 최신 확인 커밋: `b95fcce chore: trigger Railway deploy for api privacy`
+- 최신 기능 커밋: `de8b73d feat: clarify api privacy preview`
+- 최신 배포 번들 확인: JS `assets/index-D3pIvYj6.js`, CSS `assets/index-CeVnVF-0.css`
 - 11월 방향성: 고정 샘플 데모가 아니라, 사용자가 임의 CSV를 올리면 데이터 분야, 예측 목적, 맞힐 값, 제외 컬럼, 모델 선택, 위험 요소, 다음 행동, 저장/재사용, 공유/API까지 이어지는 범용 AutoML SaaS처럼 보이게 만든다.
 
 ## 발표용 핵심 흐름
@@ -35,6 +35,7 @@
 - 실험 기록에 `reuse_config`를 저장해 맞힐 값, 제외 컬럼, 선택 모델, 점수, 사용 정보가 재사용되게 개선.
 - 작업 기록에서 예측/공유 화면으로 이동할 때 선택 실험 context를 표시.
 - 저장 모델 목록에 lifecycle status, primary score, feature count를 추가하고 버전 관리 패널을 추가.
+- 공유/API 화면에 공개/비공개 미리보기, API 키 미리보기, 실제 production secret이 아니라는 안내를 추가.
 
 ## 현재 상태 판단
 
@@ -61,6 +62,7 @@
 - `frontend/src/components/deploy/ModelAssetPanel.jsx`: 저장 모델 자산 요약 UI.
 - `frontend/src/components/deploy/ModelVersionPanel.jsx`: 저장 모델 버전/상태 요약 UI.
 - `frontend/src/components/deploy/ApiUsageExamplePanel.jsx`: 공유/API 사용 흐름 UI.
+- `frontend/src/components/deploy/ApiPrivacyPanel.jsx`: 공개/비공개, API 키 미리보기 UI.
 - `frontend/src/pages/Report.jsx`: 저장 보고서 복원 처리.
 - `frontend/src/pages/History.jsx`: 작업공간/실험 기록 중심 화면.
 - `frontend/src/pages/Predict.jsx`: 작업 기록에서 넘어온 선택 실험 안내.
