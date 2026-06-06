@@ -5,9 +5,9 @@
 - 배포 URL: https://web-production-5d6fa.up.railway.app/
 - GitHub: https://github.com/ohsewool/-
 - Branch: `main`
-- 최신 확인 커밋: `b95fcce chore: trigger Railway deploy for api privacy`
-- 최신 기능 커밋: `de8b73d feat: clarify api privacy preview`
-- 최신 배포 번들 확인: JS `assets/index-D3pIvYj6.js`, CSS `assets/index-CeVnVF-0.css`
+- 최신 확인 커밋: `87def0a chore: trigger Railway deploy for agent story`
+- 최신 기능 커밋: `e94ff4d feat: add agent presentation story`
+- 최신 배포 번들 확인: JS `assets/index-CTAP3lKU.js`, CSS `assets/index-BLgYM24P.css`
 - 11월 방향성: 고정 샘플 데모가 아니라, 사용자가 임의 CSV를 올리면 데이터 분야, 예측 목적, 맞힐 값, 제외 컬럼, 모델 선택, 위험 요소, 다음 행동, 저장/재사용, 공유/API까지 이어지는 범용 AutoML SaaS처럼 보이게 만든다.
 
 ## 발표용 핵심 흐름
@@ -36,6 +36,7 @@
 - 작업 기록에서 예측/공유 화면으로 이동할 때 선택 실험 context를 표시.
 - 저장 모델 목록에 lifecycle status, primary score, feature count를 추가하고 버전 관리 패널을 추가.
 - 공유/API 화면에 공개/비공개 미리보기, API 키 미리보기, 실제 production secret이 아니라는 안내를 추가.
+- AI 에이전트 결과에 발표용 결론 패널을 추가해 한 줄 결론, 의미, 시연 스크립트, 상용 준비도를 보여줌.
 
 ## 현재 상태 판단
 
@@ -58,6 +59,7 @@
 - `backend/main_parts/004_data_quality.py`: 업로드 품질 판단, TXT 문서형 거부.
 - `backend/main_parts/039_agent_insights.py`: AI 에이전트 판단 근거 생성.
 - `frontend/src/components/agent/AgentJudgmentPanel.jsx`: 에이전트 판단 근거 UI.
+- `frontend/src/components/agent/AgentStoryPanel.jsx`: 발표용 결론과 시연 스크립트 UI.
 - `frontend/src/components/workspace/WorkspaceContinuityPanel.jsx`: 작업공간 연속성 UI.
 - `frontend/src/components/deploy/ModelAssetPanel.jsx`: 저장 모델 자산 요약 UI.
 - `frontend/src/components/deploy/ModelVersionPanel.jsx`: 저장 모델 버전/상태 요약 UI.
