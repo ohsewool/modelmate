@@ -3,6 +3,7 @@ import { Button } from '../ui/button'
 import AgentInsightCards from '../AgentInsightCards'
 import AgentAutonomyPanel from './AgentAutonomyPanel'
 import AgentDecisionBoard from './AgentDecisionBoard'
+import AgentJudgmentPanel from './AgentJudgmentPanel'
 import AgentMissionBrief from './AgentMissionBrief'
 import AgentNextActionsPanel from './AgentNextActionsPanel'
 import AgentPlanBoard, { AGENT_PLAN } from './AgentPlanBoard'
@@ -17,6 +18,7 @@ export default function AgentResultPanel({ result, steps, decision, onReport, on
         <AgentDecisionBoard decision={decision} />
       </div>
       <AgentAutonomyPanel insights={result.agent_insights} />
+      <AgentJudgmentPanel insights={result.agent_insights} />
       <AgentInsightCards insights={result.agent_insights} />
       <AgentNextActionsPanel
         insights={result.agent_insights}

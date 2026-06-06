@@ -161,6 +161,33 @@ def _model_evidence(cv_results, task_type):
     }
 
 
+def _agent_judgment(df, X, target_col, target_info, evidence, risks, actions):
+    rows = int(len(df)) if df is not None else 0
+    cols = int(df.shape[1]) if df is not None else 0
+    used = int(X.shape[1]) if X is not None else 0
+    excluded = max(cols - used - 1, 0) if cols else 0
+    confidence = target_info.get("dataset_domain_confidence") or target_info.get("target_category_confidence") or "중간"
+    return {
+        "headline": f"{target_info.get('dataset_domain', '도메인 확인 필요')} 데이터로 보고 {target_col or '목표값'} 예측 문제를 구성했습니다.",
+        "confidence": confidence,
+        "dataset_basis": [
+            f"데이터 크기: {rows:,}행, {cols:,}개 컬럼",
+            f"모델 입력으로 {used}개 정보를 사용",
+            f"예측 방해 가능성이 있는 정보 {excluded}개 제외",
+        ],
+        "target_basis": [
+            target_info.get("target_category_reason", "컬럼 구조를 기준으로 맞힐 값을 판단했습니다."),
+            f"예측 목적: {target_info.get('target_category', '목적 확인 필요')}",
+        ],
+        "model_basis": [
+            evidence.get("summary", "검증 점수를 기준으로 추천 모델을 선택했습니다."),
+            f"선택 근거 강도: {evidence.get('gap_label', '비교 정보 없음')}",
+        ],
+        "risk_basis": risks[:2],
+        "next_basis": actions[:2],
+    }
+
+
 def build_agent_insights(best_name=None, best_score=None, optuna_result=None, top_feature=None, cv_results=None):
     df = STATE.get("df")
     X = STATE.get("X")
@@ -180,17 +207,20 @@ def build_agent_insights(best_name=None, best_score=None, optuna_result=None, to
     evidence = _model_evidence(cv_results, task_type)
     priority = _agent_priority(df, X, best_score, target_info, evidence)
     readiness = _commercial_readiness(df, X, best_score, target_info, evidence)
+    risks = _risk_notes(df, X, best_score, target_info)
+    actions = _next_actions(df, X, best_score, optuna_result, target_info, top_feature)
     return {
         "domain": domain,
         "target_label": target_label,
         "target_reason": target_reason,
         "model_reason": _model_comment(best_name, task_type),
         "model_evidence": evidence,
+        "agent_judgment": _agent_judgment(df, X, target_col, target_info, evidence, risks, actions),
         "agent_priority": priority,
         "commercial_readiness": readiness,
         "score_comment": _score_comment(best_score),
         "tuning_status": tuning_status,
-        "risk_notes": _risk_notes(df, X, best_score, target_info),
-        "next_actions": _next_actions(df, X, best_score, optuna_result, target_info, top_feature),
+        "risk_notes": risks,
+        "next_actions": actions,
         "presentation_conclusion": conclusion,
     }

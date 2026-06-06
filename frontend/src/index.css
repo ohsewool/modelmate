@@ -486,6 +486,7 @@ html.dark .banner-danger  { background: rgba(244,63,94,0.1);   border-color: rgb
   .admin-stat-grid,
   .admin-detail-grid,
     .agent-result-grid,
+    .agent-judgment-grid,
     .recent-summary-grid,
     .dataset-detail-grid,
     .experiment-action-grid,
