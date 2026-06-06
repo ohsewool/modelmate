@@ -12,6 +12,7 @@ import ExperimentDetail from '../components/history/ExperimentDetail'
 import RecentExperimentSummary from '../components/history/RecentExperimentSummary'
 import DatasetList from '../components/workspace/DatasetList'
 import WorkspaceBanner from '../components/workspace/WorkspaceBanner'
+import WorkspaceContinuityPanel from '../components/workspace/WorkspaceContinuityPanel'
 import WorkspaceValuePanel from '../components/workspace/WorkspaceValuePanel'
 
 const fmt = value => {
@@ -196,6 +197,13 @@ export default function History() {
           getExperiments={item => experimentsForDataset(item, history)}
           onSelectExperiment={setSelectedItem}
           onUpload={item => nav('/upload', { state: item ? { reanalysisDataset: item } : null })}
+        />
+
+        <WorkspaceContinuityPanel
+          datasets={datasets}
+          history={history}
+          onOpenExperiment={setSelectedItem}
+          onUpload={() => nav('/upload')}
         />
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 10 }}>
