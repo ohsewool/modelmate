@@ -1,9 +1,9 @@
 {
   "status": "pass",
   "result": {
-    "dataset_id": "00ab2aa1",
-    "history_dataset_id": "00ab2aa1",
-    "model_id": "1647c521",
+    "dataset_id": "5d068334",
+    "history_dataset_id": "5d068334",
+    "model_id": "550ca3a2",
     "version_label": "v1",
     "storage_status": "사용 가능",
     "predict_status": "ok",

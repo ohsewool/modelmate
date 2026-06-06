@@ -58,6 +58,7 @@ html.dark {
     padding: 18px;
     box-shadow: 0 1px 2px rgba(15,23,42,0.035);
     transition: background 0.2s, border-color 0.2s;
+    min-width: 0;
   }
   .card-elevated {
     background: var(--surface-alt);
@@ -65,6 +66,16 @@ html.dark {
     border-radius: var(--radius);
     padding: 14px;
     transition: background 0.2s, border-color 0.2s;
+    min-width: 0;
+  }
+  .card h1,
+  .card h2,
+  .card h3,
+  .card p,
+  .card code,
+  .card-elevated p,
+  .card-elevated code {
+    overflow-wrap: anywhere;
   }
 
   /* ── Buttons ──────────────────────────────────────────── */
@@ -74,6 +85,8 @@ html.dark {
     background: #2563eb;
     border: 1px solid #2563eb;
     box-shadow: 0 1px 2px rgba(15,23,42,0.06);
+    max-width: 100%;
+    white-space: normal;
   }
   .btn-primary:hover:not(:disabled) {
     background: #1d4ed8;
@@ -94,6 +107,8 @@ html.dark {
     border: 1px solid var(--border);
     color: var(--text-2);
     box-shadow: none;
+    max-width: 100%;
+    white-space: normal;
   }
   .btn-secondary:hover {
     background: var(--surface-alt);
@@ -103,7 +118,7 @@ html.dark {
   }
 
   /* ── Badges ───────────────────────────────────────────── */
-  .badge { @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold; }
+  .badge { @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold; max-width: 100%; white-space: normal; }
   .badge-blue   { background: #eff6ff; color: #3730a3; border: 1px solid #c7d2fe; }
   .badge-green  { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
   .badge-red    { background: #fff1f2; color: #9f1239; border: 1px solid #fecdd3; }
@@ -472,6 +487,20 @@ html.dark .banner-danger  { background: rgba(244,63,94,0.1);   border-color: rgb
   main > div {
     padding-left: 12px !important;
     padding-right: 12px !important;
+  }
+
+  .card {
+    padding: 14px;
+  }
+
+  .card-elevated {
+    padding: 12px;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    width: auto;
+    min-height: 38px;
   }
 
   .home-hero-grid,
