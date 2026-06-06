@@ -30,6 +30,36 @@ def save_history(rec, user_id=None):
     with open(HISTORY_FILE, "w", encoding="utf-8") as f:
         json.dump(h, f, ensure_ascii=False, indent=2)
 
+def primary_result_metric(result, task_type):
+    if not result:
+        return {"label": "R2" if task_type == "regression" else "ROC-AUC", "value": None}
+    if task_type == "regression":
+        return {"label": "R2", "value": result.get("r2")}
+    return {"label": "ROC-AUC", "value": result.get("roc_auc", result.get("accuracy"))}
+
+def experiment_reuse_config(best_model_name, results, target_info):
+    df = STATE.get("df")
+    X = STATE.get("X")
+    task_type = STATE.get("task_type", "classification")
+    best_result = next((r for r in results or [] if r.get("model") == best_model_name), None)
+    metric = primary_result_metric(best_result or ((results or [None])[0]), task_type)
+    dataset = STATE.get("current_dataset") or {}
+    shape = list(X.shape) if X is not None else list(df.shape) if df is not None else None
+    return {
+        "dataset_id": dataset.get("id"),
+        "filename": dataset.get("filename"),
+        "target_col": STATE.get("target_col"),
+        "drop_cols": STATE.get("drop_cols", []),
+        "auto_drop_cols": STATE.get("auto_drop_cols", []),
+        "active_features": list(X.columns) if X is not None else [],
+        "data_shape": shape,
+        "dataset_domain": target_info.get("dataset_domain"),
+        "target_category": target_info.get("target_category"),
+        "task_type": task_type,
+        "best_model": best_model_name,
+        "metric": metric,
+    }
+
 def auto_parse(raw):
     seps = [",", "\t", ";", "|"]
     best, score = ",", -1

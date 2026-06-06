@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import {
   AlertCircle,
   CheckCircle2,
@@ -190,6 +191,8 @@ function ModelCard({ model, onDelete }) {
 }
 
 export default function Deploy() {
+  const location = useLocation()
+  const selectedExperiment = location.state?.selectedExperiment
   const [models, setModels] = useState([])
   const [hasModel, setHasModel] = useState(false)
   const [profile, setProfile] = useState(null)
@@ -240,6 +243,14 @@ export default function Deploy() {
   return (
     <div className="animate-fade-in" style={{ padding: 32, maxWidth: 1080 }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+        {selectedExperiment && (
+          <div className="banner-success">
+            <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)' }}>
+              작업 기록에서 {selectedExperiment.best_model || '선택 모델'} 실험을 이어왔습니다.
+              맞힐 값 {selectedExperiment.target_col || '-'} / API 공유 전 저장 모델을 만들면 됩니다.
+            </p>
+          </div>
+        )}
         <div className="card" style={{ border: 'none', background: 'linear-gradient(135deg,#eef2ff,#f8fafc 54%,#ecfeff)' }}>
           <div className="deploy-hero-grid" style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 18, alignItems: 'center' }}>
             <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>

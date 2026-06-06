@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import {
   AlertCircle,
   CheckCircle2,
@@ -147,6 +148,8 @@ function BatchResults({ data }) {
 }
 
 export default function Predict() {
+  const location = useLocation()
+  const selectedExperiment = location.state?.selectedExperiment
   const [info, setInfo] = useState(null)
   const [values, setValues] = useState({})
   const [tab, setTab] = useState('single')
@@ -234,6 +237,14 @@ export default function Predict() {
   return (
     <div className="animate-fade-in" style={{ padding: 32, maxWidth: 1120 }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+        {selectedExperiment && (
+          <div className="banner-success">
+            <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)' }}>
+              작업 기록에서 {selectedExperiment.best_model || '선택 모델'} 실험을 이어왔습니다.
+              맞힐 값 {selectedExperiment.target_col || '-'} / 데이터 {selectedExperiment.domain || '-'}
+            </p>
+          </div>
+        )}
         <div className="card" style={{ border: 'none', background: 'linear-gradient(135deg,#ecfeff,#f8fafc 54%,#eef2ff)' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 18, alignItems: 'center' }}>
             <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>

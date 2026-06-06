@@ -46,6 +46,11 @@ async def run_flow():
     await m.run_cv(user=USER)
     history = await m.get_history(user=USER)
     assert history and history[0].get("dataset_ref", {}).get("id") == saved["id"]
+    reuse = history[0].get("reuse_config") or {}
+    assert reuse.get("target_col") == "defect", "history reuse target was not saved"
+    assert "machine_id" in reuse.get("drop_cols", []), "history reuse drop columns were not saved"
+    assert reuse.get("best_model"), "history reuse selected model was not saved"
+    assert reuse.get("metric", {}).get("label"), "history reuse metric was not saved"
 
     deployed = await m.deploy_model_stable({"name": "QA saved model"}, user=USER)
     listed = await m.list_deployed(user=USER)
@@ -62,6 +67,8 @@ async def run_flow():
     return {
         "dataset_id": saved["id"],
         "history_dataset_id": history[0]["dataset_ref"]["id"],
+        "reuse_target": reuse["target_col"],
+        "reuse_model": reuse["best_model"],
         "model_id": deployed["model_id"],
         "version_label": match["version_label"],
         "storage_status": match["storage_status"],

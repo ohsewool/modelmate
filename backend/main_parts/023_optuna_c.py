@@ -30,6 +30,7 @@
         "tuned_score": after,
         "tuned_metric": metric_name,
         "dataset_ref": STATE.get("current_dataset"),
+        "reuse_config": experiment_reuse_config(best_name, STATE["cv_results"], target_info),
         "drop_cols": STATE.get("drop_cols", []),
         "auto_drop_cols": STATE.get("auto_drop_cols", []),
         "dataset_domain": target_info.get("dataset_domain"),
