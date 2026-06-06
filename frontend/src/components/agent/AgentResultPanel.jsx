@@ -7,6 +7,7 @@ import AgentJudgmentPanel from './AgentJudgmentPanel'
 import AgentMissionBrief from './AgentMissionBrief'
 import AgentNextActionsPanel from './AgentNextActionsPanel'
 import AgentPlanBoard, { AGENT_PLAN } from './AgentPlanBoard'
+import AgentStoryPanel from './AgentStoryPanel'
 import AgentStepCard from './AgentStepCard'
 
 export default function AgentResultPanel({ result, steps, decision, onReport, onXai, onPredict, onDeploy }) {
@@ -18,6 +19,7 @@ export default function AgentResultPanel({ result, steps, decision, onReport, on
         <AgentDecisionBoard decision={decision} />
       </div>
       <AgentAutonomyPanel insights={result.agent_insights} />
+      <AgentStoryPanel insights={result.agent_insights} />
       <AgentJudgmentPanel insights={result.agent_insights} />
       <AgentInsightCards insights={result.agent_insights} />
       <AgentNextActionsPanel

@@ -1,11 +1,11 @@
 {
   "status": "pass",
   "result": {
-    "dataset_id": "6053cb87",
-    "history_dataset_id": "6053cb87",
+    "dataset_id": "38cc5f90",
+    "history_dataset_id": "38cc5f90",
     "reuse_target": "defect",
     "reuse_model": "Random Forest",
-    "model_id": "e313308a",
+    "model_id": "582b7eaa",
     "version_label": "v1",
     "storage_status": "사용 가능",
     "lifecycle_status": "사용 가능",

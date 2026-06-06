@@ -188,6 +188,23 @@ def _agent_judgment(df, X, target_col, target_info, evidence, risks, actions):
     }
 
 
+def _agent_story(domain, target_label, best_name, best_score, evidence, priority, readiness, risks, actions):
+    score_text = f"{best_score:.4f}" if isinstance(best_score, (int, float)) else "점수 확인 필요"
+    risk_text = risks[0] if risks else "큰 위험 신호는 아직 보이지 않습니다."
+    action_text = actions[0] if actions else "결과 요약을 저장하고 새 데이터 예측으로 이어가세요."
+    return {
+        "one_liner": f"{domain} 데이터에서 {target_label} 문제를 자동 구성하고 {best_name or '선택 모델'}을 추천했습니다.",
+        "why_matters": f"대표 점수 {score_text} 기준으로 모델을 비교했고, {evidence.get('gap_label', '비교 정보')} 상태까지 함께 판단했습니다.",
+        "decision": priority.get("level", "검토 후 진행"),
+        "commercial_level": readiness.get("level", "보완 후 시연"),
+        "demo_script": [
+            "CSV를 올리면 데이터 분야와 맞힐 값을 자동으로 정리합니다.",
+            f"모델 비교 결과 {best_name or '선택 모델'}을 추천했고, 선택 이유를 점수와 입력 정보 기준으로 설명합니다.",
+            f"주의점은 '{risk_text}'이며, 다음 행동은 '{action_text}'입니다.",
+        ],
+    }
+
+
 def build_agent_insights(best_name=None, best_score=None, optuna_result=None, top_feature=None, cv_results=None):
     df = STATE.get("df")
     X = STATE.get("X")
@@ -216,6 +233,7 @@ def build_agent_insights(best_name=None, best_score=None, optuna_result=None, to
         "model_reason": _model_comment(best_name, task_type),
         "model_evidence": evidence,
         "agent_judgment": _agent_judgment(df, X, target_col, target_info, evidence, risks, actions),
+        "agent_story": _agent_story(domain, target_label, best_name, best_score, evidence, priority, readiness, risks, actions),
         "agent_priority": priority,
         "commercial_readiness": readiness,
         "score_comment": _score_comment(best_score),
