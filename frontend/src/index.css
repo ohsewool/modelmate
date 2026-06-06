@@ -523,6 +523,7 @@ html.dark .banner-danger  { background: rgba(244,63,94,0.1);   border-color: rgb
     .report-workspace,
     .report-story-flow,
   .api-ops-detail-grid,
+  .api-privacy-grid,
   .deploy-hero-grid,
   .deploy-create-grid,
   .model-asset-grid,
