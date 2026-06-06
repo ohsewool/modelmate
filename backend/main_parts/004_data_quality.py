@@ -86,6 +86,19 @@ def validate_dataset_file(df, filename: str = ""):
     if cols >= 2 and date_like_cols == cols:
         reasons.append("날짜 컬럼만 있음")
 
+    id_like_cols = 0
+    id_tokens = ["id", "code", "serial", "name", "address", "uuid", "uid", "번호", "이름", "주소"]
+    for col in df.columns:
+        name = str(col).lower()
+        series = df[col]
+        if isinstance(series, pd.DataFrame):
+            continue
+        unique_ratio = series.nunique(dropna=True) / max(rows, 1)
+        if unique_ratio >= 0.9 and any(token in name for token in id_tokens):
+            id_like_cols += 1
+    if cols >= 3 and id_like_cols >= max(3, cols - 1):
+        reasons.append("ID/이름 위주의 비예측형 목록")
+
     score = 100
     score -= 35 if rows < 5 else 0
     score -= 30 if cols < 2 else 0
@@ -96,6 +109,7 @@ def validate_dataset_file(df, filename: str = ""):
     score -= 25 if "표 데이터보다 문서/대화 내용에 가까움" in reasons else 0
     score -= 20 if "긴 설명 열이 대부분" in reasons else 0
     score -= 25 if "날짜 컬럼만 있음" in reasons else 0
+    score -= 30 if "ID/이름 위주의 비예측형 목록" in reasons else 0
     score = max(0, score)
 
     info = {

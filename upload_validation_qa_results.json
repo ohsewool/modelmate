@@ -1,7 +1,7 @@
 {
   "summary": {
-    "checked_cases": 6,
-    "passed_cases": 6,
+    "checked_cases": 13,
+    "passed_cases": 13,
     "failed_cases": 0
   },
   "results": [
@@ -14,7 +14,80 @@
       "message": "업로드 가능한 데이터셋입니다.",
       "score": 100,
       "readiness_label": "검토 권장",
-      "reasons": []
+      "reasons": [],
+      "target": "join_count",
+      "domain": "공공교통/이용자 통계",
+      "purpose": "가입자 수 예측"
+    },
+    {
+      "name": "valid_health",
+      "filename": "pima_like_health.csv",
+      "expected_valid": true,
+      "actual_valid": true,
+      "passed": true,
+      "message": "업로드 가능한 데이터셋입니다.",
+      "score": 100,
+      "readiness_label": "검토 권장",
+      "reasons": [],
+      "target": "diabetes",
+      "domain": "의료/건강 진단",
+      "purpose": "당뇨 여부"
+    },
+    {
+      "name": "valid_finance",
+      "filename": "credit_risk.csv",
+      "expected_valid": true,
+      "actual_valid": true,
+      "passed": true,
+      "message": "업로드 가능한 데이터셋입니다.",
+      "score": 100,
+      "readiness_label": "검토 권장",
+      "reasons": [],
+      "target": "loan_default",
+      "domain": "금융/신용 리스크",
+      "purpose": "대출/연체 위험 판단"
+    },
+    {
+      "name": "valid_hr_customer",
+      "filename": "customer_churn_hr.csv",
+      "expected_valid": true,
+      "actual_valid": true,
+      "passed": true,
+      "message": "업로드 가능한 데이터셋입니다.",
+      "score": 100,
+      "readiness_label": "검토 권장",
+      "reasons": [],
+      "target": "churn",
+      "domain": "고객 이탈/CRM",
+      "purpose": "이탈 여부"
+    },
+    {
+      "name": "valid_facility_safety",
+      "filename": "facility_safety.csv",
+      "expected_valid": true,
+      "actual_valid": true,
+      "passed": true,
+      "message": "업로드 가능한 데이터셋입니다.",
+      "score": 100,
+      "readiness_label": "검토 권장",
+      "reasons": [],
+      "target": "inspection_score",
+      "domain": "공공시설/안전 관리",
+      "purpose": "시설 정보 분류"
+    },
+    {
+      "name": "valid_manufacturing",
+      "filename": "manufacturing_quality.csv",
+      "expected_valid": true,
+      "actual_valid": true,
+      "passed": true,
+      "message": "업로드 가능한 데이터셋입니다.",
+      "score": 100,
+      "readiness_label": "검토 권장",
+      "reasons": [],
+      "target": "defect",
+      "domain": "제조/설비 품질",
+      "purpose": "고장 여부"
     },
     {
       "name": "tiny_rows",
@@ -27,7 +100,10 @@
       "readiness_label": "검토 권장",
       "reasons": [
         "행이 너무 적음"
-      ]
+      ],
+      "target": null,
+      "domain": null,
+      "purpose": null
     },
     {
       "name": "single_column",
@@ -42,7 +118,10 @@
         "열이 2개 미만",
         "값이 있는 열이 2개 미만",
         "변화가 있는 열이 2개 미만"
-      ]
+      ],
+      "target": null,
+      "domain": null,
+      "purpose": null
     },
     {
       "name": "constant_columns",
@@ -55,7 +134,10 @@
       "readiness_label": "검토 권장",
       "reasons": [
         "변화가 있는 열이 2개 미만"
-      ]
+      ],
+      "target": null,
+      "domain": null,
+      "purpose": null
     },
     {
       "name": "text_document",
@@ -63,12 +145,48 @@
       "expected_valid": false,
       "actual_valid": false,
       "passed": true,
-      "message": "데이터셋으로 보기 어렵습니다: TXT 문서형 내용에 가까움. 행/열이 있는 CSV 데이터셋을 올려주세요.",
-      "score": 75,
+      "message": "데이터셋으로 보기 어렵습니다: 문장형 텍스트가 대부분, TXT 문서형 내용에 가까움. 행/열이 있는 CSV 데이터셋을 올려주세요.",
+      "score": 50,
       "readiness_label": "주의 필요",
       "reasons": [
+        "문장형 텍스트가 대부분",
         "TXT 문서형 내용에 가까움"
-      ]
+      ],
+      "target": null,
+      "domain": null,
+      "purpose": null
+    },
+    {
+      "name": "non_predictive_ids",
+      "filename": "id_directory.csv",
+      "expected_valid": false,
+      "actual_valid": false,
+      "passed": true,
+      "message": "데이터셋으로 보기 어렵습니다: ID/이름 위주의 비예측형 목록. 행/열이 있는 CSV 데이터셋을 올려주세요.",
+      "score": 70,
+      "readiness_label": "주의 필요",
+      "reasons": [
+        "ID/이름 위주의 비예측형 목록"
+      ],
+      "target": null,
+      "domain": null,
+      "purpose": null
+    },
+    {
+      "name": "date_only",
+      "filename": "dates.csv",
+      "expected_valid": false,
+      "actual_valid": false,
+      "passed": true,
+      "message": "데이터셋으로 보기 어렵습니다: 날짜 컬럼만 있음. 행/열이 있는 CSV 데이터셋을 올려주세요.",
+      "score": 75,
+      "readiness_label": "검토 권장",
+      "reasons": [
+        "날짜 컬럼만 있음"
+      ],
+      "target": null,
+      "domain": null,
+      "purpose": null
     },
     {
       "name": "wrong_extension",
@@ -79,7 +197,10 @@
       "message": "CSV, TSV, TXT 형식의 데이터 파일만 업로드할 수 있습니다.",
       "score": null,
       "readiness_label": null,
-      "reasons": []
+      "reasons": [],
+      "target": null,
+      "domain": null,
+      "purpose": null
     }
   ]
 }
