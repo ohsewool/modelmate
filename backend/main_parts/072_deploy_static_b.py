@@ -43,19 +43,34 @@ async def list_deployed(user=Depends(get_current_user)):
         key = (r["target_col"] or "target", r["best_model_name"] or "model")
         version_counts[key] = version_counts.get(key, 0) + 1
         version_by_id[r["id"]] = f"v{version_counts[key]}"
-    return [{
-        "id": r["id"], "name": r["name"],
-        "task_type": r["task_type"], "best_model_name": r["best_model_name"],
-        "target_col": r["target_col"],
-        "features": json.loads(r["features"]),
-        "metrics": json.loads(r["metrics"]),
-        "dataset_ref": json.loads(r["dataset_ref"]) if r["dataset_ref"] else None,
-        "owner_scope": "내 모델" if user and r["user_id"] == user.get("sub") else "공용 모델",
-        "version_label": version_by_id.get(r["id"], "v1"),
-        "created_at": r["created_at"],
-        "file_exists": os.path.exists(os.path.join(MODELS_DIR, f"{r['id']}.pkl")),
-        "storage_status": "사용 가능" if os.path.exists(os.path.join(MODELS_DIR, f"{r['id']}.pkl")) else "파일 없음",
-    } for r in rows]
+    out = []
+    for r in rows:
+        features = json.loads(r["features"])
+        metrics = json.loads(r["metrics"])
+        dataset_ref = json.loads(r["dataset_ref"]) if r["dataset_ref"] else None
+        file_exists = os.path.exists(os.path.join(MODELS_DIR, f"{r['id']}.pkl"))
+        metric_src = metrics.get("best_cv") if isinstance(metrics.get("best_cv"), dict) else metrics
+        primary_score = metric_src.get("r2") if r["task_type"] == "regression" else metric_src.get("roc_auc", metric_src.get("accuracy"))
+        lifecycle_status = "사용 가능" if file_exists else "재생성 필요"
+        if file_exists and primary_score is None:
+            lifecycle_status = "점수 확인 필요"
+        out.append({
+            "id": r["id"], "name": r["name"],
+            "task_type": r["task_type"], "best_model_name": r["best_model_name"],
+            "target_col": r["target_col"],
+            "features": features,
+            "metrics": metrics,
+            "dataset_ref": dataset_ref,
+            "owner_scope": "내 모델" if user and r["user_id"] == user.get("sub") else "공용 모델",
+            "version_label": version_by_id.get(r["id"], "v1"),
+            "created_at": r["created_at"],
+            "file_exists": file_exists,
+            "storage_status": "사용 가능" if file_exists else "파일 없음",
+            "lifecycle_status": lifecycle_status,
+            "primary_score": primary_score,
+            "feature_count": len(features),
+        })
+    return out
 
 @app.delete("/api/deployed/{model_id}")
 async def delete_deployed(model_id: str, user=Depends(get_current_user)):

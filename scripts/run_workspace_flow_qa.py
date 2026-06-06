@@ -59,6 +59,8 @@ async def run_flow():
     assert match["dataset_ref"]["id"] == saved["id"]
     assert match["version_label"].startswith("v")
     assert match.get("storage_status"), "saved model storage status was not reported"
+    assert match.get("lifecycle_status") == "사용 가능", "model lifecycle status was not reported"
+    assert match.get("feature_count", 0) >= 1, "model feature count was not reported"
     example = {item["name"]: item["example"] for item in deployed["features"]}
     prediction = await m.v2_predict(deployed["model_id"], {"features": example})
     assert prediction["status"] == "ok"
@@ -72,6 +74,8 @@ async def run_flow():
         "model_id": deployed["model_id"],
         "version_label": match["version_label"],
         "storage_status": match["storage_status"],
+        "lifecycle_status": match["lifecycle_status"],
+        "feature_count": match["feature_count"],
         "predict_status": prediction["status"],
         "prediction_label": prediction.get("prediction_label", prediction.get("prediction")),
     }

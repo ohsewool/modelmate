@@ -18,6 +18,7 @@ import ModelLifecyclePanel from '../components/deploy/ModelLifecyclePanel'
 import ApiAccessPanel from '../components/deploy/ApiAccessPanel'
 import ModelAssetPanel from '../components/deploy/ModelAssetPanel'
 import ApiUsageExamplePanel from '../components/deploy/ApiUsageExamplePanel'
+import ModelVersionPanel from '../components/deploy/ModelVersionPanel'
 
 const fmt = value => {
   if (value === null || value === undefined || value === '') return '-'
@@ -287,6 +288,8 @@ export default function Deploy() {
         <ShareValuePanel models={models} hasModel={hasModel} />
 
         <ModelAssetPanel models={models} />
+
+        <ModelVersionPanel models={models} />
 
         <ModelLifecyclePanel models={models} />
 
