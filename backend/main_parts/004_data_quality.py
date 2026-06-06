@@ -69,6 +69,8 @@ def validate_dataset_file(df, filename: str = ""):
 
     if cols <= 2 and numeric_cols == 0 and text_values and (avg_text_len >= 40 or long_text_ratio >= 0.35):
         reasons.append("문장형 텍스트가 대부분")
+    if lowered.endswith(".txt") and numeric_cols == 0 and object_cols == cols and text_values and avg_text_len >= 25:
+        reasons.append("TXT 문서형 내용에 가까움")
     if object_cols == cols and numeric_cols == 0 and text_values and avg_text_len >= 80:
         reasons.append("표 데이터보다 문서/대화 내용에 가까움")
     if cols >= 3 and object_cols >= max(3, cols - 1) and numeric_cols <= 1 and text_values:
@@ -90,6 +92,7 @@ def validate_dataset_file(df, filename: str = ""):
     score -= 20 if varying_cols < 2 else 0
     score -= 20 if non_empty_cols < 2 else 0
     score -= 25 if "문장형 텍스트가 대부분" in reasons else 0
+    score -= 25 if "TXT 문서형 내용에 가까움" in reasons else 0
     score -= 25 if "표 데이터보다 문서/대화 내용에 가까움" in reasons else 0
     score -= 20 if "긴 설명 열이 대부분" in reasons else 0
     score -= 25 if "날짜 컬럼만 있음" in reasons else 0

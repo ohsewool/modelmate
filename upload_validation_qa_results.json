@@ -1,0 +1,85 @@
+{
+  "summary": {
+    "checked_cases": 6,
+    "passed_cases": 6,
+    "failed_cases": 0
+  },
+  "results": [
+    {
+      "name": "valid_public_transport",
+      "filename": "bike_members.csv",
+      "expected_valid": true,
+      "actual_valid": true,
+      "passed": true,
+      "message": "업로드 가능한 데이터셋입니다.",
+      "score": 100,
+      "readiness_label": "검토 권장",
+      "reasons": []
+    },
+    {
+      "name": "tiny_rows",
+      "filename": "tiny.csv",
+      "expected_valid": false,
+      "actual_valid": false,
+      "passed": true,
+      "message": "데이터셋으로 보기 어렵습니다: 행이 너무 적음. 행/열이 있는 CSV 데이터셋을 올려주세요.",
+      "score": 65,
+      "readiness_label": "검토 권장",
+      "reasons": [
+        "행이 너무 적음"
+      ]
+    },
+    {
+      "name": "single_column",
+      "filename": "single.csv",
+      "expected_valid": false,
+      "actual_valid": false,
+      "passed": true,
+      "message": "데이터셋으로 보기 어렵습니다: 열이 2개 미만, 값이 있는 열이 2개 미만, 변화가 있는 열이 2개 미만. 행/열이 있는 CSV 데이터셋을 올려주세요.",
+      "score": 30,
+      "readiness_label": "검토 권장",
+      "reasons": [
+        "열이 2개 미만",
+        "값이 있는 열이 2개 미만",
+        "변화가 있는 열이 2개 미만"
+      ]
+    },
+    {
+      "name": "constant_columns",
+      "filename": "constant.csv",
+      "expected_valid": false,
+      "actual_valid": false,
+      "passed": true,
+      "message": "데이터셋으로 보기 어렵습니다: 변화가 있는 열이 2개 미만. 행/열이 있는 CSV 데이터셋을 올려주세요.",
+      "score": 80,
+      "readiness_label": "검토 권장",
+      "reasons": [
+        "변화가 있는 열이 2개 미만"
+      ]
+    },
+    {
+      "name": "text_document",
+      "filename": "notes.txt",
+      "expected_valid": false,
+      "actual_valid": false,
+      "passed": true,
+      "message": "데이터셋으로 보기 어렵습니다: TXT 문서형 내용에 가까움. 행/열이 있는 CSV 데이터셋을 올려주세요.",
+      "score": 75,
+      "readiness_label": "주의 필요",
+      "reasons": [
+        "TXT 문서형 내용에 가까움"
+      ]
+    },
+    {
+      "name": "wrong_extension",
+      "filename": "report.pdf",
+      "expected_valid": false,
+      "actual_valid": false,
+      "passed": true,
+      "message": "CSV, TSV, TXT 형식의 데이터 파일만 업로드할 수 있습니다.",
+      "score": null,
+      "readiness_label": null,
+      "reasons": []
+    }
+  ]
+}
