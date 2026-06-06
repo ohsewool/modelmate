@@ -5,8 +5,9 @@
 - 배포 URL: https://web-production-5d6fa.up.railway.app/
 - GitHub: https://github.com/ohsewool/-
 - Branch: `main`
-- 최신 확인 커밋: `94416d5 style: harden compact layout wrapping`
-- 최신 배포 번들 확인: JS `assets/index-BjQVRycr.js`, CSS `assets/index-BsHtXpl6.css`
+- 최신 확인 커밋: `276d1af chore: trigger Railway deploy for experiment reuse`
+- 최신 기능 커밋: `915da86 feat: persist experiment reuse settings`
+- 최신 배포 번들 확인: JS `assets/index-DdZhweJ6.js`, CSS `assets/index-BsHtXpl6.css`
 - 11월 방향성: 고정 샘플 데모가 아니라, 사용자가 임의 CSV를 올리면 데이터 분야, 예측 목적, 맞힐 값, 제외 컬럼, 모델 선택, 위험 요소, 다음 행동, 저장/재사용, 공유/API까지 이어지는 범용 AutoML SaaS처럼 보이게 만든다.
 
 ## 발표용 핵심 흐름
@@ -31,6 +32,8 @@
 - 업로드 검증 QA 추가: 정상 CSV, 공공 데이터, 제조/품질 데이터, tiny CSV, TXT 문서형 파일, 잘못된 파일을 no-token으로 검증.
 - TXT 문서형 내용은 CSV 분석 대상으로 오해하지 않도록 친절한 거부 사유 추가.
 - compact/mobile 레이아웃 보강: 카드, 버튼, 배지, 코드 블록의 줄바꿈과 좁은 화면 깨짐을 줄임.
+- 실험 기록에 `reuse_config`를 저장해 맞힐 값, 제외 컬럼, 선택 모델, 점수, 사용 정보가 재사용되게 개선.
+- 작업 기록에서 예측/공유 화면으로 이동할 때 선택 실험 context를 표시.
 
 ## 현재 상태 판단
 
@@ -58,6 +61,8 @@
 - `frontend/src/components/deploy/ApiUsageExamplePanel.jsx`: 공유/API 사용 흐름 UI.
 - `frontend/src/pages/Report.jsx`: 저장 보고서 복원 처리.
 - `frontend/src/pages/History.jsx`: 작업공간/실험 기록 중심 화면.
+- `frontend/src/pages/Predict.jsx`: 작업 기록에서 넘어온 선택 실험 안내.
+- `frontend/src/pages/Deploy.jsx`: 작업 기록에서 넘어온 선택 실험/API 공유 안내.
 - `scripts/run_upload_validation_qa.py`: 업로드 검증 자동 QA.
 - `upload_validation_qa_results.json`: 최신 업로드 QA 결과.
 - `NOVEMBER_ROADMAP.md`: 11월까지의 우선순위 로드맵.
