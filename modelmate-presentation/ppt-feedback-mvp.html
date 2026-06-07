@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ModelMate 발표자료</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --text-2: #475569;
+      --text-3: #64748b;
+      --label: #94a3b8;
+      --blue: #2563eb;
+      --blue-2: #1d4ed8;
+      --violet: #7c3aed;
+      --green: #059669;
+      --cyan: #0891b2;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; background: var(--bg); }
+    body {
+      margin: 0;
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif;
+      background:
+        radial-gradient(circle at 86% 18%, rgba(124,58,237,.10), transparent 24rem),
+        radial-gradient(circle at 15% 12%, rgba(37,99,235,.11), transparent 26rem),
+        linear-gradient(180deg, #f8fafc, #eef2ff 52%, #f8fafc);
+      line-height: 1.55;
+      overflow-x: hidden;
+    }
+
+    .progress {
+      position: fixed;
+      left: 0;
+      top: 0;
+      height: 3px;
+      width: 0%;
+      z-index: 30;
+      background: linear-gradient(90deg, var(--blue), var(--violet), var(--cyan));
+      box-shadow: 0 0 18px rgba(37,99,235,.35);
+      transition: width .28s ease;
+    }
+
+    .deck-nav {
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      z-index: 20;
+      display: flex;
+      gap: 6px;
+      padding: 8px;
+      border: 1px solid rgba(37,99,235,.18);
+      border-radius: 999px;
+      background: rgba(255,255,255,.84);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 18px 50px rgba(15,23,42,.12);
+    }
+
+    .deck-nav a {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: #cbd5e1;
+      display: block;
+      transition: transform .18s ease, background .18s ease, box-shadow .18s ease;
+    }
+
+    .deck-nav a:hover,
+    .deck-nav a.active {
+      background: linear-gradient(135deg, var(--blue-2), var(--violet));
+      transform: scale(1.22);
+      box-shadow: 0 0 0 5px rgba(37,99,235,.10);
+    }
+
+    section {
+      min-height: 100vh;
+      padding: clamp(24px, 4vw, 56px);
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid rgba(226,232,240,.95);
+      position: relative;
+      overflow: hidden;
+      opacity: .42;
+      transform: translateY(18px) scale(.985);
+      transition: opacity .55s ease, transform .55s ease;
+    }
+
+    section.in-view {
+      opacity: 1;
+      transform: none;
+    }
+
+    .wrap {
+      width: min(1160px, 100%);
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    .kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      margin-bottom: 18px;
+      color: var(--blue);
+      font-size: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .kicker::before {
+      content: "";
+      width: 28px;
+      height: 2px;
+      border-radius: 99px;
+      background: linear-gradient(90deg, var(--blue), var(--violet));
+    }
+
+    h1, h2, h3, p { margin-top: 0; }
+
+    h1 {
+      max-width: 980px;
+      font-size: clamp(54px, 9vw, 112px);
+      line-height: .92;
+      margin-bottom: 22px;
+    }
+
+    h2 {
+      max-width: 980px;
+      font-size: clamp(32px, 4.8vw, 60px);
+      line-height: 1.04;
+      margin-bottom: 20px;
+    }
+
+    h3 {
+      font-size: 20px;
+      margin-bottom: 8px;
+    }
+
+    .lead {
+      max-width: 850px;
+      color: var(--text-2);
+      font-size: clamp(18px, 2.2vw, 24px);
+      line-height: 1.55;
+    }
+
+    .muted { color: var(--text-3); }
+
+    .gradient {
+      background: linear-gradient(135deg, #2563eb, #7c3aed 50%, #0891b2);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      right: -110px;
+      top: 50%;
+      width: min(48vw, 560px);
+      aspect-ratio: 1;
+      border-radius: 999px;
+      transform: translateY(-50%);
+      border: 1px solid rgba(37,99,235,.13);
+      box-shadow:
+        inset 0 0 0 80px rgba(37,99,235,.045),
+        inset 0 0 0 160px rgba(124,58,237,.045),
+        0 0 80px rgba(37,99,235,.12);
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 30px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 7px 13px;
+      border-radius: 999px;
+      border: 1px solid rgba(37,99,235,.18);
+      background: rgba(255,255,255,.92);
+      color: var(--text-2);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .grid { display: grid; gap: 16px; }
+    .two { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .three { grid-template-columns: repeat(3, minmax(0,1fr)); }
+    .four { grid-template-columns: repeat(4, minmax(0,1fr)); }
+
+    .card {
+      min-width: 0;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px;
+      background: rgba(255,255,255,.92);
+      box-shadow: 0 18px 60px rgba(15,23,42,.08);
+    }
+
+    .card p, .card li {
+      color: var(--text-2);
+      font-size: 15px;
+    }
+
+    .card p:last-child { margin-bottom: 0; }
+
+    .big {
+      padding: clamp(24px, 4vw, 42px);
+      border: 1px solid rgba(37,99,235,.20);
+      border-radius: 18px;
+      background:
+        linear-gradient(135deg, rgba(37,99,235,.09), rgba(124,58,237,.055)),
+        rgba(255,255,255,.94);
+    }
+
+    .why {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 18px;
+      align-items: stretch;
+      margin-top: 30px;
+    }
+
+    .arrow {
+      display: grid;
+      place-items: center;
+      color: var(--blue);
+      font-size: 32px;
+      font-weight: 900;
+    }
+
+    .label {
+      color: var(--label);
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(150px,1fr));
+      gap: 12px;
+      margin-top: 28px;
+    }
+
+    .step {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px;
+      min-height: 170px;
+      background: rgba(255,255,255,.94);
+      position: relative;
+    }
+
+    .step:not(:last-child)::after {
+      content: ">";
+      position: absolute;
+      right: -12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--blue);
+      font-size: 22px;
+      font-weight: 900;
+      z-index: 2;
+    }
+
+    .num {
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      color: #fff;
+      font-weight: 900;
+      margin-bottom: 14px;
+      background: linear-gradient(135deg, var(--blue), var(--violet));
+    }
+
+    .split {
+      display: grid;
+      grid-template-columns: .95fr 1.05fr;
+      gap: 34px;
+      align-items: center;
+    }
+
+    .screens {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0,1fr));
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .screen img {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      object-fit: cover;
+      object-position: top left;
+      max-height: 190px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #fff;
+      display: block;
+      margin-bottom: 12px;
+    }
+
+    .term-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 24px;
+    }
+
+    .term {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: #eef2ff;
+      color: var(--blue);
+      font-weight: 900;
+      font-size: 12px;
+      border: 1px solid #dbeafe;
+    }
+
+    .team {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0,1fr));
+      gap: 16px;
+      margin-top: 24px;
+    }
+
+    .role {
+      color: var(--blue);
+      font-size: 12px;
+      font-weight: 900;
+      margin-bottom: 12px;
+    }
+
+    .name {
+      display: block;
+      font-size: 22px;
+      font-weight: 900;
+      margin-bottom: 10px;
+    }
+
+    .quote {
+      max-width: 920px;
+      padding-left: 24px;
+      border-left: 3px solid var(--blue);
+      color: var(--text-2);
+      font-size: clamp(24px, 3.5vw, 42px);
+      font-weight: 800;
+      line-height: 1.35;
+    }
+
+    .center { text-align: center; }
+    .center .lead, .center h2 { margin-left: auto; margin-right: auto; }
+    .center .meta { justify-content: center; }
+
+    .final-slide .quote {
+      margin: 0 auto;
+      max-width: 980px;
+      text-align: left;
+    }
+
+    @media (max-width: 920px) {
+      section { padding: 30px 18px 70px; align-items: flex-start; }
+      .split, .two, .three, .four, .why, .flow, .screens, .team { grid-template-columns: 1fr; }
+      .arrow, .step:not(:last-child)::after { display: none; }
+      h1 { font-size: 46px; }
+      h2 { font-size: 34px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="progress" id="progress"></div>
+  <nav class="deck-nav" aria-label="슬라이드 이동">
+    <a href="#s1" class="active"></a>
+    <a href="#s2"></a>
+    <a href="#s3"></a>
+    <a href="#s4"></a>
+    <a href="#s5"></a>
+    <a href="#s6"></a>
+    <a href="#s7"></a>
+    <a href="#s8"></a>
+    <a href="#s9"></a>
+    <a href="#s10"></a>
+  </nav>
+
+  <section id="s1" class="hero">
+    <div class="wrap">
+      <div class="kicker">FINAL PROJECT</div>
+      <h1><span class="gradient">ModelMate</span></h1>
+      <p class="lead">정형 데이터 기반 Agentic AutoML 플랫폼</p>
+      <div class="meta">
+        <span class="pill">23017111 문규승</span>
+        <span class="pill">23017115 이재훈</span>
+        <span class="pill">23017120 오세울 (팀장)</span>
+        <span class="pill">졸업 프로젝트</span>
+        <span class="pill">지도교수: 장성태</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="s2">
+    <div class="wrap">
+      <div class="kicker">Background</div>
+      <h2>CSV 데이터와 예측 목적 사이의 <span class="gradient">간극</span></h2>
+      <div class="why">
+        <div class="card">
+          <div class="label">기존 상황</div>
+          <h3>데이터는 있음</h3>
+          <p>공공데이터, 건강 데이터, 업무 데이터처럼 CSV 파일은 쉽게 확보할 수 있습니다.</p>
+        </div>
+        <div class="arrow">→</div>
+        <div class="card">
+          <div class="label">실제 어려움</div>
+          <h3>예측 문제로 바꾸기 어려움</h3>
+          <p>타겟 컬럼, 제외 컬럼, 문제 유형, 모델 선택, 결과 해석을 사용자가 직접 판단해야 합니다.</p>
+        </div>
+      </div>
+      <div class="term-row">
+        <span class="term">Target Selection</span>
+        <span class="term">Column Filtering</span>
+        <span class="term">Model Selection</span>
+        <span class="term">Explainability</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="s3">
+    <div class="wrap">
+      <div class="kicker">Concept</div>
+      <h2>CSV 기반 <span class="gradient">예측 실험 자동화</span></h2>
+      <div class="big">
+        <p class="lead">ModelMate는 단순히 모델 점수를 보여주는 도구가 아니라, CSV를 예측 가능한 문제로 정리하고 모델 비교, 설명, 재사용까지 연결하는 웹 서비스입니다.</p>
+      </div>
+      <div class="flow">
+        <div class="step"><div class="num">1</div><h3>CSV 업로드</h3><p class="muted">파일 구조와 데이터 품질 확인</p></div>
+        <div class="step"><div class="num">2</div><h3>분석 설정</h3><p class="muted">맞힐 값과 제외 컬럼 정리</p></div>
+        <div class="step"><div class="num">3</div><h3>모델 비교</h3><p class="muted">교차검증 기반 성능 비교</p></div>
+        <div class="step"><div class="num">4</div><h3>결과 설명</h3><p class="muted">성능과 변수 중요도 해석</p></div>
+        <div class="step"><div class="num">5</div><h3>결과 재사용</h3><p class="muted">예측, API, 기록으로 연결</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="s4">
+    <div class="wrap">
+      <div class="kicker">Implementation</div>
+      <h2>React/Vite · FastAPI 기반 <span class="gradient">웹 서비스 구현</span></h2>
+      <div class="grid four">
+        <div class="card"><h3>Frontend</h3><p>업로드, 모델 선택, 결과 요약, XAI, AI 분석 코치 화면을 구성했습니다.</p></div>
+        <div class="card"><h3>Backend</h3><p>CSV 처리, 데이터 검증, 타겟 추천, 모델 학습/비교 API를 구현했습니다.</p></div>
+        <div class="card"><h3>AutoML</h3><p>분류/회귀를 판별하고 여러 모델을 교차검증으로 비교합니다.</p></div>
+        <div class="card"><h3>Experiment Log</h3><p>로그인 사용자별 분석 기록과 결과 재확인 흐름을 제공합니다.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="s5">
+    <div class="wrap">
+      <div class="kicker">Service Screens</div>
+      <h2>핵심 서비스 화면</h2>
+      <p class="lead">발표에서는 전체 스크린샷을 모두 보여주기보다, 사용자가 실제로 거치는 핵심 흐름만 보여줍니다.</p>
+      <div class="screens">
+        <div class="card screen">
+          <img src="../../../outputs/ppt_preview/슬라이드6.PNG" alt="CSV 업로드 화면" />
+          <h3>CSV 업로드</h3>
+          <p>파일을 올리면 데이터 구조와 예측 가능성을 먼저 확인합니다.</p>
+        </div>
+        <div class="card screen">
+          <img src="../../../outputs/ppt_preview/슬라이드9.PNG" alt="모델 비교 화면" />
+          <h3>모델 비교</h3>
+          <p>여러 모델을 같은 기준으로 비교하고 적합한 모델을 선택합니다.</p>
+        </div>
+        <div class="card screen">
+          <img src="../../../outputs/ppt_preview/슬라이드13.PNG" alt="결과 요약 화면" />
+          <h3>결과 요약</h3>
+          <p>성능, 선택 모델, 중요한 정보, 해석 결과를 한 화면에서 확인합니다.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="s6">
+    <div class="wrap split">
+      <div>
+        <div class="kicker">Agentic Flow</div>
+        <h2>분석 문제 정리와 <span class="gradient">다음 행동 추천</span></h2>
+        <p class="lead">AI 분석 코치는 업로드된 CSV를 보고 데이터 분야, 예측 목적, 타겟 후보, 제외 컬럼, 모델 비교 진행 가능 여부를 사용자에게 설명합니다.</p>
+      </div>
+      <div class="grid">
+        <div class="card"><h3>데이터 분야 판단</h3><p>건강, 제조 품질, 공공교통, 시설 안전, 고객/매출 등 컬럼 패턴을 기반으로 도메인을 추정합니다.</p></div>
+        <div class="card"><h3>타겟/제외 컬럼 판단</h3><p>모델이 맞혀야 할 값과 예측을 방해하거나 누수를 만들 수 있는 컬럼을 분리합니다.</p></div>
+        <div class="card"><h3>다음 단계 안내</h3><p>바로 모델 비교를 진행할지, 데이터를 다시 확인해야 할지 명확한 행동으로 연결합니다.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="s7">
+    <div class="wrap">
+      <div class="kicker">Validation</div>
+      <h2>대표 데이터 출처 기반 <span class="gradient">검증 결과</span></h2>
+      <div class="grid four">
+        <div class="card"><h3>UCI 공개 데이터셋</h3><p>당뇨, 품질, 분류/회귀 예제처럼 머신러닝 학습에 자주 쓰이는 정형 데이터로 기본 AutoML 흐름을 확인했습니다.</p></div>
+        <div class="card"><h3>데이콘 데이터셋</h3><p>수면·건강 라이프로그처럼 컬럼명이 축약된 데이터에서 타겟 의미를 사람이 이해하는 말로 바꾸는지 확인했습니다.</p></div>
+        <div class="card"><h3>공공기관 데이터</h3><p>공공자전거, 시설 관리 등 한글 컬럼과 행정 데이터가 포함된 CSV에서 도메인 추론과 인코딩 처리를 확인했습니다.</p></div>
+        <div class="card"><h3>비정상 파일</h3><p>잡담성 텍스트, 너무 작은 파일, 예측 대상이 불명확한 파일을 안내 메시지로 처리하도록 개선했습니다.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="s8">
+    <div class="wrap">
+      <div class="kicker">Future Work</div>
+      <h2>범용 AutoML 서비스로의 <span class="gradient">확장 방향</span></h2>
+      <div class="grid three">
+        <div class="card"><h3>데이터 품질 진단</h3><p>누수 컬럼, ID성 컬럼, 날짜 컬럼, 비예측성 파일을 더 정교하게 판별합니다.</p></div>
+        <div class="card"><h3>모델 관리</h3><p>저장 모델, 버전 기록, 재학습, 새 데이터 예측 흐름을 강화합니다.</p></div>
+        <div class="card"><h3>SaaS 기능</h3><p>사용자별 작업 공간, 공유 링크, API 키, 관리자 화면을 고도화합니다.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="s9">
+    <div class="wrap">
+      <div class="kicker">Team</div>
+      <h2>팀원별 담당 파트</h2>
+      <div class="team">
+        <div class="card">
+          <div class="role">1번 담당</div>
+          <span class="name">23017120 오세울 (팀장)</span>
+          <p>데이터/AutoML: CSV 업로드, 데이터 검사, 타겟 추천, 모델 비교, Optuna 튜닝</p>
+        </div>
+        <div class="card">
+          <div class="role">2번 담당</div>
+          <span class="name">23017115 이재훈</span>
+          <p>백엔드/API/인증: FastAPI 서버, 로그인, 작업 기록, 데모 모드, API 연결</p>
+        </div>
+        <div class="card">
+          <div class="role">3번 담당</div>
+          <span class="name">23017111 문규승</span>
+          <p>프론트/UI: 홈, 업로드, 모델 선택, 결과, XAI, AI 분석 코치 화면</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="s10" class="center final-slide">
+    <div class="wrap">
+      <div class="kicker">Closing</div>
+      <p class="quote">CSV 데이터를 예측 실험으로 바꾸는<br><span class="gradient">Agentic AutoML 플랫폼</span></p>
+    </div>
+  </section>
+
+  <script>
+    const dots = Array.from(document.querySelectorAll(".deck-nav a"));
+    const sections = dots.map(a => document.querySelector(a.getAttribute("href"))).filter(Boolean);
+    const progress = document.getElementById("progress");
+    let currentIndex = 0;
+    let isAutoScrolling = false;
+
+    function setActive(index) {
+      currentIndex = Math.max(0, Math.min(index, sections.length - 1));
+      dots.forEach((a, i) => a.classList.toggle("active", i === currentIndex));
+      sections.forEach((section, i) => section.classList.toggle("in-view", i === currentIndex));
+      if (progress) progress.style.width = `${((currentIndex + 1) / sections.length) * 100}%`;
+    }
+
+    function goTo(index) {
+      const nextIndex = Math.max(0, Math.min(index, sections.length - 1));
+      if (nextIndex === currentIndex) return;
+      setActive(nextIndex);
+      isAutoScrolling = true;
+      sections[currentIndex].scrollIntoView({ behavior: "smooth", block: "start" });
+      window.setTimeout(() => { isAutoScrolling = false; }, 780);
+    }
+
+    dots.forEach((dot, index) => {
+      dot.addEventListener("click", (event) => {
+        event.preventDefault();
+        goTo(index);
+      });
+    });
+
+    window.addEventListener("keydown", (event) => {
+      const nextKeys = ["ArrowDown", "ArrowRight", "PageDown", " ", "Enter"];
+      const prevKeys = ["ArrowUp", "ArrowLeft", "PageUp", "Backspace"];
+      if (![...nextKeys, ...prevKeys].includes(event.key)) return;
+      if (["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement?.tagName)) return;
+      event.preventDefault();
+      if (nextKeys.includes(event.key)) goTo(currentIndex + 1);
+      if (prevKeys.includes(event.key)) goTo(currentIndex - 1);
+    });
+
+    window.addEventListener("wheel", (event) => {
+      if (Math.abs(event.deltaY) < 24 || isAutoScrolling) return;
+      event.preventDefault();
+      goTo(currentIndex + (event.deltaY > 0 ? 1 : -1));
+    }, { passive: false });
+
+    const observer = new IntersectionObserver((entries) => {
+      if (isAutoScrolling) return;
+      const active = entries.filter(e => e.isIntersecting).sort((a,b) => b.intersectionRatio - a.intersectionRatio)[0];
+      if (!active) return;
+      const index = sections.findIndex(section => section.id === active.target.id);
+      if (index >= 0) setActive(index);
+    }, { threshold: [0.35, 0.6, 0.8] });
+
+    sections.forEach(s => observer.observe(s));
+    setActive(0);
+  </script>
+</body>
+</html>
