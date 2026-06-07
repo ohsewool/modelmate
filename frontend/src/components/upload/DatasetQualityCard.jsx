@@ -41,7 +41,7 @@ export default function DatasetQualityCard({ quality, error, onRetry }) {
         background: demo.bg,
         marginBottom: 12,
       }}>
-        <p style={{ margin: 0, fontSize: 11, fontWeight: 900, color: demo.color }}>시연 적합도 · {demo.label}</p>
+        <p style={{ margin: 0, fontSize: 11, fontWeight: 900, color: demo.color }}>분석 적합도 · {demo.label}</p>
         <p style={{ margin: 0, fontSize: 12, lineHeight: 1.55, color: 'var(--text-2)' }}>{demo.message}</p>
       </div>
 
@@ -93,7 +93,7 @@ function demoReadiness(failed, info, warnings) {
       label: '사용 어려움',
       color: '#dc2626',
       bg: 'rgba(220,38,38,0.06)',
-      message: '이 파일은 AutoML 데이터셋보다 문서나 불완전한 표에 가까워, 발표 시에는 다른 CSV를 쓰는 편이 안전합니다.',
+      message: '이 파일은 AutoML 데이터셋보다 문서나 불완전한 표에 가까워, 다른 CSV를 쓰는 편이 안전합니다.',
     }
   }
   const score = Number(info.score ?? 0)
@@ -110,7 +110,7 @@ function demoReadiness(failed, info, warnings) {
       label: '검토 후 사용',
       color: '#d97706',
       bg: 'rgba(245,158,11,0.08)',
-      message: '분석은 가능하지만 맞힐 값, 제외 열, 데이터 의미를 한 번 확인하면 발표 설득력이 좋아집니다.',
+      message: '분석은 가능하지만 맞힐 값, 제외 열, 데이터 의미를 한 번 확인하면 결과 신뢰도가 좋아집니다.',
     }
   }
   return {

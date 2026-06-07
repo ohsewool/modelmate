@@ -1,4 +1,4 @@
-import { Megaphone, Presentation, ShieldCheck } from 'lucide-react'
+import { ListChecks, Megaphone, ShieldCheck } from 'lucide-react'
 
 export default function AgentStoryPanel({ insights }) {
   const story = insights?.agent_story
@@ -8,7 +8,7 @@ export default function AgentStoryPanel({ insights }) {
     <section className="card" style={{ display: 'grid', gap: 14, borderColor: 'rgba(5,150,105,0.22)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 14, alignItems: 'flex-start' }}>
         <div>
-          <p className="section-title" style={{ marginBottom: 6, color: '#059669' }}>발표용 결론</p>
+          <p className="section-title" style={{ marginBottom: 6, color: '#059669' }}>핵심 결론</p>
           <h2 style={{ margin: 0, fontSize: 19, fontWeight: 950, color: 'var(--text)', lineHeight: 1.35 }}>
             {story.one_liner}
           </h2>
@@ -28,8 +28,8 @@ export default function AgentStoryPanel({ insights }) {
 
         <div className="card-elevated" style={{ padding: 13 }}>
           <p style={{ margin: '0 0 8px', fontSize: 13, fontWeight: 900, color: 'var(--text)' }}>
-            <Presentation size={15} color="#2563eb" style={{ verticalAlign: -3, marginRight: 6 }} />
-            시연 때 말할 순서
+            <ListChecks size={15} color="#2563eb" style={{ verticalAlign: -3, marginRight: 6 }} />
+            다음 확인 순서
           </p>
           <div style={{ display: 'grid', gap: 7 }}>
             {(story.demo_script || []).map(line => (

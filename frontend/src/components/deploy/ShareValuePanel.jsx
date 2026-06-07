@@ -18,7 +18,7 @@ export default function ShareValuePanel({ models, hasModel }) {
     {
       icon: ShieldCheck,
       title: '운영 상태',
-      body: '모델 파일 존재 여부와 버전 라벨을 함께 보여 발표 중 신뢰도를 높입니다.',
+      body: '모델 파일 존재 여부와 버전 라벨을 함께 보여 공유 신뢰도를 높입니다.',
       value: hasModel ? '준비됨' : '학습 필요',
     },
   ]

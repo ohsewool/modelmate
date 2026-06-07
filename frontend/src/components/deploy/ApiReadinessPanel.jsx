@@ -18,7 +18,7 @@ export default function ApiReadinessPanel({ hasModel, models }) {
   const scenarios = [
     ['웹 화면 연결', Route, '다른 화면에서 같은 모델로 예측을 요청합니다.'],
     ['외부 서비스 호출', Code2, 'REST API 주소를 복사해 외부 시스템에 붙일 수 있습니다.'],
-    ['발표 데모 안정화', Server, '저장된 모델을 재사용해 같은 결과 흐름을 반복할 수 있습니다.'],
+    ['재사용 안정화', Server, '저장된 모델을 재사용해 같은 결과 흐름을 반복할 수 있습니다.'],
     ['권한 관리 확장', LockKeyhole, '추후 팀/관리자 권한별 공유 범위로 확장할 수 있습니다.'],
   ]
 

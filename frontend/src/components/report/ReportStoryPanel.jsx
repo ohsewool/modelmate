@@ -22,7 +22,6 @@ export default function ReportStoryPanel({ points, summary }) {
             사용자가 얻는 결과
           </h2>
         </div>
-        <span className="badge badge-green">발표용</span>
       </div>
 
       {summary && (

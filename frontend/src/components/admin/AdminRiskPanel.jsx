@@ -46,7 +46,7 @@ export default function AdminRiskPanel({ summary }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start', marginBottom: 12 }}>
         <div>
           <p style={{ margin: '0 0 5px', fontSize: 13, fontWeight: 900, color: 'var(--text)' }}>운영 점검</p>
-          <p style={{ margin: 0, fontSize: 12, color: 'var(--text-2)' }}>관리자가 발표 중 확인할 수 있는 데이터 품질 신호입니다.</p>
+          <p style={{ margin: 0, fontSize: 12, color: 'var(--text-2)' }}>관리자가 운영 중 확인할 수 있는 데이터 품질 신호입니다.</p>
         </div>
         <span className={warningCount ? 'badge badge-amber' : 'badge badge-green'}>
           {warningCount ? `${warningCount}개 확인` : '정상'}

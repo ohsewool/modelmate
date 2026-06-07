@@ -16,7 +16,7 @@ export function buildAgentDecision(result) {
     score,
     tuning: insights?.tuning_status || (tuned ? '개선 확인' : '개선 생략'),
     next: insights?.next_actions?.[0] || insights?.presentation_conclusion || (xai
-      ? `${xai} 정보가 중요한 근거로 보입니다. 결과 요약을 확인한 뒤 이유 보기에서 근거를 발표용으로 정리하세요.`
+      ? `${xai} 정보가 중요한 근거로 보입니다. 결과 요약을 확인한 뒤 이유 보기에서 근거를 정리하세요.`
       : '결과 요약을 확인한 뒤, 필요하면 이유 보기에서 예측 근거를 확인하세요.'),
   }
 }

@@ -36,7 +36,7 @@ export default function AgentResultPanel({ result, steps, decision, onReport, on
             <p style={{ fontSize: 12, fontWeight: 900, color: '#7c3aed', margin: '0 0 5px' }}>판단 로그</p>
             <h2 style={{ fontSize: 18, color: 'var(--text)', margin: 0 }}>AI가 남긴 실행 기록</h2>
           </div>
-          <Badge variant={result.demo_mode ? 'secondary' : 'default'}>{result.demo_mode ? '데모 모드' : 'AI 설명 사용'}</Badge>
+          <Badge variant={result.demo_mode ? 'secondary' : 'default'}>{result.demo_mode ? '기본 요약' : 'AI 설명 사용'}</Badge>
         </div>
         <div style={{ display: 'grid', gap: 10 }}>
           {steps.map((step, idx) => <AgentStepCard key={`${step.step}-${idx}`} step={step} idx={idx} />)}
@@ -46,7 +46,7 @@ export default function AgentResultPanel({ result, steps, decision, onReport, on
         <div>
           <h2 style={{ fontSize: 18, color: 'var(--text)', margin: '0 0 6px' }}>AI 분석 코치가 결론을 만들었습니다</h2>
           <p style={{ fontSize: 13, color: 'var(--text-2)', margin: 0 }}>
-            결과 요약에서 발표용 설명을 확인하고, 이유 보기에서 근거를 더 자세히 볼 수 있습니다.
+            결과 요약에서 핵심 설명을 확인하고, 이유 보기에서 근거를 더 자세히 볼 수 있습니다.
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>

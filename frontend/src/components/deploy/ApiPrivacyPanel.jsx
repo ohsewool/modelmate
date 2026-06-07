@@ -24,7 +24,7 @@ export default function ApiPrivacyPanel({ models = [] }) {
         <div>
           <p className="section-title" style={{ marginBottom: 4 }}>공유 범위와 API 키</p>
           <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6 }}>
-            발표용으로 공개/비공개 흐름을 보여줍니다. 아래 키는 실제 production secret이 아닌 미리보기 값입니다.
+            공개/비공개 흐름을 미리 확인합니다. 아래 키는 실제 production secret이 아닌 미리보기 값입니다.
           </p>
         </div>
         <span className={latest ? 'badge badge-cyan' : 'badge badge-amber'}>{latest ? '공유 준비' : '모델 필요'}</span>

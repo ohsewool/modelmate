@@ -39,7 +39,7 @@ export default function ReportSidePanel({ open, setOpen, tab, setTab, summary, m
             <Panel title="분석 진행 상태">
               {commercial.level && (
                 <div className="report-side-commercial">
-                  <p>상용 시연 판단</p>
+                  <p>상용 활용 판단</p>
                   <b>{commercial.level}</b>
                   <span>{commercial.summary}</span>
                 </div>

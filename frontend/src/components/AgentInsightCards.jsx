@@ -40,7 +40,7 @@ export default function AgentInsightCards({ insights }) {
           <p style={{ fontSize: 12, fontWeight: 900, color: '#2563eb', margin: '0 0 5px' }}>AI 판단 요약</p>
           <h2 style={{ fontSize: 18, color: 'var(--text)', margin: 0 }}>에이전트가 먼저 본 핵심</h2>
         </div>
-        <span className="badge badge-green" style={{ fontSize: 10 }}>발표용 정리</span>
+        <span className="badge badge-green" style={{ fontSize: 10 }}>분석 요약</span>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 10 }}>
         {cards.map(card => (
@@ -52,7 +52,7 @@ export default function AgentInsightCards({ insights }) {
         ))}
       </div>
       <div style={{ marginTop: 12, padding: 12, borderRadius: 12, background: 'var(--surface-alt)', border: '1px solid var(--border-sub)' }}>
-        <p style={{ fontSize: 12, fontWeight: 900, color: 'var(--text)', margin: '0 0 6px' }}>발표용 한 문장</p>
+        <p style={{ fontSize: 12, fontWeight: 900, color: 'var(--text)', margin: '0 0 6px' }}>핵심 한 문장</p>
         <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6, margin: 0 }}>{insights.presentation_conclusion}</p>
       </div>
       {!!insights.next_actions?.length && (

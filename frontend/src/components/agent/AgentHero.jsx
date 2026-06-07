@@ -7,7 +7,7 @@ export default function AgentHero() {
           CSV를 맡기면 AI가 판단하고 실행합니다
         </h1>
         <p style={{ fontSize: 13, lineHeight: 1.65, color: 'var(--text-2)', margin: 0 }}>
-          데이터 성격, 맞힐 값, 모델 후보, 개선 필요성, 발표용 결론까지 한 번에 정리합니다.
+          데이터 성격, 맞힐 값, 모델 후보, 개선 필요성, 핵심 결론까지 한 번에 정리합니다.
         </p>
       </div>
       <div style={{ borderRadius: 14, padding: 16, background: 'linear-gradient(135deg, rgba(124,58,237,0.12), rgba(37,99,235,0.08))', border: '1px solid rgba(124,58,237,0.18)' }}>

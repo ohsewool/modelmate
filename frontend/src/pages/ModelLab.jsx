@@ -10,6 +10,15 @@ const ttStyle = {
   boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
 }
 
+const OPTUNA_MIN_TRIALS = 5
+const OPTUNA_MAX_TRIALS = 50
+
+function clampTrials(value) {
+  const num = Number(value)
+  if (!Number.isFinite(num)) return 20
+  return Math.max(OPTUNA_MIN_TRIALS, Math.min(OPTUNA_MAX_TRIALS, Math.round(num)))
+}
+
 export default function ModelLab() {
   const [state, setState] = useState(null)
   const [result, setResult] = useState(null)
@@ -41,9 +50,11 @@ export default function ModelLab() {
   }
 
   async function runOptuna() {
+    const trials = clampTrials(nTrials)
+    setNTrials(trials)
     setLoading('optuna')
     try {
-      const { data } = await api.post('/run-optuna', { n_trials: nTrials })
+      const { data } = await api.post('/run-optuna', { n_trials: trials })
       setOptRes(data)
     } catch (e) {
       alert(e.response?.data?.detail || e.message)
@@ -129,10 +140,10 @@ export default function ModelLab() {
               )}
               <LegendDot color="#2563eb" label="비교 모델" />
             </div>
-            <ResponsiveContainer width="100%" height={260}>
-              <BarChart data={chartData}>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={chartData} margin={{ top: 28, right: 12, left: 0, bottom: 6 }}>
                 <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                <YAxis domain={[0, 'dataMax']} tick={{ fontSize: 11 }} />
+                <YAxis domain={[0, max => Math.max(max * 1.12, max + 0.02)]} tick={{ fontSize: 11 }} />
                 <Tooltip contentStyle={ttStyle} formatter={v => Number(v).toFixed(4)} />
                 <Bar dataKey="score" radius={[6, 6, 0, 0]}>
                   {chartData.map(row => (
@@ -188,10 +199,11 @@ export default function ModelLab() {
               <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
                 <input
                   type="number"
-                  min="3"
-                  max="100"
+                  min={OPTUNA_MIN_TRIALS}
+                  max={OPTUNA_MAX_TRIALS}
                   value={nTrials}
-                  onChange={e => setNTrials(Number(e.target.value))}
+                  onChange={e => setNTrials(e.target.value)}
+                  onBlur={e => setNTrials(clampTrials(e.target.value))}
                   className="input"
                   style={{ width: 84 }}
                   aria-label="시도 횟수"
@@ -201,6 +213,11 @@ export default function ModelLab() {
                   자동 개선
                 </button>
               </div>
+            </div>
+            <div style={{ padding: 12, borderRadius: 12, background: 'var(--surface-alt)', border: '1px solid var(--border-sub)', marginBottom: 14 }}>
+              <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.6, margin: 0 }}>
+                기본값은 20회입니다. 숫자를 늘리면 그 횟수만큼 모델 설정 조합을 더 탐색합니다. 현재 서버 안정성을 위해 실제 실행은 {OPTUNA_MIN_TRIALS}~{OPTUNA_MAX_TRIALS}회로 제한되며, 100을 입력해도 최대 {OPTUNA_MAX_TRIALS}회만 실행합니다. 결과는 실행한 횟수 안에서 찾은 최고 조합이고, 더 좋아지지 않으면 기존 모델을 유지합니다.
+              </p>
             </div>
             {optRes ? (
               <div style={{ display: 'grid', gap: 12 }}>
@@ -216,6 +233,9 @@ export default function ModelLab() {
                   </p>
                   <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.6, margin: 0 }}>
                     {optRes.reason || '자동 개선 결과를 확인했습니다.'}
+                  </p>
+                  <p style={{ fontSize: 12, color: 'var(--text-label)', lineHeight: 1.6, margin: '6px 0 0' }}>
+                    표시된 시도 횟수는 서버가 실제로 실행한 횟수입니다.
                   </p>
                 </div>
               </div>

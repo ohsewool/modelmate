@@ -3,7 +3,7 @@ export const AGENT_PLAN = [
   { title: '모델 후보 비교', desc: '여러 모델을 같은 기준으로 시험합니다.' },
   { title: '개선 여부 판단', desc: '성능이 부족하면 자동 개선을 시도합니다.' },
   { title: '예측 근거 정리', desc: '어떤 정보가 예측에 영향을 줬는지 찾습니다.' },
-  { title: '발표용 결론 작성', desc: '결과 요약 화면에서 이해하기 쉽게 보여줍니다.' },
+  { title: '핵심 결론 작성', desc: '결과 요약 화면에서 이해하기 쉽게 보여줍니다.' },
 ]
 
 export default function AgentPlanBoard({ activeIndex, completed }) {

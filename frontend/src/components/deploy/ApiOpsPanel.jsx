@@ -22,7 +22,7 @@ export default function ApiOpsPanel({ models }) {
   const checklist = [
     ['테스트 입력 확인', active.length > 0, '공유 전 샘플 입력으로 결과를 한 번 눌러봅니다.'],
     ['모델 ID 보관', active.length > 0, '외부 서비스 연결 시 모델 ID가 API 주소가 됩니다.'],
-    ['불필요 모델 정리', (models || []).length <= 3, '발표/운영 중 헷갈리지 않게 오래된 공유 모델을 줄입니다.'],
+    ['불필요 모델 정리', (models || []).length <= 3, '운영 중 헷갈리지 않게 오래된 공유 모델을 줄입니다.'],
   ]
 
   return (

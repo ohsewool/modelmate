@@ -14,7 +14,7 @@ export default function ApiUsageExamplePanel({ models = [] }) {
     {
       icon: Eye,
       title: '공개 공유',
-      body: '발표나 보고서에서 결과를 보여주는 용도입니다. 누구나 URL을 알면 볼 수 있다는 전제로 설명합니다.',
+      body: '보고서나 공유 화면에서 결과를 보여주는 용도입니다. 누구나 URL을 알면 볼 수 있다는 전제로 설명합니다.',
       state: active.length ? '사용 가능' : '모델 필요',
     },
     {

@@ -37,7 +37,7 @@ export default function AgentAutonomyPanel({ insights }) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 10 }}>
         <Block icon={Bot} title="자동으로 판단한 것" items={auto} tone="#7c3aed" />
         <Block icon={UserCheck} title="사람이 확인할 것" items={human.length ? human : ['현재 단계에서 큰 보완점은 보이지 않습니다.']} tone="#d97706" />
-        <Block icon={ClipboardCheck} title="바로 이어갈 행동" items={next.length ? next : ['결과 요약을 열어 발표용 결론을 확인하세요.']} tone="#059669" />
+        <Block icon={ClipboardCheck} title="바로 이어갈 행동" items={next.length ? next : ['결과 요약을 열어 핵심 결론을 확인하세요.']} tone="#059669" />
       </div>
     </section>
   )

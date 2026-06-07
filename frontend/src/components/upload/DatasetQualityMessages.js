@@ -5,7 +5,7 @@ export function buildAdvice(error, info) {
   const varying = Number(info.varying_columns || 0)
   if (rows === 0 || cols === 0) return ['엑셀에서 CSV로 다시 저장한 뒤 첫 행에 컬럼명이 있는지 확인하세요.']
   if (cols < 2) return ['예측할 값과 참고할 정보가 최소 2개 열 이상 필요합니다.']
-  if (rows < 10) return ['데모 분석은 가능하지만 모델 비교에는 행이 더 많은 CSV가 안정적입니다.']
+  if (rows < 10) return ['간단 분석은 가능하지만 모델 비교에는 행이 더 많은 CSV가 안정적입니다.']
   if (varying < 2) return ['모든 행이 거의 같은 값이면 학습할 패턴이 부족하므로 다른 열을 포함하세요.']
   return ['구분자, 인코딩, 숫자/문자 컬럼이 표 형태로 정리되어 있는지 확인하세요.']
 }

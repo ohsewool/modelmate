@@ -28,13 +28,13 @@ export default function AgentMissionBrief({ insights, decision }) {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(220px, 0.55fr)', gap: 10 }}>
         <div style={{ borderRadius: 12, padding: 14, background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.16)' }}>
-          <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 900, color: '#2563eb' }}>발표에서 말할 결론</p>
+          <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 900, color: '#2563eb' }}>핵심 결론</p>
           <p style={{ margin: 0, fontSize: 13, lineHeight: 1.65, color: 'var(--text)' }}>{insights.presentation_conclusion}</p>
         </div>
         <div style={{ borderRadius: 12, padding: 14, background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.18)' }}>
           <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 900, color: '#b45309' }}>다음 행동</p>
           <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6, color: 'var(--text)' }}>
-            {(insights.next_actions || insights.risk_notes || ['결과 요약을 저장하고 새 데이터 예측 흐름을 시연하세요.'])[0]}
+            {(insights.next_actions || insights.risk_notes || ['결과 요약을 저장하고 새 데이터 예측 흐름을 확인하세요.'])[0]}
           </p>
         </div>
       </div>

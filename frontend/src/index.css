@@ -203,6 +203,7 @@ html.dark {
     top: 20px;
     display: grid;
     gap: 12px;
+    min-width: 0;
     max-height: calc(100vh - 40px);
     overflow: auto;
     background: var(--surface);
@@ -231,7 +232,7 @@ html.dark {
   }
   .upload-side-tabs {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
     gap: 6px;
   }
   .upload-side-tab {
@@ -241,8 +242,13 @@ html.dark {
     border-radius: 8px;
     padding: 8px 9px;
     font-size: 12px;
+    line-height: 1.25;
     font-weight: 800;
     cursor: pointer;
+    white-space: normal;
+    word-break: keep-all;
+    overflow-wrap: break-word;
+    text-align: left;
   }
   .upload-side-tab-active {
     background: #eff6ff;

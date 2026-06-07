@@ -31,7 +31,7 @@ const actions = [
   ['rerun', RefreshCw, '같은 설정으로 다시 분석', '같은 CSV를 다시 올리면 이전 타겟과 제외 정보를 자동으로 맞춥니다.', 'CSV 다시 올리기', '/upload'],
   ['predict', Wand2, '저장 모델로 예측', '이 실험에서 선택된 모델을 기준으로 새 데이터를 예측하는 화면으로 이동합니다.', '예측하기', '/predict'],
   ['share', Rocket, '공유/API로 연결', '선택 모델을 공유 모델이나 API 사용 흐름으로 이어갑니다.', '공유 관리', '/deploy'],
-  ['report', FileText, '보고서 다시 보기', '저장된 실험 결과를 발표용 요약 화면으로 다시 엽니다.', '결과 요약', '/report'],
+  ['report', FileText, '보고서 다시 보기', '저장된 실험 결과를 요약 화면으로 다시 엽니다.', '결과 요약', '/report'],
 ]
 
 export default function ExperimentActionPanel({ item, onNavigate }) {

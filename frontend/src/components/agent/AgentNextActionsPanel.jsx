@@ -10,7 +10,7 @@ function confidenceText(insights) {
 
 function fallbackActions(insights) {
   return [
-    insights?.presentation_conclusion || '결과 요약에서 발표용 결론을 확인하세요.',
+    insights?.presentation_conclusion || '결과 요약에서 핵심 결론을 확인하세요.',
     '새 데이터 예측 화면에서 모델이 실제 입력에 어떻게 반응하는지 확인하세요.',
     '공유 API를 만들면 같은 모델을 외부 서비스처럼 재사용할 수 있습니다.',
   ]

@@ -31,7 +31,7 @@ export default function ApiAccessPanel({ models = [] }) {
       <div className="card-elevated" style={{ padding: 13, display: 'grid', gap: 8 }}>
         <p style={{ margin: 0, fontSize: 12, fontWeight: 900, color: 'var(--text)' }}>
           <LockKeyhole size={15} style={{ verticalAlign: -3, marginRight: 6 }} />
-          발표용 접근 키 미리보기
+          접근 키 미리보기
         </p>
         <code style={{ padding: '10px 12px', borderRadius: 10, background: 'var(--surface-alt)', border: '1px solid var(--border-sub)', fontSize: 12, wordBreak: 'break-all' }}>
           {maskedKey(latest)}

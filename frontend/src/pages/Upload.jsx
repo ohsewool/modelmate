@@ -4,7 +4,6 @@ import api from '../api'
 import KPICard from '../components/KPICard'
 import { Button } from '../components/ui/button'
 import DatasetQualityCard from '../components/upload/DatasetQualityCard'
-import DemoDatasetGuide from '../components/upload/DemoDatasetGuide'
 import ReanalysisNotice from '../components/upload/ReanalysisNotice'
 import UploadJudgmentBrief from '../components/upload/UploadJudgmentBrief'
 import UploadSidePanel from '../components/upload/UploadSidePanel'
@@ -39,8 +38,6 @@ export default function Upload() {
   const reanalysisDataset = location.state?.reanalysisDataset || null
   const reanalysisExperiment = location.state?.reanalysisExperiment || null
   const reanalysisItem = reanalysisDataset || reanalysisExperiment
-  const searchParams = new URLSearchParams(location.search)
-  const showDemoGuide = searchParams.get('demo') === '1' || searchParams.get('presenter') === '1'
 
   useEffect(() => {
     if (!uploadInfo) return
@@ -165,7 +162,6 @@ export default function Upload() {
           {reanalysisItem && (
             <ReanalysisNotice item={reanalysisItem} onClear={clearReanalysis} />
           )}
-          {showDemoGuide && <DemoDatasetGuide />}
           <div
             onDragOver={e => { e.preventDefault(); setDragging(true) }}
             onDragLeave={() => setDragging(false)}

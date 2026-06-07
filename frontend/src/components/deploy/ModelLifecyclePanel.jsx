@@ -11,8 +11,8 @@ function groupByTarget(models) {
 function nextAction(models, active) {
   if (!active.length) return '모델 비교 후 공유 모델을 먼저 생성하세요.'
   if (models.some(model => model.file_exists === false)) return '파일이 없는 모델은 삭제하거나 다시 생성하세요.'
-  if (active.length > 3) return '발표 중 헷갈리지 않도록 오래된 모델을 정리하세요.'
-  return '최신 모델을 테스트하고 API 주소를 발표 흐름에 연결하세요.'
+  if (active.length > 3) return '운영 중 헷갈리지 않도록 오래된 모델을 정리하세요.'
+  return '최신 모델을 테스트하고 API 주소를 공유 흐름에 연결하세요.'
 }
 
 export default function ModelLifecyclePanel({ models = [] }) {

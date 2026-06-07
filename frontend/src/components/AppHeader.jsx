@@ -1,21 +1,10 @@
 import { useLocation } from 'react-router-dom'
-import { useState } from 'react'
 import PAGE_META from '../pageMeta'
 
 export default function AppHeader({ onMenuClick }) {
-  const { pathname, search } = useLocation()
+  const { pathname } = useLocation()
   const meta = PAGE_META[pathname] || {}
-  const searchParams = new URLSearchParams(search)
-  const presenterMode = searchParams.get('presenter') === '1' || sessionStorage.getItem('mm_presenter_mode') === '1'
-  const [demoMode, setDemoMode] = useState(presenterMode && localStorage.getItem('mm_demo_mode') === '1')
   if (!meta.title) return null
-
-  function toggleDemoMode() {
-    const next = !demoMode
-    if (next) localStorage.setItem('mm_demo_mode', '1')
-    else localStorage.removeItem('mm_demo_mode')
-    setDemoMode(next)
-  }
 
   return (
     <header style={{
@@ -49,33 +38,17 @@ export default function AppHeader({ onMenuClick }) {
           )}
         </div>
       </div>
-      {!presenterMode ? (
-        <span style={{
-          display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700,
-          color: '#047857', background: '#ecfdf5', border: '1px solid #a7f3d0',
-          padding: '5px 10px', borderRadius: 99, flexShrink: 0,
-        }}>
-          <span style={{
-            width: 6, height: 6, borderRadius: '50%', background: '#10b981',
-            display: 'inline-block', animation: 'pulse 2s infinite',
-          }} />
-          <span className="status-text">정상 작동</span>
-        </span>
-      ) : (
-      <button type="button" onClick={toggleDemoMode} title={demoMode ? '데모 모드 끄기' : '데모 모드 켜기'} style={{
+      <span style={{
         display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700,
-        color: demoMode ? '#92400e' : '#047857',
-        background: demoMode ? '#fffbeb' : '#ecfdf5',
-        border: `1px solid ${demoMode ? '#fde68a' : '#a7f3d0'}`,
-        padding: '5px 10px', borderRadius: 99, flexShrink: 0, cursor: 'pointer',
+        color: '#047857', background: '#ecfdf5', border: '1px solid #a7f3d0',
+        padding: '5px 10px', borderRadius: 99, flexShrink: 0,
       }}>
         <span style={{
-          width: 6, height: 6, borderRadius: '50%', background: demoMode ? '#f59e0b' : '#10b981',
+          width: 6, height: 6, borderRadius: '50%', background: '#10b981',
           display: 'inline-block', animation: 'pulse 2s infinite',
         }} />
-        <span className="status-text">{demoMode ? '데모 모드' : '정상 작동'}</span>
-      </button>
-      )}
+        <span className="status-text">정상 작동</span>
+      </span>
     </header>
   )
 }

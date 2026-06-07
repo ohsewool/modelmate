@@ -37,7 +37,7 @@ export default function DemoDatasetGuide() {
             <Database size={17} />
           </span>
           <div>
-            <p style={{ margin: 0, fontSize: 14, fontWeight: 900, color: 'var(--text)' }}>발표 데모 파일</p>
+            <p style={{ margin: 0, fontSize: 14, fontWeight: 900, color: 'var(--text)' }}>샘플 파일</p>
             <p style={{ margin: '3px 0 0', fontSize: 12, color: 'var(--text-label)' }}>11월 리허설 기준</p>
           </div>
         </div>
