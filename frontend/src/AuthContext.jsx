@@ -1,4 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react'
+import api from './api'
+import { clearUploadDraft } from './uploadDraftStorage'
 
 const AuthContext = createContext(null)
 
@@ -22,8 +24,12 @@ export function AuthProvider({ children }) {
   }
 
   function logout() {
+    api.post('/reset-session').catch(() => {})
+    clearUploadDraft()
     localStorage.removeItem('mm_token')
     localStorage.removeItem('mm_user')
+    localStorage.removeItem('mm_demo_mode')
+    sessionStorage.removeItem('mm_presenter_mode')
     setUser(null)
   }
 
