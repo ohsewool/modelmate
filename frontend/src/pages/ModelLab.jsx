@@ -87,8 +87,9 @@ export default function ModelLab() {
   const worstScore = scores.length ? Math.min(...scores) : null
   const bestModel = chartData.find(row => row.score === bestScore)?.model || best
   const worstModel = chartData.find(row => row.score === worstScore)?.model || null
-  const yAxisMax = chartAxisMax(scores, isRegression)
-  const yAxisTicks = isRegression ? undefined : [0, 0.25, 0.5, 0.75, 1]
+  const boundedScoreAxis = isBoundedScoreAxis(scores)
+  const yAxisMax = chartAxisMax(scores, boundedScoreAxis)
+  const yAxisTicks = boundedScoreAxis ? [0, 0.25, 0.5, 0.75, 1] : undefined
 
   return (
     <div className="animate-fade-in" style={{ padding: 32, maxWidth: 980 }}>
@@ -305,10 +306,14 @@ function formatAxisTick(value) {
   return num.toFixed(2).replace(/0+$/, '').replace(/\.$/, '')
 }
 
-function chartAxisMax(scores, isRegression) {
-  if (!scores.length) return isRegression ? 1 : 1
+function isBoundedScoreAxis(scores) {
+  return scores.length > 0 && scores.every(score => score >= 0 && score <= 1)
+}
+
+function chartAxisMax(scores, boundedScoreAxis) {
+  if (!scores.length) return 1
   const max = Math.max(...scores)
-  if (!isRegression) return 1
+  if (boundedScoreAxis) return 1
   if (!Number.isFinite(max) || max <= 0) return 1
   return Number((max * 1.12).toFixed(2))
 }
