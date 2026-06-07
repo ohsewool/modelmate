@@ -49,7 +49,7 @@ export default function UploadAgentTrace(props) {
           CSV를 분석 흐름으로 바꾼 과정
         </h2>
       </div>
-      <div className="upload-agent-trace" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 10 }}>
+      <div className="upload-agent-trace" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 }}>
         {steps.map((step, idx) => {
           const Icon = step.icon
           return (

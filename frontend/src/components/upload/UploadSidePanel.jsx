@@ -1,15 +1,18 @@
+import { CheckCircle2, FileText, ListFilter, Sparkles } from 'lucide-react'
 import DatasetQualityCard from './DatasetQualityCard'
 import UploadAgentTrace from './UploadAgentTrace'
 import UploadReadinessChecklist from './UploadReadinessChecklist'
 
 const tabs = [
-  ['readiness', '준비도'],
-  ['trace', 'AI 판단'],
-  ['quality', '품질'],
-  ['drops', '제외 이유'],
+  ['readiness', CheckCircle2, '준비도'],
+  ['trace', Sparkles, 'AI 판단'],
+  ['quality', FileText, '품질'],
+  ['drops', ListFilter, '제외'],
 ]
 
 export default function UploadSidePanel({
+  open,
+  setOpen,
   activeTab,
   setActiveTab,
   uploadInfo,
@@ -30,29 +33,35 @@ export default function UploadSidePanel({
   const visibleTabs = tabs.filter(([key]) => key !== 'drops' || hasDrops)
 
   return (
-    <aside className="upload-side-panel">
-      <div className="upload-side-head">
-        <div>
-          <p className="upload-side-kicker">보조 정보</p>
-          <h2 className="upload-side-title">필요할 때 펼쳐보기</h2>
+    <aside className={`upload-side-panel ${open ? 'upload-side-open' : ''}`}>
+      <button type="button" className="upload-side-toggle" onClick={() => setOpen(!open)}>
+        {open ? '접기' : '자세히'}
+      </button>
+      {open && (
+        <div className="upload-side-head">
+          <div>
+            <p className="upload-side-kicker">보조 정보</p>
+            <h2 className="upload-side-title">필요할 때 펼쳐보기</h2>
+          </div>
+          <span className="badge badge-blue">{visibleTabs.length}개</span>
         </div>
-        <span className="badge badge-blue">{visibleTabs.length}개</span>
-      </div>
+      )}
 
       <div className="upload-side-tabs">
-        {visibleTabs.map(([key, label]) => (
+        {visibleTabs.map(([key, Icon, label]) => (
           <button
             key={key}
             type="button"
-            onClick={() => setActiveTab(key)}
+            onClick={() => { setActiveTab(key); setOpen(true) }}
             className={`upload-side-tab ${activeTab === key ? 'upload-side-tab-active' : ''}`}
           >
-            {label}
+            <Icon size={17} />
+            {open && <span>{label}</span>}
           </button>
         ))}
       </div>
 
-      <div className="upload-side-body">
+      {open && <div className="upload-side-body">
         {activeTab === 'readiness' && (
           <UploadReadinessChecklist
             rows={uploadInfo.shape?.[0]}
@@ -93,7 +102,7 @@ export default function UploadSidePanel({
             </div>
           </div>
         )}
-      </div>
+      </div>}
     </aside>
   )
 }

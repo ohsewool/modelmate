@@ -202,7 +202,7 @@ export default function ModelLab() {
                   min={OPTUNA_MIN_TRIALS}
                   max={OPTUNA_MAX_TRIALS}
                   value={nTrials}
-                  onChange={e => setNTrials(e.target.value)}
+                  onChange={e => setNTrials(e.target.value === '' ? '' : clampTrials(e.target.value))}
                   onBlur={e => setNTrials(clampTrials(e.target.value))}
                   className="input"
                   style={{ width: 84 }}
@@ -216,7 +216,7 @@ export default function ModelLab() {
             </div>
             <div style={{ padding: 12, borderRadius: 12, background: 'var(--surface-alt)', border: '1px solid var(--border-sub)', marginBottom: 14 }}>
               <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.6, margin: 0 }}>
-                기본값은 20회입니다. 숫자를 늘리면 그 횟수만큼 모델 설정 조합을 더 탐색합니다. 현재 서버 안정성을 위해 실제 실행은 {OPTUNA_MIN_TRIALS}~{OPTUNA_MAX_TRIALS}회로 제한되며, 100을 입력해도 최대 {OPTUNA_MAX_TRIALS}회만 실행합니다. 결과는 실행한 횟수 안에서 찾은 최고 조합이고, 더 좋아지지 않으면 기존 모델을 유지합니다.
+                기본값은 20회입니다. 숫자를 늘리면 그 횟수만큼 모델 설정 조합을 더 탐색합니다. 현재 서버 안정성을 위해 입력값은 {OPTUNA_MIN_TRIALS}~{OPTUNA_MAX_TRIALS}회로 제한됩니다. 결과는 실행한 횟수 안에서 찾은 최고 조합이고, 더 좋아지지 않으면 기존 모델을 유지합니다.
               </p>
             </div>
             {optRes ? (

@@ -31,6 +31,7 @@ export default function Upload() {
   const [targetError, setTargetError] = useState('')
   const [needsReupload, setNeedsReupload] = useState(false)
   const [sideTab, setSideTab] = useState('readiness')
+  const [sideOpen, setSideOpen] = useState(false)
   const [loading, setLoading] = useState('')
   const fileRef = useRef()
   const nav = useNavigate()
@@ -203,7 +204,7 @@ export default function Upload() {
           <DatasetQualityCard error={uploadError} onRetry={() => fileRef.current.click()} />
         </div>
       ) : (
-        <div className="animate-slide-up upload-workspace">
+        <div className={`animate-slide-up upload-workspace ${sideOpen ? 'upload-workspace-open' : ''}`}>
           <div className="upload-main-flow">
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
               <KPICard label="데이터 행" value={uploadInfo.shape?.[0]?.toLocaleString?.() || uploadInfo.shape?.[0]} color="blue" />
@@ -317,6 +318,8 @@ export default function Upload() {
           </div>
 
           <UploadSidePanel
+            open={sideOpen}
+            setOpen={setSideOpen}
             activeTab={sideTab}
             setActiveTab={setSideTab}
             uploadInfo={uploadInfo}

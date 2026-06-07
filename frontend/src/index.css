@@ -188,9 +188,13 @@ html.dark {
   }
   .upload-workspace {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 330px;
+    grid-template-columns: minmax(0, 1fr) 74px;
     gap: 16px;
     align-items: start;
+    transition: grid-template-columns 180ms ease;
+  }
+  .upload-workspace-open {
+    grid-template-columns: minmax(0, 1fr) 360px;
   }
   .upload-main-flow {
     display: flex;
@@ -209,8 +213,28 @@ html.dark {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 14px;
+    padding: 10px;
     box-shadow: 0 1px 2px rgba(15,23,42,0.035);
+    transition: padding 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+  }
+  .upload-side-open {
+    padding: 14px;
+  }
+  .upload-side-toggle {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    padding: 8px 6px;
+    font-size: 12px;
+    font-weight: 900;
+    cursor: pointer;
+    transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+  }
+  .upload-side-toggle:hover {
+    background: #dbeafe;
+    border-color: #bfdbfe;
   }
   .upload-side-head {
     display: flex;
@@ -232,23 +256,37 @@ html.dark {
   }
   .upload-side-tabs {
     display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 6px;
+    gap: 7px;
   }
   .upload-side-tab {
+    min-height: 42px;
     border: 1px solid var(--border);
     background: var(--surface-alt);
     color: var(--text-2);
     border-radius: 8px;
-    padding: 8px 9px;
+    padding: 0;
     font-size: 12px;
     line-height: 1.25;
     font-weight: 800;
     cursor: pointer;
-    white-space: normal;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    white-space: nowrap;
     word-break: keep-all;
-    overflow-wrap: break-word;
-    text-align: left;
+    overflow-wrap: normal;
+    transition: background 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms ease;
+  }
+  .upload-side-open .upload-side-tab {
+    justify-content: flex-start;
+    padding: 0 11px;
+  }
+  .upload-side-tab:hover,
+  .report-side-tab:hover {
+    border-color: #bfdbfe;
+    background: #f8fbff;
+    transform: translateY(-1px);
   }
   .upload-side-tab-active {
     background: #eff6ff;
@@ -258,12 +296,14 @@ html.dark {
   .upload-side-body {
     display: grid;
     gap: 12px;
+    animation: fadeIn 180ms ease;
   }
   .report-workspace {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 74px;
     gap: 16px;
     align-items: start;
+    transition: grid-template-columns 180ms ease;
   }
   .report-workspace-open {
     grid-template-columns: minmax(0, 1fr) 360px;
@@ -286,6 +326,7 @@ html.dark {
     border-radius: var(--radius);
     padding: 10px;
     box-shadow: 0 1px 2px rgba(15,23,42,0.035);
+    transition: padding 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
   }
   .report-side-open {
     padding: 14px;
@@ -300,6 +341,11 @@ html.dark {
     font-size: 12px;
     font-weight: 900;
     cursor: pointer;
+    transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+  }
+  .report-side-toggle:hover {
+    background: #dbeafe;
+    border-color: #bfdbfe;
   }
   .report-side-tabs {
     display: grid;
@@ -318,6 +364,7 @@ html.dark {
     font-size: 12px;
     font-weight: 850;
     cursor: pointer;
+    transition: background 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms ease;
   }
   .report-side-open .report-side-tab {
     justify-content: flex-start;
@@ -331,6 +378,7 @@ html.dark {
   .report-side-content {
     display: grid;
     gap: 12px;
+    animation: fadeIn 180ms ease;
   }
   .report-side-section {
     display: grid;
