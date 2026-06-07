@@ -87,6 +87,8 @@ export default function ModelLab() {
   const worstScore = scores.length ? Math.min(...scores) : null
   const bestModel = chartData.find(row => row.score === bestScore)?.model || best
   const worstModel = chartData.find(row => row.score === worstScore)?.model || null
+  const yAxisMax = chartAxisMax(scores, isRegression)
+  const yAxisTicks = isRegression ? undefined : [0, 0.25, 0.5, 0.75, 1]
 
   return (
     <div className="animate-fade-in" style={{ padding: 32, maxWidth: 980 }}>
@@ -143,7 +145,7 @@ export default function ModelLab() {
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={chartData} margin={{ top: 28, right: 12, left: 0, bottom: 6 }}>
                 <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                <YAxis domain={[0, max => Math.max(max * 1.12, max + 0.02)]} tick={{ fontSize: 11 }} />
+                <YAxis domain={[0, yAxisMax]} ticks={yAxisTicks} tickFormatter={formatAxisTick} tick={{ fontSize: 11 }} />
                 <Tooltip contentStyle={ttStyle} formatter={v => Number(v).toFixed(4)} />
                 <Bar dataKey="score" radius={[6, 6, 0, 0]}>
                   {chartData.map(row => (
@@ -294,6 +296,21 @@ function shortModel(name) {
 function formatScore(value) {
   const num = Number(value)
   return Number.isFinite(num) ? num.toFixed(4) : '-'
+}
+
+function formatAxisTick(value) {
+  const num = Number(value)
+  if (!Number.isFinite(num)) return ''
+  if (Number.isInteger(num)) return String(num)
+  return num.toFixed(2).replace(/0+$/, '').replace(/\.$/, '')
+}
+
+function chartAxisMax(scores, isRegression) {
+  if (!scores.length) return isRegression ? 1 : 1
+  const max = Math.max(...scores)
+  if (!isRegression) return 1
+  if (!Number.isFinite(max) || max <= 0) return 1
+  return Number((max * 1.12).toFixed(2))
 }
 
 function formatDelta(value) {
