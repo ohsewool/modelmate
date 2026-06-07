@@ -7,16 +7,7 @@ import DatasetQualityCard from '../components/upload/DatasetQualityCard'
 import ReanalysisNotice from '../components/upload/ReanalysisNotice'
 import UploadJudgmentBrief from '../components/upload/UploadJudgmentBrief'
 import UploadSidePanel from '../components/upload/UploadSidePanel'
-
-const UPLOAD_DRAFT_KEY = 'mm_upload_draft'
-
-function loadUploadDraft() {
-  try {
-    return JSON.parse(sessionStorage.getItem(UPLOAD_DRAFT_KEY) || 'null')
-  } catch {
-    return null
-  }
-}
+import { clearUploadDraft, loadUploadDraft, saveUploadDraft } from '../uploadDraftStorage'
 
 export default function Upload() {
   const [dragging, setDragging] = useState(false)
@@ -41,15 +32,24 @@ export default function Upload() {
   const reanalysisItem = reanalysisDataset || reanalysisExperiment
 
   useEffect(() => {
+    if (!draft.current?.uploadInfo) return
+    api.get('/state').then(r => {
+      if (!r.data?.has_data) {
+        clearUploadState('이전 화면 정보가 남아 있었지만 서버에 실제 CSV가 없어 초기화했습니다. 같은 CSV를 다시 올려주세요.')
+      }
+    }).catch(() => {})
+  }, [])
+
+  useEffect(() => {
     if (!uploadInfo) return
-    sessionStorage.setItem(UPLOAD_DRAFT_KEY, JSON.stringify({
+    saveUploadDraft({
       uploadInfo,
       aiAnalysis,
       target,
       dropCols,
       colLabels,
       edaInfo,
-    }))
+    })
   }, [uploadInfo, aiAnalysis, target, dropCols, colLabels, edaInfo])
 
   async function handleFile(file) {
@@ -103,8 +103,7 @@ export default function Upload() {
     } catch (e) {
       const detail = e.response?.data?.detail || e.message
       if (String(detail).includes('파일 없음') || String(detail).includes('데이터가 없습니다') || String(detail).includes('업로드 원본')) {
-        setNeedsReupload(true)
-        setTargetError('서버 재시작 또는 배포로 업로드 원본이 사라졌습니다. 같은 CSV를 다시 올리면 이어서 분석할 수 있습니다.')
+        clearUploadState('서버 재시작 또는 배포로 업로드 원본이 사라졌습니다. 같은 CSV를 다시 올려주세요.')
       } else {
         setTargetError(detail)
       }
@@ -118,16 +117,20 @@ export default function Upload() {
   }
 
   function reset() {
+    clearUploadState()
+  }
+
+  function clearUploadState(message = '') {
     setUploadInfo(null)
     setAiAnalysis(null)
     setTarget('')
     setDropCols([])
     setColLabels({})
     setEdaInfo(null)
-    setUploadError(null)
+    setUploadError(message ? { message, tips: ['파일 선택을 눌러 같은 CSV를 다시 올리면 새 분석을 시작할 수 있습니다.'] } : null)
     setTargetError('')
     setNeedsReupload(false)
-    sessionStorage.removeItem(UPLOAD_DRAFT_KEY)
+    clearUploadDraft()
   }
 
   function clearReanalysis() {

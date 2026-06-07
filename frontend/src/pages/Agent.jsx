@@ -7,8 +7,7 @@ import AgentLoadingPanel from '../components/agent/AgentLoadingPanel'
 import AgentResultPanel from '../components/agent/AgentResultPanel'
 import AgentStartPanel from '../components/agent/AgentStartPanel'
 import { buildAgentDecision } from '../components/agent/AgentUtils'
-
-const UPLOAD_DRAFT_KEY = 'mm_upload_draft'
+import { saveUploadDraft } from '../uploadDraftStorage'
 
 export default function Agent() {
   const [loading, setLoading] = useState(false)
@@ -65,14 +64,14 @@ export default function Agent() {
       setQuickLoading('target')
       const { data: eda } = await api.post('/set-target', { target_col: target, drop_cols: dropCols, col_labels: colLabels })
 
-      sessionStorage.setItem(UPLOAD_DRAFT_KEY, JSON.stringify({
+      saveUploadDraft({
         uploadInfo: upload,
         aiAnalysis: ai,
         target,
         dropCols,
         colLabels,
         edaInfo: eda,
-      }))
+      })
 
       setQuickSummary({
         fileName: file.name,
