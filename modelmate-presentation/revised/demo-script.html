@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ModelMate 시연용 PPT 대본</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --surface: #fff;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --muted: #475569;
+      --blue: #2563eb;
+      --violet: #7c3aed;
+      --green: #059669;
+      --amber: #d97706;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif;
+      background:
+        radial-gradient(circle at 82% 16%, rgba(124,58,237,.10), transparent 24rem),
+        radial-gradient(circle at 12% 10%, rgba(37,99,235,.12), transparent 25rem),
+        linear-gradient(180deg, #f8fafc, #eef2ff 55%, #f8fafc);
+      line-height: 1.72;
+    }
+
+    header {
+      padding: 56px clamp(20px, 5vw, 72px) 30px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    main {
+      width: min(1120px, calc(100% - 36px));
+      margin: 0 auto;
+      padding: 26px 0 72px;
+    }
+
+    h1, h2, h3, p { margin-top: 0; }
+    h1 {
+      margin-bottom: 12px;
+      font-size: clamp(40px, 7vw, 82px);
+      line-height: 1;
+    }
+    h2 {
+      margin-bottom: 12px;
+      font-size: clamp(24px, 3.6vw, 40px);
+      line-height: 1.16;
+    }
+    h3 { margin-bottom: 8px; font-size: 17px; }
+
+    .gradient {
+      background: linear-gradient(135deg, var(--blue), var(--violet));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .lead {
+      max-width: 900px;
+      color: var(--muted);
+      font-size: 19px;
+    }
+
+    .meta, .toc {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 22px;
+    }
+
+    .pill, .toc a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 7px 12px;
+      border: 1px solid rgba(37,99,235,.18);
+      border-radius: 999px;
+      background: rgba(255,255,255,.92);
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+      text-decoration: none;
+    }
+
+    .slide {
+      margin: 18px 0;
+      padding: clamp(20px, 3vw, 30px);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: rgba(255,255,255,.94);
+      box-shadow: 0 18px 60px rgba(15,23,42,.08);
+    }
+
+    .head {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: flex-start;
+      margin-bottom: 18px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .num {
+      display: inline-grid;
+      place-items: center;
+      width: 38px;
+      height: 38px;
+      margin-right: 10px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--blue), var(--violet));
+      color: #fff;
+      font-weight: 900;
+    }
+
+    .time {
+      color: var(--green);
+      font-size: 13px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: .75fr 1.25fr;
+      gap: 18px;
+    }
+
+    .note {
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #f8fafc;
+    }
+
+    .note strong {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--blue);
+      font-size: 13px;
+    }
+
+    .script {
+      padding: 18px;
+      border-radius: 12px;
+      background: #0f172a;
+      color: #f8fafc;
+      font-size: 17px;
+      line-height: 1.86;
+    }
+
+    .script p:last-child, .note p:last-child { margin-bottom: 0; }
+    .cue {
+      margin-top: 14px;
+      color: var(--amber);
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    @media (max-width: 840px) {
+      .grid { grid-template-columns: 1fr; }
+      .head { display: block; }
+      .time { display: block; margin-top: 8px; }
+    }
+
+    @media print {
+      body { background: #fff; }
+      header { padding: 32px 36px 18px; }
+      main { width: auto; padding: 0 24px 24px; }
+      .toc { display: none; }
+      .slide { page-break-inside: avoid; box-shadow: none; }
+      .script { background: #f8fafc; color: #0f172a; border: 1px solid #cbd5e1; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1><span class="gradient">ModelMate</span><br>시연용 PPT 대본</h1>
+    <p class="lead">시연용ppt.pptx 16장 기준으로, 기존 대본에서 불필요한 배경/구현/팀 역할/미래 방향 설명을 줄이고 화면 흐름 중심으로 다시 정리한 대본입니다.</p>
+    <div class="meta">
+      <span class="pill">권장 발표 시간: 7~9분</span>
+      <span class="pill">핵심: CSV 업로드 → 모델 비교 → 결과 활용</span>
+      <span class="pill">톤: 화면을 보며 설명</span>
+    </div>
+  </header>
+
+  <main>
+    <nav class="toc">
+      <a href="#s1">1. 표지</a>
+      <a href="#s2">2. 홈/로그인</a>
+      <a href="#s3">3. 메인/업로드</a>
+      <a href="#s4">4. CSV 판단</a>
+      <a href="#s5">5. 정리 상세</a>
+      <a href="#s6">6. 모델 비교</a>
+      <a href="#s7">7. 성능 개선</a>
+      <a href="#s8">8. 개선 비교</a>
+      <a href="#s9">9. 리포트</a>
+      <a href="#s10">10. 결과 확인</a>
+      <a href="#s11">11. AI 실행</a>
+      <a href="#s12">12. AI 완료</a>
+      <a href="#s13">13. 새 예측</a>
+      <a href="#s14">14. API 공유</a>
+      <a href="#s15">15. 기록</a>
+      <a href="#s16">16. 세부사항</a>
+    </nav>
+
+    <section class="slide" id="s1">
+      <div class="head"><h2><span class="num">1</span>표지</h2><span class="time">약 30초</span></div>
+      <div class="grid">
+        <div class="note"><strong>말할 포인트</strong><p>프로젝트 전체 설명보다 “시연 화면 흐름”을 보여준다고 시작합니다.</p></div>
+        <div class="script">
+          <p>안녕하세요. 지금부터 ModelMate의 시연 화면 흐름을 설명드리겠습니다.</p>
+          <p>ModelMate는 CSV 데이터를 업로드하면 예측 대상 설정, 모델 비교, 결과 해석, 새 데이터 예측, API 공유, 작업 기록까지 이어지는 정형 데이터 기반 AutoML 서비스입니다.</p>
+          <p>이번 발표에서는 실제 화면을 기준으로 사용자가 어떤 순서로 서비스를 이용하는지 보여드리겠습니다.</p>
+          <div class="cue">다음: 홈페이지와 로그인 화면</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" id="s2">
+      <div class="head"><h2><span class="num">2</span>홈페이지 · 로그인</h2><span class="time">약 35초</span></div>
+      <div class="grid">
+        <div class="note"><strong>빼는 내용</strong><p>프로젝트 배경 설명은 여기서 길게 하지 않습니다.</p></div>
+        <div class="script">
+          <p>먼저 서비스 진입 화면입니다.</p>
+          <p>홈페이지에서는 CSV만 올리면 예측 AI를 만들 수 있다는 메시지를 전면에 배치했습니다. 처음 보는 사용자도 이 서비스가 어떤 목적으로 만들어졌는지 바로 이해하도록 구성했습니다.</p>
+          <p>로그인 화면은 카드형 UI로 단순하게 구성했고, 로그인 후 바로 분석 플로우로 진입할 수 있습니다.</p>
+          <div class="cue">다음: 메인 화면과 CSV 업로드 진입</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" id="s3">
+      <div class="head"><h2><span class="num">3</span>메인 · CSV 업로드</h2><span class="time">약 40초</span></div>
+      <div class="grid">
+        <div class="note"><strong>더할 내용</strong><p>왼쪽 사이드바가 “시연 동선”이라는 점을 명확히 말합니다.</p></div>
+        <div class="script">
+          <p>다음은 메인 화면과 CSV 업로드 진입 화면입니다.</p>
+          <p>왼쪽 사이드바를 기준으로 데이터 넣기, 모델 고르기, 결과 요약, 이유 보기 순서가 이어집니다.</p>
+          <p>이 구조는 사용자가 현재 어느 단계에 있는지 놓치지 않도록 시연 동선을 고정해주는 역할을 합니다. 또한 현재 데이터 상태와 모델 상태가 계속 표시되어 분석 진행 상황을 확인할 수 있습니다.</p>
+          <div class="cue">다음: CSV 업로드 후 자동 판단</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" id="s4">
+      <div class="head"><h2><span class="num">4</span>CSV 업로드</h2><span class="time">약 55초</span></div>
+      <div class="grid">
+        <div class="note"><strong>핵심 보강</strong><p>범용성 포인트: 데이터셋 종류에 따라 타겟과 입력 변수가 달라짐.</p></div>
+        <div class="script">
+          <p>CSV를 업로드하면 ModelMate가 데이터셋에 맞게 자동으로 읽고 정리합니다.</p>
+          <p>예를 들어 의료나 건강 데이터라면 진단 관련 예측 문제로 정리할 수 있고, 공공교통 데이터라면 이용자 통계나 수요 예측 문제로 연결할 수 있습니다.</p>
+          <p>업로드 후에는 행 수, 컬럼 수, 결측값, 데이터 종류를 요약하고, 사용할 정보와 제외할 정보를 나누어 보여줍니다.</p>
+          <p>여기서 중요한 점은 고정된 샘플만 처리하는 것이 아니라, 데이터셋 종류에 따라 맞힐 값과 입력 변수가 달라진다는 점입니다.</p>
+          <div class="cue">다음: 데이터 정리 상세</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" id="s5">
+      <div class="head"><h2><span class="num">5</span>데이터 정리 상세</h2><span class="time">약 45초</span></div>
+      <div class="grid">
+        <div class="note"><strong>말할 포인트</strong><p>비전공자가 컬럼을 직접 판단해야 하는 부담을 줄인다는 점.</p></div>
+        <div class="script">
+          <p>다음은 데이터 정리 상세 화면입니다.</p>
+          <p>AI가 예측할 정답, 사용할 정보, 제외할 정보를 구분해서 제안합니다.</p>
+          <p>사용자는 이 설정을 확인한 뒤, 필요하면 파일을 다시 올리거나 바로 모델 비교 단계로 넘어갈 수 있습니다.</p>
+          <p>이 화면의 역할은 비전공자가 컬럼 의미를 하나씩 직접 판단해야 하는 부담을 줄여주는 것입니다.</p>
+          <div class="cue">다음: 모델 고르기</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" id="s6">
+      <div class="head"><h2><span class="num">6</span>모델 고르기</h2><span class="time">약 55초</span></div>
+      <div class="grid">
+        <div class="note"><strong>더할 내용</strong><p>모델을 고르는 이유: 데이터마다 잘 맞는 모델이 다르기 때문.</p></div>
+        <div class="script">
+          <p>다음은 모델 고르기 화면입니다.</p>
+          <p>ModelMate는 Logistic Regression, Random Forest, Gradient Boosting, LightGBM, XGBoost, Decision Tree 등 여러 모델을 같은 기준으로 비교합니다.</p>
+          <p>모델을 비교하는 이유는 데이터 구조에 따라 잘 맞는 모델이 달라지기 때문입니다. 어떤 데이터는 단순한 모델이 안정적이고, 어떤 데이터는 트리 기반 모델이 더 좋은 성능을 낼 수 있습니다.</p>
+          <p>그래프에서는 최고 모델과 낮은 성능 모델을 한눈에 볼 수 있고, 결과표에서는 Accuracy, F1, ROC-AUC 같은 주요 지표를 함께 확인할 수 있습니다.</p>
+          <div class="cue">다음: 성능 개선 기능</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" id="s7">
+      <div class="head"><h2><span class="num">7</span>성능 개선 기능</h2><span class="time">약 45초</span></div>
+      <div class="grid">
+        <div class="note"><strong>줄인 내용</strong><p>Optuna 세부 설명보다 “안전하게 개선 시도”를 강조합니다.</p></div>
+        <div class="script">
+          <p>다음은 성능 개선 기능입니다.</p>
+          <p>선택된 모델에 대해 자동 개선을 시도하고, 개선 전후 점수와 변화량을 보여줍니다.</p>
+          <p>여기서 중요한 점은 자동 개선이 무조건 적용되는 기능이 아니라는 점입니다. 개선 후 성능이 더 낮아지면 원래 모델을 유지하도록 설계했습니다.</p>
+          <p>즉, 성능 개선을 시도하되 결과가 나빠지는 경우에는 안전하게 기존 모델을 유지합니다.</p>
+          <div class="cue">다음: 개선 결과 비교</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" id="s8">
+      <div class="head"><h2><span class="num">8</span>개선 결과 비교</h2><span class="time">약 40초</span></div>
+      <div class="grid">
+        <div class="note"><strong>핵심</strong><p>자동 개선은 “항상 성공”이 아니라 결과를 비교하고 판단하는 과정.</p></div>
+        <div class="script">
+          <p>이 화면에서는 개선 실패, 점수 하락, 개선 성공 케이스를 모두 확인할 수 있습니다.</p>
+          <p>시연에서 보여주고 싶은 점은 이 기능이 단순히 자동으로 점수를 올린다는 기능이 아니라, 개선 결과를 비교하고 최종적으로 유지할 모델을 판단하는 과정이라는 점입니다.</p>
+          <p>개선 전후 숫자를 비교해서 신뢰도를 확보하고, 최종 선택 모델과 분석 준비 상태를 요약합니다.</p>
+          <div class="cue">다음: 결과 리포트</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" id="s9">
+      <div class="head"><h2><span class="num">9</span>결과 리포트</h2><span class="time">약 45초</span></div>
+      <div class="grid">
+        <div class="note"><strong>말할 포인트</strong><p>결과를 공유 가능한 보고서 형태로 정리.</p></div>
+        <div class="script">
+          <p>다음은 결과 리포트입니다.</p>
+          <p>최종 모델, 데이터 요약, 교차검증 성능, 모델 비교표가 리포트 형태로 정리됩니다.</p>
+          <p>HTML 리포트에서는 최고 모델과 주요 성능을 첫 화면에서 확인할 수 있고, CV 비교표를 통해 모델별 검증 결과를 표로 볼 수 있습니다.</p>
+          <p>이 리포트는 분석 결과를 발표 자료나 공유용 결과물로 활용할 수 있습니다.</p>
+          <div class="cue">다음: 결과 확인</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" id="s10">
+      <div class="head"><h2><span class="num">10</span>결과 확인</h2><span class="time">약 50초</span></div>
+      <div class="grid">
+        <div class="note"><strong>더할 내용</strong><p>점수만 보는 것이 아니라 이유까지 보는 화면이라고 설명.</p></div>
+        <div class="script">
+          <p>다음은 결과 확인 화면입니다.</p>
+          <p>결과 요약 화면에서는 모델 비교 결과, 데이터 정리 내용, 예측에 영향을 준 중요한 변수들을 한 번에 확인할 수 있습니다.</p>
+          <p>특히 이유 보기 화면에서는 예측 결과에 영향을 준 핵심 근거를 따로 강조해서 보여줍니다.</p>
+          <p>이를 통해 사용자는 단순히 점수만 보는 것이 아니라, 왜 이 모델이 선택되었고 어떤 정보가 예측에 중요했는지 이해할 수 있습니다.</p>
+          <div class="cue">다음: AI 한 번에 실행</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" id="s11">
+      <div class="head"><h2><span class="num">11</span>AI 한 번에 실행</h2><span class="time">약 55초</span></div>
+      <div class="grid">
+        <div class="note"><strong>에이전트 느낌 보강</strong><p>계획 제시 → 실행 → 판단 로그 → 다음 행동 연결.</p></div>
+        <div class="script">
+          <p>다음은 AI 한 번에 실행 기능입니다.</p>
+          <p>이 기능은 사용자가 직접 모델을 고르지 않아도, AI 분석 코치가 데이터 상태 확인부터 모델 비교, 개선 판단, 이유 분석까지 한 번에 진행하는 흐름입니다.</p>
+          <p>실행 전에는 어떤 순서로 분석을 진행할지 먼저 제시합니다. 이후 추천 모델과 대표 점수를 보여주고, 판단 로그를 통해 왜 그런 결론이 나왔는지 확인할 수 있습니다.</p>
+          <p>이 기능의 목적은 분석 과정이 블랙박스처럼 보이지 않도록 하는 것입니다.</p>
+          <div class="cue">다음: AI 실행 완료</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" id="s12">
+      <div class="head"><h2><span class="num">12</span>AI 실행 완료</h2><span class="time">약 35초</span></div>
+      <div class="grid">
+        <div class="note"><strong>줄인 내용</strong><p>AI 기능 설명 반복을 줄이고 결과 활용으로 연결.</p></div>
+        <div class="script">
+          <p>AI 실행이 완료되면 단계별 실행 기록과 결론 화면이 나타납니다.</p>
+          <p>여기서 사용자는 결과 요약 보기나 이유 보기로 바로 이동할 수 있습니다.</p>
+          <p>그리고 이후 새 데이터 예측이나 API 공유로 기능을 확장할 수 있습니다.</p>
+          <p>즉, AI가 분석을 끝내는 데서 멈추지 않고 결과 활용 단계까지 이어지도록 구성했습니다.</p>
+          <div class="cue">다음: 새 데이터 예측</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" id="s13">
+      <div class="head"><h2><span class="num">13</span>새 데이터 예측</h2><span class="time">약 45초</span></div>
+      <div class="grid">
+        <div class="note"><strong>말할 포인트</strong><p>모델 선택 이후 실제 활용 단계.</p></div>
+        <div class="script">
+          <p>다음은 새 데이터 예측입니다.</p>
+          <p>학습된 모델에 새로운 입력값을 넣어 한 행 단위의 예측을 실행할 수 있습니다.</p>
+          <p>입력 화면에서는 각 입력값의 평균값도 함께 표시해서 테스트하기 쉽게 만들었습니다.</p>
+          <p>예측 결과에서는 예측값뿐 아니라 확신도와 주요 근거도 함께 보여줍니다. 또한 단일 행뿐 아니라 CSV를 다시 업로드해 여러 행을 한 번에 예측하는 방식으로도 확장할 수 있습니다.</p>
+          <div class="cue">다음: 여러 행 결과와 API 공유</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" id="s14">
+      <div class="head"><h2><span class="num">14</span>여러 행 결과 · API 공유</h2><span class="time">약 45초</span></div>
+      <div class="grid">
+        <div class="note"><strong>핵심</strong><p>분석 결과를 화면 밖에서도 재사용할 수 있음.</p></div>
+        <div class="script">
+          <p>다음은 여러 행 예측 결과와 API 공유입니다.</p>
+          <p>여러 행 예측 결과는 표 형태로 정리되고, 각 행마다 예측값, 확신도, 보정 여부, 주요 근거를 확인할 수 있습니다.</p>
+          <p>학습된 모델은 API로 공유할 수 있고, 외부 서비스에서도 호출할 수 있도록 테스트와 복사 기능을 제공합니다.</p>
+          <p>즉, 분석 결과를 화면에서 확인하는 것뿐 아니라 실제 서비스와 연결할 수 있는 구조입니다.</p>
+          <div class="cue">다음: API 결과와 작업 기록</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" id="s15">
+      <div class="head"><h2><span class="num">15</span>API 결과 · 작업 기록</h2><span class="time">약 40초</span></div>
+      <div class="grid">
+        <div class="note"><strong>줄인 내용</strong><p>관리자 설명은 짧게, 기록 재사용 가치를 중심으로.</p></div>
+        <div class="script">
+          <p>API 테스트 화면에서는 입력폼과 curl 예시를 함께 제공해 개발자가 바로 테스트할 수 있도록 했습니다.</p>
+          <p>또한 마이페이지와 작업 기록에서는 전체 실험 이력을 관리할 수 있습니다.</p>
+          <p>관리자 작업 공간에서는 각 실험의 데이터셋, 선택 모델, 최고 성능 등을 확인할 수 있습니다.</p>
+          <p>이 기능은 분석 결과를 한 번 보고 끝내는 것이 아니라, 나중에 다시 확인하고 관리할 수 있도록 하기 위한 기능입니다.</p>
+          <div class="cue">다음: 실험 세부사항</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" id="s16">
+      <div class="head"><h2><span class="num">16</span>실험 세부사항</h2><span class="time">약 45초</span></div>
+      <div class="grid">
+        <div class="note"><strong>마무리 추가</strong><p>시연 흐름 전체를 한 문장으로 정리합니다.</p></div>
+        <div class="script">
+          <p>마지막은 실험 세부사항 화면입니다.</p>
+          <p>작업 기록을 누르면 데이터 크기, 맞히려는 값, 선택 모델, 주요 성능, 모델별 비교표를 다시 확인할 수 있습니다.</p>
+          <p>이 화면은 사용자가 이전 분석 결과를 잃어버리지 않고, 나중에 다시 확인하거나 비교할 수 있도록 하기 위한 마무리 화면입니다.</p>
+          <p>정리하면, ModelMate는 CSV 업로드에서 시작해 데이터 판단, 모델 비교, 성능 개선, 결과 해석, 예측, API 공유, 작업 기록까지 이어지는 AutoML 시연 흐름을 구현했습니다.</p>
+          <p>이상으로 ModelMate 시연 발표를 마치겠습니다. 감사합니다.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
