@@ -8,6 +8,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from backend.tools.automl_training import automl_training_tool
 from backend.tools.base import ToolHandler
 from backend.tools.data_profile import data_profile_tool
 from backend.tools.leakage_check import leakage_check_tool
@@ -88,9 +89,9 @@ def build_pr01_mock_registry() -> ToolRegistry:
         ),
         (
             "automl_training_tool",
-            "Mock existing ModelMate AutoML adapter placeholder",
-            {"summary": "Training is intentionally not executed in PR-04.", "risk": "not_executed"},
-            _mock_handler,
+            "Thin adapter around the existing ModelMate AutoML training flow",
+            {"summary": "Calls existing target setup and CV training when dataset input is provided.", "risk": "adapter"},
+            automl_training_tool,
         ),
     ]:
         registry.register(
@@ -103,6 +104,11 @@ def build_pr01_mock_registry() -> ToolRegistry:
                         "user_goal": {"type": "string"},
                         "profile": {"type": "object"},
                         "validation": {"type": "object"},
+                        "target_column": {"type": "string"},
+                        "excluded_columns": {"type": "array"},
+                        "task_type": {"type": "string"},
+                        "metric_preference": {"type": "string"},
+                        "training_budget": {"type": "object"},
                     },
                 },
                 output_schema={
@@ -110,6 +116,9 @@ def build_pr01_mock_registry() -> ToolRegistry:
                     "properties": {
                         "summary": {"type": "string"},
                         "status": {"type": "string"},
+                        "success": {"type": "boolean"},
+                        "best_model": {"type": "object"},
+                        "leaderboard_summary": {"type": "array"},
                         "recommended_next_action": {"type": "string"},
                     },
                 },

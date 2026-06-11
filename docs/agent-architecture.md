@@ -1,6 +1,6 @@
 # ModelMate Agent Architecture
 
-Current status: PR-06 deterministic target recommendation and leakage checks. This document describes the target
+Current status: PR-07 AutoML training adapter. This document describes the target
 architecture, but the production app is still the existing ModelMate AutoML
 workflow. ModelMate is being extended toward Agentic AutoML.
 
@@ -131,9 +131,29 @@ These tools are deterministic safety gates. They are not statistical leakage
 proofs and they do not run training. Their output is JSON-compatible so the
 mock timeline can store it as observations and decisions.
 
+## PR-07 AutoML Training Adapter
+
+PR-07 wraps the existing ModelMate training path as `automl_training_tool`.
+The adapter calls the current `set_target` and `run_cv` functions instead of
+reimplementing model training. It accepts dataset input, target column,
+excluded columns, task hints, metric preference, and budget metadata, then
+returns a JSON-compatible wrapper around the existing model comparison result:
+
+- success/failure status
+- task type and target column
+- used and excluded features
+- leaderboard and compact leaderboard summary
+- best model and best metric
+- training warnings/failures
+- existing in-memory model identifier
+- recommended next action for PR-08 evaluation policy
+
+The adapter is still not a real LLM agent. It does not add evaluation retry
+policy, SHAP, final report generation, or deployment checks.
+
 ## Next Connection
 
-PR-07 should wrap the existing AutoML training path as an `automl_training_tool`
-adapter while preserving the legacy upload/model-comparison flow.
+PR-08 should add an `evaluation_tool` and metric-threshold decision policy so
+training results can branch into accept, retry, or human review.
 
 It still should not call a real LLM.
