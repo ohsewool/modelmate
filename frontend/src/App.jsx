@@ -13,6 +13,7 @@ import Agent from './pages/Agent'
 import Predict from './pages/Predict'
 import Deploy from './pages/Deploy'
 import Login from './pages/Login'
+import Pricing from './pages/Pricing'
 
 const GOOGLE_CLIENT_ID = '373474705259-7b18amrkom84aqqt59n87lglhrgq1trj.apps.googleusercontent.com'
 
@@ -37,6 +38,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/pricing" element={<Pricing />} />
             <Route path="/*" element={
               <RequireAuth>
                 <AppLayout>

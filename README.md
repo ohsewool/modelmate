@@ -1,4 +1,4 @@
-# ModelMate
+﻿# ModelMate
 
 ModelMate turns CSV data into explainable predictions, grounded reports, and
 reusable prediction APIs through a guided AI analyst workflow.
@@ -27,7 +27,7 @@ Users do not primarily buy "an AI agent" itself. They use ModelMate to get:
 - and a prediction API/share flow that can be demonstrated or extended later.
 
 The Agentic AutoML work in this repository is an architecture direction, not a
-claim that ModelMate is already a fully autonomous AI data scientist.
+claim that ModelMate is already a complete autonomous AI data scientist.
 
 ## Deployment
 
@@ -103,6 +103,18 @@ shared prediction API contract and limitations.
 Operational readiness is handled at MVP level: status tracking, friendly
 failure recovery messages, and demo guardrails for file size, row count, column
 count, and training budget. See `docs/operational-readiness.md`.
+
+Commercial SaaS MVP trust documents are drafted, not finalized legal policies:
+
+- Privacy and data handling draft: `docs/privacy.md`
+- Terms and acceptable use draft: `docs/terms.md`
+- MVP security notes: `docs/security-notes.md`
+- Planned pricing mock: `docs/pricing.md`
+
+These documents clarify current limitations. ModelMate is not an enterprise
+AutoML replacement, does not claim enterprise compliance, and does not
+currently implement payment, billing, account-based quota, or full production
+security governance.
 
 Large enterprise features are intentionally out of scope for now:
 
