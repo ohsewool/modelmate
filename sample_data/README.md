@@ -3,6 +3,8 @@
 These files are small synthetic demo datasets for presentation and QA use.
 They are not real personal or business records.
 
+Machine-readable metadata is available in `sample_data/metadata.json`.
+
 ## Recommended Demo Order
 
 1. `customer_churn_demo.csv`
@@ -33,3 +35,12 @@ They are not real personal or business records.
 Use these files as backup demo data. The main product story remains: a user can
 upload an arbitrary CSV and ModelMate guides the analysis from data check to
 prediction, report, and reusable prediction API.
+
+## Onboarding Goal Examples
+
+- I want to predict which customers may churn.
+- I want to predict manufacturing defects from machine signals.
+- I want to estimate public bike signups from historical CSV data.
+- 고객 이탈 가능성을 예측하고 싶습니다.
+- 제조 불량 가능성을 예측하고 싶습니다.
+- 과거 CSV 데이터로 공공자전거 가입 건수를 예측하고 싶습니다.

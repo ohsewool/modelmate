@@ -93,6 +93,7 @@ enterprise expansion. The priority is SaaS readiness:
 - prediction API documentation
 - project save/reopen/re-run flow
 - basic usage limits
+- try-with-sample-data onboarding
 - clear explanation of what ModelMate does and does not do
 
 Grounded reports and reusable prediction APIs are important because they turn a
@@ -103,6 +104,17 @@ shared prediction API contract and limitations.
 Operational readiness is handled at MVP level: status tracking, friendly
 failure recovery messages, and demo guardrails for file size, row count, column
 count, and training budget. See `docs/operational-readiness.md`.
+
+First-time users can try ModelMate without preparing their own CSV. The upload
+screen links to three small synthetic sample datasets:
+
+- `sample_data/customer_churn_demo.csv`
+- `sample_data/manufacturing_quality_demo.csv`
+- `sample_data/public_bike_signup_demo.csv`
+
+See `sample_data/metadata.json`, `docs/onboarding.md`, and
+`docs/demo-agentic-automl.md` for recommended targets, task types, demo goals,
+and guided demo flow.
 
 Commercial SaaS MVP trust documents are drafted, not finalized legal policies:
 

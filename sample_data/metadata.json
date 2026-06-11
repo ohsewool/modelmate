@@ -1,0 +1,35 @@
+[
+  {
+    "file": "customer_churn_demo.csv",
+    "name": "Customer Churn Demo",
+    "description": "Predict whether a customer is likely to churn from usage, support, contract, and login behavior.",
+    "recommended_target": "churn",
+    "task_type": "classification",
+    "demo_goal": "Identify customers at risk of leaving.",
+    "onboarding_goal": "I want to predict which customers may churn.",
+    "expected_warnings": ["Check identifier-like columns such as customer_id before training."],
+    "recommended_next_action": "Run target recommendation and leakage check before model comparison."
+  },
+  {
+    "file": "manufacturing_quality_demo.csv",
+    "name": "Manufacturing Quality Demo",
+    "description": "Predict product defects from machine temperature, vibration, pressure, humidity, and shift data.",
+    "recommended_target": "defect",
+    "task_type": "classification",
+    "demo_goal": "Find production runs that may be defective.",
+    "onboarding_goal": "I want to predict manufacturing defects from machine signals.",
+    "expected_warnings": ["Review batch_id as an identifier-like column."],
+    "recommended_next_action": "Use the leakage/excluded-column review before training."
+  },
+  {
+    "file": "public_bike_signup_demo.csv",
+    "name": "Public Bike Signup Demo",
+    "description": "Estimate public bike signup count from month, user group, promotion count, stations, and weather.",
+    "recommended_target": "signup_count",
+    "task_type": "regression",
+    "demo_goal": "Estimate public bike signup demand from historical CSV data.",
+    "onboarding_goal": "I want to estimate public bike signups from historical CSV data.",
+    "expected_warnings": ["Month-like columns may need review depending on prediction timing."],
+    "recommended_next_action": "Run regression model comparison and review the grounded report."
+  }
+]

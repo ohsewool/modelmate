@@ -4,6 +4,7 @@ import api from '../api'
 import KPICard from '../components/KPICard'
 import { Button } from '../components/ui/button'
 import DatasetQualityCard from '../components/upload/DatasetQualityCard'
+import DemoDatasetGuide from '../components/upload/DemoDatasetGuide'
 import ReanalysisNotice from '../components/upload/ReanalysisNotice'
 import UploadJudgmentBrief from '../components/upload/UploadJudgmentBrief'
 import UploadSidePanel from '../components/upload/UploadSidePanel'
@@ -203,6 +204,7 @@ export default function Upload() {
             <ReanalysisNotice item={reanalysisItem} onClear={clearReanalysis} />
           )}
           <StatusRecoveryPanel status={operationalStatus} limits={usageLimits} compact />
+          <DemoDatasetGuide />
           <div
             onDragOver={e => { e.preventDefault(); setDragging(true) }}
             onDragLeave={() => setDragging(false)}
