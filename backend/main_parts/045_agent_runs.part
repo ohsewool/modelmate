@@ -26,7 +26,7 @@ async def list_agent_mock_tools():
     return {
         "agent_status": "mock_registry_only",
         "tools": registry.describe(),
-        "message": "PR-04 mock tool registry only. Tools do not call real AutoML logic.",
+        "message": "PR-06 registry includes deterministic safety tools. Tools do not call real AutoML logic.",
     }
 
 
@@ -117,5 +117,5 @@ async def get_agent_mock_timeline(analysis_run_id: str, user=Depends(get_current
     return {
         **timeline,
         "agent_status": "mock_timeline_only",
-        "message": "This timeline contains PR-04 mock plan, tool call, observation, and decision records.",
+        "message": "This timeline contains mock plan, deterministic tool call, observation, and decision records.",
     }

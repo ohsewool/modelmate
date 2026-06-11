@@ -20,6 +20,7 @@ from .trace import (
 )
 from .tool import ToolExecutionRequest, ToolExecutionResponse
 from .observation import ObservationPayload
+from .decision import DecisionPayload
 
 __all__ = [
     "AgentDecision",
@@ -36,4 +37,5 @@ __all__ = [
     "ToolExecutionRequest",
     "ToolExecutionResponse",
     "ObservationPayload",
+    "DecisionPayload",
 ]

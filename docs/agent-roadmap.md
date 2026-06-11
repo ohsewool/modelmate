@@ -1,6 +1,6 @@
 # ModelMate Agent Upgrade Roadmap
 
-Current status: PR-05 deterministic data profile and schema validation tools. ModelMate is being extended toward
+Current status: PR-06 deterministic target recommendation and leakage checks. ModelMate is being extended toward
 Agentic AutoML, but it is not yet a completed real AI agent.
 
 | PR | Goal | Files | Done Criteria | Test Method | Risks | Next PR |
@@ -10,7 +10,7 @@ Agentic AutoML, but it is not yet a completed real AI agent.
 | PR-03 | Add goal-first mock planner API | `backend/agents`, `backend/main_parts/045_agent_runs.part` | User goal creates a mock plan and trace records | API call returns run id and ordered steps | Endpoint may confuse users if exposed too early | PR-04 adds timeline UI |
 | PR-04 | Add mock tool registry and timeline flow | `backend/tools/registry.py`, `backend/agents/mock_runner.py`, `backend/main_parts/045_agent_runs.part` | Plan, mock tool call, observation, and decision records are visible by API | Mock timeline API test | Could be mistaken for real agent execution | PR-05 replaces first mock tools with deterministic tools |
 | PR-05 | Replace first mock tools with deterministic data profiling and schema validation | `backend/tools/data_profile.py`, `backend/tools/schema_validation.py`, `backend/tools/registry.py` | Profile and validation outputs are JSON-compatible and can become observations | Direct tool tests, mock timeline with `csv_text`, compile backend | Validation is heuristic and not a final training decision | PR-06 adds target/leakage tools |
-| PR-06 | Wrap target recommendation and leakage checks as tools | `target_recommendation_tool`, `leakage_check_tool` | Target and excluded-column reasons become decisions | Pima, public bike, facility, manufacturing QA | Wrong auto-exclusion risk | PR-07 wraps AutoML |
+| PR-06 | Wrap target recommendation and leakage checks as tools | `backend/tools/target_recommendation.py`, `backend/tools/leakage_check.py` | Target and excluded-column reasons become deterministic observations | Direct tool tests, mock timeline with `csv_text`, compile backend | Wrong auto-exclusion risk; heuristics still need human review | PR-07 wraps AutoML |
 | PR-07 | Wrap existing AutoML as `automl_training_tool` | adapter around existing training flow | Legacy model comparison remains intact and agent can call training | Legacy regression plus mock agent run | Training state conflicts | PR-08 adds evaluation branch |
 | PR-08 | Add evaluation and tuning decision policy | `evaluation_tool`, Optuna decision policy | Stable/no-improvement/retry cases are recorded as decisions | Optuna and no-improvement QA | Excessive retry behavior | PR-09 adds XAI/report evidence |
 | PR-09 | Wrap XAI and report creation as tools | `shap_explainer_tool`, `report_writer_tool` | Final report links to observations and evidence | Report/XAI regression | Overconfident explanations | PR-10 adds human review |
@@ -18,17 +18,19 @@ Agentic AutoML, but it is not yet a completed real AI agent.
 | PR-11 | Add model aliases, versions, lineage | model registry metadata | Saved models can be reused with trace lineage | Save/load/predict QA | DB complexity | PR-12 strengthens SaaS UX |
 | PR-12 | Polish workspace/share/API around agent runs | workspace, share/API UI | Dataset-run-model-report links are clear | Login/share/API QA | Permission policy gaps | Stabilization |
 
-## Current PR-05 Notes
+## Current PR-06 Notes
 
-PR-05 keeps the same timeline shape but upgrades the first two tools:
+PR-06 keeps the same timeline shape and upgrades the first four safety tools:
 
 ```text
-goal -> plan -> data_profile_tool/schema_validation_tool -> observations -> decisions -> timeline
+goal -> plan -> profile/validation/target/leakage tools -> observations -> decisions -> timeline
 ```
 
-`data_profile_tool` and `schema_validation_tool` are deterministic Python tools.
-They can inspect `csv_text`, `records`, `file_path`, or a dataframe-like object.
-They do not call LLMs and do not call the real AutoML training pipeline.
+`target_recommendation_tool` reuses the PR-05 profile and validation output to
+rank target candidates. `leakage_check_tool` then reviews feature columns for
+target-like, identifier-like, high-cardinality, result-like, and future-only
+signals. These are deterministic safety gates. They do not call LLMs and do not
+call the real AutoML training pipeline.
 
 ## Validation
 

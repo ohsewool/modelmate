@@ -1,6 +1,6 @@
 # ModelMate Agent Architecture
 
-Current status: PR-05 deterministic data profile and schema validation tools. This document describes the target
+Current status: PR-06 deterministic target recommendation and leakage checks. This document describes the target
 architecture, but the production app is still the existing ModelMate AutoML
 workflow. ModelMate is being extended toward Agentic AutoML.
 
@@ -113,9 +113,27 @@ These tools are deterministic and do not call an LLM. They also do not call the
 existing AutoML training pipeline. Their outputs are JSON-compatible so they can
 be stored as future observations.
 
+## PR-06 Deterministic Target And Leakage Tools
+
+PR-06 replaces two more mock tools with deterministic Python tools:
+
+- `target_recommendation_tool`: ranks possible target columns from profile and
+  validation outputs. It rejects identifier-like columns, constant columns,
+  high-cardinality columns, and heavily missing columns. Each candidate includes
+  inferred task type, confidence, reason, warnings, balance/distribution
+  summary, suitability, and next action.
+- `leakage_check_tool`: reviews feature columns against the chosen target. It
+  flags target-like names, result/label/status columns, possible future-only
+  fields, identifier-like columns, high-cardinality columns, and datetime fields
+  that need time-order review.
+
+These tools are deterministic safety gates. They are not statistical leakage
+proofs and they do not run training. Their output is JSON-compatible so the
+mock timeline can store it as observations and decisions.
+
 ## Next Connection
 
-PR-06 should add deterministic `target_recommendation_tool` and
-`leakage_check_tool` behavior on top of these profile and validation outputs.
+PR-07 should wrap the existing AutoML training path as an `automl_training_tool`
+adapter while preserving the legacy upload/model-comparison flow.
 
 It still should not call a real LLM.

@@ -1,4 +1,4 @@
-"""PR-04 mock agent runner.
+"""Mock agent runner for the Agentic AutoML skeleton.
 
 This runner proves the shape of plan -> tool call -> observation -> decision
 without calling an LLM or the real ModelMate AutoML pipeline.
@@ -26,11 +26,14 @@ def select_mock_tools(user_goal: str) -> list[str]:
     selected = ["data_profile_tool", "schema_validation_tool"]
     if any(word in goal for word in ("target", "predict", "prediction", "classify", "forecast")):
         selected.append("target_recommendation_tool")
+        selected.append("leakage_check_tool")
     elif any(word in goal for word in ("leak", "exclude", "id", "date")):
+        selected.append("target_recommendation_tool")
         selected.append("leakage_check_tool")
     else:
         selected.append("target_recommendation_tool")
-    return selected[:3]
+        selected.append("leakage_check_tool")
+    return selected[:4]
 
 
 def run_mock_agent_timeline(
@@ -59,11 +62,21 @@ def run_mock_agent_timeline(
     tool_results = []
     shared_tool_arguments = tool_arguments or {}
     latest_profile: dict[str, Any] | None = None
+    latest_validation: dict[str, Any] | None = None
+    latest_target: dict[str, Any] | None = None
     for tool_name in select_mock_tools(plan.goal):
         tool = registry.get(tool_name)
-        arguments = {"user_goal": plan.goal, "mode": "deterministic_pr05", **shared_tool_arguments}
+        arguments = {"user_goal": plan.goal, "mode": "deterministic_pr06", **shared_tool_arguments}
         if tool_name == "schema_validation_tool" and latest_profile is not None:
             arguments["profile"] = latest_profile
+        if tool_name == "target_recommendation_tool" and latest_profile is not None:
+            arguments["profile"] = latest_profile
+            if latest_validation is not None:
+                arguments["validation"] = latest_validation
+        if tool_name == "leakage_check_tool" and latest_profile is not None:
+            arguments["profile"] = latest_profile
+            if latest_target is not None:
+                arguments["recommended_target"] = latest_target
         call = create_tool_call(
             conn,
             run_id,
@@ -75,6 +88,10 @@ def run_mock_agent_timeline(
         result = {**tool.mock_response, **tool.handler(arguments)}
         if tool_name == "data_profile_tool":
             latest_profile = result
+        if tool_name == "schema_validation_tool":
+            latest_validation = result
+        if tool_name == "target_recommendation_tool":
+            latest_target = result.get("recommended_target")
         observation = create_observation(
             conn,
             run_id,
@@ -102,7 +119,7 @@ def run_mock_agent_timeline(
         conn,
         run_id,
         "human_review",
-        "PR-04 stops before real AutoML execution. A human should confirm before PR-05 tools replace mocks.",
+        "PR-06 stops before real AutoML execution. A human should confirm before PR-07 wraps training.",
     )
     timeline = get_analysis_timeline(conn, run_id)
     return {
@@ -113,5 +130,5 @@ def run_mock_agent_timeline(
         "final_decision": final_decision,
         "timeline": timeline,
         "agent_status": "mock_timeline_only",
-        "message": "PR-05 uses deterministic profile/validation tools when data is provided. No LLM or real AutoML pipeline was called.",
+        "message": "PR-06 uses deterministic profile, validation, target, and leakage tools when data is provided. No LLM or real AutoML pipeline was called.",
     }

@@ -10,7 +10,9 @@ from typing import Any
 
 from backend.tools.base import ToolHandler
 from backend.tools.data_profile import data_profile_tool
+from backend.tools.leakage_check import leakage_check_tool
 from backend.tools.schema_validation import schema_validation_tool
+from backend.tools.target_recommendation import target_recommendation_tool
 
 
 @dataclass(frozen=True)
@@ -74,15 +76,15 @@ def build_pr01_mock_registry() -> ToolRegistry:
         ),
         (
             "target_recommendation_tool",
-            "Mock target candidate recommendation",
-            {"summary": "A likely target column would be ranked from goal and column names.", "risk": "medium"},
-            _mock_handler,
+            "Deterministic prediction target candidate ranking",
+            {"summary": "Target candidates are ranked from profile metadata.", "risk": "deterministic"},
+            target_recommendation_tool,
         ),
         (
             "leakage_check_tool",
-            "Mock leakage and excluded-column review",
-            {"summary": "Potential ID/date/direct-answer columns would be reviewed.", "risk": "medium"},
-            _mock_handler,
+            "Deterministic leakage and excluded-column review",
+            {"summary": "Suspicious features are flagged from names and profile metadata.", "risk": "deterministic"},
+            leakage_check_tool,
         ),
         (
             "automl_training_tool",
@@ -95,8 +97,22 @@ def build_pr01_mock_registry() -> ToolRegistry:
             ToolDefinition(
                 name=name,
                 description=description,
-                input_schema={"type": "object", "properties": {"user_goal": {"type": "string"}}},
-                output_schema={"type": "object", "properties": {"summary": {"type": "string"}, "risk": {"type": "string"}}},
+                input_schema={
+                    "type": "object",
+                    "properties": {
+                        "user_goal": {"type": "string"},
+                        "profile": {"type": "object"},
+                        "validation": {"type": "object"},
+                    },
+                },
+                output_schema={
+                    "type": "object",
+                    "properties": {
+                        "summary": {"type": "string"},
+                        "status": {"type": "string"},
+                        "recommended_next_action": {"type": "string"},
+                    },
+                },
                 mock_response=mock_response,
                 handler=handler,
             )
