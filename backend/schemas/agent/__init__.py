@@ -21,6 +21,7 @@ from .trace import (
 from .tool import ToolExecutionRequest, ToolExecutionResponse
 from .observation import ObservationPayload
 from .decision import DecisionPayload
+from .deployment import DeploymentDecision, DeploymentRecordPlaceholder
 from .evidence import EvidenceBundle
 from .report import GroundedReport, ReportSection
 
@@ -40,6 +41,8 @@ __all__ = [
     "ToolExecutionResponse",
     "ObservationPayload",
     "DecisionPayload",
+    "DeploymentDecision",
+    "DeploymentRecordPlaceholder",
     "EvidenceBundle",
     "GroundedReport",
     "ReportSection",

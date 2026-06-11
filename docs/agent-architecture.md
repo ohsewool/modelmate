@@ -1,6 +1,6 @@
 # ModelMate Agent Architecture
 
-Current status: PR-10 validation and grounded report draft tools. This document describes the target
+Current status: PR-11 deployment readiness advice. This document describes the target
 architecture, but the production app is still the existing ModelMate AutoML
 workflow. ModelMate is being extended toward Agentic AutoML.
 
@@ -219,10 +219,35 @@ PR-10 also adds `docs/report-center.md` and a backend placeholder for future
 Report Center storage. It does not implement a frontend Report Center, PDF
 export, deployment checks, human review queues, or resume flows.
 
+## PR-11 Deployment Readiness Advice
+
+PR-11 adds `deployment_check_tool`, a deterministic advice tool that reads:
+
+- evidence bundle
+- validation result
+- report result
+- metric and threshold evidence
+- leakage and data-quality warnings
+- explanation availability
+- limitations and intended use
+
+It returns JSON-compatible deployment advice:
+
+- `deploy_recommended`
+- `needs_review`
+- `hold`
+- `blocked`
+- `unknown`
+
+The tool returns observation and decision payloads, but it never deploys a
+model, modifies prediction APIs, changes storage, or calls an LLM. PR-11 also
+adds a minimal Deployment Center placeholder and `docs/deployment-center.md` for
+future model stage and deployment history work.
+
 ## Next Connection
 
-PR-11 should add deployment-check contracts and Deployment Center preparation.
-Deployment checks, human review queues, resume flows, and a completed real agent
-runtime are still outside PR-10.
+PR-12 should add human review and resume-flow contracts. Actual production
+deployment automation, human review queues, resume flows, and a completed real
+agent runtime are still outside PR-11.
 
 It still should not call a real LLM.

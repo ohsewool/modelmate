@@ -1,6 +1,6 @@
 # ModelMate Agent Upgrade Roadmap
 
-Current status: PR-10 validation and grounded report draft tools. ModelMate is being extended toward
+Current status: PR-11 deployment readiness advice. ModelMate is being extended toward
 Agentic AutoML, but it is not yet a completed real AI agent.
 
 | PR | Goal | Files | Done Criteria | Test Method | Risks | Next PR |
@@ -15,27 +15,26 @@ Agentic AutoML, but it is not yet a completed real AI agent.
 | PR-08 | Add evaluation and retry decision placeholder | `backend/tools/evaluation.py`, `backend/tools/evaluation_policy.py`, `backend/tools/registry.py` | Metric threshold observation and decision placeholder are returned | Direct evaluation tests, training benchmark, upload QA, compile backend | Thresholds are heuristic and retry is not executed yet | PR-09 adds XAI/report evidence |
 | PR-09 | Wrap XAI evidence as a tool and create evidence bundle structure | `backend/tools/shap_explainer.py`, `backend/tools/evidence_bundle.py`, `backend/schemas/agent/evidence.py`, `backend/tools/registry.py` | Explanation observations and evidence bundle are JSON-compatible | Direct explainer test, training benchmark, upload QA, compile backend | Explanations may fall back to approximate feature importance | PR-10 adds validation and report writer |
 | PR-10 | Add validation and report writing tools | `backend/tools/validation.py`, `backend/tools/report_writer.py`, `backend/tools/report_center.py`, `backend/schemas/agent/report.py`, `docs/report-center.md` | Report draft is grounded in evidence and missing evidence is disclosed | Direct validation/report tests, upload QA, training benchmark, compile backend | Report wording can still be too generic when evidence is sparse | PR-11 adds deployment checks |
-| PR-11 | Add model aliases, versions, lineage | model registry metadata | Saved models can be reused with trace lineage | Save/load/predict QA | DB complexity | PR-12 strengthens SaaS UX |
-| PR-12 | Polish workspace/share/API around agent runs | workspace, share/API UI | Dataset-run-model-report links are clear | Login/share/API QA | Permission policy gaps | Stabilization |
+| PR-11 | Add deployment readiness advice | `backend/tools/deployment_check.py`, `backend/tools/deployment_center.py`, `backend/schemas/agent/deployment.py`, `docs/deployment-center.md` | Deployment advice returns deploy/review/hold/blocked without deploying | Direct deployment tool tests, upload QA, training benchmark, compile backend | Advice is deterministic and not a production approval system | PR-12 adds human review/resume contracts |
+| PR-12 | Add human review and resume contracts | review schema, resume state notes | Risky decisions can be paused and resumed later | Contract tests | Review workflow complexity | PR-13 strengthens SaaS UX |
+| PR-13 | Polish workspace/share/API around agent runs | workspace, share/API UI | Dataset-run-model-report links are clear | Login/share/API QA | Permission policy gaps | Stabilization |
 
-## Current PR-10 Notes
+## Current PR-11 Notes
 
-PR-10 consumes the PR-09 evidence bundle:
+PR-11 consumes PR-10 report output:
 
 ```text
-evidence bundle -> validation_tool -> validation observation -> report_writer_tool -> grounded Markdown report draft
+evidence bundle -> validation_tool -> report_writer_tool -> deployment_check_tool -> deployment advice
 ```
 
-`validation_tool` checks whether the bundle has enough evidence for a grounded
-report. Missing target, metric, model, XAI, data-profile, schema-validation, or
-leakage-check evidence is reported explicitly.
+`deployment_check_tool` reads validation status, report status, metrics,
+threshold status, leakage warnings, data-quality warnings, explanation
+availability, limitations, and intended use. It returns a deterministic
+deployment advice decision, not an actual deployment.
 
-`report_writer_tool` creates a deterministic Markdown report from evidence only.
-It includes metric, target, leakage warnings, data-quality warnings, XAI summary,
-limitations, and next action. It does not call an LLM.
-
-PR-10 does not implement deployment checks, Deployment Center, human review
-queues, resume flow, PDF export, or a completed real AI agent.
+PR-11 does not implement production deployment, prediction API changes, model
+storage migration, frontend Deployment Center, human review queues, resume flow,
+PDF export, or a completed real AI agent.
 
 ## Validation
 
@@ -130,5 +129,29 @@ bundle = {
 validation = validation_tool({"evidence_bundle": bundle})
 report = report_writer_tool({"evidence_bundle": bundle, "validation_result": validation})
 print(validation["validation_status"], report["report_format"])
+PY
+```
+
+For direct deployment advice verification:
+
+```bash
+python - <<'PY'
+from backend.tools import deployment_check_tool
+bundle = {
+    "user_goal": "Predict churn",
+    "selected_target": "churn",
+    "task_type": "classification",
+    "metric_summary": {"evaluated_metric": "roc_auc", "best_metric_value": 0.84},
+    "threshold_status": "pass",
+    "explanation_summary": "tenure is the strongest available signal",
+    "limitations": ["Feature importance is not causality."],
+}
+validation = {"validation_status": "grounded"}
+report = {"success": True}
+print(deployment_check_tool({
+    "evidence_bundle": bundle,
+    "validation_result": validation,
+    "report_result": report,
+})["deployment_status"])
 PY
 ```

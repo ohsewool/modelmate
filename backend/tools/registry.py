@@ -11,6 +11,7 @@ from typing import Any
 from backend.tools.automl_training import automl_training_tool
 from backend.tools.base import ToolHandler
 from backend.tools.data_profile import data_profile_tool
+from backend.tools.deployment_check import deployment_check_tool
 from backend.tools.evaluation import evaluation_tool
 from backend.tools.leakage_check import leakage_check_tool
 from backend.tools.report_writer import report_writer_tool
@@ -121,6 +122,12 @@ def build_pr01_mock_registry() -> ToolRegistry:
             {"summary": "Creates a report draft only from available evidence.", "risk": "deterministic"},
             report_writer_tool,
         ),
+        (
+            "deployment_check_tool",
+            "Deterministic deployment readiness advice checker",
+            {"summary": "Returns deploy, hold, review, or blocked advice without deploying.", "risk": "deterministic"},
+            deployment_check_tool,
+        ),
     ]:
         registry.register(
             ToolDefinition(
@@ -142,6 +149,9 @@ def build_pr01_mock_registry() -> ToolRegistry:
                         "evaluation_result": {"type": "object"},
                         "evidence_bundle": {"type": "object"},
                         "validation_result": {"type": "object"},
+                        "report_result": {"type": "object"},
+                        "intended_use": {"type": "string"},
+                        "deployment_policy": {"type": "object"},
                         "max_sample_size": {"type": "integer"},
                     },
                 },
@@ -160,6 +170,8 @@ def build_pr01_mock_registry() -> ToolRegistry:
                         "validation_status": {"type": "string"},
                         "report_format": {"type": "string"},
                         "markdown": {"type": "string"},
+                        "deployment_status": {"type": "string"},
+                        "risk_level": {"type": "string"},
                         "recommended_next_action": {"type": "string"},
                     },
                 },
