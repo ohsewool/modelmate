@@ -1,48 +1,102 @@
 # ModelMate
 
-ModelMate는 CSV를 업로드하면 데이터 구조 확인, 타깃 추천, 모델 비교,
-결과 요약, 설명 가능성 확인, 새 데이터 예측, 공유/API 흐름을 제공하는
-졸업프로젝트용 AutoML 웹 서비스입니다.
+ModelMate is a graduation-project AutoML web service for guided CSV predictive
+analysis.
 
-## 배포
+It helps a user upload a CSV, inspect whether the data is usable, choose a
+prediction target, compare models, understand the result, and reuse the outcome
+through reports, prediction screens, workspace history, and API-style sharing.
+
+## Product Position
+
+ModelMate is not intended to replace enterprise AutoML platforms such as
+DataRobot, Vertex AI, Azure ML, or Dataiku.
+
+The realistic product position is:
+
+> Guided CSV predictive analysis SaaS MVP.
+
+Users do not primarily buy "an AI agent" itself. They use ModelMate to get:
+
+- a reliable prediction result from a CSV,
+- evidence-backed model and data explanations,
+- a reusable report,
+- and a prediction API/share flow that can be demonstrated or extended later.
+
+The Agentic AutoML work in this repository is an architecture direction, not a
+claim that ModelMate is already a fully autonomous AI data scientist.
+
+## Deployment
 
 - Railway: https://web-production-5d6fa.up.railway.app/
 - GitHub: https://github.com/ohsewool/-
 - Branch: `main`
 
-## 기존 AutoML 기능
+## Current AutoML Features
 
-- CSV/TXT/TSV 업로드와 데이터셋 유효성 검사
-- 데이터 분야와 예측 목적 추정
-- 타깃 컬럼 추천과 제외 컬럼 정리
-- 여러 모델 교차검증 비교
-- Optuna 기반 성능 개선 옵션
-- 결과 요약, XAI/이유 보기, 새 데이터 예측
-- 공유/API 화면과 작업 기록 재사용
+- CSV/TXT/TSV upload and validation
+- Dataset domain and prediction-purpose inference
+- Target recommendation and excluded-column review
+- Cross-validated model comparison
+- Optional Optuna tuning
+- Result summary and XAI/reason view
+- New-data prediction
+- Workspace/history reuse
+- Share/API-style flow
 
-## Agentic AutoML 업그레이드 방향
+## Agentic AutoML Upgrade Status
 
-ModelMate는 real tool-calling Agentic AutoML 플랫폼 방향으로 확장 중입니다.
-현재 구현은 기존 AutoML을 유지하면서 agent가 사용할 수 있는 tool, evidence,
-decision, review skeleton을 단계적으로 추가한 상태입니다.
+ModelMate is being extended toward a real tool-calling Agentic AutoML platform.
+The current implementation keeps the existing AutoML flow and adds tool,
+evidence, decision, review, and resume skeletons around it.
 
-아직 완전한 자율 AI 데이터사이언티스트는 아닙니다. 실제 LLM planner,
-동적 tool selection runtime, 자동 재학습, 자동 운영 배포는 아직 구현하지
-않았습니다.
+Implemented skeleton flow:
 
-## 현재 구현된 Agentic Flow
+1. Mock goal-to-plan structure
+2. Tool registry
+3. Data profile and schema validation tools
+4. Target recommendation and leakage check tools
+5. AutoML training adapter around the existing pipeline
+6. Evaluation decision tool
+7. XAI/evidence bundle adapter
+8. Evidence validation tool
+9. Grounded report writer
+10. Deployment readiness advice
+11. Human review and resume skeleton
 
-1. 사용자 분석 목표를 mock planner가 구조화
-2. tool registry에서 사용 가능한 도구 확인
-3. data profile과 schema validation 수행
-4. target recommendation과 leakage check 수행
-5. 기존 AutoML을 `automl_training_tool` adapter로 호출
-6. evaluation tool이 metric 기준으로 판단
-7. XAI adapter가 explanation evidence bundle 생성
-8. validation tool이 evidence bundle 검증
-9. report writer가 grounded Markdown report draft 생성
-10. deployment check tool이 deploy/review/hold/blocked advice 반환
-11. human review/resume skeleton이 다음 행동 추천
+Still not implemented:
+
+- real LLM planner runtime
+- fully dynamic tool selection runtime
+- automatic retraining loops
+- production deployment automation
+- persistent human review queue
+- enterprise model registry
+- feature store
+- full MLOps lifecycle
+- payment system
+
+## Commercialization Readiness Focus
+
+Until the November graduation-project target, the priority is not large
+enterprise expansion. The priority is SaaS readiness:
+
+- stable demo flow
+- clear README and docs
+- report export path
+- prediction API documentation
+- project save/reopen/re-run flow
+- basic usage limits
+- clear explanation of what ModelMate does and does not do
+
+Large enterprise features are intentionally out of scope for now:
+
+- enterprise model registry
+- feature store
+- full MLOps automation
+- automatic retraining loop
+- large connector system
+- billing/payment system
 
 ## Tool Registry
 
@@ -57,52 +111,21 @@ decision, review skeleton을 단계적으로 추가한 상태입니다.
 - `report_writer_tool`
 - `deployment_check_tool`
 
-## Trace Concepts
-
-Agentic 확장을 위해 다음 개념을 문서와 skeleton으로 준비했습니다.
-
-- `analysis_runs`: 하나의 분석 목표와 실행 단위
-- `analysis_steps`: plan, tool call, observation, decision 단계
-- `tool_calls`: 도구 이름, 입력, 상태, 결과
-- `observations`: 도구 결과에서 agent가 읽은 근거
-- `decisions`: 다음 행동 판단
-- `review_items`: 사람이 확인해야 하는 위험 항목
-- `resume_recommendations`: review 이후 재개 방향 제안
-
-## Human Review / Resume Skeleton
-
-PR-12에서는 human review queue와 resume flow를 skeleton 수준으로 추가했습니다.
-
-가능한 것:
-
-- `needs_review`, `hold`, `blocked` decision을 review item으로 변환
-- review item의 status/resolution/reviewer note 구조화
-- resolution에 따라 다음 행동 추천
-
-아직 하지 않는 것:
-
-- 실제 DB queue
-- async worker
-- 자동 재학습
-- 자동 배포
-- 실제 LLM planner 재호출
-- 프론트 review center 대규모 구현
-
-## 로컬 실행
+## Local Run
 
 ```bash
 pip install -r requirements.txt
 uvicorn backend.main:app --reload
 ```
 
-프론트엔드 빌드:
+Frontend build:
 
 ```bash
 cd frontend
 npm run build
 ```
 
-## 테스트
+## QA
 
 ```bash
 python -m compileall backend
@@ -111,23 +134,24 @@ python scripts/run_training_benchmark.py
 python scripts/run_full_qa.py --skip-slow
 ```
 
-## 데모 시나리오
+## Demo Scenario
 
-1. 로그인
-2. CSV 업로드
-3. 데이터 판단과 타깃 추천 확인
-4. 모델 비교 실행
-5. 성능과 추천 모델 확인
-6. 결과 요약과 XAI 근거 확인
-7. 작업 기록 또는 공유/API 흐름 확인
-8. Agentic 확장 설명: tool registry, evidence, report, deployment advice,
+1. Login
+2. Upload a CSV
+3. Check dataset judgment and target recommendation
+4. Run model comparison
+5. Review selected model and performance
+6. Open report/XAI/reason view
+7. Check workspace history or share/API flow
+8. Explain the Agentic AutoML architecture direction:
+   tool registry, evidence bundle, grounded report, deployment advice, and
    human review/resume skeleton
 
-## 관리자 계정
+## Admin Account
 
-환경변수로 변경할 수 있습니다.
+The admin account can be configured through environment variables:
 
 - `ADMIN_EMAIL`
 - `ADMIN_PASSWORD`
 
-환경변수가 없으면 기본값은 `admin@modelmate.local` / `admin1234`입니다.
+Default values are `admin@modelmate.local` / `admin1234`.
