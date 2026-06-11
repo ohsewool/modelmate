@@ -13,9 +13,11 @@ from backend.tools.base import ToolHandler
 from backend.tools.data_profile import data_profile_tool
 from backend.tools.evaluation import evaluation_tool
 from backend.tools.leakage_check import leakage_check_tool
+from backend.tools.report_writer import report_writer_tool
 from backend.tools.schema_validation import schema_validation_tool
 from backend.tools.shap_explainer import shap_explainer_tool
 from backend.tools.target_recommendation import target_recommendation_tool
+from backend.tools.validation import validation_tool
 
 
 @dataclass(frozen=True)
@@ -107,6 +109,18 @@ def build_pr01_mock_registry() -> ToolRegistry:
             {"summary": "Returns SHAP, feature importance, coefficient, or unavailable evidence.", "risk": "adapter"},
             shap_explainer_tool,
         ),
+        (
+            "validation_tool",
+            "Deterministic evidence validator for grounded reports",
+            {"summary": "Checks whether an evidence bundle can support a grounded report.", "risk": "deterministic"},
+            validation_tool,
+        ),
+        (
+            "report_writer_tool",
+            "Deterministic grounded Markdown report writer",
+            {"summary": "Creates a report draft only from available evidence.", "risk": "deterministic"},
+            report_writer_tool,
+        ),
     ]:
         registry.register(
             ToolDefinition(
@@ -126,6 +140,8 @@ def build_pr01_mock_registry() -> ToolRegistry:
                         "automl_training_result": {"type": "object"},
                         "threshold_config": {"type": "object"},
                         "evaluation_result": {"type": "object"},
+                        "evidence_bundle": {"type": "object"},
+                        "validation_result": {"type": "object"},
                         "max_sample_size": {"type": "integer"},
                     },
                 },
@@ -141,6 +157,9 @@ def build_pr01_mock_registry() -> ToolRegistry:
                         "decision": {"type": "object"},
                         "explanation_type": {"type": "string"},
                         "evidence_bundle": {"type": "object"},
+                        "validation_status": {"type": "string"},
+                        "report_format": {"type": "string"},
+                        "markdown": {"type": "string"},
                         "recommended_next_action": {"type": "string"},
                     },
                 },

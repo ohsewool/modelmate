@@ -1,6 +1,6 @@
 # ModelMate Agent Architecture
 
-Current status: PR-09 XAI adapter and evidence bundle. This document describes the target
+Current status: PR-10 validation and grounded report draft tools. This document describes the target
 architecture, but the production app is still the existing ModelMate AutoML
 workflow. ModelMate is being extended toward Agentic AutoML.
 
@@ -200,10 +200,29 @@ model evidence, metric evidence, explanation evidence, data-quality warnings,
 leakage warnings, limitations, source tool calls, and creation time. This is
 only evidence preparation for a future report writer.
 
+## PR-10 Validation And Grounded Report Draft
+
+PR-10 adds two deterministic tools:
+
+- `validation_tool`: checks whether an evidence bundle can support a grounded
+  report. It returns grounded, weak, invalid, or unknown-style validation
+  signals through a JSON-compatible observation.
+- `report_writer_tool`: creates a Markdown report draft from the provided
+  evidence bundle and validation result.
+
+The report writer does not call an LLM. It only writes from supplied evidence
+such as target, task type, model summary, metric summary, leakage warnings, data
+quality warnings, XAI explanation, and limitations. If evidence is missing, the
+report states that evidence is missing instead of inventing claims.
+
+PR-10 also adds `docs/report-center.md` and a backend placeholder for future
+Report Center storage. It does not implement a frontend Report Center, PDF
+export, deployment checks, human review queues, or resume flows.
+
 ## Next Connection
 
-PR-10 should add validation and report-writing tools that consume the evidence
-bundle. Final report generation, deployment checks, and human review queues are
-still outside PR-09.
+PR-11 should add deployment-check contracts and Deployment Center preparation.
+Deployment checks, human review queues, resume flows, and a completed real agent
+runtime are still outside PR-10.
 
 It still should not call a real LLM.

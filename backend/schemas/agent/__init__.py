@@ -22,6 +22,7 @@ from .tool import ToolExecutionRequest, ToolExecutionResponse
 from .observation import ObservationPayload
 from .decision import DecisionPayload
 from .evidence import EvidenceBundle
+from .report import GroundedReport, ReportSection
 
 __all__ = [
     "AgentDecision",
@@ -40,4 +41,6 @@ __all__ = [
     "ObservationPayload",
     "DecisionPayload",
     "EvidenceBundle",
+    "GroundedReport",
+    "ReportSection",
 ]
