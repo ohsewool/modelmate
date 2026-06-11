@@ -1,6 +1,6 @@
 # ModelMate Agent Architecture
 
-Current status: PR-03 mock planner trace API. This document describes the target
+Current status: PR-04 mock planner/timeline stage. This document describes the target
 architecture, but the production app is still the existing ModelMate AutoML
 workflow. ModelMate is being extended toward Agentic AutoML.
 
@@ -75,13 +75,30 @@ The endpoint stores an `analysis_run` and ordered `analysis_steps` from the mock
 `SupervisorPlanner`. It does not call an LLM and does not call the existing
 AutoML pipeline.
 
+## PR-04 Mock Timeline
+
+PR-04 adds mock-only tool registry and timeline endpoints:
+
+```text
+GET  /api/agent/tools
+POST /api/agent/mock-timeline
+GET  /api/agent/runs/{analysis_run_id}/timeline
+```
+
+The mock timeline records:
+
+1. structured plan
+2. selected mock tool calls
+3. mock observations
+4. placeholder decisions
+
+This is still not a real LLM agent. The mock tools expose names, descriptions,
+input/output schemas, and mock responses only. They do not inspect CSV data and
+do not call the existing AutoML pipeline.
+
 ## Next Connection
 
-PR-04 should add a small timeline UI that:
+PR-05 should replace `data_profile_tool` and `schema_validation_tool` with
+deterministic non-LLM tools that can inspect uploaded data safely.
 
-1. accepts or reuses an `analysis_run_id`
-2. shows planned steps in order
-3. distinguishes future tool calls, observations, and decisions
-4. keeps the existing ModelMate demo flow intact
-
-It still should not call a real LLM or the real AutoML pipeline.
+It still should not call a real LLM.

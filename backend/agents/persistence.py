@@ -184,11 +184,175 @@ def get_analysis_run_trace(conn: sqlite3.Connection, analysis_run_id: str) -> di
     ).fetchall()
     return {
         "run": dict(run),
-        "steps": [
-            {
-                **dict(row),
-                "payload": json.loads(row["payload_json"] or "{}"),
-            }
-            for row in steps
-        ],
+        "steps": [_decode_step(row) for row in steps],
     }
+
+
+def _decode_step(row: sqlite3.Row) -> dict[str, Any]:
+    return {**dict(row), "payload": json.loads(row["payload_json"] or "{}")}
+
+
+def create_tool_call(
+    conn: sqlite3.Connection,
+    analysis_run_id: str,
+    tool_name: str,
+    *,
+    analysis_step_id: str | None = None,
+    arguments: dict[str, Any] | None = None,
+    status: str = "succeeded",
+) -> dict[str, Any]:
+    ensure_agent_trace_schema(conn)
+    now = _now_iso()
+    row = {
+        "id": str(uuid.uuid4()),
+        "analysis_run_id": analysis_run_id,
+        "analysis_step_id": analysis_step_id,
+        "tool_name": tool_name,
+        "arguments": arguments or {},
+        "status": status,
+        "created_at": now,
+        "finished_at": now if status in ("succeeded", "failed") else None,
+    }
+    conn.execute(
+        """
+        INSERT INTO tool_calls
+            (id, analysis_run_id, analysis_step_id, tool_name, arguments_json, status, created_at, finished_at)
+        VALUES (?,?,?,?,?,?,?,?)
+        """,
+        (
+            row["id"],
+            row["analysis_run_id"],
+            row["analysis_step_id"],
+            row["tool_name"],
+            _json(row["arguments"]),
+            row["status"],
+            row["created_at"],
+            row["finished_at"],
+        ),
+    )
+    conn.commit()
+    return row
+
+
+def create_observation(
+    conn: sqlite3.Connection,
+    analysis_run_id: str,
+    summary: str,
+    *,
+    tool_call_id: str | None = None,
+    evidence: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    ensure_agent_trace_schema(conn)
+    row = {
+        "id": str(uuid.uuid4()),
+        "analysis_run_id": analysis_run_id,
+        "tool_call_id": tool_call_id,
+        "summary": summary,
+        "evidence": evidence or {},
+        "created_at": _now_iso(),
+    }
+    conn.execute(
+        """
+        INSERT INTO observations
+            (id, analysis_run_id, tool_call_id, summary, evidence_json, created_at)
+        VALUES (?,?,?,?,?,?)
+        """,
+        (
+            row["id"],
+            row["analysis_run_id"],
+            row["tool_call_id"],
+            row["summary"],
+            _json(row["evidence"]),
+            row["created_at"],
+        ),
+    )
+    conn.commit()
+    return row
+
+
+def create_decision(
+    conn: sqlite3.Connection,
+    analysis_run_id: str,
+    action: str,
+    reason: str,
+    *,
+    observation_id: str | None = None,
+    next_step_id: str | None = None,
+) -> dict[str, Any]:
+    ensure_agent_trace_schema(conn)
+    row = {
+        "id": str(uuid.uuid4()),
+        "analysis_run_id": analysis_run_id,
+        "observation_id": observation_id,
+        "action": action,
+        "reason": reason,
+        "next_step_id": next_step_id,
+        "created_at": _now_iso(),
+    }
+    conn.execute(
+        """
+        INSERT INTO decisions
+            (id, analysis_run_id, observation_id, action, reason, next_step_id, created_at)
+        VALUES (?,?,?,?,?,?,?)
+        """,
+        (
+            row["id"],
+            row["analysis_run_id"],
+            row["observation_id"],
+            row["action"],
+            row["reason"],
+            row["next_step_id"],
+            row["created_at"],
+        ),
+    )
+    conn.commit()
+    return row
+
+
+def get_analysis_timeline(conn: sqlite3.Connection, analysis_run_id: str) -> dict[str, Any] | None:
+    trace = get_analysis_run_trace(conn, analysis_run_id)
+    if not trace:
+        return None
+    tool_calls = conn.execute(
+        "SELECT * FROM tool_calls WHERE analysis_run_id=? ORDER BY created_at ASC",
+        (analysis_run_id,),
+    ).fetchall()
+    observations = conn.execute(
+        "SELECT * FROM observations WHERE analysis_run_id=? ORDER BY created_at ASC",
+        (analysis_run_id,),
+    ).fetchall()
+    decisions = conn.execute(
+        "SELECT * FROM decisions WHERE analysis_run_id=? ORDER BY created_at ASC",
+        (analysis_run_id,),
+    ).fetchall()
+    return {
+        **trace,
+        "tool_calls": [_decode_json_row(row, "arguments_json", "arguments") for row in tool_calls],
+        "observations": [_decode_json_row(row, "evidence_json", "evidence") for row in observations],
+        "decisions": [dict(row) for row in decisions],
+        "timeline": _merge_timeline(trace["steps"], tool_calls, observations, decisions),
+    }
+
+
+def _decode_json_row(row: sqlite3.Row, json_key: str, output_key: str) -> dict[str, Any]:
+    data = dict(row)
+    data[output_key] = json.loads(data.pop(json_key) or "{}")
+    return data
+
+
+def _merge_timeline(
+    steps: list[dict[str, Any]],
+    tool_calls: list[sqlite3.Row],
+    observations: list[sqlite3.Row],
+    decisions: list[sqlite3.Row],
+) -> list[dict[str, Any]]:
+    items: list[dict[str, Any]] = []
+    for step in steps:
+        items.append({"type": "plan", "created_at": step["created_at"], "data": step})
+    for row in tool_calls:
+        items.append({"type": "tool_call", "created_at": row["created_at"], "data": _decode_json_row(row, "arguments_json", "arguments")})
+    for row in observations:
+        items.append({"type": "observation", "created_at": row["created_at"], "data": _decode_json_row(row, "evidence_json", "evidence")})
+    for row in decisions:
+        items.append({"type": "decision", "created_at": row["created_at"], "data": dict(row)})
+    return sorted(items, key=lambda item: item["created_at"])

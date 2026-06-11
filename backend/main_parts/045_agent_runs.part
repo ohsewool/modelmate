@@ -4,14 +4,27 @@ from backend.agents import SupervisorPlanner
 from backend.agents.persistence import (
     create_analysis_run,
     create_analysis_steps_from_plan,
+    get_analysis_timeline,
     get_analysis_run_trace,
 )
+from backend.agents.mock_runner import run_mock_agent_timeline
+from backend.tools import build_pr04_mock_registry
 
 
 class AgentMockPlanBody(BaseModel):
     user_goal: str
     project_id: str | None = None
     dataset_id: str | None = None
+
+
+@app.get("/api/agent/tools")
+async def list_agent_mock_tools():
+    registry = build_pr04_mock_registry()
+    return {
+        "agent_status": "mock_registry_only",
+        "tools": registry.describe(),
+        "message": "PR-04 mock tool registry only. Tools do not call real AutoML logic.",
+    }
 
 
 @app.post("/api/agent/mock-plan")
@@ -58,4 +71,40 @@ async def get_agent_mock_run(analysis_run_id: str, user=Depends(get_current_user
         **trace,
         "agent_status": "mock_trace_only",
         "message": "This run contains stored PR-03 mock planner trace data.",
+    }
+
+
+@app.post("/api/agent/mock-timeline")
+async def create_agent_mock_timeline(
+    body: AgentMockPlanBody,
+    user=Depends(get_current_user),
+):
+    conn = get_db()
+    try:
+        user_id = user.get("sub") if user else None
+        result = run_mock_agent_timeline(
+            conn,
+            body.user_goal,
+            user_id=user_id,
+            project_id=body.project_id,
+            dataset_id=body.dataset_id,
+        )
+    finally:
+        conn.close()
+    return result
+
+
+@app.get("/api/agent/runs/{analysis_run_id}/timeline")
+async def get_agent_mock_timeline(analysis_run_id: str, user=Depends(get_current_user)):
+    conn = get_db()
+    try:
+        timeline = get_analysis_timeline(conn, analysis_run_id)
+    finally:
+        conn.close()
+    if not timeline:
+        raise HTTPException(404, "Agent analysis run timeline not found")
+    return {
+        **timeline,
+        "agent_status": "mock_timeline_only",
+        "message": "This timeline contains PR-04 mock plan, tool call, observation, and decision records.",
     }
