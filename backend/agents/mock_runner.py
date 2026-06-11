@@ -40,6 +40,7 @@ def run_mock_agent_timeline(
     user_id: str | None = None,
     project_id: str | None = None,
     dataset_id: str | None = None,
+    tool_arguments: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     planner = SupervisorPlanner()
     registry = build_pr04_mock_registry()
@@ -56,9 +57,13 @@ def run_mock_agent_timeline(
     step_by_tool = {step["payload"].get("tool_name"): step["id"] for step in steps}
 
     tool_results = []
+    shared_tool_arguments = tool_arguments or {}
+    latest_profile: dict[str, Any] | None = None
     for tool_name in select_mock_tools(plan.goal):
         tool = registry.get(tool_name)
-        arguments = {"user_goal": plan.goal, "mode": "mock"}
+        arguments = {"user_goal": plan.goal, "mode": "deterministic_pr05", **shared_tool_arguments}
+        if tool_name == "schema_validation_tool" and latest_profile is not None:
+            arguments["profile"] = latest_profile
         call = create_tool_call(
             conn,
             run_id,
@@ -67,7 +72,9 @@ def run_mock_agent_timeline(
             arguments=arguments,
             status="succeeded",
         )
-        result = {**tool.handler(arguments), **tool.mock_response}
+        result = {**tool.mock_response, **tool.handler(arguments)}
+        if tool_name == "data_profile_tool":
+            latest_profile = result
         observation = create_observation(
             conn,
             run_id,
@@ -106,5 +113,5 @@ def run_mock_agent_timeline(
         "final_decision": final_decision,
         "timeline": timeline,
         "agent_status": "mock_timeline_only",
-        "message": "PR-04 uses mock tools only. No LLM or real AutoML pipeline was called.",
+        "message": "PR-05 uses deterministic profile/validation tools when data is provided. No LLM or real AutoML pipeline was called.",
     }

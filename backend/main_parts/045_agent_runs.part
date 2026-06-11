@@ -15,6 +15,9 @@ class AgentMockPlanBody(BaseModel):
     user_goal: str
     project_id: str | None = None
     dataset_id: str | None = None
+    csv_text: str | None = None
+    records: list[dict] | None = None
+    file_path: str | None = None
 
 
 @app.get("/api/agent/tools")
@@ -82,12 +85,20 @@ async def create_agent_mock_timeline(
     conn = get_db()
     try:
         user_id = user.get("sub") if user else None
+        tool_arguments = {}
+        if body.csv_text:
+            tool_arguments["csv_text"] = body.csv_text
+        if body.records:
+            tool_arguments["records"] = body.records
+        if body.file_path:
+            tool_arguments["file_path"] = body.file_path
         result = run_mock_agent_timeline(
             conn,
             body.user_goal,
             user_id=user_id,
             project_id=body.project_id,
             dataset_id=body.dataset_id,
+            tool_arguments=tool_arguments,
         )
     finally:
         conn.close()

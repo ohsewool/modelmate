@@ -6,10 +6,11 @@ Future PRs will wrap existing ModelMate functions as tool adapters here.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Callable
+from typing import Any
 
-
-ToolHandler = Callable[[dict[str, Any]], dict[str, Any]]
+from backend.tools.base import ToolHandler
+from backend.tools.data_profile import data_profile_tool
+from backend.tools.schema_validation import schema_validation_tool
 
 
 @dataclass(frozen=True)
@@ -58,31 +59,36 @@ def _mock_handler(arguments: dict[str, Any]) -> dict[str, Any]:
 
 def build_pr01_mock_registry() -> ToolRegistry:
     registry = ToolRegistry()
-    for name, description, mock_response in [
+    for name, description, mock_response, handler in [
         (
             "data_profile_tool",
-            "Mock CSV structure and quality inspection",
-            {"summary": "Dataset shape and column types would be inspected.", "risk": "none"},
+            "Deterministic CSV structure and quality inspection",
+            {"summary": "Dataset shape and column types are inspected when data is provided.", "risk": "deterministic"},
+            data_profile_tool,
         ),
         (
             "schema_validation_tool",
-            "Mock malformed or non-predictive file detection",
-            {"summary": "Schema appears usable for a prediction workflow.", "risk": "low"},
+            "Deterministic malformed or non-predictive file detection",
+            {"summary": "Schema validation checks safety gates when data is provided.", "risk": "deterministic"},
+            schema_validation_tool,
         ),
         (
             "target_recommendation_tool",
             "Mock target candidate recommendation",
             {"summary": "A likely target column would be ranked from goal and column names.", "risk": "medium"},
+            _mock_handler,
         ),
         (
             "leakage_check_tool",
             "Mock leakage and excluded-column review",
             {"summary": "Potential ID/date/direct-answer columns would be reviewed.", "risk": "medium"},
+            _mock_handler,
         ),
         (
             "automl_training_tool",
             "Mock existing ModelMate AutoML adapter placeholder",
             {"summary": "Training is intentionally not executed in PR-04.", "risk": "not_executed"},
+            _mock_handler,
         ),
     ]:
         registry.register(
@@ -92,7 +98,7 @@ def build_pr01_mock_registry() -> ToolRegistry:
                 input_schema={"type": "object", "properties": {"user_goal": {"type": "string"}}},
                 output_schema={"type": "object", "properties": {"summary": {"type": "string"}, "risk": {"type": "string"}}},
                 mock_response=mock_response,
-                handler=_mock_handler,
+                handler=handler,
             )
         )
     return registry

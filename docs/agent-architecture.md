@@ -1,6 +1,6 @@
 # ModelMate Agent Architecture
 
-Current status: PR-04 mock planner/timeline stage. This document describes the target
+Current status: PR-05 deterministic data profile and schema validation tools. This document describes the target
 architecture, but the production app is still the existing ModelMate AutoML
 workflow. ModelMate is being extended toward Agentic AutoML.
 
@@ -96,9 +96,26 @@ This is still not a real LLM agent. The mock tools expose names, descriptions,
 input/output schemas, and mock responses only. They do not inspect CSV data and
 do not call the existing AutoML pipeline.
 
+## PR-05 Deterministic Safety Tools
+
+PR-05 replaces the first two mock tools with deterministic Python tools:
+
+- `data_profile_tool`: profiles row/column counts, dtypes, missing values, unique
+  counts, high-cardinality columns, constant columns, id-like columns, numeric
+  columns, categorical columns, datetime-like columns, class-balance candidates,
+  and profiling warnings.
+- `schema_validation_tool`: acts as a safety gate before training by returning
+  pass/warning/fail status, violations, severe missing-value columns, constant
+  columns, identifier-like columns, too-few-row/too-few-column checks, training
+  suitability, and recommended next action.
+
+These tools are deterministic and do not call an LLM. They also do not call the
+existing AutoML training pipeline. Their outputs are JSON-compatible so they can
+be stored as future observations.
+
 ## Next Connection
 
-PR-05 should replace `data_profile_tool` and `schema_validation_tool` with
-deterministic non-LLM tools that can inspect uploaded data safely.
+PR-06 should add deterministic `target_recommendation_tool` and
+`leakage_check_tool` behavior on top of these profile and validation outputs.
 
 It still should not call a real LLM.

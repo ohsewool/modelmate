@@ -18,6 +18,8 @@ from .trace import (
     ObservationSchema,
     ToolCallSchema,
 )
+from .tool import ToolExecutionRequest, ToolExecutionResponse
+from .observation import ObservationPayload
 
 __all__ = [
     "AgentDecision",
@@ -31,4 +33,7 @@ __all__ = [
     "DecisionSchema",
     "ObservationSchema",
     "ToolCallSchema",
+    "ToolExecutionRequest",
+    "ToolExecutionResponse",
+    "ObservationPayload",
 ]
