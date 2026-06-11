@@ -300,6 +300,20 @@ export default function Deploy() {
 
         <ApiUsageExamplePanel models={models} />
 
+        <section className="card">
+          <p className="section-title">Prediction API documentation</p>
+          <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6 }}>
+            공유 모델은 <code>/api/v2/&lt;model_id&gt;/predict</code> 형식의 재사용 가능한 예측 API로 호출할 수 있습니다.
+            요청 형식, 응답 예시, 보안 한계는 <code>docs/prediction-api.md</code>에 정리되어 있습니다.
+          </p>
+          <div className="banner-warning" style={{ alignItems: 'flex-start' }}>
+            <AlertCircle size={16} />
+            <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)', lineHeight: 1.55 }}>
+              현재 공유 URL은 SaaS MVP용 재사용 흐름입니다. 운영 환경의 API key, rate limit, audit log, billing control을 대체하지 않습니다.
+            </p>
+          </div>
+        </section>
+
         <ApiOpsPanel models={models} />
 
         <ApiReadinessPanel models={models} hasModel={hasModel} />

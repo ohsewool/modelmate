@@ -318,6 +318,12 @@ export default function Report() {
               </Button>
             </div>
           </div>
+          <div style={{ marginTop: 14, padding: 12, borderRadius: 12, background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.18)' }}>
+            <p style={{ margin: 0, fontSize: 12, color: 'var(--text-2)', lineHeight: 1.6 }}>
+              HTML 리포트에는 분석 목표, 데이터 요약, 추천 타깃, 모델 비교, 성능 지표, 설명 근거, 한계와 다음 행동이 포함됩니다.
+              모델 성능과 설명은 업로드된 데이터와 현재 검증 결과에 기반합니다.
+            </p>
+          </div>
         </div>
 
         {historyReport && (

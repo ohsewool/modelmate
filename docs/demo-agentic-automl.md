@@ -51,6 +51,7 @@ stable presentation rehearsal:
      prediction/share API path.
    - Show: `Model trust summary`, `Evidence-based report`, and `Analysis trace`
      cards so the audience can see why the result is believable.
+   - Click: `HTML로 열기` or report download to show the grounded report export.
    - Closing message: ModelMate gives a repeatable predictive analysis result
      that can be reused after the first CSV upload.
 
@@ -82,6 +83,9 @@ Use the same first six steps, then add:
     - Click: prediction or share/API screen.
     - Explain: the commercial value is not only "model recommendation"; it is
       the ability to reuse the result for later predictions.
+    - Mention: `docs/prediction-api.md` documents the existing
+      `/api/v2/{model_id}/predict` endpoint, request/response examples, and
+      security limitations.
 
 12. Briefly explain Agentic AutoML direction.
     - Current implementation: tool registry, deterministic checks, evidence
@@ -96,6 +100,10 @@ Use the same first six steps, then add:
   explanation availability, deployment readiness, and human review status.
 - Evidence-based report: selected target, task type, best model, best metric,
   top features, limitations, and recommended next action.
+- Report export: HTML report preview/download contains the same grounded
+  evidence and the limitation sentence about uploaded data and validation.
+- Reusable prediction API: shared models can be called through the documented
+  `/api/v2/{model_id}/predict` endpoint.
 
 Use the phrase "guided analysis trace" rather than "fully autonomous AI data
 scientist."

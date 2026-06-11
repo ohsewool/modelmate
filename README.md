@@ -44,9 +44,11 @@ claim that ModelMate is already a fully autonomous AI data scientist.
 - Optional Optuna tuning
 - Result summary and XAI/reason view
 - Analysis trace, trust summary, and evidence summary on the report screen
+- HTML report preview/download for grounded analysis reports
 - New-data prediction
 - Workspace/history reuse
 - Share/API-style flow
+- Reusable prediction API documentation for shared models
 
 ## Agentic AutoML Upgrade Status
 
@@ -92,6 +94,11 @@ enterprise expansion. The priority is SaaS readiness:
 - project save/reopen/re-run flow
 - basic usage limits
 - clear explanation of what ModelMate does and does not do
+
+Grounded reports and reusable prediction APIs are important because they turn a
+one-time model comparison screen into a SaaS-style output that can be saved,
+shared, reviewed, and reused. See `docs/prediction-api.md` for the current
+shared prediction API contract and limitations.
 
 Large enterprise features are intentionally out of scope for now:
 

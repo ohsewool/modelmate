@@ -37,6 +37,11 @@
   .decision-grid{{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}}
   .decision-grid div{{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px}}
   .decision-grid ul{{margin:8px 0 0 16px;font-size:.8rem;color:#475569}}
+  .evidence-grid{{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}}
+  .evidence-item{{background:white;border:1px solid #e2e8f0;border-radius:12px;padding:12px}}
+  .evidence-item b{{display:block;font-size:.74rem;color:#64748b;margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}}
+  .evidence-item span{{font-size:.88rem;color:#0f172a;font-weight:700}}
+  .limit-box{{background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:14px 16px;color:#9a3412;font-size:.84rem;margin-top:14px}}
   .footer{{margin-top:40px;color:#94a3b8;font-size:.75rem;text-align:center;
             border-top:1px solid #e2e8f0;padding-top:20px}}
   .no-print{{text-align:center;margin-bottom:20px}}
@@ -82,6 +87,24 @@
 
 <h2>🏆 모델 비교 (3-fold CV)</h2>
 <table>{thead}{tbody}</table>
+
+<h2>🧾 분석 근거 요약</h2>
+<div class="evidence-grid">
+  <div class="evidence-item"><b>Analysis goal</b><span>{STATE.get('target_col','—')} 예측</span></div>
+  <div class="evidence-item"><b>Recommended target</b><span>{STATE.get('target_col','—')}</span></div>
+  <div class="evidence-item"><b>Task type</b><span>{'Regression' if is_reg else 'Classification'}</span></div>
+  <div class="evidence-item"><b>Best model</b><span>{name}</span></div>
+  <div class="evidence-item"><b>Evaluation metric</b><span>{'R²' if is_reg else 'ROC-AUC'}: {best_score if best_score is not None else '—'}</span></div>
+  <div class="evidence-item"><b>Metric threshold status</b><span>{'검토 권장' if best_score is None else '확인됨'}</span></div>
+  <div class="evidence-item"><b>Data quality warnings</b><span>{len(insights.get('risk_notes', []))}개 주의</span></div>
+  <div class="evidence-item"><b>Leakage warnings</b><span>{len(STATE.get('auto_drop_cols', []))}개 제외/검토</span></div>
+  <div class="evidence-item"><b>XAI / explanation summary</b><span>{top_feature or '설명 근거 제한'}</span></div>
+  <div class="evidence-item"><b>Recommended next action</b><span>{(insights.get('next_actions') or ['이유 보기와 새 데이터 예측 확인'])[0]}</span></div>
+</div>
+<div class="limit-box">
+  모델 성능과 설명은 업로드된 데이터와 현재 검증 결과에 기반합니다.<br>
+  Model performance and explanations are based on the uploaded dataset and the current validation results.
+</div>
 
 {opt_html}
 {fi_html}

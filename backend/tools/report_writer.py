@@ -10,7 +10,8 @@ from typing import Any
 from backend.tools.report_center import build_temporary_report_id
 
 
-LIMITATION_TEXT = "모델 성능과 설명은 입력 데이터와 현재 검증 결과에 기반합니다."
+LIMITATION_TEXT = "모델 성능과 설명은 업로드된 데이터와 현재 검증 결과에 기반합니다."
+LIMITATION_TEXT_EN = "Model performance and explanations are based on the uploaded dataset and the current validation results."
 
 
 def _bundle(arguments: dict[str, Any]) -> dict[str, Any]:
@@ -44,6 +45,8 @@ def report_writer_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     limitations = list(evidence.get("limitations") or [])
     if LIMITATION_TEXT not in limitations:
         limitations.append(LIMITATION_TEXT)
+    if LIMITATION_TEXT_EN not in limitations:
+        limitations.append(LIMITATION_TEXT_EN)
 
     title = f"ModelMate 분석 보고서 - {_text(target, '타깃 미정')}"
     summary = f"{_text(target, '선택된 타깃')} 예측을 위해 {_text(task, '작업 유형 미정')} 모델 결과를 evidence 기반으로 정리했습니다."
