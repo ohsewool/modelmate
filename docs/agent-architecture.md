@@ -1,6 +1,6 @@
 # ModelMate Agent Architecture
 
-Current status: PR-11 deployment readiness advice. This document describes the target
+Current status: PR-12 human review and resume skeleton. This document describes the target
 architecture, but the production app is still the existing ModelMate AutoML
 workflow. ModelMate is being extended toward Agentic AutoML.
 
@@ -244,10 +244,26 @@ model, modifies prediction APIs, changes storage, or calls an LLM. PR-11 also
 adds a minimal Deployment Center placeholder and `docs/deployment-center.md` for
 future model stage and deployment history work.
 
+## PR-12 Human Review And Resume Skeleton
+
+PR-12 adds review and resume contracts for risky decisions. It introduces:
+
+- `ReviewItem` and `ResumeRecommendation` schemas
+- `review_queue.py` helpers that turn risky decisions into review items
+- `resume.py` helpers that recommend the next action after reviewer resolution
+- `docs/demo-agentic-automl.md` for the current demo story
+- README cleanup with an honest claim about current limits
+
+Review items can be created for situations such as weak validation, blocked
+deployment advice, high leakage risk, unavailable explanation, or other warning
+observations. Resume recommendations are only placeholders: they do not rerun
+AutoML, deploy models, call an LLM, or start async workers.
+
 ## Next Connection
 
-PR-12 should add human review and resume-flow contracts. Actual production
-deployment automation, human review queues, resume flows, and a completed real
-agent runtime are still outside PR-11.
+The first Agentic AutoML upgrade pass is now documented through PR-12. Future
+work can add persistent trace storage, real planner execution, review UI, model
+lifecycle management, and deployment governance. A completed real agent runtime
+is still outside PR-12.
 
 It still should not call a real LLM.

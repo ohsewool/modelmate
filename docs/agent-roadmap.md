@@ -1,6 +1,6 @@
 # ModelMate Agent Upgrade Roadmap
 
-Current status: PR-11 deployment readiness advice. ModelMate is being extended toward
+Current status: PR-12 human review and resume skeleton. ModelMate is being extended toward
 Agentic AutoML, but it is not yet a completed real AI agent.
 
 | PR | Goal | Files | Done Criteria | Test Method | Risks | Next PR |
@@ -16,25 +16,25 @@ Agentic AutoML, but it is not yet a completed real AI agent.
 | PR-09 | Wrap XAI evidence as a tool and create evidence bundle structure | `backend/tools/shap_explainer.py`, `backend/tools/evidence_bundle.py`, `backend/schemas/agent/evidence.py`, `backend/tools/registry.py` | Explanation observations and evidence bundle are JSON-compatible | Direct explainer test, training benchmark, upload QA, compile backend | Explanations may fall back to approximate feature importance | PR-10 adds validation and report writer |
 | PR-10 | Add validation and report writing tools | `backend/tools/validation.py`, `backend/tools/report_writer.py`, `backend/tools/report_center.py`, `backend/schemas/agent/report.py`, `docs/report-center.md` | Report draft is grounded in evidence and missing evidence is disclosed | Direct validation/report tests, upload QA, training benchmark, compile backend | Report wording can still be too generic when evidence is sparse | PR-11 adds deployment checks |
 | PR-11 | Add deployment readiness advice | `backend/tools/deployment_check.py`, `backend/tools/deployment_center.py`, `backend/schemas/agent/deployment.py`, `docs/deployment-center.md` | Deployment advice returns deploy/review/hold/blocked without deploying | Direct deployment tool tests, upload QA, training benchmark, compile backend | Advice is deterministic and not a production approval system | PR-12 adds human review/resume contracts |
-| PR-12 | Add human review and resume contracts | review schema, resume state notes | Risky decisions can be paused and resumed later | Contract tests | Review workflow complexity | PR-13 strengthens SaaS UX |
-| PR-13 | Polish workspace/share/API around agent runs | workspace, share/API UI | Dataset-run-model-report links are clear | Login/share/API QA | Permission policy gaps | Stabilization |
+| PR-12 | Add human review and resume contracts | `backend/schemas/agent/review.py`, `backend/agents/review_queue.py`, `backend/agents/resume.py`, `README.md`, `docs/demo-agentic-automl.md` | Risky decisions can become review items and receive resume recommendations | Contract tests, upload QA, training benchmark, compile backend | Skeleton is not persistent and does not rerun work | Future stabilization |
+| Future | Polish workspace/share/API around agent runs | workspace, share/API UI | Dataset-run-model-report links are clear | Login/share/API QA | Permission policy gaps | Stabilization |
 
-## Current PR-11 Notes
+## Current PR-12 Notes
 
-PR-11 consumes PR-10 report output:
+PR-12 completes the first skeleton pass:
 
 ```text
-evidence bundle -> validation_tool -> report_writer_tool -> deployment_check_tool -> deployment advice
+agent decision -> needs_review / hold / blocked -> review item -> reviewer resolution -> resume recommendation
 ```
 
-`deployment_check_tool` reads validation status, report status, metrics,
-threshold status, leakage warnings, data-quality warnings, explanation
-availability, limitations, and intended use. It returns a deterministic
-deployment advice decision, not an actual deployment.
+`review_queue.py` can turn risky decision or observation payloads into
+JSON-compatible review items. `resume.py` can mark a review item as resolved and
+recommend the next action. This is a skeleton only: there is no DB queue, async
+worker, actual retraining, actual deployment, or LLM planner call.
 
-PR-11 does not implement production deployment, prediction API changes, model
-storage migration, frontend Deployment Center, human review queues, resume flow,
-PDF export, or a completed real AI agent.
+README and `docs/demo-agentic-automl.md` describe the current state honestly:
+ModelMate is being extended toward real tool-calling Agentic AutoML, but it is
+not yet a fully autonomous AI data scientist.
 
 ## Validation
 
@@ -153,5 +153,18 @@ print(deployment_check_tool({
     "validation_result": validation,
     "report_result": report,
 })["deployment_status"])
+PY
+```
+
+For direct review/resume skeleton verification:
+
+```bash
+python - <<'PY'
+from backend.agents.review_queue import review_item_from_decision
+from backend.agents.resume import resolve_review_item, build_resume_recommendation
+decision = {"action": "blocked", "rationale": "High leakage risk"}
+item = review_item_from_decision(decision, {"severity": "error"}, analysis_run_id="demo", step_id="s1")
+resolved = resolve_review_item(item, "fix_required", "Remove leakage column")
+print(item["status"], build_resume_recommendation(resolved)["status"])
 PY
 ```

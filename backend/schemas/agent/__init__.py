@@ -24,6 +24,7 @@ from .decision import DecisionPayload
 from .deployment import DeploymentDecision, DeploymentRecordPlaceholder
 from .evidence import EvidenceBundle
 from .report import GroundedReport, ReportSection
+from .review import ResumeRecommendation, ReviewItem
 
 __all__ = [
     "AgentDecision",
@@ -46,4 +47,6 @@ __all__ = [
     "EvidenceBundle",
     "GroundedReport",
     "ReportSection",
+    "ResumeRecommendation",
+    "ReviewItem",
 ]
