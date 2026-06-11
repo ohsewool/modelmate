@@ -1,6 +1,6 @@
 # ModelMate Agent Architecture
 
-Current status: PR-07 AutoML training adapter. This document describes the target
+Current status: PR-08 evaluation tool and retry decision placeholder. This document describes the target
 architecture, but the production app is still the existing ModelMate AutoML
 workflow. ModelMate is being extended toward Agentic AutoML.
 
@@ -151,9 +151,31 @@ returns a JSON-compatible wrapper around the existing model comparison result:
 The adapter is still not a real LLM agent. It does not add evaluation retry
 policy, SHAP, final report generation, or deployment checks.
 
+## PR-08 Evaluation Tool
+
+PR-08 adds `evaluation_tool`, a deterministic metric-threshold evaluator for
+`automl_training_tool` output. It does not run training again. It reads the
+leaderboard and best metric, then returns:
+
+- evaluated metric and value
+- pass/warning/fail/unknown threshold status
+- model quality: strong, acceptable, weak, invalid, or unknown
+- warnings and failure reasons
+- an observation payload
+- a decision placeholder
+- a retry recommendation placeholder that is not executed in PR-08
+
+Default thresholds are intentionally moderate:
+
+- classification: pass at 0.80, warning at 0.65
+- regression R2: pass at 0.70, warning at 0.40
+
+Lower-is-better metrics such as RMSE and MAE are supported as warning/unknown
+gates when provided, but PR-08 does not implement advanced evaluation policy.
+
 ## Next Connection
 
-PR-08 should add an `evaluation_tool` and metric-threshold decision policy so
-training results can branch into accept, retry, or human review.
+PR-09 should add evidence bundles for explanation/report tools. SHAP, final
+report generation, and deployment checks are still outside this PR.
 
 It still should not call a real LLM.

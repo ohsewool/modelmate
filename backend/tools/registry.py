@@ -11,6 +11,7 @@ from typing import Any
 from backend.tools.automl_training import automl_training_tool
 from backend.tools.base import ToolHandler
 from backend.tools.data_profile import data_profile_tool
+from backend.tools.evaluation import evaluation_tool
 from backend.tools.leakage_check import leakage_check_tool
 from backend.tools.schema_validation import schema_validation_tool
 from backend.tools.target_recommendation import target_recommendation_tool
@@ -93,6 +94,12 @@ def build_pr01_mock_registry() -> ToolRegistry:
             {"summary": "Calls existing target setup and CV training when dataset input is provided.", "risk": "adapter"},
             automl_training_tool,
         ),
+        (
+            "evaluation_tool",
+            "Deterministic metric threshold evaluator for AutoML results",
+            {"summary": "Evaluates training metrics and returns a decision placeholder.", "risk": "deterministic"},
+            evaluation_tool,
+        ),
     ]:
         registry.register(
             ToolDefinition(
@@ -109,6 +116,8 @@ def build_pr01_mock_registry() -> ToolRegistry:
                         "task_type": {"type": "string"},
                         "metric_preference": {"type": "string"},
                         "training_budget": {"type": "object"},
+                        "automl_training_result": {"type": "object"},
+                        "threshold_config": {"type": "object"},
                     },
                 },
                 output_schema={
@@ -119,6 +128,8 @@ def build_pr01_mock_registry() -> ToolRegistry:
                         "success": {"type": "boolean"},
                         "best_model": {"type": "object"},
                         "leaderboard_summary": {"type": "array"},
+                        "threshold_status": {"type": "string"},
+                        "decision": {"type": "object"},
                         "recommended_next_action": {"type": "string"},
                     },
                 },
