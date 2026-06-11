@@ -11,6 +11,13 @@ from .contracts import (
     AgentRunDraft,
     AgentToolCall,
 )
+from .trace import (
+    AnalysisRunSchema,
+    AnalysisStepSchema,
+    DecisionSchema,
+    ObservationSchema,
+    ToolCallSchema,
+)
 
 __all__ = [
     "AgentDecision",
@@ -19,4 +26,9 @@ __all__ = [
     "AgentPlanStep",
     "AgentRunDraft",
     "AgentToolCall",
+    "AnalysisRunSchema",
+    "AnalysisStepSchema",
+    "DecisionSchema",
+    "ObservationSchema",
+    "ToolCallSchema",
 ]
