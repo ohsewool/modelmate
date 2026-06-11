@@ -1,104 +1,108 @@
-# ModelMate Agentic AutoML Demo Script
+# ModelMate Demo Scenario
 
-Current status: PR-12 skeleton demo.
+ModelMate turns CSV data into explainable predictions, grounded reports, and
+reusable prediction APIs through a guided AI analyst workflow.
 
-This script explains the current demo flow honestly. ModelMate is being extended
-toward a real tool-calling Agentic AutoML platform, but it is not yet a fully
-autonomous AI data scientist.
+ModelMate는 CSV 데이터를 설명 가능한 예측, 근거 기반 보고서, 재사용 가능한
+예측 API로 바꿔주는 가이드형 AI 분석 서비스입니다.
 
-## 1. User Goal
+Current status: Commercialization PR-01 demo scenario. The Agentic AutoML
+architecture exists as tool, evidence, decision, review, and resume skeletons,
+but ModelMate should not be described as a fully autonomous AI data scientist.
 
-Start with a plain analysis goal, for example:
+## Recommended Demo Datasets
 
-```text
-Predict diabetes risk from this CSV and explain the strongest evidence.
-```
+Use arbitrary CSV upload as the main story. Use these synthetic files only for
+stable presentation rehearsal:
 
-## 2. Dataset Input
+| File | Recommended Target | Task Type | Demo Message |
+| --- | --- | --- | --- |
+| `sample_data/customer_churn_demo.csv` | `churn` | classification | Customer churn prediction from usage and support signals |
+| `sample_data/manufacturing_quality_demo.csv` | `defect` | classification | Manufacturing defect prediction from machine signals |
+| `sample_data/public_bike_signup_demo.csv` | `signup_count` | regression | Public bike signup demand prediction |
 
-Upload a CSV through the existing ModelMate flow. The current production demo
-still starts from the normal upload and AutoML screens.
+## 3-Minute Demo Flow
 
-## 3. Structured Plan
+1. Open ModelMate and explain the product in one sentence.
+   - Message: CSV upload -> data check -> target recommendation -> model
+     comparison -> explanation/report -> prediction API.
 
-The agent skeleton can represent a structured plan:
+2. Login and open the CSV upload screen.
+   - Click: `시작하기` or login button.
+   - Show: ModelMate starts from a normal CSV workflow, not a fixed sample-only
+     demo.
 
-```text
-profile data -> validate schema -> recommend target -> check leakage -> train -> evaluate -> explain -> report -> deployment advice
-```
+3. Upload `customer_churn_demo.csv`.
+   - Show: row count, column count, missing values, domain/purpose judgment.
+   - Explain: ModelMate first checks whether the data can support prediction.
 
-## 4. Tool Registry
+4. Confirm the recommended target.
+   - Expected target: `churn`.
+   - Show: ID-like columns are not useful prediction targets and may be excluded
+     from features.
 
-Show that the system now has named tools:
+5. Run model comparison.
+   - Show: several models are compared under one task type.
+   - Explain: the model is chosen from measured results, not from a hard-coded
+     answer.
 
-- data profile
-- schema validation
-- target recommendation
-- leakage check
-- AutoML training adapter
-- evaluation
-- XAI evidence
-- validation
-- grounded report writer
-- deployment advice
+6. Open result summary, XAI/reason view, and report/share flow.
+   - Show: performance, selected model, top evidence, limitations, and
+     prediction/share API path.
+   - Closing message: ModelMate gives a repeatable predictive analysis result
+     that can be reused after the first CSV upload.
 
-## 5. Data Profiling And Schema Validation
+## 5-Minute Demo Flow
 
-Explain that the first safety gate checks whether the CSV is tabular,
-predictive, and usable before training.
+Use the same first six steps, then add:
 
-## 6. Target Recommendation And Leakage Check
+7. Show target and excluded-column rationale.
+   - Mention: ID, name, email, result-like, and high-cardinality columns are
+     treated carefully because they can distort prediction.
 
-Explain that ModelMate recommends a target and flags suspicious columns such as
-IDs, labels, result-like columns, or high-cardinality identifiers.
+8. Show report/XAI limitations.
+   - Mention: if explanation evidence is limited, ModelMate records that
+     limitation instead of pretending certainty.
 
-## 7. AutoML Training Adapter
+9. Show workspace/history reuse.
+   - Click: history or workspace screen.
+   - Show: the user can reopen previous work rather than repeating every step.
 
-Explain that the existing AutoML pipeline is preserved and wrapped as a tool
-adapter. This protects the working demo while preparing for agent execution.
+10. Show prediction/API-style reuse.
+    - Click: prediction or share/API screen.
+    - Explain: the commercial value is not only "model recommendation"; it is
+      the ability to reuse the result for later predictions.
 
-## 8. Evaluation Decision
+11. Briefly explain Agentic AutoML direction.
+    - Current implementation: tool registry, deterministic checks, evidence
+      bundle, grounded report, deployment advice, human review/resume skeleton.
+    - Honest limit: no real LLM planner runtime, no automatic production
+      deployment, no automatic retraining loop.
 
-Show that the model result is not only summarized. It becomes an observation
-and decision signal such as continue, retry recommended, hold, or needs review.
+## Backup Dataset Switch
 
-## 9. XAI And Evidence Bundle
+If the churn demo behaves unexpectedly:
 
-Explain that explanation evidence is collected from SHAP or fallback feature
-importance when possible. If explanation is unavailable, the system records the
-limitation instead of pretending.
+1. Use `manufacturing_quality_demo.csv`.
+2. Expected target: `defect`.
+3. Emphasize defect prediction and data-quality judgment.
 
-## 10. Grounded Report
+If a regression example is needed:
 
-The report writer creates a Markdown draft from the evidence bundle. It must
-include metrics, target, leakage warnings, data quality warnings, XAI summary,
-limitations, and next action.
+1. Use `public_bike_signup_demo.csv`.
+2. Expected target: `signup_count`.
+3. Emphasize demand prediction and public-service data use.
 
-## 11. Deployment Check
+## What Not To Claim
 
-The deployment check returns advice only:
+- Do not say ModelMate replaces DataRobot, Vertex AI, Azure ML, or Dataiku.
+- Do not say ModelMate is already a fully autonomous real AI agent.
+- Do not say the prediction is guaranteed correct.
+- Do not say the API key/share flow is production-grade secret management unless
+  that production security layer is implemented.
 
-- deploy recommended
-- needs review
-- hold
-- blocked
+## One-Sentence Closing
 
-It does not actually deploy a model.
-
-## 12. Human Review And Resume Skeleton
-
-If a decision is risky, PR-12 can create a review item and recommend how to
-resume after a reviewer resolution.
-
-## 13. Current Limits
-
-- No real LLM planner is connected.
-- No automatic retraining loop is implemented.
-- No automatic production deployment is implemented.
-- No persistent human review queue is implemented.
-- Existing AutoML screens remain the main demo experience.
-
-## 14. Next Plan
-
-Future work can connect the skeleton to a real planner, persistent trace store,
-review UI, model lifecycle management, and safer deployment governance.
+ModelMate is a guided CSV predictive analysis SaaS MVP: it helps a user turn a
+CSV into a prediction target, model comparison, explanation, grounded report,
+and reusable prediction flow.

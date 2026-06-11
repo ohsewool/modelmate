@@ -1,0 +1,16 @@
+batch_id,machine_temp,vibration,pressure,humidity,operator_shift,defect
+B001,72.4,0.21,101.3,41,day,no
+B002,81.7,0.39,109.1,46,night,yes
+B003,74.2,0.24,102.7,43,day,no
+B004,86.1,0.47,114.5,52,night,yes
+B005,70.8,0.18,99.4,39,day,no
+B006,83.5,0.43,111.0,49,night,yes
+B007,76.0,0.28,104.2,45,day,no
+B008,88.4,0.51,116.8,55,night,yes
+B009,73.1,0.22,100.9,42,day,no
+B010,80.2,0.36,108.2,48,night,yes
+B011,75.6,0.26,103.8,44,day,no
+B012,84.7,0.45,112.9,50,night,yes
+B013,71.9,0.20,100.1,40,day,no
+B014,79.4,0.33,106.7,47,night,no
+B015,87.0,0.49,115.2,53,night,yes

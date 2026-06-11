@@ -1,7 +1,10 @@
 # ModelMate
 
-ModelMate is a graduation-project AutoML web service for guided CSV predictive
-analysis.
+ModelMate turns CSV data into explainable predictions, grounded reports, and
+reusable prediction APIs through a guided AI analyst workflow.
+
+ModelMate는 CSV 데이터를 설명 가능한 예측, 근거 기반 보고서, 재사용 가능한
+예측 API로 바꿔주는 가이드형 AI 분석 서비스입니다.
 
 It helps a user upload a CSV, inspect whether the data is usable, choose a
 prediction target, compare models, understand the result, and reuse the outcome
@@ -136,6 +139,8 @@ python scripts/run_full_qa.py --skip-slow
 
 ## Demo Scenario
 
+Recommended demo files live in `sample_data/`.
+
 1. Login
 2. Upload a CSV
 3. Check dataset judgment and target recommendation
@@ -143,9 +148,12 @@ python scripts/run_full_qa.py --skip-slow
 5. Review selected model and performance
 6. Open report/XAI/reason view
 7. Check workspace history or share/API flow
-8. Explain the Agentic AutoML architecture direction:
+8. Explain the Agentic AutoML architecture direction honestly:
    tool registry, evidence bundle, grounded report, deployment advice, and
    human review/resume skeleton
+
+Detailed 3-minute and 5-minute demo flows are documented in
+`docs/demo-agentic-automl.md`.
 
 ## Admin Account
 

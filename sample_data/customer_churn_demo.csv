@@ -1,0 +1,16 @@
+customer_id,tenure_months,monthly_fee,support_tickets,contract_type,last_login_days,churn
+CUST001,3,29.9,4,monthly,18,yes
+CUST002,24,49.0,1,annual,2,no
+CUST003,7,39.5,3,monthly,12,yes
+CUST004,18,59.0,0,annual,1,no
+CUST005,2,19.9,5,monthly,24,yes
+CUST006,36,79.0,1,annual,3,no
+CUST007,11,45.0,2,monthly,8,no
+CUST008,5,34.0,4,monthly,16,yes
+CUST009,27,69.0,0,annual,4,no
+CUST010,9,42.0,3,monthly,10,yes
+CUST011,15,52.0,1,annual,5,no
+CUST012,4,31.0,5,monthly,21,yes
+CUST013,30,75.0,1,annual,2,no
+CUST014,13,47.0,2,monthly,7,no
+CUST015,6,36.0,4,monthly,15,yes

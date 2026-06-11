@@ -6,12 +6,15 @@ import { Badge } from '../components/ui/badge'
 import ValidationProof from '../components/ValidationProof'
 
 const steps = [
-  ['CSV 업로드', '파일을 넣으면 데이터 형태를 먼저 확인합니다.'],
-  ['모델 선택', '여러 모델을 비교하고 가장 좋은 결과를 고릅니다.'],
-  ['결과 설명', '점수와 예측 이유를 한 화면에서 확인합니다.'],
+  ['CSV 업로드', '분석할 CSV를 올리고 데이터 구조를 확인합니다.'],
+  ['데이터 점검', '결측값, 식별자, 학습 가능성을 먼저 살펴봅니다.'],
+  ['타깃 추천', '무엇을 예측하면 좋은지 후보와 이유를 제안합니다.'],
+  ['모델 비교', '여러 모델을 같은 기준으로 비교하고 가장 적합한 모델을 고릅니다.'],
+  ['설명/보고서', '성능, 주요 변수, 한계까지 근거 기반으로 정리합니다.'],
+  ['예측 API', '학습 결과를 새 데이터 예측과 API 형태로 재사용합니다.'],
 ]
 
-const examples = ['이탈 예측', '매출 예측', '불량 감지', '수요 예측']
+const examples = ['이탈 예측', '수요 예측', '불량 감지', '가입 건수 예측']
 
 export default function Home() {
   const nav = useNavigate()
@@ -54,7 +57,7 @@ export default function Home() {
           <div style={{ width: 'min(1100px, 100%)', margin: '0 auto' }}>
             <div className="home-hero-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 0.92fr) minmax(360px, 1fr)', gap: 28, alignItems: 'center' }}>
               <div>
-                <Badge variant="secondary" style={{ marginBottom: 18 }}>CSV로 만드는 예측 AI</Badge>
+                <Badge variant="secondary" style={{ marginBottom: 18 }}>Guided CSV predictive analysis</Badge>
                 <h1 style={{
                   margin: 0, fontSize: 'clamp(48px, 8vw, 92px)', lineHeight: 0.96,
                   fontWeight: 950, letterSpacing: 0, color: 'var(--text)',
@@ -62,10 +65,10 @@ export default function Home() {
                   ModelMate
                 </h1>
                 <p style={{ margin: '18px 0 0', fontSize: 22, lineHeight: 1.35, color: 'var(--text)', fontWeight: 800 }}>
-                  데이터만 넣으면 모델 비교부터 예측 이유까지.
+                  CSV 데이터를 설명 가능한 예측, 근거 기반 보고서, 재사용 가능한 예측 API로.
                 </p>
                 <p style={{ margin: '12px 0 26px', fontSize: 15, lineHeight: 1.7, color: 'var(--text-2)', maxWidth: 520 }}>
-                  복잡한 설정 없이 CSV를 업로드하고, 가장 잘 맞는 예측 모델과 결과 설명을 바로 확인합니다.
+                  ModelMate는 CSV 업로드부터 데이터 점검, 타깃 추천, 모델 비교, 설명/보고서, 예측 API까지 이어지는 가이드형 AI 분석 서비스입니다.
                 </p>
 
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 22 }}>
@@ -141,8 +144,8 @@ function ProductPreview() {
       <div style={{ padding: 18, display: 'grid', gap: 14 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
           <div>
-            <p style={{ margin: '0 0 6px', fontSize: 12, color: '#2563eb', fontWeight: 850 }}>결과 요약</p>
-            <h2 style={{ margin: 0, fontSize: 22, fontWeight: 900 }}>LightGBM 선택</h2>
+            <p style={{ margin: '0 0 6px', fontSize: 12, color: '#2563eb', fontWeight: 850 }}>분석 결과</p>
+            <h2 style={{ margin: 0, fontSize: 22, fontWeight: 900 }}>예측 모델 준비</h2>
           </div>
           <Badge variant="success">완료</Badge>
         </div>
@@ -156,7 +159,7 @@ function ProductPreview() {
         <div className="card-elevated" style={{ padding: 14 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
             <BarChart3 size={16} color="#2563eb" />
-            <strong style={{ fontSize: 14 }}>중요 정보 순위</strong>
+            <strong style={{ fontSize: 14 }}>근거 기반 설명</strong>
           </div>
           {[
             ['최근 이용 횟수', 88],
@@ -173,10 +176,10 @@ function ProductPreview() {
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-          <ActionPill icon={<Sparkles size={15} />} text="AI 자동 실행" />
-          <ActionPill icon={<ShieldCheck size={15} />} text="검증 흐름" />
-          <ActionPill icon={<CheckCircle2 size={15} />} text="이유 보기" />
-          <ActionPill icon={<Play size={15} />} text="새 예측" />
+          <ActionPill icon={<Sparkles size={15} />} text="타깃 추천" />
+          <ActionPill icon={<ShieldCheck size={15} />} text="데이터 점검" />
+          <ActionPill icon={<CheckCircle2 size={15} />} text="보고서 생성" />
+          <ActionPill icon={<Play size={15} />} text="예측 API" />
         </div>
       </div>
     </div>
