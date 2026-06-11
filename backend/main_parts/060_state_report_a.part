@@ -18,6 +18,13 @@ async def get_state():
         "gemini_error":  _GEMINI_ERROR,
         "gemini_call_error": _GEMINI_CALL_ERROR,
         "col_labels":    STATE.get("col_labels", {}),
+        "analysis_status": STATE.get("analysis_status") or analysis_status_payload(
+            "created",
+            "not_started",
+            "아직 분석 실행 상태가 없습니다.",
+            recommended_next_action="CSV 업로드부터 시작하세요.",
+        ),
+        "usage_limits": MVP_USAGE_LIMITS,
     }
 
 # ── HTML 리포트 (PDF 인쇄 지원) ──────────────────────────

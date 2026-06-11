@@ -2,9 +2,23 @@
 async def set_target(body: dict):
     df = STATE.get("df")
     if df is None:
-        raise HTTPException(400, "업로드 원본이 없습니다. 서버 재시작 또는 배포 후에는 같은 CSV를 다시 올려주세요.")
+        raise HTTPException(400, failure_detail(
+            "target_recommendation",
+            "업로드 원본이 없습니다. 서버 재시작 또는 배포 후에는 같은 CSV를 다시 올려주세요.",
+            "STATE['df'] is missing",
+            retry_possible=True,
+            recommended_next_action="같은 CSV를 다시 업로드한 뒤 타깃을 선택하세요.",
+        ))
     tgt = body["target_col"]
-    if tgt not in df.columns: raise HTTPException(400, f"컬럼 없음: {tgt}")
+    if tgt not in df.columns:
+        raise HTTPException(400, failure_detail(
+            "target_recommendation",
+            f"선택한 타깃 컬럼을 찾을 수 없습니다: {tgt}",
+            f"target column not found: {tgt}",
+            retry_possible=True,
+            recommended_next_action="업로드 화면에서 실제 존재하는 컬럼을 다시 선택하세요.",
+        ))
+    set_analysis_status("running", "target_recommendation", f"{tgt} 컬럼을 타깃으로 사용할 수 있는지 준비하는 중입니다.")
 
     # 제외 컬럼 처리
     drop_cols = [c for c in body.get("drop_cols", []) if c in df.columns and c != tgt]
@@ -29,6 +43,12 @@ async def set_target(body: dict):
         "target_encoder": target_le,
         "n_unique_target": n_unique,
     })
+    set_analysis_status(
+        "succeeded",
+        "target_recommendation",
+        f"{tgt} 타깃 설정과 학습 데이터 준비가 완료되었습니다.",
+        recommended_next_action="모델 고르기 화면에서 모델 비교를 실행하세요.",
+    )
 
     # 상관관계 (수치형 컬럼만)
     num_df = X.copy(); num_df[tgt] = y
@@ -81,5 +101,6 @@ async def set_target(body: dict):
         "n_unique_target": n_unique,
         "stats": df.describe(include="all").fillna(0).round(3).to_dict(),
         "explanations": preprocess_explanations(task_type, n_unique, len(X.columns)),
+        "analysis_status": STATE.get("analysis_status"),
     }
 

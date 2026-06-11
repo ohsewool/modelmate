@@ -100,6 +100,10 @@ one-time model comparison screen into a SaaS-style output that can be saved,
 shared, reviewed, and reused. See `docs/prediction-api.md` for the current
 shared prediction API contract and limitations.
 
+Operational readiness is handled at MVP level: status tracking, friendly
+failure recovery messages, and demo guardrails for file size, row count, column
+count, and training budget. See `docs/operational-readiness.md`.
+
 Large enterprise features are intentionally out of scope for now:
 
 - enterprise model registry

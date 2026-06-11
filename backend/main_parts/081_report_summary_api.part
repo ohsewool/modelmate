@@ -63,6 +63,13 @@ async def report_summary():
 
     return {
         "status": "ok",
+        "analysis_status": STATE.get("analysis_status") or analysis_status_payload(
+            "succeeded" if model is not None else "running",
+            "report_summary",
+            "결과 요약을 생성했습니다." if model is not None else "모델 결과가 아직 준비되지 않았습니다.",
+            recommended_next_action="HTML report export 또는 prediction API 공유를 확인하세요.",
+        ),
+        "usage_limits": MVP_USAGE_LIMITS,
         "generated_at": datetime.now().isoformat(timespec="seconds"),
         "readiness": readiness,
         "readiness_score": round(completed / total, 2),

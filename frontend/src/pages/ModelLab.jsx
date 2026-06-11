@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Bar, BarChart, Cell, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import api from '../api'
 import KPICard from '../components/KPICard'
+import StatusRecoveryPanel from '../components/StatusRecoveryPanel'
 
 const ttStyle = {
   background: '#ffffff', border: '1px solid var(--border)',
@@ -25,11 +26,15 @@ export default function ModelLab() {
   const [optRes, setOptRes] = useState(null)
   const [nTrials, setNTrials] = useState(20)
   const [loading, setLoading] = useState('')
+  const [operationalStatus, setOperationalStatus] = useState(null)
+  const [usageLimits, setUsageLimits] = useState(null)
   const nav = useNavigate()
 
   useEffect(() => {
     api.get('/state').then(r => {
       setState(r.data)
+      setOperationalStatus(r.data.analysis_status || null)
+      setUsageLimits(r.data.usage_limits || null)
       if (r.data.cv_results) setResult({ results: r.data.cv_results, best_model: r.data.best_model })
       if (r.data.optuna_result) setOptRes(r.data.optuna_result)
     }).catch(() => {})
@@ -40,10 +45,22 @@ export default function ModelLab() {
     try {
       const { data } = await api.post('/run-cv')
       setResult(data)
+      setOperationalStatus(data.analysis_status || null)
       const fresh = await api.get('/state')
       setState(fresh.data)
+      setUsageLimits(fresh.data.usage_limits || null)
     } catch (e) {
-      alert(e.response?.data?.detail || e.message)
+      const detail = e.response?.data?.detail
+      if (detail?.user_friendly_message) {
+        setOperationalStatus({
+          status: 'failed',
+          current_step: detail.failed_stage,
+          progress_message: detail.user_friendly_message,
+          error_message: detail.technical_message,
+          recommended_next_action: detail.recommended_next_action,
+        })
+      }
+      alert(detail?.user_friendly_message || detail || e.message)
     } finally {
       setLoading('')
     }
@@ -107,6 +124,8 @@ export default function ModelLab() {
           같은 데이터로 여러 모델을 시험하고 가장 좋은 모델을 보여줍니다.
         </p>
       </section>
+
+      <StatusRecoveryPanel status={operationalStatus} limits={usageLimits} compact />
 
       <div className="card" style={{ marginBottom: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'flex-start' }}>

@@ -1,7 +1,15 @@
 @app.post("/api/run-cv")
 async def run_cv(user=Depends(get_current_user)):
     X, y = STATE.get("X"), STATE.get("y")
-    if X is None: raise HTTPException(400, "데이터 없음")
+    set_analysis_status("running", "automl_training", "여러 모델을 같은 기준으로 학습하고 비교하는 중입니다.")
+    if X is None:
+        raise HTTPException(400, failure_detail(
+            "automl_training",
+            "모델 비교를 시작할 데이터가 없습니다.",
+            "STATE['X'] is missing",
+            retry_possible=True,
+            recommended_next_action="CSV 업로드와 타깃 설정을 먼저 완료한 뒤 모델 비교를 다시 실행하세요.",
+        ))
     task_type = STATE.get("task_type", "classification")
     if task_type == "regression":
         kf = make_cv_for_target(y, "regression")
@@ -16,7 +24,13 @@ async def run_cv(user=Depends(get_current_user)):
                 results.append(make_cv_failure(name, "regression", e))
         ok_results = [r for r in results if r.get("status") == "ok"]
         if not ok_results:
-            raise HTTPException(500, "All regression models failed")
+            raise HTTPException(500, failure_detail(
+                "automl_training",
+                "모든 회귀 모델 학습이 실패했습니다.",
+                "All regression models failed",
+                retry_possible=True,
+                recommended_next_action="타깃 컬럼의 결측값과 사용 가능한 숫자/범주형 컬럼을 확인한 뒤 다시 실행하세요.",
+            ))
         ok_results.sort(key=lambda x: x["r2"], reverse=True)
         results = ok_results + [r for r in results if r.get("status") != "ok"]
         best_name = ok_results[0]["model"]
@@ -32,6 +46,8 @@ async def run_cv(user=Depends(get_current_user)):
                         key=lambda x: x["importance"], reverse=True)
         target_info = infer_target_category(STATE.get("df"), STATE["target_col"])
         save_history({"timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                      "status": "succeeded",
+                      "current_step": "automl_training",
                       "data_shape": list(X.shape), "target": STATE["target_col"],
                       "best_model": best_name, "results": results, "optuna_applied": False,
                       "dataset_ref": STATE.get("current_dataset"),
@@ -41,7 +57,14 @@ async def run_cv(user=Depends(get_current_user)):
                       "dataset_domain": target_info.get("dataset_domain"),
                       "target_category": target_info.get("target_category"),
                       "task_type": "regression"}, user_id=user["sub"] if user else None)
+        set_analysis_status(
+            "succeeded",
+            "automl_training",
+            f"{best_name} 모델이 가장 좋은 회귀 결과로 선택되었습니다.",
+            recommended_next_action="결과 요약에서 성능, 신뢰도, 보고서 export를 확인하세요.",
+        )
         return {"results": results, "best_model": best_name,
+                "analysis_status": STATE.get("analysis_status"),
                 "feature_importance": fi, "task_type": "regression",
                 "explanations": cv_explanations(best_name, results, "regression"),
                 "final_r2":   round(float(r2_score(y, preds)), 4),
@@ -63,7 +86,13 @@ async def run_cv(user=Depends(get_current_user)):
             results.append(make_cv_failure(name, "classification", e))
     ok_results = [r for r in results if r.get("status") == "ok"]
     if not ok_results:
-        raise HTTPException(500, "모든 모델 학습 실패")
+        raise HTTPException(500, failure_detail(
+            "automl_training",
+            "모든 분류 모델 학습이 실패했습니다.",
+            "All classification models failed",
+            retry_possible=True,
+            recommended_next_action="타깃 값의 클래스 수, 결측값, 제외 컬럼 설정을 확인한 뒤 다시 실행하세요.",
+        ))
     ok_results.sort(key=lambda x: x["roc_auc"], reverse=True)
     results = ok_results + [r for r in results if r.get("status") != "ok"]
     best_name = ok_results[0]["model"]
@@ -79,7 +108,13 @@ async def run_cv(user=Depends(get_current_user)):
                 break
             except: continue
         else:
-            raise HTTPException(500, f"모델 학습 실패: {e}")
+            raise HTTPException(500, failure_detail(
+                "automl_training",
+                "선택 가능한 모델 학습이 모두 실패했습니다.",
+                str(e),
+                retry_possible=True,
+                recommended_next_action="다른 타깃 컬럼을 선택하거나 결측값/식별자 컬럼을 정리한 뒤 다시 실행하세요.",
+            ))
     STATE.update({"cv_results": results, "best_model_name": best_name,
                   "best_model": bm, "predictions": preds,
                   "optuna_result": None, "shap_values": None})
@@ -90,6 +125,8 @@ async def run_cv(user=Depends(get_current_user)):
                     key=lambda x: x["importance"], reverse=True)
     target_info = infer_target_category(STATE.get("df"), STATE["target_col"])
     save_history({"timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                  "status": "succeeded",
+                  "current_step": "automl_training",
                   "data_shape": list(X.shape), "target": STATE["target_col"],
                   "best_model": best_name, "results": results, "optuna_applied": False,
                   "dataset_ref": STATE.get("current_dataset"),
@@ -99,7 +136,14 @@ async def run_cv(user=Depends(get_current_user)):
                   "dataset_domain": target_info.get("dataset_domain"),
                   "target_category": target_info.get("target_category"),
                   "task_type": "classification"}, user_id=user["sub"] if user else None)
+    set_analysis_status(
+        "succeeded",
+        "automl_training",
+        f"{best_name} 모델이 가장 좋은 분류 결과로 선택되었습니다.",
+        recommended_next_action="결과 요약에서 신뢰도, evidence, report export를 확인하세요.",
+    )
     return {"results": results, "best_model": best_name,
+            "analysis_status": STATE.get("analysis_status"),
             "feature_importance": fi, "task_type": "classification",
             "explanations": cv_explanations(best_name, results, "classification"),
             "final_accuracy": round(float(accuracy_score(y, preds)), 4),

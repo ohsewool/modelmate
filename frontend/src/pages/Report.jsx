@@ -16,6 +16,7 @@ import ReportSidePanel from '../components/report/ReportSidePanel'
 import AnalysisTracePanel from '../components/report/AnalysisTracePanel'
 import TrustSummaryPanel from '../components/report/TrustSummaryPanel'
 import EvidenceSummaryPanel from '../components/report/EvidenceSummaryPanel'
+import StatusRecoveryPanel from '../components/StatusRecoveryPanel'
 
 const fmt = value => {
   if (value === null || value === undefined || value === '') return '-'
@@ -334,6 +335,12 @@ export default function Report() {
             </p>
           </div>
         )}
+
+        <StatusRecoveryPanel
+          status={summary.analysis_status}
+          limits={summary.usage_limits}
+          compact
+        />
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 14 }}>
           <MiniStat label="준비도" value={pct(summary.readiness_score)} tone="green" />

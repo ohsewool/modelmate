@@ -7,6 +7,7 @@ import DatasetQualityCard from '../components/upload/DatasetQualityCard'
 import ReanalysisNotice from '../components/upload/ReanalysisNotice'
 import UploadJudgmentBrief from '../components/upload/UploadJudgmentBrief'
 import UploadSidePanel from '../components/upload/UploadSidePanel'
+import StatusRecoveryPanel from '../components/StatusRecoveryPanel'
 import { clearUploadDraft, loadUploadDraft, saveUploadDraft } from '../uploadDraftStorage'
 
 export default function Upload() {
@@ -19,6 +20,8 @@ export default function Upload() {
   const [colLabels, setColLabels] = useState(() => draft.current?.colLabels || {})
   const [edaInfo, setEdaInfo] = useState(() => draft.current?.edaInfo || null)
   const [uploadError, setUploadError] = useState(null)
+  const [operationalStatus, setOperationalStatus] = useState(null)
+  const [usageLimits, setUsageLimits] = useState(null)
   const [targetError, setTargetError] = useState('')
   const [needsReupload, setNeedsReupload] = useState(false)
   const [sideTab, setSideTab] = useState('readiness')
@@ -34,6 +37,8 @@ export default function Upload() {
   useEffect(() => {
     if (!draft.current?.uploadInfo) return
     api.get('/state').then(r => {
+      setOperationalStatus(r.data?.analysis_status || null)
+      setUsageLimits(r.data?.usage_limits || null)
       if (!r.data?.has_data) {
         clearUploadState('이전 화면 정보가 남아 있었지만 서버에 실제 CSV가 없어 초기화했습니다. 같은 CSV를 다시 올려주세요.')
       }
@@ -60,6 +65,8 @@ export default function Upload() {
     fd.append('file', file)
     try {
       const { data } = await api.post('/upload', fd)
+      setOperationalStatus(data.analysis_status || null)
+      setUsageLimits(data.usage_guardrails?.limits || null)
       const reuseTarget = reanalysisItem?.target_col || reanalysisItem?.target
       const canReuseTarget = reuseTarget && data.columns?.includes(reuseTarget)
       const reuseDrops = [
@@ -86,8 +93,24 @@ export default function Upload() {
       }
     } catch (e) {
       const detail = e.response?.data?.detail
+      if (typeof detail === 'object') {
+        setOperationalStatus(detail.analysis_status || {
+          status: 'failed',
+          current_step: detail.failed_stage || 'csv_upload',
+          progress_message: detail.user_friendly_message || detail.message,
+          error_message: detail.technical_message || detail.raw_error,
+          recommended_next_action: detail.recommended_next_action || detail.tips?.[0],
+        })
+      } else {
+        setOperationalStatus({
+          status: 'failed',
+          current_step: 'csv_upload',
+          progress_message: detail || e.message,
+          recommended_next_action: 'CSV 파일인지, 첫 행에 컬럼명이 있는지 확인한 뒤 다시 업로드하세요.',
+        })
+      }
       setUploadError(typeof detail === 'object'
-        ? detail
+        ? { ...detail, message: detail.message || detail.user_friendly_message }
         : { message: detail || e.message, tips: ['CSV 파일인지, 첫 행에 컬럼명이 있는지 확인해 주세요.'] })
     } finally {
       setLoading('')
@@ -100,12 +123,25 @@ export default function Upload() {
     try {
       const { data } = await api.post('/set-target', { target_col: target, drop_cols: dropCols, col_labels: colLabels })
       setEdaInfo(data)
+      setOperationalStatus(data.analysis_status || null)
     } catch (e) {
       const detail = e.response?.data?.detail || e.message
-      if (String(detail).includes('파일 없음') || String(detail).includes('데이터가 없습니다') || String(detail).includes('업로드 원본')) {
+      const message = typeof detail === 'object'
+        ? (detail.user_friendly_message || detail.message || detail.technical_message)
+        : detail
+      if (typeof detail === 'object') {
+        setOperationalStatus({
+          status: 'failed',
+          current_step: detail.failed_stage,
+          progress_message: detail.user_friendly_message || detail.message,
+          error_message: detail.technical_message,
+          recommended_next_action: detail.recommended_next_action,
+        })
+      }
+      if (String(message).includes('파일 없음') || String(message).includes('데이터가 없습니다') || String(message).includes('업로드 원본')) {
         clearUploadState('서버 재시작 또는 배포로 업로드 원본이 사라졌습니다. 같은 CSV를 다시 올려주세요.')
       } else {
-        setTargetError(detail)
+        setTargetError(message)
       }
     } finally {
       setLoading('')
@@ -166,6 +202,7 @@ export default function Upload() {
           {reanalysisItem && (
             <ReanalysisNotice item={reanalysisItem} onClear={clearReanalysis} />
           )}
+          <StatusRecoveryPanel status={operationalStatus} limits={usageLimits} compact />
           <div
             onDragOver={e => { e.preventDefault(); setDragging(true) }}
             onDragLeave={() => setDragging(false)}
@@ -226,6 +263,8 @@ export default function Upload() {
               activeCount={activeCols.length}
               dropCount={dropCols.length}
             />
+
+            <StatusRecoveryPanel status={operationalStatus} limits={usageLimits} compact />
 
             {uploadInfo.saved_dataset && (
               <div className="banner-success">

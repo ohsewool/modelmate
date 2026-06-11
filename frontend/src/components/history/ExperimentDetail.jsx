@@ -16,11 +16,24 @@ function primaryMetric(item) {
   return { label, value }
 }
 
+function runStatusLabel(status) {
+  return ({
+    created: '생성됨',
+    queued: '대기',
+    running: '진행 중',
+    succeeded: '완료',
+    failed: '실패',
+    cancelled: '취소',
+    needs_review: '검토 필요',
+  }[status || 'succeeded'] || status || '완료')
+}
+
 export default function ExperimentDetail({ item, owner, onClose, onNavigate }) {
   const metric = primaryMetric(item)
   const rows = [
     ['데이터 분야', item.dataset_domain || '기록 없음'],
     ['예측 목적', item.target_category || item.target || '-'],
+    ['작업 상태', runStatusLabel(item.status)],
     ['선택 모델', item.best_model || '-'],
     ['주요 성능', `${metric.label} ${fmt(metric.value)}`],
   ]

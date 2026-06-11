@@ -34,6 +34,24 @@ function taskLabel(task) {
   return '분석'
 }
 
+function runStatusLabel(status) {
+  return ({
+    created: '생성됨',
+    queued: '대기',
+    running: '진행 중',
+    succeeded: '완료',
+    failed: '실패',
+    cancelled: '취소',
+    needs_review: '검토 필요',
+  }[status || 'succeeded'] || status || '완료')
+}
+
+function runStatusVariant(status) {
+  if (status === 'failed') return 'danger'
+  if (status === 'needs_review' || status === 'running' || status === 'queued') return 'warning'
+  return 'success'
+}
+
 function datasetMatchesExperiment(dataset, item) {
   if (item.dataset_ref?.id && dataset.id) return item.dataset_ref.id === dataset.id
   const sameTarget = String(item.target || '') === String(dataset.target_col || '')
@@ -300,6 +318,7 @@ export default function History() {
                       <th>분야</th>
                       <th>맞히려는 값</th>
                       <th>예측 유형</th>
+                      <th>상태</th>
                       <th>선택 모델</th>
                       <th>성능</th>
                       <th>개선</th>
@@ -329,6 +348,7 @@ export default function History() {
                           <td>{item.dataset_domain || '-'}</td>
                           <td>{item.target || '-'}</td>
                           <td>{taskLabel(item.task_type)}</td>
+                          <td><Badge variant={runStatusVariant(item.status)}>{runStatusLabel(item.status)}</Badge></td>
                           <td style={{ fontWeight: 750, color: 'var(--text)' }}>
                             {item.best_model || '-'} {item.agent_run && <Badge variant="default">AI</Badge>}
                           </td>

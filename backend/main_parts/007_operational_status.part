@@ -1,0 +1,103 @@
+# ── MVP operational status and guardrails ─────────────────
+
+CANONICAL_ANALYSIS_STATUSES = {
+    "created", "queued", "running", "succeeded", "failed", "cancelled", "needs_review"
+}
+
+STATUS_ALIASES = {
+    "draft": "created",
+    "ok": "succeeded",
+    "done": "succeeded",
+    "success": "succeeded",
+    "error": "failed",
+}
+
+MVP_USAGE_LIMITS = {
+    "max_csv_file_size_mb": 10,
+    "warning_row_count": 10000,
+    "max_demo_training_rows": 50000,
+    "warning_column_count": 80,
+    "max_column_count": 150,
+    "training_time_budget_seconds": 180,
+    "max_models_per_run": 8,
+    "unsupported_file_types": ["xlsx", "xls", "pdf", "docx", "png", "jpg"],
+}
+
+def normalize_analysis_status(status):
+    value = str(status or "created").lower()
+    value = STATUS_ALIASES.get(value, value)
+    return value if value in CANONICAL_ANALYSIS_STATUSES else "needs_review"
+
+def analysis_status_payload(
+    status,
+    current_step,
+    progress_message,
+    *,
+    started_at=None,
+    completed_at=None,
+    failed_at=None,
+    error_type=None,
+    error_message=None,
+    recommended_next_action=None,
+):
+    normalized = normalize_analysis_status(status)
+    return {
+        "status": normalized,
+        "current_step": current_step,
+        "progress_message": progress_message,
+        "started_at": started_at,
+        "completed_at": completed_at,
+        "failed_at": failed_at,
+        "error_type": error_type,
+        "error_message": error_message,
+        "recommended_next_action": recommended_next_action or "다음 분석 단계를 진행하세요.",
+    }
+
+def set_analysis_status(status, current_step, progress_message, **kwargs):
+    payload = analysis_status_payload(status, current_step, progress_message, **kwargs)
+    prev = STATE.get("analysis_status") or {}
+    if not payload.get("started_at"):
+        payload["started_at"] = prev.get("started_at") or datetime.now().isoformat(timespec="seconds")
+    if payload["status"] == "succeeded" and not payload.get("completed_at"):
+        payload["completed_at"] = datetime.now().isoformat(timespec="seconds")
+    if payload["status"] == "failed" and not payload.get("failed_at"):
+        payload["failed_at"] = datetime.now().isoformat(timespec="seconds")
+    STATE["analysis_status"] = payload
+    return payload
+
+def failure_detail(failed_stage, user_friendly_message, technical_message, *, retry_possible=True, recommended_next_action=None):
+    debug_id = datetime.now().strftime("run-%Y%m%d%H%M%S")
+    payload = {
+        "failed_stage": failed_stage,
+        "user_friendly_message": user_friendly_message,
+        "technical_message": str(technical_message),
+        "retry_possible": retry_possible,
+        "recommended_next_action": recommended_next_action or "입력값을 확인한 뒤 다시 시도하세요.",
+        "support_debug_id": debug_id,
+    }
+    set_analysis_status(
+        "failed",
+        failed_stage,
+        user_friendly_message,
+        error_type=failed_stage,
+        error_message=str(technical_message),
+        recommended_next_action=payload["recommended_next_action"],
+    )
+    return payload
+
+def dataset_guardrail_warnings(df):
+    warnings = []
+    rows, cols = df.shape
+    if rows > MVP_USAGE_LIMITS["warning_row_count"]:
+        warnings.append({
+            "level": "warning",
+            "message": f"데모 기준 권장 행 수({MVP_USAGE_LIMITS['warning_row_count']:,})를 넘었습니다.",
+            "recommended_next_action": "발표/데모에서는 일부 샘플을 사용하거나 실행 시간을 충분히 확보하세요.",
+        })
+    if cols > MVP_USAGE_LIMITS["warning_column_count"]:
+        warnings.append({
+            "level": "warning",
+            "message": f"컬럼이 {cols}개입니다. 데모 기준으로는 {MVP_USAGE_LIMITS['warning_column_count']}개 이하를 권장합니다.",
+            "recommended_next_action": "ID, 메모, 중복 컬럼을 제외하고 다시 실행하면 더 안정적입니다.",
+        })
+    return warnings
