@@ -14,10 +14,14 @@ from backend.tools.schema_validation import schema_validation_tool
 
 
 TARGET_NAME_RE = re.compile(
-    r"(target|label|result|outcome|class|status|approved|pass|fail|churn|converted|score|grade|amount|price|sales|value|수|값|결과|상태|등급|점수|합격|불량|고장|가입|매출|금액)",
+    r"(target|label|result|outcome|class|status|approved|pass|fail|churn|converted|default|defect|fault|risk|diabetes|disease|diagnosis|inspection_score|risk_level|join_count|member_count|grade|amount|price|sales|value|수|값|결과|상태|등급|점수|합격|불량|고장|가입|매출|금액|당뇨|진단|위험)",
     re.I,
 )
 IDENTIFIER_RE = re.compile(r"(^id$|_id$|uuid|guid|name|email|phone|address|addr|이름|주소|전화|메일)", re.I)
+FEATURE_NAME_RE = re.compile(
+    r"(age|glucose|bmi|income|debt|credit|temperature|vibration|pressure|month|date|gender|tenure|charge|ticket|member_type|나이|연령|온도|진동|압력|소득|부채)",
+    re.I,
+)
 
 
 def _ratio(unique_count: int, row_count: int) -> float:
@@ -52,11 +56,16 @@ def _candidate_summary(column: str, profile: dict[str, Any]) -> dict[str, Any]:
     score = 0.35
 
     if TARGET_NAME_RE.search(column):
-        score += 0.28
+        score += 0.4
+    elif FEATURE_NAME_RE.search(column):
+        score -= 0.18
+        warnings.append("일반 입력 정보처럼 보여 타깃 우선순위를 낮췄습니다.")
     if class_balance:
-        score += 0.18
-    if numeric_distribution and task_type == "regression":
-        score += 0.14
+        score += 0.22
+    if numeric_distribution and task_type == "regression" and TARGET_NAME_RE.search(column):
+        score += 0.12
+    elif numeric_distribution and task_type == "regression":
+        score -= 0.06
     if high_cardinality:
         score -= 0.22
         warnings.append("고유값 비율이 높아 타깃으로 부적합할 수 있습니다.")

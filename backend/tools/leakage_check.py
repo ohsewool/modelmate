@@ -36,7 +36,7 @@ def _suspicion(column: str, target: str, profile: dict[str, Any]) -> dict[str, A
         score += 0.45
         reasons.append("타깃 컬럼명과 매우 비슷합니다.")
     if RESULT_NAME_RE.search(column):
-        score += 0.3
+        score += 0.4
         reasons.append("결과나 라벨을 뜻하는 이름입니다.")
     if FUTURE_NAME_RE.search(column):
         score += 0.25
