@@ -1,6 +1,6 @@
 # ModelMate Agent Architecture
 
-Current status: PR-08 evaluation tool and retry decision placeholder. This document describes the target
+Current status: PR-09 XAI adapter and evidence bundle. This document describes the target
 architecture, but the production app is still the existing ModelMate AutoML
 workflow. ModelMate is being extended toward Agentic AutoML.
 
@@ -173,9 +173,37 @@ Default thresholds are intentionally moderate:
 Lower-is-better metrics such as RMSE and MAE are supported as warning/unknown
 gates when provided, but PR-08 does not implement advanced evaluation policy.
 
+## PR-09 XAI Adapter And Evidence Bundle
+
+PR-09 adds `shap_explainer_tool`, an adapter around the existing ModelMate
+explanation helpers. It does not create a final report and does not call an LLM.
+
+The adapter tries explanation sources in this order:
+
+1. existing `global_explanation_items` / `local_explanation_items` helpers
+2. model-provided `feature_importances_`
+3. model-provided `coef_`
+4. unavailable explanation observation with limitations
+
+The tool returns JSON-compatible explanation output:
+
+- explanation type
+- global and local explanations
+- top features
+- warnings and limitations
+- observation payload
+- evidence items
+- recommended next action
+
+PR-09 also adds an evidence bundle structure for PR-10. The bundle can carry
+model evidence, metric evidence, explanation evidence, data-quality warnings,
+leakage warnings, limitations, source tool calls, and creation time. This is
+only evidence preparation for a future report writer.
+
 ## Next Connection
 
-PR-09 should add evidence bundles for explanation/report tools. SHAP, final
-report generation, and deployment checks are still outside this PR.
+PR-10 should add validation and report-writing tools that consume the evidence
+bundle. Final report generation, deployment checks, and human review queues are
+still outside PR-09.
 
 It still should not call a real LLM.

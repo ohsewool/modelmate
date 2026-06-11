@@ -14,6 +14,7 @@ from backend.tools.data_profile import data_profile_tool
 from backend.tools.evaluation import evaluation_tool
 from backend.tools.leakage_check import leakage_check_tool
 from backend.tools.schema_validation import schema_validation_tool
+from backend.tools.shap_explainer import shap_explainer_tool
 from backend.tools.target_recommendation import target_recommendation_tool
 
 
@@ -100,6 +101,12 @@ def build_pr01_mock_registry() -> ToolRegistry:
             {"summary": "Evaluates training metrics and returns a decision placeholder.", "risk": "deterministic"},
             evaluation_tool,
         ),
+        (
+            "shap_explainer_tool",
+            "XAI adapter that returns explanation evidence for the trained model",
+            {"summary": "Returns SHAP, feature importance, coefficient, or unavailable evidence.", "risk": "adapter"},
+            shap_explainer_tool,
+        ),
     ]:
         registry.register(
             ToolDefinition(
@@ -118,6 +125,8 @@ def build_pr01_mock_registry() -> ToolRegistry:
                         "training_budget": {"type": "object"},
                         "automl_training_result": {"type": "object"},
                         "threshold_config": {"type": "object"},
+                        "evaluation_result": {"type": "object"},
+                        "max_sample_size": {"type": "integer"},
                     },
                 },
                 output_schema={
@@ -130,6 +139,8 @@ def build_pr01_mock_registry() -> ToolRegistry:
                         "leaderboard_summary": {"type": "array"},
                         "threshold_status": {"type": "string"},
                         "decision": {"type": "object"},
+                        "explanation_type": {"type": "string"},
+                        "evidence_bundle": {"type": "object"},
                         "recommended_next_action": {"type": "string"},
                     },
                 },

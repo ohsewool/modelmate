@@ -21,6 +21,7 @@ from .trace import (
 from .tool import ToolExecutionRequest, ToolExecutionResponse
 from .observation import ObservationPayload
 from .decision import DecisionPayload
+from .evidence import EvidenceBundle
 
 __all__ = [
     "AgentDecision",
@@ -38,4 +39,5 @@ __all__ = [
     "ToolExecutionResponse",
     "ObservationPayload",
     "DecisionPayload",
+    "EvidenceBundle",
 ]

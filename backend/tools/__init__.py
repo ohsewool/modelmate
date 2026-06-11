@@ -6,6 +6,7 @@ from .data_profile import data_profile_tool
 from .evaluation import evaluation_tool
 from .leakage_check import leakage_check_tool
 from .schema_validation import schema_validation_tool
+from .shap_explainer import shap_explainer_tool
 from .target_recommendation import target_recommendation_tool
 
 __all__ = [
@@ -18,5 +19,6 @@ __all__ = [
     "evaluation_tool",
     "leakage_check_tool",
     "schema_validation_tool",
+    "shap_explainer_tool",
     "target_recommendation_tool",
 ]
