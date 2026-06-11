@@ -7,7 +7,13 @@ is ready to persist mock planner runs.
 
 from __future__ import annotations
 
+import json
 import sqlite3
+import uuid
+from datetime import datetime
+from typing import Any
+
+from backend.schemas.agent import AgentPlan
 
 
 AGENT_TRACE_TABLES = (
@@ -85,3 +91,104 @@ def ensure_agent_trace_schema(conn: sqlite3.Connection) -> None:
         )
     """)
     conn.commit()
+
+
+def _now_iso() -> str:
+    return datetime.utcnow().isoformat(timespec="seconds") + "Z"
+
+
+def _json(data: dict[str, Any]) -> str:
+    return json.dumps(data, ensure_ascii=False, sort_keys=True)
+
+
+def create_analysis_run(
+    conn: sqlite3.Connection,
+    user_goal: str,
+    *,
+    user_id: str | None = None,
+    project_id: str | None = None,
+    dataset_id: str | None = None,
+    status: str = "draft",
+) -> str:
+    ensure_agent_trace_schema(conn)
+    run_id = str(uuid.uuid4())
+    now = _now_iso()
+    conn.execute(
+        """
+        INSERT INTO analysis_runs
+            (id, user_id, project_id, dataset_id, user_goal, status, created_at, updated_at)
+        VALUES (?,?,?,?,?,?,?,?)
+        """,
+        (run_id, user_id, project_id, dataset_id, user_goal, status, now, now),
+    )
+    conn.commit()
+    return run_id
+
+
+def create_analysis_steps_from_plan(
+    conn: sqlite3.Connection,
+    analysis_run_id: str,
+    plan: AgentPlan,
+) -> list[dict[str, Any]]:
+    ensure_agent_trace_schema(conn)
+    rows: list[dict[str, Any]] = []
+    now = _now_iso()
+    for index, step in enumerate(plan.steps, start=1):
+        step_row = {
+            "id": str(uuid.uuid4()),
+            "analysis_run_id": analysis_run_id,
+            "step_index": index,
+            "step_kind": "plan",
+            "title": step.title,
+            "status": "pending",
+            "payload": {
+                "step_id": step.step_id,
+                "tool_name": step.tool_name,
+                "reason": step.reason,
+            },
+            "created_at": now,
+        }
+        conn.execute(
+            """
+            INSERT INTO analysis_steps
+                (id, analysis_run_id, step_index, step_kind, title, status, payload_json, created_at)
+            VALUES (?,?,?,?,?,?,?,?)
+            """,
+            (
+                step_row["id"],
+                step_row["analysis_run_id"],
+                step_row["step_index"],
+                step_row["step_kind"],
+                step_row["title"],
+                step_row["status"],
+                _json(step_row["payload"]),
+                step_row["created_at"],
+            ),
+        )
+        rows.append(step_row)
+    conn.commit()
+    return rows
+
+
+def get_analysis_run_trace(conn: sqlite3.Connection, analysis_run_id: str) -> dict[str, Any] | None:
+    ensure_agent_trace_schema(conn)
+    run = conn.execute(
+        "SELECT * FROM analysis_runs WHERE id=?",
+        (analysis_run_id,),
+    ).fetchone()
+    if not run:
+        return None
+    steps = conn.execute(
+        "SELECT * FROM analysis_steps WHERE analysis_run_id=? ORDER BY step_index ASC",
+        (analysis_run_id,),
+    ).fetchall()
+    return {
+        "run": dict(run),
+        "steps": [
+            {
+                **dict(row),
+                "payload": json.loads(row["payload_json"] or "{}"),
+            }
+            for row in steps
+        ],
+    }

@@ -1,6 +1,6 @@
 # ModelMate Agent Architecture
 
-Current status: PR-02 schema preparation. This document describes the target
+Current status: PR-03 mock planner trace API. This document describes the target
 architecture, but the production app is still the existing ModelMate AutoML
 workflow. ModelMate is being extended toward Agentic AutoML.
 
@@ -62,13 +62,26 @@ PR-02 prepares storage-facing contracts for:
 The helper is intentionally not wired into app startup yet. This protects the
 existing demo and deployment flow while giving PR-03 a clean persistence boundary.
 
+## PR-03 Mock Planner API
+
+PR-03 adds a small deterministic endpoint:
+
+```text
+POST /api/agent/mock-plan
+GET  /api/agent/runs/{analysis_run_id}
+```
+
+The endpoint stores an `analysis_run` and ordered `analysis_steps` from the mock
+`SupervisorPlanner`. It does not call an LLM and does not call the existing
+AutoML pipeline.
+
 ## Next Connection
 
-PR-03 should add a mock planner endpoint that:
+PR-04 should add a small timeline UI that:
 
-1. accepts a user goal
-2. creates an `analysis_run`
-3. stores planned `analysis_steps`
-4. returns a run id and plan summary
+1. accepts or reuses an `analysis_run_id`
+2. shows planned steps in order
+3. distinguishes future tool calls, observations, and decisions
+4. keeps the existing ModelMate demo flow intact
 
 It still should not call a real LLM or the real AutoML pipeline.

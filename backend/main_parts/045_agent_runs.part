@@ -1,0 +1,61 @@
+
+# Agentic AutoML mock planner endpoints (PR-03)
+from backend.agents import SupervisorPlanner
+from backend.agents.persistence import (
+    create_analysis_run,
+    create_analysis_steps_from_plan,
+    get_analysis_run_trace,
+)
+
+
+class AgentMockPlanBody(BaseModel):
+    user_goal: str
+    project_id: str | None = None
+    dataset_id: str | None = None
+
+
+@app.post("/api/agent/mock-plan")
+async def create_agent_mock_plan(
+    body: AgentMockPlanBody,
+    user=Depends(get_current_user),
+):
+    planner = SupervisorPlanner()
+    plan = planner.create_initial_plan(body.user_goal)
+    conn = get_db()
+    try:
+        user_id = user.get("sub") if user else None
+        run_id = create_analysis_run(
+            conn,
+            plan.goal,
+            user_id=user_id,
+            project_id=body.project_id,
+            dataset_id=body.dataset_id,
+            status="draft",
+        )
+        steps = create_analysis_steps_from_plan(conn, run_id, plan)
+    finally:
+        conn.close()
+    return {
+        "analysis_run_id": run_id,
+        "status": "draft",
+        "goal": plan.goal,
+        "steps": steps,
+        "agent_status": "mock_planner_only",
+        "message": "PR-03 stores a deterministic mock plan only. No LLM or AutoML tool was called.",
+    }
+
+
+@app.get("/api/agent/runs/{analysis_run_id}")
+async def get_agent_mock_run(analysis_run_id: str, user=Depends(get_current_user)):
+    conn = get_db()
+    try:
+        trace = get_analysis_run_trace(conn, analysis_run_id)
+    finally:
+        conn.close()
+    if not trace:
+        raise HTTPException(404, "Agent analysis run not found")
+    return {
+        **trace,
+        "agent_status": "mock_trace_only",
+        "message": "This run contains stored PR-03 mock planner trace data.",
+    }
