@@ -43,6 +43,7 @@ claim that ModelMate is already a fully autonomous AI data scientist.
 - Cross-validated model comparison
 - Optional Optuna tuning
 - Result summary and XAI/reason view
+- Analysis trace, trust summary, and evidence summary on the report screen
 - New-data prediction
 - Workspace/history reuse
 - Share/API-style flow

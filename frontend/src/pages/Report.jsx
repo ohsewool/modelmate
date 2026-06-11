@@ -13,6 +13,9 @@ import { Badge } from '../components/ui/badge'
 import { Button } from '../components/ui/button'
 import ReportStoryPanel from '../components/report/ReportStoryPanel'
 import ReportSidePanel from '../components/report/ReportSidePanel'
+import AnalysisTracePanel from '../components/report/AnalysisTracePanel'
+import TrustSummaryPanel from '../components/report/TrustSummaryPanel'
+import EvidenceSummaryPanel from '../components/report/EvidenceSummaryPanel'
 
 const fmt = value => {
   if (value === null || value === undefined || value === '') return '-'
@@ -334,6 +337,17 @@ export default function Report() {
         </div>
 
         <BusinessSummary data={business} />
+
+        <TrustSummaryPanel summary={summary} models={topModels} primaryMetric={primaryMetric} />
+
+        <EvidenceSummaryPanel
+          summary={summary}
+          models={topModels}
+          primaryMetric={primaryMetric}
+          features={features}
+        />
+
+        <AnalysisTracePanel summary={summary} />
 
         <ReportStoryPanel
           points={summary.presentation_points}

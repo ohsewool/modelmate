@@ -49,6 +49,8 @@ stable presentation rehearsal:
 6. Open result summary, XAI/reason view, and report/share flow.
    - Show: performance, selected model, top evidence, limitations, and
      prediction/share API path.
+   - Show: `Model trust summary`, `Evidence-based report`, and `Analysis trace`
+     cards so the audience can see why the result is believable.
    - Closing message: ModelMate gives a repeatable predictive analysis result
      that can be reused after the first CSV upload.
 
@@ -64,20 +66,39 @@ Use the same first six steps, then add:
    - Mention: if explanation evidence is limited, ModelMate records that
      limitation instead of pretending certainty.
 
-9. Show workspace/history reuse.
+9. Show the analysis trace.
+   - Mention: the report screen surfaces goal interpretation, data profile,
+     schema validation, target recommendation, leakage check, AutoML training,
+     evaluation decision, XAI evidence, report writing, deployment readiness,
+     and human review status.
+   - Explain: this is not just a model score; it is a visible chain of
+     observations and decisions.
+
+10. Show workspace/history reuse.
    - Click: history or workspace screen.
    - Show: the user can reopen previous work rather than repeating every step.
 
-10. Show prediction/API-style reuse.
+11. Show prediction/API-style reuse.
     - Click: prediction or share/API screen.
     - Explain: the commercial value is not only "model recommendation"; it is
       the ability to reuse the result for later predictions.
 
-11. Briefly explain Agentic AutoML direction.
+12. Briefly explain Agentic AutoML direction.
     - Current implementation: tool registry, deterministic checks, evidence
       bundle, grounded report, deployment advice, human review/resume skeleton.
     - Honest limit: no real LLM planner runtime, no automatic production
       deployment, no automatic retraining loop.
+
+## Report Screen Talking Points
+
+- Analysis trace: shows the analysis path from user goal to report.
+- Model trust summary: data warnings, leakage warnings, metric threshold,
+  explanation availability, deployment readiness, and human review status.
+- Evidence-based report: selected target, task type, best model, best metric,
+  top features, limitations, and recommended next action.
+
+Use the phrase "guided analysis trace" rather than "fully autonomous AI data
+scientist."
 
 ## Backup Dataset Switch
 
