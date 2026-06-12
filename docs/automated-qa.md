@@ -14,6 +14,7 @@ python scripts/run_auth_smoke.py --base-url http://localhost:8000
 python scripts/run_ownership_smoke.py --base-url http://localhost:8000
 python scripts/run_project_history_smoke.py --base-url http://localhost:8000
 python scripts/run_background_jobs_smoke.py --base-url http://localhost:8000
+python scripts/run_failure_recovery_smoke.py --base-url http://localhost:8000
 ```
 
 ## Product Smoke Test
@@ -65,6 +66,9 @@ python scripts/run_release_qa.py --base-url https://web-production-5d6fa.up.rail
 - background job smoke can create a signed-in training job, poll job status,
   confirm owner-only job access, confirm project job history, and verify guest
   demo mode remains available;
+- failure recovery smoke can create a failed job, verify `error_type`,
+  `error_message`, `recommended_next_action`, run an owner-protected rerun,
+  check duplicate rerun behavior, and confirm another user cannot rerun it;
 - upload validation QA passes;
 - full QA quick path passes;
 - training benchmark can run when not skipped;
@@ -101,6 +105,8 @@ python scripts/run_release_qa.py --base-url https://web-production-5d6fa.up.rail
 - background job smoke fails: verify `/api/training/jobs`,
   `/api/training/jobs/{job_id}`, and `/api/projects/{id}/jobs` are deployed and
   owner-scoped.
+- failure recovery smoke fails: verify failed jobs expose recovery fields and
+  `/api/training/jobs/{job_id}/rerun` keeps ownership and duplicate guards.
 
 ## Release Blockers
 
@@ -115,3 +121,4 @@ python scripts/run_release_qa.py --base-url https://web-production-5d6fa.up.rail
   model metadata by guessing an id.
 - user B can access user A's training job or project job history by guessing an
   id.
+- user B can rerun user A's failed job or failed project run.

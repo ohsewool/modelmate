@@ -121,6 +121,27 @@ export default function ModelLab() {
     }
   }
 
+  async function rerunTrainingJob() {
+    if (!trainingJob?.job_id) return
+    setLoading('job-rerun')
+    try {
+      const { data } = await api.post(`/training/jobs/${trainingJob.job_id}/rerun`)
+      setTrainingJob(data)
+      setOperationalStatus({
+        status: data.status,
+        current_step: data.current_step,
+        progress_message: data.progress_message,
+        error_message: data.error_message,
+        recommended_next_action: data.recommended_next_action,
+      })
+    } catch (e) {
+      const detail = e.response?.data?.detail
+      alert(detail?.user_friendly_message || detail || e.message)
+    } finally {
+      setLoading('')
+    }
+  }
+
   async function runOptuna() {
     const trials = clampTrials(nTrials)
     setNTrials(trials)
@@ -195,11 +216,27 @@ export default function ModelLab() {
               {trainingJob.status} / {trainingJob.progress_message || 'No message'} / {trainingJob.progress_percent ?? 0}%
             </p>
           )}
+          {trainingJob?.status === 'failed' && (
+            <p style={{ fontSize: 12, color: '#b91c1c', margin: '6px 0 0' }}>
+              {trainingJob.error_type || 'training_failed'}: {trainingJob.error_message || 'Training failed.'}
+            </p>
+          )}
+          {trainingJob?.duplicate_guard && (
+            <p style={{ fontSize: 12, color: '#b45309', margin: '6px 0 0' }}>
+              A training job is already active for this project.
+            </p>
+          )}
         </div>
         <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
           {trainingJob?.job_id && (
             <button className="btn-secondary" onClick={() => refreshTrainingJob()} disabled={!!loading}>
               Refresh
+            </button>
+          )}
+          {trainingJob?.status === 'failed' && (
+            <button className="btn-secondary" onClick={rerunTrainingJob} disabled={!!loading}>
+              {loading === 'job-rerun' && <span className="spinner" />}
+              Retry job
             </button>
           )}
           <button className="btn-primary" onClick={startTrainingJob} disabled={!!loading || !user || user.is_guest}>

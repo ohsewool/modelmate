@@ -67,6 +67,15 @@ These endpoints provide MVP job status tracking for signed-in users. They do not
 provide enterprise-grade job isolation, distributed worker recovery, or a full
 queue system.
 
+Failure recovery and rerun endpoints added in PR-16 are also owner-scoped:
+
+- `POST /api/training/jobs/{job_id}/rerun`;
+- `POST /api/projects/{project_id}/runs/{analysis_run_id}/rerun`.
+
+Duplicate execution guards return the active project job when a queued/running
+job already exists. This is an MVP safety guard, not a complete distributed
+workflow lock.
+
 Guest demo mode remains separate. Ownerless demo or legacy data should not be
 treated as another user's private project, and public prediction endpoints are
 not forcibly blocked by this PR. Prediction token hardening is a later roadmap

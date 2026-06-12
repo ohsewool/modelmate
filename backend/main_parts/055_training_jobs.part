@@ -30,9 +30,16 @@ def ensure_training_jobs_table():
             error_message TEXT,
             recommended_next_action TEXT,
             result_summary TEXT,
-            artifact_refs TEXT
+            artifact_refs TEXT,
+            rerun_of TEXT,
+            source_run_id TEXT
         )
     """)
+    cols = [r[1] for r in conn.execute("PRAGMA table_info(training_jobs)").fetchall()]
+    if "rerun_of" not in cols:
+        conn.execute("ALTER TABLE training_jobs ADD COLUMN rerun_of TEXT")
+    if "source_run_id" not in cols:
+        conn.execute("ALTER TABLE training_jobs ADD COLUMN source_run_id TEXT")
     conn.commit()
     conn.close()
 
@@ -47,6 +54,9 @@ def _job_row_to_dict(row):
     item = dict(row)
     item["result_summary"] = _safe_json(item.get("result_summary"), {}) or {}
     item["artifact_refs"] = _safe_json(item.get("artifact_refs"), {}) or {}
+    item["can_rerun"] = item.get("status") in ("failed", "succeeded", "cancelled", "needs_review")
+    item["rerun_source_run_id"] = item.get("source_run_id") or item.get("rerun_of")
+    item["duplicate_guard"] = False
     return item
 
 
@@ -81,18 +91,76 @@ def _get_training_job_owned(user, job_id):
 def _friendly_job_error(exc):
     detail = getattr(exc, "detail", None)
     if isinstance(detail, dict):
+        error_type = classify_training_error(
+            detail.get("failed_stage"),
+            detail.get("technical_message") or detail.get("user_friendly_message") or str(detail),
+        )
         return {
-            "error_type": detail.get("failed_stage") or "automl_training",
+            "error_type": error_type,
             "error_message": detail.get("technical_message") or detail.get("user_friendly_message") or str(detail),
             "progress_message": detail.get("user_friendly_message") or "Training failed while preparing the dataset.",
-            "recommended_next_action": detail.get("recommended_next_action") or "Check the selected target and dataset, then try again.",
+            "recommended_next_action": detail.get("recommended_next_action") or recommended_action_for_error(error_type),
         }
+    error_type = classify_training_error(None, str(detail or exc))
     return {
-        "error_type": "automl_training",
+        "error_type": error_type,
         "error_message": str(detail or exc),
         "progress_message": "The training job failed. Please check the dataset and try again.",
-        "recommended_next_action": "Confirm the CSV has usable feature columns and a valid target column.",
+        "recommended_next_action": recommended_action_for_error(error_type),
     }
+
+
+def classify_training_error(stage, message):
+    text = f"{stage or ''} {message or ''}".lower()
+    if "permission" in text or "access" in text or "not allowed" in text:
+        return "permission_denied"
+    if "csv" in text and ("header" in text or "parse" in text):
+        return "invalid_csv"
+    if "header" in text:
+        return "missing_header"
+    if "too many rows" in text:
+        return "too_many_rows"
+    if "too many columns" in text:
+        return "too_many_columns"
+    if "state['x'] is missing" in text or "data" in text and "missing" in text:
+        return "empty_dataset"
+    if "target" in text and ("missing" in text or "not found" in text):
+        return "missing_target"
+    if "single" in text and "class" in text:
+        return "single_class_target"
+    if "target" in text:
+        return "invalid_target"
+    if "leak" in text:
+        return "leakage_risk_blocked"
+    if "timeout" in text:
+        return "training_timeout"
+    if "report" in text:
+        return "report_failed"
+    if "explanation" in text or "shap" in text:
+        return "explanation_failed"
+    if "training" in text or "model" in text or "automl" in text:
+        return "training_failed"
+    return "unknown_error"
+
+
+def recommended_action_for_error(error_type):
+    return {
+        "invalid_csv": "Upload a CSV file with a header row and at least two columns.",
+        "missing_header": "Upload a CSV file whose first row contains column names.",
+        "empty_dataset": "Upload a CSV and choose a target before starting training.",
+        "too_many_rows": "Try a smaller CSV file or sample fewer rows for this MVP demo.",
+        "too_many_columns": "Remove unnecessary ID, memo, or duplicate columns before retrying.",
+        "missing_target": "Choose a target column that exists in the uploaded CSV.",
+        "invalid_target": "Choose a target column with enough non-empty values.",
+        "single_class_target": "Choose a target column with at least two unique values.",
+        "leakage_risk_blocked": "Remove columns that directly reveal the answer and retry.",
+        "training_timeout": "Try a smaller CSV file or fewer candidate models.",
+        "training_failed": "Review the target, missing values, and excluded columns, then retry.",
+        "explanation_failed": "Review model results first; explanations can be retried later.",
+        "report_failed": "Retry report generation after confirming the model result exists.",
+        "permission_denied": "Sign in with the project owner account and try again.",
+        "unknown_error": "Retry the analysis from the project history page or upload a cleaner CSV.",
+    }.get(error_type, "Retry the analysis from the project history page.")
 
 
 def _training_result_summary(data):
@@ -154,13 +222,31 @@ def _execute_training_job(job_id, user_payload):
 ensure_training_jobs_table()
 
 
-@app.post("/api/training/jobs")
-async def create_training_job(body: TrainingJobBody, background_tasks: BackgroundTasks, user=Depends(get_current_user)):
-    require_current_user(user)
-    if body.project_id:
-        assert_project_owner(user, body.project_id)
-    if body.dataset_id:
-        assert_dataset_owner(user, body.dataset_id)
+def _find_active_training_job(user_id, project_id):
+    if not project_id:
+        return None
+    conn = get_db()
+    try:
+        row = conn.execute(
+            """
+            SELECT * FROM training_jobs
+            WHERE user_id=? AND project_id=? AND status IN ('created','queued','running')
+            ORDER BY created_at DESC LIMIT 1
+            """,
+            (user_id, project_id),
+        ).fetchone()
+    finally:
+        conn.close()
+    return _job_row_to_dict(row) if row else None
+
+
+def _create_training_job_record(user, background_tasks, body, *, rerun_of=None, source_run_id=None):
+    active = _find_active_training_job(user["sub"], body.project_id)
+    if active:
+        active["duplicate_guard"] = True
+        active["progress_message"] = active.get("progress_message") or "A training job is already running for this project."
+        active["recommended_next_action"] = "A training job is already running for this project. Please wait for it to finish or check the current job status."
+        return active
     import uuid
     now = _job_now()
     job_id = str(uuid.uuid4())
@@ -168,8 +254,8 @@ async def create_training_job(body: TrainingJobBody, background_tasks: Backgroun
     conn.execute(
         """
         INSERT INTO training_jobs
-        (job_id,user_id,project_id,analysis_run_id,dataset_id,status,current_step,progress_message,progress_percent,created_at,queued_at,recommended_next_action,result_summary,artifact_refs)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        (job_id,user_id,project_id,analysis_run_id,dataset_id,status,current_step,progress_message,progress_percent,created_at,queued_at,recommended_next_action,result_summary,artifact_refs,rerun_of,source_run_id)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
         """,
         (
             job_id,
@@ -186,6 +272,8 @@ async def create_training_job(body: TrainingJobBody, background_tasks: Backgroun
             "Wait for the job status to update, then open the result or report.",
             json.dumps({}, ensure_ascii=False),
             json.dumps({}, ensure_ascii=False),
+            rerun_of,
+            source_run_id,
         ),
     )
     conn.commit()
@@ -194,9 +282,57 @@ async def create_training_job(body: TrainingJobBody, background_tasks: Backgroun
     return _get_training_job_owned(user, job_id)
 
 
+@app.post("/api/training/jobs")
+async def create_training_job(body: TrainingJobBody, background_tasks: BackgroundTasks, user=Depends(get_current_user)):
+    require_current_user(user)
+    if body.project_id:
+        assert_project_owner(user, body.project_id)
+    if body.dataset_id:
+        assert_dataset_owner(user, body.dataset_id)
+    return _create_training_job_record(user, background_tasks, body)
+
+
 @app.get("/api/training/jobs/{job_id}")
 async def get_training_job(job_id: str, user=Depends(get_current_user)):
     return _get_training_job_owned(user, job_id)
+
+
+@app.post("/api/training/jobs/{job_id}/rerun")
+async def rerun_training_job(job_id: str, background_tasks: BackgroundTasks, user=Depends(get_current_user)):
+    job = _get_training_job_owned(user, job_id)
+    body = TrainingJobBody(
+        project_id=job.get("project_id"),
+        dataset_id=job.get("dataset_id"),
+        analysis_run_id=job.get("analysis_run_id"),
+    )
+    if body.project_id:
+        assert_project_owner(user, body.project_id)
+    return _create_training_job_record(
+        user,
+        background_tasks,
+        body,
+        rerun_of=job_id,
+        source_run_id=job.get("analysis_run_id") or job.get("source_run_id"),
+    )
+
+
+@app.post("/api/projects/{project_id}/runs/{analysis_run_id}/rerun")
+async def rerun_project_run(project_id: str, analysis_run_id: str, background_tasks: BackgroundTasks, user=Depends(get_current_user)):
+    project = assert_project_owner(user, project_id)
+    conn = get_db()
+    try:
+        runs = _project_runs(conn, project_id, project["user_id"])
+    finally:
+        conn.close()
+    if not any(row.get("analysis_run_id") == analysis_run_id for row in runs):
+        _resource_not_found()
+    body = TrainingJobBody(project_id=project_id, analysis_run_id=analysis_run_id)
+    return _create_training_job_record(
+        user,
+        background_tasks,
+        body,
+        source_run_id=analysis_run_id,
+    )
 
 
 @app.get("/api/projects/{project_id}/jobs")

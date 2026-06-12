@@ -107,7 +107,46 @@ def _project_last_job(conn, project_id, user_id):
         "progress_message": row["progress_message"],
         "finished_at": row["finished_at"],
         "failed_at": row["failed_at"],
+        "error_type": row["error_type"],
         "error_message": row["error_message"],
+        "recommended_next_action": row["recommended_next_action"],
+        "rerun_of": row["rerun_of"] if "rerun_of" in row.keys() else None,
+    }
+
+
+def _project_job_rollup(conn, project_id, user_id, last_job=None):
+    try:
+        rows = conn.execute(
+            "SELECT * FROM training_jobs WHERE project_id=? AND user_id=? ORDER BY created_at DESC LIMIT 200",
+            (project_id, user_id),
+        ).fetchall()
+    except sqlite3.OperationalError:
+        return {
+            "last_failed_at": None,
+            "last_error_type": None,
+            "last_error_message": None,
+            "last_recommended_next_action": None,
+            "can_rerun": False,
+            "rerun_count": 0,
+            "rerun_of": None,
+            "latest_rerun_id": None,
+            "active_job_id": None,
+            "active_job_status": None,
+        }
+    failed = next((row for row in rows if row["status"] == "failed"), None)
+    active = next((row for row in rows if row["status"] in ("created", "queued", "running")), None)
+    latest_rerun = next((row for row in rows if "rerun_of" in row.keys() and row["rerun_of"]), None)
+    return {
+        "last_failed_at": failed["failed_at"] if failed else None,
+        "last_error_type": failed["error_type"] if failed else None,
+        "last_error_message": failed["error_message"] if failed else None,
+        "last_recommended_next_action": failed["recommended_next_action"] if failed else None,
+        "can_rerun": bool(last_job and last_job.get("status") in ("failed", "succeeded", "cancelled", "needs_review")),
+        "rerun_count": sum(1 for row in rows if "rerun_of" in row.keys() and row["rerun_of"]),
+        "rerun_of": latest_rerun["rerun_of"] if latest_rerun else None,
+        "latest_rerun_id": latest_rerun["job_id"] if latest_rerun else None,
+        "active_job_id": active["job_id"] if active else None,
+        "active_job_status": active["status"] if active else None,
     }
 
 
@@ -149,9 +188,10 @@ def _project_reports(conn, project_id, user_id):
     return reports
 
 
-def _project_summary(project, datasets, runs, prediction_meta, last_job=None):
+def _project_summary(project, datasets, runs, prediction_meta, last_job=None, job_rollup=None):
     last_run = runs[0] if runs else None
     latest_dataset = datasets[0] if datasets else None
+    job_rollup = job_rollup or {}
     return {
         "project_id": project["id"],
         "id": project["id"],
@@ -178,6 +218,7 @@ def _project_summary(project, datasets, runs, prediction_meta, last_job=None):
         "last_job_progress_message": last_job.get("progress_message") if last_job else None,
         "last_job_finished_at": last_job.get("finished_at") if last_job else None,
         "last_job_error_message": last_job.get("error_message") if last_job else None,
+        **job_rollup,
     }
 
 
@@ -263,7 +304,8 @@ async def list_projects(user=Depends(get_current_user)):
         runs = _project_runs(conn, project["id"], user["sub"])
         prediction_meta = _project_prediction_metadata(conn, project["id"], user["sub"])
         last_job = _project_last_job(conn, project["id"], user["sub"])
-        summary = _project_summary(project, datasets, runs, prediction_meta, last_job)
+        job_rollup = _project_job_rollup(conn, project["id"], user["sub"], last_job)
+        summary = _project_summary(project, datasets, runs, prediction_meta, last_job, job_rollup)
         summary["dataset_count"] = len(datasets)
         out.append(summary)
     conn.close()
@@ -283,6 +325,7 @@ async def get_project_detail(project_id: str, user=Depends(get_current_user)):
         reports = _project_reports(conn, project_id, project["user_id"])
         prediction_meta = _project_prediction_metadata(conn, project_id, project["user_id"])
         last_job = _project_last_job(conn, project_id, project["user_id"])
+        job_rollup = _project_job_rollup(conn, project_id, project["user_id"], last_job)
     finally:
         conn.close()
     known_warnings = []
@@ -290,7 +333,7 @@ async def get_project_detail(project_id: str, user=Depends(get_current_user)):
         known_warnings.append("No dataset metadata is linked to this project yet.")
     if not runs:
         known_warnings.append("No analysis run history is linked to this project yet.")
-    summary = _project_summary(project, datasets, runs, prediction_meta, last_job)
+    summary = _project_summary(project, datasets, runs, prediction_meta, last_job, job_rollup)
     return {
         **summary,
         "datasets": [dict(r) for r in datasets],

@@ -39,6 +39,17 @@ report metadata by guessing an id.
 Commercialization PR-15 adds owner-scoped lightweight training job status. User
 B cannot read User A's `job_id` or project job list by guessing identifiers.
 
+Commercialization PR-16 adds MVP failure recovery and rerun endpoints:
+
+- `POST /api/training/jobs/{job_id}/rerun`
+- `POST /api/projects/{project_id}/runs/{analysis_run_id}/rerun`
+
+Failed jobs expose `error_type`, `error_message`, `recommended_next_action`,
+`failed_at`, and `can_rerun`. Rerun jobs keep a link to the source job or run
+with `rerun_of` or `source_run_id`. If a project already has a queued/running
+job, duplicate rerun attempts return the active job instead of creating another
+parallel job.
+
 The project list route keeps a compatibility behavior for unauthenticated users:
 it returns an empty list instead of exposing private records.
 
@@ -47,7 +58,7 @@ it returns an empty list instead of exposing private records.
 The following are intentionally left for later PRs:
 
 - full persisted HTML report bodies per report id;
-- explicit project rerun execution endpoint with ownership checks;
+- full rerun restoration of every prior UI setting;
 - durable distributed job recovery after server restart;
 - dataset deletion;
 - report-id based private HTML export;
@@ -68,6 +79,7 @@ Next PRs should continue from this project history foundation:
 ```bash
 python scripts/run_project_history_smoke.py --base-url http://localhost:8000
 python scripts/run_background_jobs_smoke.py --base-url http://localhost:8000
+python scripts/run_failure_recovery_smoke.py --base-url http://localhost:8000
 ```
 
 The smoke test creates two users, creates a project for User A, links a mock
@@ -77,3 +89,7 @@ cannot open User A's project detail or run history.
 The background jobs smoke test creates a training job for User A, confirms job
 status is readable by the owner, confirms User B cannot read it, and confirms
 project detail includes the latest job status.
+
+The failure recovery smoke test confirms a failed job includes recovery fields,
+owner rerun works, duplicate rerun is guarded, and User B cannot rerun User A's
+job.

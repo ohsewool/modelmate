@@ -97,6 +97,37 @@ Training job failures are stored on the job record with `error_type`,
 responses should avoid stack traces and explain whether the user should choose a
 different target, re-upload a CSV, or review missing/identifier-heavy columns.
 
+## MVP Failure Recovery And Rerun
+
+Commercialization PR-16 adds a small failure recovery layer for training jobs.
+It does not implement a full workflow orchestrator or automatic retraining loop.
+
+Failure records can include:
+
+- `status`
+- `current_step`
+- `error_type`
+- `error_message`
+- `recommended_next_action`
+- `failed_at`
+- `can_rerun`
+- `rerun_source_run_id`
+
+Supported error types are intentionally simple and user-facing, for example
+`invalid_csv`, `missing_header`, `empty_dataset`, `missing_target`,
+`invalid_target`, `single_class_target`, `leakage_risk_blocked`,
+`training_timeout`, `training_failed`, `permission_denied`, and
+`unknown_error`.
+
+Rerun endpoints:
+
+- `POST /api/training/jobs/{job_id}/rerun`
+- `POST /api/projects/{project_id}/runs/{analysis_run_id}/rerun`
+
+Rerun requests are owner-protected. If a project already has a `queued` or
+`running` job, the API returns the active job with duplicate-guard guidance
+instead of creating another job for the same project.
+
 ## Retry Guidance
 
 Common recovery actions:

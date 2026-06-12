@@ -101,6 +101,16 @@ export default function ProjectHistoryPanel({ projects = [], user, onRerun }) {
                     Latest job: {detail.last_job_status} / {detail.last_job_progress_message || 'No message'}
                   </p>
                 )}
+                {detail.last_error_type && (
+                  <p style={{ margin: '4px 0 0', fontSize: 12, color: '#b91c1c' }}>
+                    {detail.last_error_type}: {detail.last_error_message || 'Training failed.'}
+                  </p>
+                )}
+                {detail.last_recommended_next_action && (
+                  <p style={{ margin: '4px 0 0', fontSize: 12, color: '#047857' }}>
+                    Next: {detail.last_recommended_next_action}
+                  </p>
+                )}
               </div>
               <Button variant="secondary" size="sm" onClick={() => onRerun?.(detail)}>
                 <RefreshCw size={14} /> Rerun

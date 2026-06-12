@@ -135,6 +135,11 @@ in-process FastAPI background wrapper around the existing AutoML flow, not a
 distributed queue or enterprise job orchestration system. See
 `docs/operational-readiness.md`.
 
+MVP failure recovery is available for training jobs. Failed jobs expose a
+classified `error_type`, safe `error_message`, `recommended_next_action`, and
+owner-protected rerun endpoint. Duplicate reruns for an active project return
+the current active job instead of creating runaway parallel jobs.
+
 Available without signing in:
 
 - landing page and product docs;
@@ -227,13 +232,14 @@ python scripts/run_auth_smoke.py --base-url https://web-production-5d6fa.up.rail
 python scripts/run_ownership_smoke.py --base-url https://web-production-5d6fa.up.railway.app
 python scripts/run_project_history_smoke.py --base-url https://web-production-5d6fa.up.railway.app
 python scripts/run_background_jobs_smoke.py --base-url https://web-production-5d6fa.up.railway.app
+python scripts/run_failure_recovery_smoke.py --base-url https://web-production-5d6fa.up.railway.app
 python scripts/run_product_smoke.py --base-url https://web-production-5d6fa.up.railway.app
 ```
 
 Automated QA checks endpoints, sample upload, target selection, report export,
 auth-lite session context, register/login/logout smoke, MVP ownership smoke,
-project history smoke, background job smoke, guest demo session start, and
-deployment smoke paths. Human review is still needed for usability, copy
+project history smoke, background job smoke, failure recovery smoke, guest demo
+session start, and deployment smoke paths. Human review is still needed for usability, copy
 clarity, visual layout, and whether beta users find the report persuasive.
 
 Commercial SaaS MVP trust documents are drafted, not finalized legal policies:
@@ -294,6 +300,7 @@ python scripts/run_full_qa.py --skip-slow
 python scripts/run_ownership_smoke.py --base-url http://localhost:8000
 python scripts/run_project_history_smoke.py --base-url http://localhost:8000
 python scripts/run_background_jobs_smoke.py --base-url http://localhost:8000
+python scripts/run_failure_recovery_smoke.py --base-url http://localhost:8000
 ```
 
 ## Demo Scenario
