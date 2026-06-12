@@ -7,6 +7,17 @@
             FOREIGN KEY (user_id) REFERENCES users(id)
         )
     """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS auth_sessions (
+            id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
+            session_token_hash TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            expires_at TEXT NOT NULL,
+            revoked_at TEXT,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+    """)
     conn.commit()
     conn.close()
 
@@ -15,6 +26,16 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
         return None
     try:
         payload = jose_jwt.decode(credentials.credentials, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        session_id = payload.get("jti")
+        if session_id:
+            conn = get_db()
+            row = conn.execute(
+                "SELECT revoked_at, expires_at FROM auth_sessions WHERE id=?",
+                (session_id,),
+            ).fetchone()
+            conn.close()
+            if not row or row["revoked_at"]:
+                return None
         return payload
     except Exception:
         return None

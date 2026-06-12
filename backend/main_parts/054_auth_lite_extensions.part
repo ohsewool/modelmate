@@ -1,0 +1,18 @@
+@app.post("/api/auth/logout")
+async def auth_logout(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    if not credentials:
+        return {"ok": True, "mode": "guest_demo"}
+    try:
+        payload = jose_jwt.decode(credentials.credentials, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        session_id = payload.get("jti")
+        if session_id:
+            conn = get_db()
+            conn.execute(
+                "UPDATE auth_sessions SET revoked_at=? WHERE id=?",
+                (datetime.now().isoformat(), session_id),
+            )
+            conn.commit()
+            conn.close()
+    except Exception:
+        pass
+    return {"ok": True, "mode": "guest_demo"}

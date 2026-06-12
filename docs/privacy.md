@@ -38,7 +38,7 @@ yet provide a complete commercial data governance program.
 
 Current limitations include:
 
-- no full production-grade authentication policy
+- auth-lite exists, but no full production-grade authentication policy
 - no formal user-level data isolation guarantee
 - no formal retention/deletion request workflow
 - no complete audit log policy
@@ -53,7 +53,7 @@ datasets that do not contain sensitive personal information.
 
 Before commercial use, ModelMate should add:
 
-- authentication and account management
+- stronger authentication and account management
 - user-level data isolation
 - retention and deletion policy
 - deletion request workflow

@@ -1,5 +1,3 @@
-    )
-
 @app.post("/api/auth/signup")
 async def auth_signup(body: EmailAuthBody):
     import uuid
@@ -18,6 +16,10 @@ async def auth_signup(body: EmailAuthBody):
     conn.commit(); conn.close()
     token = make_token(user_id, body.email, name, role="user")
     return {"token": token, "user": {"id": user_id, "email": body.email, "name": name, "picture": "", "role": "user"}}
+
+@app.post("/api/auth/register")
+async def auth_register(body: EmailAuthBody):
+    return await auth_signup(body)
 
 @app.post("/api/auth/login")
 async def auth_login(body: EmailAuthBody):

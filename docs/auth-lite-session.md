@@ -46,9 +46,23 @@ Current capabilities:
 ## Backend Endpoints
 
 ```text
+POST /api/auth/register
+POST /api/auth/signup
+POST /api/auth/login
+POST /api/auth/logout
+GET  /api/auth/me
 GET  /api/session
 POST /api/session/guest
 ```
+
+The frontend currently uses bearer tokens in `localStorage` because the existing
+API client already sends an `Authorization: Bearer <token>` header. This PR does
+not migrate the app to HTTP-only cookies; that can be reviewed later with CSRF
+and deployment-domain settings together.
+
+Passwords are stored with the existing standard-library PBKDF2 hashing helper,
+not as plaintext. New auth tokens include a session id (`jti`) and expiry, and
+logout revokes the matching `auth_sessions` row.
 
 `GET /api/session` returns a JSON-compatible session context:
 
@@ -63,6 +77,21 @@ POST /api/session/guest
 
 `POST /api/session/guest` starts or refreshes a guest demo context. It does not
 create an account and does not write a user-owned project record.
+
+## Storage Foundation
+
+The existing `users` table is extended with compatibility fields such as `plan`
+and `updated_at`. A lightweight `auth_sessions` table records:
+
+- session id
+- user id
+- hashed session identifier
+- created timestamp
+- expiry timestamp
+- revoked timestamp
+
+This is a foundation for later user-owned project checks, not a complete access
+control system.
 
 ## What This PR Does Not Implement
 

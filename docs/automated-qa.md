@@ -10,6 +10,7 @@ python -m compileall backend
 python scripts/run_upload_validation_qa.py
 python scripts/run_training_benchmark.py
 python scripts/run_full_qa.py --skip-slow
+python scripts/run_auth_smoke.py --base-url http://localhost:8000
 ```
 
 ## Product Smoke Test
@@ -49,6 +50,8 @@ python scripts/run_release_qa.py --base-url https://web-production-5d6fa.up.rail
 ## What Is Checked Automatically
 
 - backend compiles;
+- auth smoke can register, login, call `/api/auth/me`, logout, and confirm token
+  revocation when a base URL is provided;
 - upload validation QA passes;
 - full QA quick path passes;
 - training benchmark can run when not skipped;

@@ -68,6 +68,10 @@ def init_db():
         conn.execute("ALTER TABLE users ADD COLUMN password_hash TEXT")
     if "role" not in cols:
         conn.execute("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user'")
+    if "plan" not in cols:
+        conn.execute("ALTER TABLE users ADD COLUMN plan TEXT DEFAULT 'free'")
+    if "updated_at" not in cols:
+        conn.execute("ALTER TABLE users ADD COLUMN updated_at TEXT")
 
     # 기본 계정 자동 생성 (없을 때만)
     admin_email = os.getenv("ADMIN_EMAIL", "admin@modelmate.local")

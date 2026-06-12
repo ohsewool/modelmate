@@ -16,6 +16,9 @@ Current safeguards include:
 - file type validation for supported tabular uploads
 - dataset quality checks before analysis
 - lightweight demo usage guardrails
+- auth-lite email/password login using PBKDF2 password hashing
+- bearer-token session records with logout revocation support
+- guest demo mode for trying the sample flow without signing in
 - user-facing failure recovery messages
 - documentation warning users not to upload secrets or sensitive data
 - environment-variable based deployment configuration
@@ -27,6 +30,8 @@ The following are not yet implemented as full commercial controls:
 - full authentication and authorization policy
 - payment security
 - enterprise access control
+- enterprise SSO
+- full RBAC
 - complete audit logging
 - advanced encryption policy
 - SOC2 or ISO compliance program
@@ -39,6 +44,8 @@ When deploying on Railway or a similar platform:
 
 - keep secrets in environment variables
 - do not commit API keys, tokens, passwords, or database credentials to GitHub
+- set `JWT_SECRET`, `ADMIN_EMAIL`, and `ADMIN_PASSWORD` through Railway
+  environment variables instead of hard-coding production values
 - rotate exposed keys immediately if a secret is accidentally committed
 - verify the deployed bundle after each production push
 - avoid storing sensitive uploaded CSV files in temporary demo storage
@@ -49,6 +56,7 @@ Before production commercialization, ModelMate should add:
 
 - stronger auth and role-based access control
 - user-level project isolation
+- user-owned project access checks around datasets, reports, and prediction APIs
 - audit logs for uploads, training, prediction, and report access
 - data retention and deletion controls
 - secret scanning in CI

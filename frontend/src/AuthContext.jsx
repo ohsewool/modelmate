@@ -48,6 +48,7 @@ export function AuthProvider({ children }) {
   }
 
   function logout() {
+    api.post('/auth/logout').catch(() => {})
     api.post('/reset-session').catch(() => {})
     clearUploadDraft()
     localStorage.removeItem('mm_token')

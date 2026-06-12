@@ -41,10 +41,7 @@ async def auth_google(body: GoogleTokenBody):
         role = existing["role"] or "user"
     conn.close()
 
-    token = jose_jwt.encode(
-        {"sub": user_id, "email": email, "name": name, "picture": picture, "role": role},
-        JWT_SECRET, algorithm=JWT_ALGORITHM
-    )
+    token = make_token(user_id, email, name, picture, role=role)
     return {"token": token, "user": {"id": user_id, "email": email, "name": name, "picture": picture, "role": role}}
 
 class EmailAuthBody(BaseModel):
@@ -53,6 +50,26 @@ class EmailAuthBody(BaseModel):
     name: str = ""
 
 def make_token(user_id, email, name, picture="", role="user"):
-    return jose_jwt.encode(
-        {"sub": user_id, "email": email, "name": name, "picture": picture, "role": role},
-        JWT_SECRET, algorithm=JWT_ALGORITHM
+    session_id = secrets.token_hex(16)
+    now = datetime.now()
+    expires_at = datetime.fromtimestamp(now.timestamp() + 60 * 60 * 24 * 7)
+    payload = {
+        "sub": user_id,
+        "email": email,
+        "name": name or "",
+        "picture": picture or "",
+        "role": role or "user",
+        "jti": session_id,
+        "exp": int(expires_at.timestamp()),
+    }
+    token = jose_jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+    conn = get_db()
+    conn.execute(
+        """INSERT OR REPLACE INTO auth_sessions
+           (id, user_id, session_token_hash, created_at, expires_at, revoked_at)
+           VALUES (?,?,?,?,?,NULL)""",
+        (session_id, user_id, hashlib.sha256(session_id.encode()).hexdigest(), now.isoformat(), expires_at.isoformat()),
+    )
+    conn.commit()
+    conn.close()
+    return token

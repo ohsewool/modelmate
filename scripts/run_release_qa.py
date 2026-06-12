@@ -61,11 +61,14 @@ def main():
         results = [run_step(name, cmd, timeout) for name, cmd, timeout in steps]
 
     if args.base_url:
+        auth_cmd = [sys.executable, str(ROOT / "scripts" / "run_auth_smoke.py"), "--base-url", args.base_url]
+        results.append(run_step("auth_smoke", auth_cmd, 180))
         smoke_cmd = [sys.executable, str(ROOT / "scripts" / "run_product_smoke.py"), "--base-url", args.base_url]
         if args.skip_training:
             smoke_cmd.append("--skip-training")
         results.append(run_step("product_smoke", smoke_cmd, 240))
     else:
+        results.append({"name": "auth_smoke", "status": "skipped", "reason": "--base-url not provided"})
         results.append({"name": "product_smoke", "status": "skipped", "reason": "--base-url not provided"})
 
     allowed = {"pass", "skipped"}
