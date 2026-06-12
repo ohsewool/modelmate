@@ -257,6 +257,42 @@ def _create_training_job_record(user, background_tasks, body, *, rerun_of=None, 
                 "user_friendly_message": "This dataset was deleted and cannot be used for rerun or training.",
                 "recommended_next_action": "Upload the CSV again or choose another dataset.",
             })
+    if body.run_config and body.run_config.get("smoke_force_failure"):
+        import uuid
+        now = _job_now()
+        job_id = str(uuid.uuid4())
+        conn = get_db()
+        conn.execute(
+            """
+            INSERT INTO training_jobs
+            (job_id,user_id,project_id,analysis_run_id,dataset_id,status,current_step,progress_message,progress_percent,created_at,queued_at,failed_at,error_type,error_message,recommended_next_action,result_summary,artifact_refs,rerun_of,source_run_id)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+            """,
+            (
+                job_id,
+                user["sub"],
+                body.project_id,
+                body.analysis_run_id,
+                body.dataset_id,
+                "failed",
+                "training_failed",
+                "Smoke failure created for recovery QA.",
+                100,
+                now,
+                now,
+                now,
+                "training_failed",
+                "Smoke failure created for recovery QA.",
+                recommended_action_for_error("training_failed"),
+                json.dumps({}, ensure_ascii=False),
+                json.dumps({}, ensure_ascii=False),
+                rerun_of,
+                source_run_id,
+            ),
+        )
+        conn.commit()
+        conn.close()
+        return _get_training_job_owned(user, job_id)
     active = _find_active_training_job(user["sub"], body.project_id)
     if active:
         active["duplicate_guard"] = True

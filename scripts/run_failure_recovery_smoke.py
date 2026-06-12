@@ -80,7 +80,12 @@ def run(base_url):
     project_id = (create["json"] or {}).get("id")
     add(results, "user A can create project", create["status"] == 200 and bool(project_id), "POST /api/projects", create["status"])
 
-    job = request("POST", join(base_url, "/api/training/jobs"), payload={"project_id": project_id}, token=token_a)
+    job = request(
+        "POST",
+        join(base_url, "/api/training/jobs"),
+        payload={"project_id": project_id, "run_config": {"smoke_force_failure": True}},
+        token=token_a,
+    )
     job_id = (job["json"] or {}).get("job_id")
     add(results, "failure test job can be created", job["status"] == 200 and bool(job_id), "POST /api/training/jobs", job["status"])
 
