@@ -14,6 +14,12 @@ import Predict from './pages/Predict'
 import Deploy from './pages/Deploy'
 import Login from './pages/Login'
 import Pricing from './pages/Pricing'
+import WorkspaceDashboard from './pages/workspace/WorkspaceDashboard'
+import WorkspaceProjects from './pages/workspace/WorkspaceProjects'
+import WorkspaceJobs from './pages/workspace/WorkspaceJobs'
+import WorkspaceReports from './pages/workspace/WorkspaceReports'
+import WorkspacePredictionApis from './pages/workspace/WorkspacePredictionApis'
+import WorkspaceSettings from './pages/workspace/WorkspaceSettings'
 
 const GOOGLE_CLIENT_ID = '373474705259-7b18amrkom84aqqt59n87lglhrgq1trj.apps.googleusercontent.com'
 
@@ -43,6 +49,14 @@ export default function App() {
               <RequireAuth>
                 <AppLayout>
                   <Routes>
+                    <Route path="/dashboard" element={<WorkspaceDashboard />} />
+                    <Route path="/projects" element={<WorkspaceProjects />} />
+                    <Route path="/jobs" element={<WorkspaceJobs />} />
+                    <Route path="/reports" element={<WorkspaceReports />} />
+                    <Route path="/prediction-apis" element={<WorkspacePredictionApis />} />
+                    <Route path="/settings" element={<WorkspaceSettings />} />
+                    <Route path="/new" element={<Navigate to="/upload" replace />} />
+                    <Route path="/analysis/new" element={<Navigate to="/upload" replace />} />
                     <Route path="/upload"    element={<Upload />} />
                     <Route path="/agent"     element={<Agent />} />
                     <Route path="/model-lab" element={<ModelLab />} />
@@ -51,7 +65,7 @@ export default function App() {
                     <Route path="/xai"       element={<XAI />} />
                     <Route path="/history"   element={<History />} />
                     <Route path="/report"    element={<Report />} />
-                    <Route path="*"          element={<Navigate to="/" replace />} />
+                    <Route path="*"          element={<Navigate to="/dashboard" replace />} />
                   </Routes>
                 </AppLayout>
               </RequireAuth>

@@ -482,6 +482,30 @@ html.dark {
     cursor: pointer; transition: all 0.15s; flex-shrink: 0;
   }
   .theme-toggle:hover { background: var(--surface); color: var(--text); border-color: #6366f1; }
+
+  .workspace-sidebar {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+  }
+  .workspace-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 38px;
+    padding: 0 10px;
+    border-radius: 8px;
+    color: var(--text-2);
+    font-size: 13px;
+    font-weight: 750;
+    transition: background 0.15s, color 0.15s;
+  }
+  .workspace-nav-item:hover { background: var(--surface-alt); color: var(--text); }
+  .workspace-nav-active { background: #eff6ff; color: #1d4ed8; }
+  .workspace-overlay { display: none; }
+  .workspace-close-mobile { display: none; }
 }
 
 /* ── Dark mode overrides ─────────────────────────────── */
@@ -506,6 +530,27 @@ html.dark .banner-danger  { background: rgba(244,63,94,0.1);   border-color: rgb
 
 /* ── 반응형 (모바일) ─────────────────────────────────── */
 @media (max-width: 768px) {
+  .workspace-shell { grid-template-columns: 1fr !important; }
+  .workspace-sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: 248px;
+    z-index: 60;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+    box-shadow: 8px 0 24px rgba(15,23,42,0.16);
+  }
+  .workspace-sidebar-open { transform: translateX(0); }
+  .workspace-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 55;
+    border: 0;
+    background: rgba(15,23,42,0.35);
+  }
+  .workspace-close-mobile { display: inline-flex !important; }
+
   /* 사이드바: 모바일에서 드로어로 */
   .sidebar {
     position: fixed !important;

@@ -69,6 +69,19 @@ Goal:
 
 - Shift from "analysis demo" to "saved SaaS workspace".
 
+Implementation notes:
+
+- Implemented in the frontend app shell with primary workspace navigation.
+- Added authenticated routes: `/dashboard`, `/projects`, `/jobs`, `/reports`,
+  `/prediction-apis`, and `/settings`.
+- Added `/new` and `/analysis/new` compatibility entry points that open the
+  existing upload/new-analysis flow.
+- Existing upload, model comparison, report, reason, prediction, deploy, and
+  history screens are preserved.
+- Project detail and run detail tabs are intentionally left for UI-03.
+- Missing or partial backend metadata is handled with empty states and graceful
+  placeholders rather than new backend architecture.
+
 ## UI-03: Project Detail / Run Detail
 
 Scope:
