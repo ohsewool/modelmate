@@ -55,7 +55,7 @@ Use this sentence when describing the project:
 Avoid these claims:
 
 - ModelMate replaces enterprise AutoML platforms.
-- ModelMate is already a fully autonomous AI data scientist.
+- ModelMate is already a complete autonomous AI analyst.
 - ModelMate automatically handles full MLOps and production deployment.
 
 ## Practical Roadmap

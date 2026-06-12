@@ -131,6 +131,22 @@ feature request, or beta feedback template. Known limitations remain: no
 payment, no account-based quota, no full async job queue, no enterprise
 compliance program, and no complete autonomous AI analyst runtime.
 
+Final demo and beta QA documents:
+
+- Deployment checklist: `docs/deployment-checklist.md`
+- Final QA checklist: `docs/final-qa.md`
+- Demo QA checklist: `docs/demo-qa-checklist.md`
+
+Screenshots to add before a public demo:
+
+- Landing page
+- CSV upload and sample dataset selector
+- Agent timeline
+- Trust panel
+- Report export
+- Prediction API documentation
+- Project history/rerun
+
 Commercial SaaS MVP trust documents are drafted, not finalized legal policies:
 
 - Privacy and data handling draft: `docs/privacy.md`

@@ -34,7 +34,7 @@ worker, actual retraining, actual deployment, or LLM planner call.
 
 README and `docs/demo-agentic-automl.md` describe the current state honestly:
 ModelMate is being extended toward real tool-calling Agentic AutoML, but it is
-not yet a fully autonomous AI data scientist.
+not yet a complete autonomous AI analyst.
 
 ## Validation
 
