@@ -209,6 +209,8 @@ Final demo and beta QA documents:
 - Deployment checklist: `docs/deployment-checklist.md`
 - Final QA checklist: `docs/final-qa.md`
 - Demo QA checklist: `docs/demo-qa-checklist.md`
+- Frontend design guide: `docs/frontend-design-guide.md`
+- UI redesign roadmap: `docs/ui-redesign-roadmap.md`
 
 Beta launch package:
 
