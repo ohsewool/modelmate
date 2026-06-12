@@ -133,19 +133,37 @@ compliance program, and no complete autonomous AI analyst runtime.
 
 Final demo and beta QA documents:
 
+- Beta MVP release notes: `docs/release-notes-beta.md`
+- Beta tester guide: `docs/beta-tester-guide.md`
+- Beta feedback message draft: `docs/beta-feedback-message.md`
 - Deployment checklist: `docs/deployment-checklist.md`
 - Final QA checklist: `docs/final-qa.md`
 - Demo QA checklist: `docs/demo-qa-checklist.md`
 
-Screenshots to add before a public demo:
+Beta launch package:
+
+- Status: small beta package for 5-15 testers
+- Try the demo: open the app, download a sample CSV from the upload screen,
+  upload it, run model comparison, review report/export/API/history
+- What to test: clarity of CSV choice, target recommendation, warnings, report
+  usefulness, prediction API reuse, and project rerun
+- Feedback: use GitHub issue templates or the placeholder form in
+  `docs/beta-feedback-message.md`
+- Direction: feedback-driven commercialization of a guided CSV predictive
+  analysis MVP
+
+Screenshots to add before a wider public demo:
 
 - Landing page
 - CSV upload and sample dataset selector
+- Target recommendation
 - Agent timeline
 - Trust panel
+- Model comparison
 - Report export
 - Prediction API documentation
 - Project history/rerun
+- Privacy/terms/pricing links
 
 Commercial SaaS MVP trust documents are drafted, not finalized legal policies:
 
