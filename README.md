@@ -49,6 +49,7 @@ claim that ModelMate is already a complete autonomous AI data scientist.
 - Workspace/history reuse
 - Share/API-style flow
 - Reusable prediction API documentation for shared models
+- Auth-lite session foundation with guest demo mode
 
 ## Agentic AutoML Upgrade Status
 
@@ -92,6 +93,7 @@ enterprise expansion. The priority is SaaS readiness:
 - report export path
 - prediction API documentation
 - project save/reopen/re-run flow
+- auth-lite session foundation with guest demo mode
 - basic usage limits
 - try-with-sample-data onboarding
 - clear explanation of what ModelMate does and does not do
@@ -104,6 +106,11 @@ shared prediction API contract and limitations.
 Operational readiness is handled at MVP level: status tracking, friendly
 failure recovery messages, and demo guardrails for file size, row count, column
 count, and training budget. See `docs/operational-readiness.md`.
+
+Auth-lite is handled at MVP foundation level. Guest demo mode remains available,
+and `/api/session` exposes whether the current context is guest or authenticated
+so the next PR can attach user-owned project rules. This is not full RBAC,
+payment, SSO, or account-based quota. See `docs/auth-lite-session.md`.
 
 First-time users can try ModelMate without preparing their own CSV. The upload
 screen links to three small synthetic sample datasets:
@@ -137,6 +144,7 @@ Final demo and beta QA documents:
 - Beta tester guide: `docs/beta-tester-guide.md`
 - Beta feedback message draft: `docs/beta-feedback-message.md`
 - Automated QA guide: `docs/automated-qa.md`
+- Auth-lite session foundation: `docs/auth-lite-session.md`
 - Deployment checklist: `docs/deployment-checklist.md`
 - Final QA checklist: `docs/final-qa.md`
 - Demo QA checklist: `docs/demo-qa-checklist.md`
@@ -174,8 +182,9 @@ python scripts/run_product_smoke.py --base-url https://web-production-5d6fa.up.r
 ```
 
 Automated QA checks endpoints, sample upload, target selection, report export,
-and deployment smoke paths. Human review is still needed for usability, copy
-clarity, visual layout, and whether beta users find the report persuasive.
+auth-lite session context, guest demo session start, and deployment smoke paths.
+Human review is still needed for usability, copy clarity, visual layout, and
+whether beta users find the report persuasive.
 
 Commercial SaaS MVP trust documents are drafted, not finalized legal policies:
 

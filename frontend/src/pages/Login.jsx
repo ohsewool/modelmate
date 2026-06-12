@@ -5,7 +5,7 @@ import { useAuth } from '../AuthContext'
 import api from '../api'
 
 export default function Login() {
-  const { user, login } = useAuth()
+  const { user, login, startGuest } = useAuth()
   const nav = useNavigate()
 
   const [mode,     setMode]     = useState('login')
@@ -40,6 +40,18 @@ export default function Login() {
       login(data.token, data.user)
       nav(data.user?.role === 'admin' ? '/history' : '/upload')
     } catch(e) { setError('Google 로그인에 실패했습니다') }
+  }
+
+  async function handleGuestStart() {
+    setError('')
+    setLoading(true)
+    try {
+      await startGuest()
+      nav('/upload')
+    } catch (e) {
+      setError('게스트 데모 세션을 시작하지 못했습니다. 잠시 후 다시 시도해주세요.')
+    }
+    setLoading(false)
   }
 
   const inputStyle = {
@@ -187,6 +199,18 @@ export default function Login() {
             shape="rectangular"
           />
         </div>
+
+        <button type="button" onClick={handleGuestStart} disabled={loading} style={{
+          width:'100%', marginTop: 14, padding:'11px', borderRadius:10,
+          border:'1px solid #c7d2fe', background:'#eef2ff', color:'#3730a3',
+          cursor: loading ? 'not-allowed' : 'pointer', fontWeight:800,
+          fontSize:13, fontFamily:'inherit',
+        }}>
+          로그인 없이 게스트 데모로 시작
+        </button>
+        <p style={{ fontSize:11, color:'#6b7280', lineHeight:1.5, margin:'10px 0 0', textAlign:'center' }}>
+          게스트 데모는 업로드와 분석 흐름 확인용이며, 계정별 프로젝트 저장은 로그인 후 사용할 수 있습니다.
+        </p>
 
       </div>
     </div>

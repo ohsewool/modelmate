@@ -125,6 +125,7 @@ export default function Sidebar({ isOpen, onClose }) {
                 <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.name}</p>
                 <p style={{ fontSize: 10, color: 'var(--text-label)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</p>
                 {user.role === 'admin' && <p style={{ fontSize: 10, color: '#1d4ed8', fontWeight: 800, margin: '2px 0 0' }}>관리자</p>}
+                {user.is_guest && <p style={{ fontSize: 10, color: '#7c3aed', fontWeight: 800, margin: '2px 0 0' }}>게스트 데모</p>}
               </div>
               <button onClick={logout} title="로그아웃" style={{
                 width: 28, height: 28, background: 'none', border: 'none',

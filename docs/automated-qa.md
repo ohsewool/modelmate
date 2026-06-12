@@ -55,6 +55,8 @@ python scripts/run_release_qa.py --base-url https://web-production-5d6fa.up.rail
 - landing and pricing routes respond;
 - `/api/state`, `/api/agent/tools`, `/api/deployed`, `/api/report/summary`, and
   `/api/report/html` respond;
+- `/api/session` returns an auth-lite session context;
+- `/api/session/guest` can start a guest demo session;
 - sample CSV upload works;
 - target selection path works;
 - AutoML training endpoint works when not skipped;

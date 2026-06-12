@@ -69,6 +69,19 @@ def run_smoke(base_url, skip_training=False):
     state = request("GET", join(base_url, "/api/state"))
     add_result(results, "state API exists", state["status"] == 200 and contains_any(state["text"], ["has_data", "analysis_status"]), "GET /api/state", state["status"])
 
+    session = request("GET", join(base_url, "/api/session"))
+    session_ok = session["status"] == 200 and contains_any(session["text"], ["guest_demo", "capabilities", "workspace_scope"])
+    add_result(results, "auth-lite session context exists", session_ok, "GET /api/session", session["status"])
+
+    guest = request(
+        "POST",
+        join(base_url, "/api/session/guest"),
+        data=json_body({"source": "smoke_test"}),
+        headers={"Content-Type": "application/json"},
+    )
+    guest_ok = guest["status"] == 200 and contains_any(guest["text"], ["guest_session_id", "guest_demo", "project_persistence"])
+    add_result(results, "guest demo session can start", guest_ok, "POST /api/session/guest", guest["status"])
+
     tools = request("GET", join(base_url, "/api/agent/tools"))
     add_result(results, "agent tools endpoint exists", tools["status"] == 200 and contains_any(tools["text"], ["data_profile_tool", "automl_training_tool"]), "GET /api/agent/tools", tools["status"])
 
@@ -119,6 +132,7 @@ def run_smoke(base_url, skip_training=False):
         "docs/terms.md",
         "docs/pricing.md",
         "docs/prediction-api.md",
+        "docs/auth-lite-session.md",
         "sample_data/metadata.json",
     ])
     add_result(results, "privacy/terms/pricing/prediction docs exist", docs_ok, "local docs check")
