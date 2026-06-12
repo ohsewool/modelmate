@@ -24,7 +24,7 @@ export default function WorkspaceProjects() {
             <thead><tr><th>Project</th><th>Status</th><th>Target</th><th>Dataset</th><th>Latest run</th><th>Best model</th><th>Metric</th><th>Actions</th></tr></thead>
             <tbody>{data.projects.map(project => (
               <tr key={project.id}>
-                <td><strong>{project.name}</strong><br /><span style={{ color: 'var(--text-label)' }}>{project.id}</span></td>
+                <td><Link to={`/projects/${project.id}`}><strong>{project.name}</strong></Link><br /><span style={{ color: 'var(--text-label)' }}>{project.id}</span></td>
                 <td><StatusBadge status={project.archive_status || 'active'} /></td>
                 <td>{fmt(projectTarget(project))}</td>
                 <td>{projectDatasetName(project)}</td>
@@ -32,9 +32,9 @@ export default function WorkspaceProjects() {
                 <td>{fmt(project.last_best_model)}</td>
                 <td>{primaryMetric(project)}</td>
                 <td style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  <button className="btn-secondary" onClick={() => nav('/history')}>History</button>
-                  <Link to="/reports">Reports</Link>
-                  <Link to="/prediction-apis">APIs</Link>
+                  <button className="btn-secondary" onClick={() => nav(`/projects/${project.id}`)}>Open</button>
+                  <Link to={`/projects/${project.id}?tab=report`}>Reports</Link>
+                  <Link to={`/projects/${project.id}?tab=api`}>APIs</Link>
                 </td>
               </tr>
             ))}</tbody>

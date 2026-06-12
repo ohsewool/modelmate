@@ -50,7 +50,7 @@ export default function WorkspaceDashboard() {
                   <td>{fmt(projectTarget(project))}</td>
                   <td>{fmt(project.last_best_model)}</td>
                   <td>{primaryMetric(project)}</td>
-                  <td><Link to="/projects">Open</Link></td>
+                  <td><Link to={`/projects/${project.id}`}>Open</Link></td>
                 </tr>
               ))}</tbody>
             </table>

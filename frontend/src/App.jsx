@@ -20,6 +20,8 @@ import WorkspaceJobs from './pages/workspace/WorkspaceJobs'
 import WorkspaceReports from './pages/workspace/WorkspaceReports'
 import WorkspacePredictionApis from './pages/workspace/WorkspacePredictionApis'
 import WorkspaceSettings from './pages/workspace/WorkspaceSettings'
+import ProjectDetail from './pages/workspace/ProjectDetail'
+import RunDetail from './pages/workspace/RunDetail'
 
 const GOOGLE_CLIENT_ID = '373474705259-7b18amrkom84aqqt59n87lglhrgq1trj.apps.googleusercontent.com'
 
@@ -51,6 +53,8 @@ export default function App() {
                   <Routes>
                     <Route path="/dashboard" element={<WorkspaceDashboard />} />
                     <Route path="/projects" element={<WorkspaceProjects />} />
+                    <Route path="/projects/:projectId" element={<ProjectDetail />} />
+                    <Route path="/projects/:projectId/runs/:runId" element={<RunDetail />} />
                     <Route path="/jobs" element={<WorkspaceJobs />} />
                     <Route path="/reports" element={<WorkspaceReports />} />
                     <Route path="/prediction-apis" element={<WorkspacePredictionApis />} />

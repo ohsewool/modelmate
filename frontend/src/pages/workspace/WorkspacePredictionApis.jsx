@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { EmptyState, LoadingState, StatusBadge, WorkspacePageHeader } from '../../components/workspace-shell/WorkspaceStates'
 import { fmt, loadPredictionApiRows } from './workspaceData'
 import api from '../../api'
@@ -33,13 +33,13 @@ export default function WorkspacePredictionApis() {
               const calls = row.tokens.reduce((sum, token) => sum + Number(token.usage_count || 0), 0)
               return (
                 <tr key={row.project.id}>
-                  <td><strong>{row.project.name}</strong><br /><span style={{ color: 'var(--text-label)' }}>{row.project.id}</span></td>
+                  <td><Link to={`/projects/${row.project.id}?tab=api`}><strong>{row.project.name}</strong></Link><br /><span style={{ color: 'var(--text-label)' }}>{row.project.id}</span></td>
                   <td><StatusBadge status={row.availability?.available ? 'ready' : 'warning'} /></td>
                   <td>{active.length} active / {row.tokens.length} total</td>
                   <td>{latestUsed(row.tokens)}</td>
                   <td>{calls}</td>
                   <td>{row.availability?.dataset_active ? 'Dataset active' : fmt(row.availability?.reason)} - {row.availability?.model_ready ? 'Model ready' : 'Model needed'}</td>
-                  <td><button className="btn-secondary" onClick={() => nav('/deploy')}>Manage tokens</button></td>
+                  <td><button className="btn-secondary" onClick={() => nav(`/projects/${row.project.id}?tab=api`)}>Manage tokens</button></td>
                 </tr>
               )
             })}</tbody>

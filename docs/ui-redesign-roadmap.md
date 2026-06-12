@@ -95,6 +95,24 @@ Goal:
 
 - Make each project/run understandable, reopenable, and trustable.
 
+Implementation notes:
+
+- Added project detail route `/projects/:projectId` with tabs for overview,
+  runs, report, prediction API, dataset, and settings.
+- Added run detail route `/projects/:projectId/runs/:runId` with an honest
+  run timeline based on saved project/run/job metadata.
+- Added failure recovery panels for failed runs and deleted dataset states.
+- Added rerun actions that reuse the existing safe project run rerun endpoint
+  instead of introducing a new training flow.
+- Reused existing project, job, report, dataset delete impact, and prediction
+  token APIs; no backend endpoint was added for UI-03.
+- Cross-linked Dashboard, Projects, Jobs, Reports, and Prediction APIs pages to
+  project/run detail views.
+- Detailed trace steps that are not persisted by the backend are clearly shown
+  as unavailable rather than fabricated.
+- UI-04 should continue with operational polish for job center, token status,
+  dataset retention, and beta/support states.
+
 ## UI-04: Ops UX Polish
 
 Scope:

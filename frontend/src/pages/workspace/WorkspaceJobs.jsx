@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { EmptyState, LoadingState, StatusBadge, WorkspacePageHeader } from '../../components/workspace-shell/WorkspaceStates'
 import { fmt, loadJobsForProjects } from './workspaceData'
 import api from '../../api'
@@ -26,13 +26,13 @@ export default function WorkspaceJobs() {
             <tbody>{jobs.map(job => (
               <tr key={job.job_id}>
                 <td><strong>{job.job_id?.slice(0, 8)}</strong></td>
-                <td>{job.project?.name || '-'}</td>
+                <td>{job.project?.id ? <Link to={`/projects/${job.project.id}`}>{job.project?.name || job.project.id}</Link> : '-'}</td>
                 <td><StatusBadge status={job.status} /></td>
                 <td>{fmt(job.current_step)}</td>
                 <td>{fmt(job.started_at || job.created_at)}</td>
                 <td>{fmt(job.finished_at || job.failed_at)}</td>
                 <td>{fmt(job.error_type || job.error_message)}</td>
-                <td><button className="btn-secondary" onClick={() => nav('/history')}>View history</button></td>
+                <td>{job.project?.id && job.analysis_run_id ? <Link to={`/projects/${job.project.id}/runs/${job.analysis_run_id}`}>Run detail</Link> : <button className="btn-secondary" onClick={() => nav('/history')}>View history</button>}</td>
               </tr>
             ))}</tbody>
           </table>
