@@ -123,6 +123,11 @@ stays available for sample-data evaluation. This is MVP access control, not
 enterprise-grade tenant isolation. See `docs/security-notes.md` and
 `docs/privacy.md`.
 
+Persistent project history is available at MVP level. Signed-in users can open
+My Projects, see linked dataset metadata, recent run summaries, report metadata,
+prediction API metadata, and a rerun entrypoint. Guest demo results remain
+separate from private project history. See `docs/project-rerun.md`.
+
 Available without signing in:
 
 - landing page and product docs;
@@ -137,6 +142,7 @@ Requires signing in:
 - account-scoped project list and dataset metadata;
 - project detail access;
 - account-scoped analysis history;
+- project run history and report metadata;
 - private agent analysis run trace access;
 - private deployed model metadata and deletion.
 
@@ -211,12 +217,14 @@ Release QA can be run with:
 python scripts/run_release_qa.py --base-url https://web-production-5d6fa.up.railway.app --skip-training
 python scripts/run_auth_smoke.py --base-url https://web-production-5d6fa.up.railway.app
 python scripts/run_ownership_smoke.py --base-url https://web-production-5d6fa.up.railway.app
+python scripts/run_project_history_smoke.py --base-url https://web-production-5d6fa.up.railway.app
 python scripts/run_product_smoke.py --base-url https://web-production-5d6fa.up.railway.app
 ```
 
 Automated QA checks endpoints, sample upload, target selection, report export,
 auth-lite session context, register/login/logout smoke, MVP ownership smoke,
-guest demo session start, and deployment smoke paths. Human review is still needed for usability, copy
+project history smoke, guest demo session start, and deployment smoke paths.
+Human review is still needed for usability, copy
 clarity, visual layout, and whether beta users find the report persuasive.
 
 Commercial SaaS MVP trust documents are drafted, not finalized legal policies:
@@ -275,6 +283,7 @@ python scripts/run_upload_validation_qa.py
 python scripts/run_training_benchmark.py
 python scripts/run_full_qa.py --skip-slow
 python scripts/run_ownership_smoke.py --base-url http://localhost:8000
+python scripts/run_project_history_smoke.py --base-url http://localhost:8000
 ```
 
 ## Demo Scenario

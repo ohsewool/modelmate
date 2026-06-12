@@ -51,6 +51,8 @@ When a user signs in, newly saved projects, uploaded dataset metadata, agent
 analysis runs, and deployed model metadata are associated with that user's
 `user_id` at the MVP application layer. Project lists and private resource
 detail routes are intended to show only the signed-in user's resources.
+Project detail, project run history, and project report metadata are also
+scoped by `user_id` at the MVP application layer.
 
 Guest demo mode remains available for sample-data evaluation. Guest/demo data is
 treated separately from private user projects and should not be used for

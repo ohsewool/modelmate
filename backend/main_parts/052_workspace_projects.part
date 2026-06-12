@@ -3,6 +3,159 @@ class ProjectBody(BaseModel):
     description: str = ""
 
 
+def _safe_json(raw, fallback=None):
+    if raw is None:
+        return fallback
+    try:
+        return json.loads(raw) if isinstance(raw, str) else raw
+    except Exception:
+        return fallback
+
+
+def _metric_from_history(item):
+    task_type = item.get("task_type")
+    first = (item.get("results") or [{}])[0]
+    if task_type == "regression":
+        return {"name": "R2", "value": first.get("r2")}
+    return {"name": "ROC-AUC", "value": first.get("roc_auc", first.get("accuracy"))}
+
+
+def _history_project_id(item):
+    ref = item.get("dataset_ref") or {}
+    return ref.get("project_id")
+
+
+def _run_history_item(row):
+    item = _safe_json(row["data"], {}) or {}
+    metric = _metric_from_history(item)
+    warnings_count = len(item.get("risk_notes") or item.get("warnings") or [])
+    report_id = f"experiment-{row['id']}" if item.get("best_model") else None
+    return {
+        "analysis_run_id": f"experiment-{row['id']}",
+        "source": "experiment_history",
+        "created_at": row["created_at"],
+        "status": item.get("status") or "succeeded",
+        "goal": item.get("dataset_domain") or item.get("target_category") or "Saved CSV analysis",
+        "target": item.get("target"),
+        "task_type": item.get("task_type"),
+        "best_model": item.get("best_model"),
+        "metric_name": metric["name"],
+        "metric_value": metric["value"],
+        "warnings_count": warnings_count,
+        "report_id": report_id,
+        "can_rerun": bool(item.get("reuse_config") or item.get("dataset_ref")),
+        "failure_message": item.get("error_message") if item.get("status") == "failed" else None,
+        "reuse_config": item.get("reuse_config"),
+    }
+
+
+def _agent_run_item(row):
+    return {
+        "analysis_run_id": row["id"],
+        "source": "agent_trace",
+        "created_at": row["created_at"],
+        "status": row["status"],
+        "goal": row["user_goal"],
+        "target": None,
+        "task_type": None,
+        "best_model": None,
+        "metric_name": None,
+        "metric_value": None,
+        "warnings_count": 0,
+        "report_id": None,
+        "can_rerun": False,
+        "failure_message": None,
+        "reuse_config": None,
+    }
+
+
+def _project_prediction_metadata(conn, project_id, user_id):
+    rows = conn.execute(
+        "SELECT * FROM deployed_models WHERE user_id=? ORDER BY created_at DESC",
+        (user_id,),
+    ).fetchall()
+    out = []
+    for row in rows:
+        dataset_ref = _safe_json(row["dataset_ref"], {}) or {}
+        if dataset_ref.get("project_id") != project_id:
+            continue
+        out.append({
+            "model_id": row["id"],
+            "name": row["name"],
+            "best_model_name": row["best_model_name"],
+            "target_col": row["target_col"],
+            "task_type": row["task_type"],
+            "created_at": row["created_at"],
+            "predict_url": f"/api/v2/{row['id']}/predict",
+        })
+    return out
+
+
+def _project_runs(conn, project_id, user_id):
+    runs = []
+    rows = conn.execute(
+        "SELECT id, data, created_at FROM experiments WHERE user_id=? ORDER BY id DESC LIMIT 200",
+        (user_id,),
+    ).fetchall()
+    for row in rows:
+        item = _safe_json(row["data"], {}) or {}
+        if _history_project_id(item) == project_id:
+            runs.append(_run_history_item(row))
+    try:
+        agent_rows = conn.execute(
+            "SELECT * FROM analysis_runs WHERE user_id=? AND project_id=? ORDER BY created_at DESC LIMIT 100",
+            (user_id, project_id),
+        ).fetchall()
+        runs.extend(_agent_run_item(row) for row in agent_rows)
+    except sqlite3.OperationalError:
+        pass
+    return sorted(runs, key=lambda row: row.get("created_at") or "", reverse=True)
+
+
+def _project_reports(conn, project_id, user_id):
+    reports = []
+    for run in _project_runs(conn, project_id, user_id):
+        if not run.get("report_id"):
+            continue
+        reports.append({
+            "report_id": run["report_id"],
+            "analysis_run_id": run["analysis_run_id"],
+            "created_at": run["created_at"],
+            "title": f"{run.get('target') or 'CSV'} analysis report",
+            "status": "metadata_available",
+            "export_available": False,
+            "message": "Saved report metadata is available. HTML export uses the current analysis session until report persistence is added.",
+        })
+    return reports
+
+
+def _project_summary(project, datasets, runs, prediction_meta):
+    last_run = runs[0] if runs else None
+    latest_dataset = datasets[0] if datasets else None
+    return {
+        "project_id": project["id"],
+        "id": project["id"],
+        "name": project["name"],
+        "description": project["description"] or "",
+        "created_at": project["created_at"],
+        "updated_at": project["updated_at"],
+        "user_id": project["user_id"],
+        "owner_user_id": project["user_id"],
+        "last_run_id": last_run.get("analysis_run_id") if last_run else None,
+        "last_status": last_run.get("status") if last_run else None,
+        "last_target": last_run.get("target") if last_run else None,
+        "last_task_type": last_run.get("task_type") if last_run else None,
+        "last_best_model": last_run.get("best_model") if last_run else None,
+        "last_metric_name": last_run.get("metric_name") if last_run else None,
+        "last_metric_value": last_run.get("metric_value") if last_run else None,
+        "dataset_name": latest_dataset["filename"] if latest_dataset else None,
+        "dataset_summary": dict(latest_dataset) if latest_dataset else None,
+        "run_count": len(runs),
+        "has_report": any(row.get("report_id") for row in runs),
+        "has_prediction_api": bool(prediction_meta),
+    }
+
+
 def ensure_default_project(user_id, name="기본 프로젝트"):
     import uuid
     conn = get_db()
@@ -71,14 +224,24 @@ async def list_projects(user=Depends(get_current_user)):
         return []
     ensure_default_project(user["sub"])
     conn = get_db()
-    rows = conn.execute(
-        """SELECT p.*, COUNT(d.id) AS dataset_count
-           FROM projects p LEFT JOIN datasets d ON d.project_id=p.id
-           WHERE p.user_id=? GROUP BY p.id ORDER BY p.updated_at DESC""",
+    projects = conn.execute(
+        "SELECT * FROM projects WHERE user_id=? ORDER BY updated_at DESC",
         (user["sub"],),
     ).fetchall()
+    out = []
+    for row in projects:
+        project = dict(row)
+        datasets = conn.execute(
+            "SELECT * FROM datasets WHERE project_id=? AND user_id=? ORDER BY created_at DESC",
+            (project["id"], user["sub"]),
+        ).fetchall()
+        runs = _project_runs(conn, project["id"], user["sub"])
+        prediction_meta = _project_prediction_metadata(conn, project["id"], user["sub"])
+        summary = _project_summary(project, datasets, runs, prediction_meta)
+        summary["dataset_count"] = len(datasets)
+        out.append(summary)
     conn.close()
-    return [dict(r) for r in rows]
+    return out
 
 
 @app.get("/api/projects/{project_id}")
@@ -90,13 +253,47 @@ async def get_project_detail(project_id: str, user=Depends(get_current_user)):
             "SELECT * FROM datasets WHERE project_id=? AND user_id=? ORDER BY created_at DESC",
             (project_id, project["user_id"]),
         ).fetchall()
+        runs = _project_runs(conn, project_id, project["user_id"])
+        reports = _project_reports(conn, project_id, project["user_id"])
+        prediction_meta = _project_prediction_metadata(conn, project_id, project["user_id"])
     finally:
         conn.close()
+    known_warnings = []
+    if not datasets:
+        known_warnings.append("No dataset metadata is linked to this project yet.")
+    if not runs:
+        known_warnings.append("No analysis run history is linked to this project yet.")
+    summary = _project_summary(project, datasets, runs, prediction_meta)
     return {
-        **project,
+        **summary,
         "datasets": [dict(r) for r in datasets],
+        "analysis_runs": runs,
+        "available_reports": reports,
+        "prediction_api_metadata": prediction_meta,
+        "known_warnings": known_warnings,
+        "next_recommended_action": "Open a saved run, review report metadata, or rerun the workflow from the upload screen.",
         "ownership": "owned",
     }
+
+
+@app.get("/api/projects/{project_id}/runs")
+async def get_project_runs(project_id: str, user=Depends(get_current_user)):
+    project = assert_project_owner(user, project_id)
+    conn = get_db()
+    try:
+        return _project_runs(conn, project_id, project["user_id"])
+    finally:
+        conn.close()
+
+
+@app.get("/api/projects/{project_id}/reports")
+async def get_project_reports(project_id: str, user=Depends(get_current_user)):
+    project = assert_project_owner(user, project_id)
+    conn = get_db()
+    try:
+        return _project_reports(conn, project_id, project["user_id"])
+    finally:
+        conn.close()
 
 
 @app.post("/api/projects")

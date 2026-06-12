@@ -11,6 +11,7 @@ import ExperimentComparePanel from '../components/history/ExperimentComparePanel
 import ExperimentDetail from '../components/history/ExperimentDetail'
 import RecentExperimentSummary from '../components/history/RecentExperimentSummary'
 import DatasetList from '../components/workspace/DatasetList'
+import ProjectHistoryPanel from '../components/workspace/ProjectHistoryPanel'
 import WorkspaceBanner from '../components/workspace/WorkspaceBanner'
 import WorkspaceContinuityPanel from '../components/workspace/WorkspaceContinuityPanel'
 import WorkspaceValuePanel from '../components/workspace/WorkspaceValuePanel'
@@ -74,6 +75,7 @@ export default function History() {
   const [profile, setProfile] = useState(null)
   const [history, setHistory] = useState([])
   const [datasets, setDatasets] = useState([])
+  const [projects, setProjects] = useState([])
   const [adminSummary, setAdminSummary] = useState(null)
   const [selectedItem, setSelectedItem] = useState(null)
   const [compareItems, setCompareItems] = useState([])
@@ -90,9 +92,11 @@ export default function History() {
         api.get('/history'),
         api.get('/datasets').catch(() => ({ data: [] })),
       ])
+      const projectsRes = await api.get('/projects').catch(() => ({ data: [] }))
       setProfile(profileRes.data)
       setHistory(historyRes.data || [])
       setDatasets(datasetsRes.data || [])
+      setProjects(projectsRes.data || [])
       if (profileRes.data?.is_admin) {
         const adminRes = await api.get('/admin/summary').catch(() => ({ data: null }))
         setAdminSummary(adminRes.data)
@@ -209,6 +213,12 @@ export default function History() {
         />
 
         {profile?.is_admin && <AdminDashboard summary={adminSummary} />}
+
+        <ProjectHistoryPanel
+          projects={projects}
+          user={user}
+          onRerun={project => nav('/upload', { state: { rerunProject: project } })}
+        />
 
         <DatasetList
           datasets={datasets}

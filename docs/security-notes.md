@@ -23,6 +23,7 @@ Current safeguards include:
   deployed model metadata
 - private project lists scoped by `user_id`
 - public prediction invocation kept separate from private model metadata access
+- owner-scoped project history, run history, and report metadata endpoints
 - user-facing failure recovery messages
 - documentation warning users not to upload secrets or sensitive data
 - environment-variable based deployment configuration
@@ -48,6 +49,12 @@ Commercialization PR-13 adds an MVP access-control layer for saved resources.
 Authenticated project, dataset, analysis-run, and deployed-model metadata are
 associated with the current `user_id`, and private list/detail routes only
 return resources owned by that user, except for admin review paths.
+
+Project history endpoints added in PR-14 are also owner-scoped:
+
+- `GET /api/projects/{project_id}`;
+- `GET /api/projects/{project_id}/runs`;
+- `GET /api/projects/{project_id}/reports`.
 
 Guest demo mode remains separate. Ownerless demo or legacy data should not be
 treated as another user's private project, and public prediction endpoints are

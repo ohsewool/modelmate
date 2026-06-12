@@ -65,6 +65,8 @@ def main():
         results.append(run_step("auth_smoke", auth_cmd, 180))
         ownership_cmd = [sys.executable, str(ROOT / "scripts" / "run_ownership_smoke.py"), "--base-url", args.base_url]
         results.append(run_step("ownership_smoke", ownership_cmd, 180))
+        project_history_cmd = [sys.executable, str(ROOT / "scripts" / "run_project_history_smoke.py"), "--base-url", args.base_url]
+        results.append(run_step("project_history_smoke", project_history_cmd, 180))
         smoke_cmd = [sys.executable, str(ROOT / "scripts" / "run_product_smoke.py"), "--base-url", args.base_url]
         if args.skip_training:
             smoke_cmd.append("--skip-training")
@@ -72,6 +74,7 @@ def main():
     else:
         results.append({"name": "auth_smoke", "status": "skipped", "reason": "--base-url not provided"})
         results.append({"name": "ownership_smoke", "status": "skipped", "reason": "--base-url not provided"})
+        results.append({"name": "project_history_smoke", "status": "skipped", "reason": "--base-url not provided"})
         results.append({"name": "product_smoke", "status": "skipped", "reason": "--base-url not provided"})
 
     allowed = {"pass", "skipped"}

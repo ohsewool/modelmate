@@ -12,6 +12,7 @@ python scripts/run_training_benchmark.py
 python scripts/run_full_qa.py --skip-slow
 python scripts/run_auth_smoke.py --base-url http://localhost:8000
 python scripts/run_ownership_smoke.py --base-url http://localhost:8000
+python scripts/run_project_history_smoke.py --base-url http://localhost:8000
 ```
 
 ## Product Smoke Test
@@ -58,6 +59,8 @@ python scripts/run_release_qa.py --base-url https://web-production-5d6fa.up.rail
 - ownership smoke can register two users, create a project for user A, confirm
   user B cannot list or open user A's project, and confirm user B cannot read
   user A's agent analysis run;
+- project history smoke can open project detail, run history, and report
+  metadata for the owner while blocking another user;
 - upload validation QA passes;
 - full QA quick path passes;
 - training benchmark can run when not skipped;
@@ -89,6 +92,8 @@ python scripts/run_release_qa.py --base-url https://web-production-5d6fa.up.rail
 - upload smoke fails: `/api/upload` changed or rejected the sample CSV.
 - training smoke times out: use `--skip-training` for a quick deployment check.
 - report summary lacks evidence/trust data: run training before checking report.
+- project history smoke fails: verify `/api/projects/{id}`, `/runs`, and
+  `/reports` are deployed and ownership checks are active.
 
 ## Release Blockers
 
