@@ -53,6 +53,8 @@ python scripts/run_release_qa.py --base-url https://web-production-5d6fa.up.rail
 - backend compiles;
 - auth smoke can register, login, call `/api/auth/me`, logout, and confirm token
   revocation when a base URL is provided;
+- auth smoke confirms `/api/auth/me` does not expose password or
+  `password_hash` fields;
 - ownership smoke can register two users, create a project for user A, confirm
   user B cannot list or open user A's project, and confirm user B cannot read
   user A's agent analysis run;

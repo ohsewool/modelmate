@@ -5,8 +5,8 @@ into a full auth, billing, or enterprise access-control system.
 
 ## Goal
 
-Prepare the product for future user-owned projects and access control while
-keeping the existing guest demo flow working.
+Prepare the product for user-owned projects and access control while keeping
+the existing guest demo flow working.
 
 ## Current Session Modes
 
@@ -31,9 +31,10 @@ Current limitations:
 
 ### Authenticated user
 
-Existing email/Google login remains available. Authenticated requests can be
-recognized by the current bearer token and are ready to be connected to
-user-owned projects in a later PR.
+Existing email/Google login remains available. Authenticated requests are
+recognized by the current bearer token. PR-13 connects saved projects, dataset
+metadata, agent analysis runs, and private deployed model metadata to
+user-owned access checks at MVP level.
 
 Current capabilities:
 
@@ -73,7 +74,7 @@ logout revokes the matching `auth_sessions` row.
 - `workspace_scope`
 - `capabilities`
 - `limitations`
-- `next_foundation`
+- `access_control`
 
 `POST /api/session/guest` starts or refreshes a guest demo context. It does not
 create an account and does not write a user-owned project record.
@@ -90,7 +91,7 @@ and `updated_at`. A lightweight `auth_sessions` table records:
 - expiry timestamp
 - revoked timestamp
 
-This is a foundation for later user-owned project checks, not a complete access
+This is a foundation for MVP user-owned project checks, not a complete access
 control system.
 
 ## What This PR Does Not Implement
@@ -102,16 +103,23 @@ control system.
 - account-based quota
 - full RBAC
 - team workspace
-- user-owned project access-control enforcement
+- full enterprise-grade user-owned project access-control enforcement
 
-## Next PR Connection
+## PR-13 and PR-14 Connection
 
-The next PR can use this session context to add user-owned project rules:
+PR-13 uses this session context to add MVP user-owned project rules:
 
 - attach analysis runs and datasets to an owner;
 - separate guest, user, and admin visibility;
 - add read/write checks around project endpoints;
-- document upgrade path from guest demo to logged-in workspace.
+- keep guest demo separate from private project history.
+
+PR-14 should continue with persistent project history and rerun ownership:
+
+- define project detail records that connect dataset, analysis run, report, and
+  saved model metadata;
+- require ownership checks before reopening or rerunning a saved project;
+- keep public prediction invocation separate from private prediction metadata.
 
 The existing CSV upload, AutoML, report, prediction API, and sample demo flows
 must remain compatible.

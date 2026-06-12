@@ -123,6 +123,23 @@ stays available for sample-data evaluation. This is MVP access control, not
 enterprise-grade tenant isolation. See `docs/security-notes.md` and
 `docs/privacy.md`.
 
+Available without signing in:
+
+- landing page and product docs;
+- sample dataset selector and guest demo session;
+- CSV upload/demo analysis flow;
+- report preview/export demo flow when the current session has analysis state;
+- prediction API documentation and public prediction invocation for shared
+  model URLs.
+
+Requires signing in:
+
+- account-scoped project list and dataset metadata;
+- project detail access;
+- account-scoped analysis history;
+- private agent analysis run trace access;
+- private deployed model metadata and deletion.
+
 First-time users can try ModelMate without preparing their own CSV. The upload
 screen links to three small synthetic sample datasets:
 
@@ -156,6 +173,9 @@ Final demo and beta QA documents:
 - Beta feedback message draft: `docs/beta-feedback-message.md`
 - Automated QA guide: `docs/automated-qa.md`
 - Auth-lite session foundation: `docs/auth-lite-session.md`
+- Project rerun and PR-14 notes: `docs/project-rerun.md`
+- Commercialization roadmap: `docs/commercialization-roadmap.md`
+- Commercialization backlog: `docs/commercialization-backlog.md`
 - Deployment checklist: `docs/deployment-checklist.md`
 - Final QA checklist: `docs/final-qa.md`
 - Demo QA checklist: `docs/demo-qa-checklist.md`

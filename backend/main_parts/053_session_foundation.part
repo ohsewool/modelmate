@@ -22,7 +22,7 @@ def build_session_context(user=None, guest_session_id=None):
                 "prediction_api": True,
                 "project_persistence": True,
             },
-            "next_foundation": "user-owned projects can use this context for ownership checks.",
+            "access_control": "MVP ownership checks are active for saved projects and private metadata.",
         }
     guest_id = guest_session_id or f"guest-{secrets.token_hex(8)}"
     return {
@@ -42,7 +42,7 @@ def build_session_context(user=None, guest_session_id=None):
             "Guest demo results are not isolated as user-owned project records.",
             "Login is required for account-scoped project history and datasets.",
         ],
-        "next_foundation": "PR-13 can attach user-owned projects and access control to this session context.",
+        "access_control": "Guest demo resources stay separate from private user-owned projects.",
     }
 
 

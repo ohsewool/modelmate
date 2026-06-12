@@ -64,6 +64,8 @@ def run(base_url):
     me = request("GET", join(base_url, "/api/auth/me"), token=login_token)
     me_json = me["json"] or {}
     add(results, "me endpoint success after login", me["status"] == 200 and me_json.get("email") == email, "GET /api/auth/me", me["status"])
+    leaked_keys = {"password", "password_hash"} & set(me_json.keys())
+    add(results, "auth response does not expose password fields", me["status"] == 200 and not leaked_keys, f"leaked keys: {sorted(leaked_keys)}", me["status"])
 
     logout = request("POST", join(base_url, "/api/auth/logout"), token=login_token)
     add(results, "logout success", logout["status"] == 200 and (logout["json"] or {}).get("ok") is True, "POST /api/auth/logout", logout["status"])
