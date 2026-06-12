@@ -241,6 +241,22 @@ def _find_active_training_job(user_id, project_id):
 
 
 def _create_training_job_record(user, background_tasks, body, *, rerun_of=None, source_run_id=None):
+    if body.project_id:
+        project = assert_project_owner(user, body.project_id)
+        if project.get("deleted_at") or project.get("archive_status") == "deleted":
+            raise HTTPException(400, {
+                "error_type": "project_deleted",
+                "user_friendly_message": "This project was deleted and cannot be used for rerun or training.",
+                "recommended_next_action": "Upload the CSV again or create a new project.",
+            })
+    if body.dataset_id:
+        dataset = assert_dataset_owner(user, body.dataset_id)
+        if dataset.get("deleted_at"):
+            raise HTTPException(400, {
+                "error_type": "dataset_deleted",
+                "user_friendly_message": "This dataset was deleted and cannot be used for rerun or training.",
+                "recommended_next_action": "Upload the CSV again or choose another dataset.",
+            })
     active = _find_active_training_job(user["sub"], body.project_id)
     if active:
         active["duplicate_guard"] = True

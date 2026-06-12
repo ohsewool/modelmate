@@ -65,6 +65,21 @@ The following are intentionally left for later PRs:
 - prediction token ownership hardening;
 - team workspace, RBAC, payment, or enterprise SSO.
 
+## Dataset Delete Impact
+
+Commercialization PR-17 adds MVP dataset delete and project archive behavior.
+Signed-in users can preview delete impact before deleting a dataset. The impact
+response explains whether rerun will be disabled and how many linked runs,
+reports, models, or prediction APIs may be affected.
+
+Deleted datasets are hidden from the active dataset list. Rerun/training
+requests that reference a deleted dataset or archived project are blocked with a
+friendly message that asks the user to upload the CSV again or choose another
+dataset. Existing reports may remain as historical summaries. Prediction API
+metadata linked to deleted artifacts may be marked disabled.
+
+Guest/sample datasets remain separate from private user-owned datasets.
+
 ## PR-14 Connection
 
 Next PRs should continue from this project history foundation:
@@ -80,6 +95,7 @@ Next PRs should continue from this project history foundation:
 python scripts/run_project_history_smoke.py --base-url http://localhost:8000
 python scripts/run_background_jobs_smoke.py --base-url http://localhost:8000
 python scripts/run_failure_recovery_smoke.py --base-url http://localhost:8000
+python scripts/run_dataset_delete_smoke.py --base-url http://localhost:8000
 ```
 
 The smoke test creates two users, creates a project for User A, links a mock
@@ -93,3 +109,7 @@ project detail includes the latest job status.
 The failure recovery smoke test confirms a failed job includes recovery fields,
 owner rerun works, duplicate rerun is guarded, and User B cannot rerun User A's
 job.
+
+The dataset delete smoke test uploads a sample CSV as User A, confirms User B
+cannot read or delete that dataset, confirms delete-impact is available, deletes
+the dataset as User A, and confirms training on the deleted dataset is blocked.

@@ -3,6 +3,10 @@ class ProjectBody(BaseModel):
     description: str = ""
 
 
+DATASET_RETENTION_DAYS = int(os.getenv("DATASET_RETENTION_DAYS", "30"))
+DELETED_ARTIFACT_RETENTION_DAYS = int(os.getenv("DELETED_ARTIFACT_RETENTION_DAYS", "30"))
+
+
 def _safe_json(raw, fallback=None):
     if raw is None:
         return fallback
@@ -10,6 +14,42 @@ def _safe_json(raw, fallback=None):
         return json.loads(raw) if isinstance(raw, str) else raw
     except Exception:
         return fallback
+
+
+def ensure_dataset_management_columns():
+    def add_column_once(conn, table, col, col_type):
+        try:
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {col_type}")
+        except sqlite3.OperationalError as exc:
+            if "duplicate column name" not in str(exc).lower():
+                raise
+
+    conn = get_db()
+    dataset_cols = [r[1] for r in conn.execute("PRAGMA table_info(datasets)").fetchall()]
+    for col, col_type in {
+        "original_filename": "TEXT",
+        "file_size_bytes": "INTEGER",
+        "updated_at": "TEXT",
+        "deleted_at": "TEXT",
+        "delete_status": "TEXT DEFAULT 'active'",
+        "retention_status": "TEXT DEFAULT 'active'",
+        "source_type": "TEXT DEFAULT 'upload'",
+        "is_demo_dataset": "INTEGER DEFAULT 0",
+    }.items():
+        if col not in dataset_cols:
+            add_column_once(conn, "datasets", col, col_type)
+    project_cols = [r[1] for r in conn.execute("PRAGMA table_info(projects)").fetchall()]
+    if "deleted_at" not in project_cols:
+        add_column_once(conn, "projects", "deleted_at", "TEXT")
+    if "archive_status" not in project_cols:
+        add_column_once(conn, "projects", "archive_status", "TEXT DEFAULT 'active'")
+    deploy_cols = [r[1] for r in conn.execute("PRAGMA table_info(deployed_models)").fetchall()]
+    if "disabled_at" not in deploy_cols:
+        add_column_once(conn, "deployed_models", "disabled_at", "TEXT")
+    if "disabled_reason" not in deploy_cols:
+        add_column_once(conn, "deployed_models", "disabled_reason", "TEXT")
+    conn.commit()
+    conn.close()
 
 
 def _metric_from_history(item):
@@ -89,6 +129,79 @@ def _project_prediction_metadata(conn, project_id, user_id):
             "predict_url": f"/api/v2/{row['id']}/predict",
         })
     return out
+
+
+def _dataset_deleted(row):
+    return bool(row and (row["deleted_at"] if "deleted_at" in row.keys() else None))
+
+
+def _dataset_impact(conn, dataset, user_id):
+    dataset_ref_id = dataset["id"]
+    project_id = dataset["project_id"]
+    experiments = conn.execute(
+        "SELECT id, data FROM experiments WHERE user_id=? ORDER BY id DESC LIMIT 500",
+        (user_id,),
+    ).fetchall()
+    linked_runs = 0
+    linked_reports = 0
+    for row in experiments:
+        item = _safe_json(row["data"], {}) or {}
+        ref = item.get("dataset_ref") or {}
+        if ref.get("id") == dataset_ref_id or ref.get("dataset_id") == dataset_ref_id:
+            linked_runs += 1
+            if item.get("best_model"):
+                linked_reports += 1
+    linked_models = 0
+    linked_prediction_apis = 0
+    deployed_rows = conn.execute(
+        "SELECT * FROM deployed_models WHERE user_id=? ORDER BY created_at DESC",
+        (user_id,),
+    ).fetchall()
+    for row in deployed_rows:
+        ref = _safe_json(row["dataset_ref"], {}) or {}
+        if ref.get("id") == dataset_ref_id or ref.get("dataset_id") == dataset_ref_id or ref.get("project_id") == project_id:
+            linked_models += 1
+            linked_prediction_apis += 1
+    return {
+        "will_delete_dataset_file": False,
+        "will_disable_rerun": True,
+        "linked_analysis_runs": linked_runs,
+        "linked_reports": linked_reports,
+        "linked_models": linked_models,
+        "linked_prediction_apis": linked_prediction_apis,
+        "will_revoke_prediction_api": linked_prediction_apis > 0,
+        "retention_note": f"Dataset metadata is soft-deleted. Historical summaries may remain for up to {DELETED_ARTIFACT_RETENTION_DAYS} days in this MVP foundation.",
+    }
+
+
+def _dataset_payload(row, conn=None):
+    item = dict(row)
+    quality = _safe_json(item.get("quality"), {}) or {}
+    deleted = bool(item.get("deleted_at"))
+    item.update({
+        "dataset_id": item.get("id"),
+        "original_filename": item.get("original_filename") or item.get("filename"),
+        "row_count": item.get("rows"),
+        "column_count": item.get("columns"),
+        "delete_status": item.get("delete_status") or ("deleted" if deleted else "active"),
+        "retention_status": item.get("retention_status") or ("deleted_retained" if deleted else "active"),
+        "source_type": item.get("source_type") or "upload",
+        "is_demo_dataset": bool(item.get("is_demo_dataset") or 0),
+        "quality_summary": quality,
+        "linked_analysis_run_count": None,
+        "linked_report_count": None,
+        "linked_model_count": None,
+        "has_prediction_api": None,
+    })
+    if conn is not None:
+        impact = _dataset_impact(conn, row, item["user_id"])
+        item.update({
+            "linked_analysis_run_count": impact["linked_analysis_runs"],
+            "linked_report_count": impact["linked_reports"],
+            "linked_model_count": impact["linked_models"],
+            "has_prediction_api": impact["linked_prediction_apis"] > 0,
+        })
+    return item
 
 
 def _project_last_job(conn, project_id, user_id):
@@ -199,6 +312,8 @@ def _project_summary(project, datasets, runs, prediction_meta, last_job=None, jo
         "description": project["description"] or "",
         "created_at": project["created_at"],
         "updated_at": project["updated_at"],
+        "deleted_at": project["deleted_at"] if "deleted_at" in project.keys() else None,
+        "archive_status": project["archive_status"] if "archive_status" in project.keys() else "active",
         "user_id": project["user_id"],
         "owner_user_id": project["user_id"],
         "last_run_id": last_run.get("analysis_run_id") if last_run else None,
@@ -226,7 +341,7 @@ def ensure_default_project(user_id, name="기본 프로젝트"):
     import uuid
     conn = get_db()
     row = conn.execute(
-        "SELECT * FROM projects WHERE user_id=? ORDER BY created_at ASC LIMIT 1",
+        "SELECT * FROM projects WHERE user_id=? AND COALESCE(archive_status,'active')='active' AND deleted_at IS NULL ORDER BY created_at ASC LIMIT 1",
         (user_id,),
     ).fetchone()
     if row:
@@ -265,11 +380,12 @@ def save_dataset_record(user, filename, df, target_col, quality, domain_info):
     conn = get_db()
     conn.execute(
         """INSERT INTO datasets
-           (id,project_id,user_id,filename,rows,columns,target_col,domain,quality,created_at)
-           VALUES (?,?,?,?,?,?,?,?,?,?)""",
+           (id,project_id,user_id,filename,original_filename,rows,columns,target_col,domain,quality,created_at,updated_at,delete_status,retention_status,source_type,is_demo_dataset)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
         (
-            dataset_id, project["id"], user["sub"], filename, int(df.shape[0]), int(df.shape[1]),
-            str(target_col), domain_info.get("dataset_domain"), json.dumps(quality, ensure_ascii=False), now,
+            dataset_id, project["id"], user["sub"], filename, filename, int(df.shape[0]), int(df.shape[1]),
+            str(target_col), domain_info.get("dataset_domain"), json.dumps(quality, ensure_ascii=False), now, now,
+            "active", "active", "upload", 0,
         ),
     )
     conn.execute("UPDATE projects SET updated_at=? WHERE id=?", (now, project["id"]))
@@ -284,6 +400,9 @@ def save_dataset_record(user, filename, df, target_col, quality, domain_info):
     return dataset_meta
 
 
+ensure_dataset_management_columns()
+
+
 @app.get("/api/projects")
 async def list_projects(user=Depends(get_current_user)):
     if not user:
@@ -291,14 +410,14 @@ async def list_projects(user=Depends(get_current_user)):
     ensure_default_project(user["sub"])
     conn = get_db()
     projects = conn.execute(
-        "SELECT * FROM projects WHERE user_id=? ORDER BY updated_at DESC",
+        "SELECT * FROM projects WHERE user_id=? AND COALESCE(archive_status,'active')='active' AND deleted_at IS NULL ORDER BY updated_at DESC",
         (user["sub"],),
     ).fetchall()
     out = []
     for row in projects:
         project = dict(row)
         datasets = conn.execute(
-            "SELECT * FROM datasets WHERE project_id=? AND user_id=? ORDER BY created_at DESC",
+            "SELECT * FROM datasets WHERE project_id=? AND user_id=? AND deleted_at IS NULL ORDER BY created_at DESC",
             (project["id"], user["sub"]),
         ).fetchall()
         runs = _project_runs(conn, project["id"], user["sub"])
@@ -336,7 +455,7 @@ async def get_project_detail(project_id: str, user=Depends(get_current_user)):
     summary = _project_summary(project, datasets, runs, prediction_meta, last_job, job_rollup)
     return {
         **summary,
-        "datasets": [dict(r) for r in datasets],
+        "datasets": [_dataset_payload(r, conn=None) for r in datasets],
         "analysis_runs": runs,
         "available_reports": reports,
         "prediction_api_metadata": prediction_meta,
@@ -386,12 +505,139 @@ async def create_project(body: ProjectBody, user=Depends(get_current_user)):
 
 @app.get("/api/datasets")
 async def list_datasets(user=Depends(get_current_user)):
-    if not user:
-        return []
+    require_current_user(user)
     conn = get_db()
     rows = conn.execute(
-        "SELECT * FROM datasets WHERE user_id=? ORDER BY created_at DESC LIMIT 100",
+        "SELECT * FROM datasets WHERE user_id=? AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 100",
         (user["sub"],),
     ).fetchall()
+    out = [_dataset_payload(row, conn) for row in rows]
     conn.close()
-    return [dict(r) for r in rows]
+    return out
+
+
+@app.get("/api/datasets/{dataset_id}")
+async def get_dataset_detail(dataset_id: str, user=Depends(get_current_user)):
+    row = assert_dataset_owner(user, dataset_id)
+    conn = get_db()
+    try:
+        return _dataset_payload(row, conn)
+    finally:
+        conn.close()
+
+
+@app.get("/api/datasets/{dataset_id}/delete-impact")
+async def get_dataset_delete_impact(dataset_id: str, user=Depends(get_current_user)):
+    row = assert_dataset_owner(user, dataset_id)
+    conn = get_db()
+    try:
+        impact = _dataset_impact(conn, row, row["user_id"])
+    finally:
+        conn.close()
+    return {
+        "dataset_id": dataset_id,
+        "filename": row["filename"],
+        **impact,
+        "delete_policy": "soft_delete",
+        "recommended_next_action": "Deleting this dataset will prevent future reruns that depend on the original CSV. Existing reports may remain as historical summaries.",
+    }
+
+
+@app.delete("/api/datasets/{dataset_id}")
+async def delete_dataset(dataset_id: str, user=Depends(get_current_user)):
+    row = assert_dataset_owner(user, dataset_id)
+    conn = get_db()
+    try:
+        active_job = conn.execute(
+            "SELECT * FROM training_jobs WHERE dataset_id=? AND user_id=? AND status IN ('created','queued','running') LIMIT 1",
+            (dataset_id, row["user_id"]),
+        ).fetchone()
+        if active_job:
+            raise HTTPException(409, {
+                "error_type": "active_job_exists",
+                "user_friendly_message": "A training job is already running for this dataset. Please wait for it to finish before deleting.",
+                "recommended_next_action": "Refresh job status, then delete the dataset after the job finishes.",
+                "active_job_id": active_job["job_id"],
+            })
+        impact = _dataset_impact(conn, row, row["user_id"])
+        now = datetime.now().isoformat()
+        conn.execute(
+            "UPDATE datasets SET deleted_at=?, delete_status='deleted', retention_status='deleted_retained', updated_at=? WHERE id=? AND user_id=?",
+            (now, now, dataset_id, row["user_id"]),
+        )
+        conn.execute(
+            "UPDATE deployed_models SET disabled_at=?, disabled_reason=? WHERE user_id=? AND dataset_ref LIKE ?",
+            (now, "linked_dataset_deleted", row["user_id"], f"%{dataset_id}%"),
+        )
+        conn.commit()
+        return {
+            "ok": True,
+            "dataset_id": dataset_id,
+            "deleted_at": now,
+            "delete_status": "deleted",
+            "impact": impact,
+            "recommended_next_action": "Project history remains available, but reruns that require this dataset are disabled.",
+        }
+    finally:
+        conn.close()
+
+
+@app.get("/api/projects/{project_id}/delete-impact")
+async def get_project_delete_impact(project_id: str, user=Depends(get_current_user)):
+    project = assert_project_owner(user, project_id)
+    conn = get_db()
+    try:
+        datasets = conn.execute("SELECT * FROM datasets WHERE project_id=? AND user_id=? AND deleted_at IS NULL", (project_id, project["user_id"])).fetchall()
+        active_jobs = conn.execute("SELECT * FROM training_jobs WHERE project_id=? AND user_id=? AND status IN ('created','queued','running')", (project_id, project["user_id"])).fetchall()
+        prediction_meta = _project_prediction_metadata(conn, project_id, project["user_id"])
+        runs = _project_runs(conn, project_id, project["user_id"])
+        reports = _project_reports(conn, project_id, project["user_id"])
+    finally:
+        conn.close()
+    return {
+        "project_id": project_id,
+        "will_archive_project": True,
+        "will_soft_delete_datasets": len(datasets),
+        "will_disable_rerun": True,
+        "linked_analysis_runs": len(runs),
+        "linked_reports": len(reports),
+        "linked_models": len(prediction_meta),
+        "linked_prediction_apis": len(prediction_meta),
+        "active_jobs": [{"job_id": row["job_id"], "status": row["status"]} for row in active_jobs],
+        "retention_note": "Project deletion is implemented as MVP archive/soft delete. Historical summaries may remain.",
+    }
+
+
+@app.delete("/api/projects/{project_id}")
+async def delete_project(project_id: str, user=Depends(get_current_user)):
+    project = assert_project_owner(user, project_id)
+    conn = get_db()
+    try:
+        active_jobs = conn.execute(
+            "SELECT * FROM training_jobs WHERE project_id=? AND user_id=? AND status IN ('created','queued','running') LIMIT 1",
+            (project_id, project["user_id"]),
+        ).fetchone()
+        if active_jobs:
+            raise HTTPException(409, {
+                "error_type": "active_job_exists",
+                "user_friendly_message": "A training job is already running for this project. Please wait for it to finish before deleting.",
+                "recommended_next_action": "Refresh job status, then archive the project after the job finishes.",
+                "active_job_id": active_jobs["job_id"],
+            })
+        now = datetime.now().isoformat()
+        conn.execute("UPDATE projects SET deleted_at=?, archive_status='deleted', updated_at=? WHERE id=? AND user_id=?", (now, now, project_id, project["user_id"]))
+        conn.execute("UPDATE datasets SET deleted_at=COALESCE(deleted_at, ?), delete_status='deleted', retention_status='deleted_retained', updated_at=? WHERE project_id=? AND user_id=?", (now, now, project_id, project["user_id"]))
+        conn.execute(
+            "UPDATE deployed_models SET disabled_at=?, disabled_reason=? WHERE user_id=? AND dataset_ref LIKE ?",
+            (now, "linked_project_deleted", project["user_id"], f"%{project_id}%"),
+        )
+        conn.commit()
+        return {
+            "ok": True,
+            "project_id": project_id,
+            "deleted_at": now,
+            "archive_status": "deleted",
+            "recommended_next_action": "The project is hidden from My Projects. Historical summaries may remain for review.",
+        }
+    finally:
+        conn.close()

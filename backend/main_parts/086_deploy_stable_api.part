@@ -62,6 +62,16 @@ async def deploy_model_stable(body: dict, user=Depends(get_current_user)):
 
 @app.post("/api/v2/{model_id}/predict")
 async def v2_predict(model_id: str, body: dict):
+    conn = get_db()
+    row = conn.execute("SELECT * FROM deployed_models WHERE id=?", (model_id,)).fetchone()
+    conn.close()
+    if row and "disabled_at" in row.keys() and row["disabled_at"]:
+        raise HTTPException(410, {
+            "error_type": "prediction_api_disabled",
+            "user_friendly_message": "This prediction API is disabled because the linked dataset or project was deleted.",
+            "recommended_next_action": "Create a new analysis run and deploy a new prediction API.",
+            "disabled_reason": row["disabled_reason"] if "disabled_reason" in row.keys() else "linked_artifact_deleted",
+        })
     fp = deployed_model_path(model_id)
     if not os.path.exists(fp):
         raise HTTPException(404, f"Model not found: {model_id}")

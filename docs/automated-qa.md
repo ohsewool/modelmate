@@ -15,6 +15,7 @@ python scripts/run_ownership_smoke.py --base-url http://localhost:8000
 python scripts/run_project_history_smoke.py --base-url http://localhost:8000
 python scripts/run_background_jobs_smoke.py --base-url http://localhost:8000
 python scripts/run_failure_recovery_smoke.py --base-url http://localhost:8000
+python scripts/run_dataset_delete_smoke.py --base-url http://localhost:8000
 ```
 
 ## Product Smoke Test
@@ -69,6 +70,10 @@ python scripts/run_release_qa.py --base-url https://web-production-5d6fa.up.rail
 - failure recovery smoke can create a failed job, verify `error_type`,
   `error_message`, `recommended_next_action`, run an owner-protected rerun,
   check duplicate rerun behavior, and confirm another user cannot rerun it;
+- dataset delete smoke can register two users, upload a sample CSV for user A,
+  confirm user B cannot read or delete user A's dataset, preview delete impact,
+  delete the dataset as user A, and verify training on the deleted dataset is
+  blocked;
 - upload validation QA passes;
 - full QA quick path passes;
 - training benchmark can run when not skipped;
@@ -107,6 +112,8 @@ python scripts/run_release_qa.py --base-url https://web-production-5d6fa.up.rail
   owner-scoped.
 - failure recovery smoke fails: verify failed jobs expose recovery fields and
   `/api/training/jobs/{job_id}/rerun` keeps ownership and duplicate guards.
+- dataset delete smoke fails: verify `/api/datasets`, dataset delete-impact,
+  dataset delete, and deleted-resource training guards are deployed.
 
 ## Release Blockers
 
@@ -122,3 +129,5 @@ python scripts/run_release_qa.py --base-url https://web-production-5d6fa.up.rail
 - user B can access user A's training job or project job history by guessing an
   id.
 - user B can rerun user A's failed job or failed project run.
+- user B can delete user A's dataset or project.
+- a deleted dataset can still be used to start a new training/rerun job.

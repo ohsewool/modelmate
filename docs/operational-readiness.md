@@ -128,6 +128,29 @@ Rerun requests are owner-protected. If a project already has a `queued` or
 `running` job, the API returns the active job with duplicate-guard guidance
 instead of creating another job for the same project.
 
+## Dataset Delete And Rerun Safety
+
+Commercialization PR-17 adds a small dataset management and delete/retention
+foundation:
+
+- `GET /api/datasets` lists active datasets owned by the signed-in user;
+- `GET /api/datasets/{dataset_id}` returns owner-scoped dataset metadata;
+- `GET /api/datasets/{dataset_id}/delete-impact` previews linked run, report,
+  model, and prediction API impact;
+- `DELETE /api/datasets/{dataset_id}` soft-deletes an owned dataset;
+- `GET /api/projects/{project_id}/delete-impact` previews project archive
+  impact;
+- `DELETE /api/projects/{project_id}` archives an owned project and
+  soft-deletes its active datasets.
+
+Deletion is blocked when the dataset or project has an active `created`,
+`queued`, or `running` training job. Deleted datasets and archived projects are
+blocked from new training/rerun requests with a friendly recovery message.
+
+Reports may remain as historical summaries. Prediction API metadata linked to a
+deleted dataset or project may be marked disabled, and public prediction calls
+for disabled artifacts return a friendly disabled response.
+
 ## Retry Guidance
 
 Common recovery actions:
@@ -173,6 +196,9 @@ job scheduling.
 - Some status values are reserved for future async flows.
 - The app still prioritizes a graduation-project SaaS MVP demo over enterprise
   production operations.
+- Dataset retention uses policy placeholders and soft-delete metadata only. No
+  automatic retention scheduler or enterprise data lifecycle automation is
+  implemented.
 
 ## Future Work
 

@@ -53,6 +53,8 @@ claim that ModelMate is already a complete autonomous AI data scientist.
 - Email/password register, login, `/auth/me`, and logout smoke checks
 - User-owned project foundation with MVP ownership checks for saved projects,
   datasets, agent analysis runs, and private deployed model metadata
+- User-owned dataset management with MVP delete impact warnings and soft-delete
+  retention foundation
 
 ## Agentic AutoML Upgrade Status
 
@@ -140,6 +142,14 @@ classified `error_type`, safe `error_message`, `recommended_next_action`, and
 owner-protected rerun endpoint. Duplicate reruns for an active project return
 the current active job instead of creating runaway parallel jobs.
 
+MVP dataset management is available for signed-in users. Users can list their
+own uploaded datasets, open dataset metadata, preview delete impact, and
+soft-delete datasets they own. Deleted datasets are hidden from active dataset
+lists and blocked from future training/rerun flows that require the original
+CSV. Historical report summaries may remain, and prediction API metadata linked
+to deleted datasets or projects can be marked disabled. This is a
+delete/retention foundation, not complete data lifecycle management.
+
 Available without signing in:
 
 - landing page and product docs;
@@ -158,6 +168,7 @@ Requires signing in:
 - background training job status for owned projects;
 - private agent analysis run trace access;
 - private deployed model metadata and deletion.
+- private dataset list/detail/delete and project archive/delete impact flows.
 
 First-time users can try ModelMate without preparing their own CSV. The upload
 screen links to three small synthetic sample datasets:
@@ -233,14 +244,16 @@ python scripts/run_ownership_smoke.py --base-url https://web-production-5d6fa.up
 python scripts/run_project_history_smoke.py --base-url https://web-production-5d6fa.up.railway.app
 python scripts/run_background_jobs_smoke.py --base-url https://web-production-5d6fa.up.railway.app
 python scripts/run_failure_recovery_smoke.py --base-url https://web-production-5d6fa.up.railway.app
+python scripts/run_dataset_delete_smoke.py --base-url https://web-production-5d6fa.up.railway.app
 python scripts/run_product_smoke.py --base-url https://web-production-5d6fa.up.railway.app
 ```
 
 Automated QA checks endpoints, sample upload, target selection, report export,
 auth-lite session context, register/login/logout smoke, MVP ownership smoke,
 project history smoke, background job smoke, failure recovery smoke, guest demo
-session start, and deployment smoke paths. Human review is still needed for usability, copy
-clarity, visual layout, and whether beta users find the report persuasive.
+session start, dataset delete smoke, and deployment smoke paths. Human review is
+still needed for usability, copy clarity, visual layout, and whether beta users
+find the report persuasive.
 
 Commercial SaaS MVP trust documents are drafted, not finalized legal policies:
 
@@ -301,6 +314,7 @@ python scripts/run_ownership_smoke.py --base-url http://localhost:8000
 python scripts/run_project_history_smoke.py --base-url http://localhost:8000
 python scripts/run_background_jobs_smoke.py --base-url http://localhost:8000
 python scripts/run_failure_recovery_smoke.py --base-url http://localhost:8000
+python scripts/run_dataset_delete_smoke.py --base-url http://localhost:8000
 ```
 
 ## Demo Scenario

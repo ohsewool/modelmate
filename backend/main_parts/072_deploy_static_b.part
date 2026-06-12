@@ -48,6 +48,8 @@ async def list_deployed(user=Depends(get_current_user)):
         features = json.loads(r["features"])
         metrics = json.loads(r["metrics"])
         dataset_ref = json.loads(r["dataset_ref"]) if r["dataset_ref"] else None
+        disabled_at = r["disabled_at"] if "disabled_at" in r.keys() else None
+        disabled_reason = r["disabled_reason"] if "disabled_reason" in r.keys() else None
         file_exists = os.path.exists(os.path.join(MODELS_DIR, f"{r['id']}.pkl"))
         metric_src = metrics.get("best_cv") if isinstance(metrics.get("best_cv"), dict) else metrics
         primary_score = metric_src.get("r2") if r["task_type"] == "regression" else metric_src.get("roc_auc", metric_src.get("accuracy"))
@@ -67,6 +69,9 @@ async def list_deployed(user=Depends(get_current_user)):
             "file_exists": file_exists,
             "storage_status": "사용 가능" if file_exists else "파일 없음",
             "lifecycle_status": lifecycle_status,
+            "disabled_at": disabled_at,
+            "disabled_reason": disabled_reason,
+            "is_disabled": bool(disabled_at),
             "primary_score": primary_score,
             "feature_count": len(features),
         })
@@ -78,6 +83,8 @@ async def get_deployed_metadata(model_id: str, user=Depends(get_current_user)):
     features = json.loads(row["features"])
     metrics = json.loads(row["metrics"])
     dataset_ref = json.loads(row["dataset_ref"]) if row["dataset_ref"] else None
+    disabled_at = row["disabled_at"] if "disabled_at" in row.keys() else None
+    disabled_reason = row["disabled_reason"] if "disabled_reason" in row.keys() else None
     return {
         "id": row["id"],
         "name": row["name"],
@@ -91,6 +98,9 @@ async def get_deployed_metadata(model_id: str, user=Depends(get_current_user)):
         "owner_scope": "owned",
         "predict_url": f"/api/v2/{model_id}/predict",
         "metadata_access": "private_owner_required",
+        "disabled_at": disabled_at,
+        "disabled_reason": disabled_reason,
+        "is_disabled": bool(disabled_at),
     }
 
 @app.delete("/api/deployed/{model_id}")
@@ -109,6 +119,16 @@ async def delete_deployed(model_id: str, user=Depends(get_current_user)):
 
 @app.post("/api/v1/{model_id}/predict")
 async def v1_predict(model_id: str, body: dict):
+    conn = get_db()
+    row = conn.execute("SELECT * FROM deployed_models WHERE id=?", (model_id,)).fetchone()
+    conn.close()
+    if row and "disabled_at" in row.keys() and row["disabled_at"]:
+        raise HTTPException(410, {
+            "error_type": "prediction_api_disabled",
+            "user_friendly_message": "This prediction API is disabled because the linked dataset or project was deleted.",
+            "recommended_next_action": "Create a new analysis run and deploy a new prediction API.",
+            "disabled_reason": row["disabled_reason"] if "disabled_reason" in row.keys() else "linked_artifact_deleted",
+        })
     fp = os.path.join(MODELS_DIR, f"{model_id}.pkl")
     if not os.path.exists(fp):
         raise HTTPException(404, f"모델을 찾을 수 없습니다: {model_id}")

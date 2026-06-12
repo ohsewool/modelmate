@@ -225,6 +225,7 @@ export default function History() {
           getExperiments={item => experimentsForDataset(item, history)}
           onSelectExperiment={setSelectedItem}
           onUpload={item => nav('/upload', { state: item ? { reanalysisDataset: item } : null })}
+          onDeleted={load}
         />
 
         <WorkspaceContinuityPanel

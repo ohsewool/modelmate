@@ -41,7 +41,8 @@ Current limitations include:
 - auth-lite exists, but no full production-grade authentication policy
 - MVP user-owned project checks exist, but no formal user-level data isolation
   guarantee
-- no formal retention/deletion request workflow
+- MVP owner-triggered dataset deletion exists, but no formal retention/deletion
+  request workflow
 - no complete audit log policy
 - no enterprise encryption/compliance policy
 
@@ -63,6 +64,26 @@ sensitive or production data.
 
 This ownership layer is a foundation for commercialization work. It is not a
 complete commercial privacy, retention, deletion, audit, or compliance program.
+
+## MVP Dataset Deletion And Retention Foundation
+
+Signed-in users can list their own uploaded dataset metadata and request deletion
+for datasets they own. The current MVP uses a soft-delete foundation:
+
+- uploaded user datasets can be marked deleted by the owner;
+- deleted datasets are hidden from active private dataset lists;
+- rerun/training flows that require a deleted dataset are blocked with a
+  friendly message;
+- reports may remain as historical summaries unless the project is also
+  archived/deleted;
+- prediction API metadata linked to deleted datasets or projects may be marked
+  disabled;
+- guest/sample datasets are not treated as user-owned private datasets.
+
+The current configuration recognizes `DATASET_RETENTION_DAYS` and
+`DELETED_ARTIFACT_RETENTION_DAYS` as policy placeholders. There is no automatic
+retention scheduler in this PR. ModelMate does not claim GDPR/CCPA-compliant
+deletion or enterprise-grade data governance.
 
 ## Recommended User Practice
 

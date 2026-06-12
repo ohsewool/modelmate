@@ -1,12 +1,42 @@
 import { useState } from 'react'
-import { Database, Upload } from 'lucide-react'
+import { AlertTriangle, Database, Trash2, Upload } from 'lucide-react'
+import api from '../../api'
 import { Button } from '../ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
 import { Badge } from '../ui/badge'
 import DatasetDetail from './DatasetDetail'
 
-export default function DatasetList({ datasets, onUpload, getExperiments, onSelectExperiment }) {
+export default function DatasetList({ datasets, onUpload, getExperiments, onSelectExperiment, onDeleted }) {
   const [selected, setSelected] = useState(null)
+  const [impact, setImpact] = useState(null)
+  const [message, setMessage] = useState('')
+  const [deleting, setDeleting] = useState(false)
+
+  async function showDeleteImpact(item) {
+    setMessage('')
+    try {
+      const res = await api.get(`/datasets/${item.id}/delete-impact`)
+      setImpact(res.data)
+    } catch (e) {
+      setMessage(e.response?.data?.detail?.user_friendly_message || e.response?.data?.detail || e.message)
+    }
+  }
+
+  async function deleteDataset(item) {
+    setDeleting(true)
+    setMessage('')
+    try {
+      await api.delete(`/datasets/${item.id}`)
+      setSelected(null)
+      setImpact(null)
+      setMessage('Dataset deleted. Reports may remain as historical summaries, but rerun is disabled.')
+      await onDeleted?.()
+    } catch (e) {
+      setMessage(e.response?.data?.detail?.user_friendly_message || e.response?.data?.detail || e.message)
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   return (
     <Card>
@@ -33,16 +63,57 @@ export default function DatasetList({ datasets, onUpload, getExperiments, onSele
                 key={item.id}
                 item={item}
                 active={selected?.id === item.id}
-                onClick={() => setSelected(selected?.id === item.id ? null : item)}
+                onClick={() => {
+                  setImpact(null)
+                  setMessage('')
+                  setSelected(selected?.id === item.id ? null : item)
+                }}
               />
             ))}
             {selected && (
-              <DatasetDetail
-                item={selected}
-                experiments={getExperiments?.(selected) || []}
-                onSelectExperiment={onSelectExperiment}
-                onUpload={() => onUpload(selected)}
-              />
+              <div style={{ display: 'grid', gap: 10 }}>
+                <DatasetDetail
+                  item={selected}
+                  experiments={getExperiments?.(selected) || []}
+                  onSelectExperiment={onSelectExperiment}
+                  onUpload={() => onUpload(selected)}
+                />
+                <div style={{ border: '1px solid #fecaca', background: '#fff7ed', borderRadius: 12, padding: 12 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' }}>
+                    <div style={{ display: 'flex', gap: 10 }}>
+                      <AlertTriangle size={18} color="#ea580c" />
+                      <div>
+                        <p style={{ margin: 0, fontSize: 13, fontWeight: 850, color: '#9a3412' }}>Dataset delete</p>
+                        <p style={{ margin: '4px 0 0', fontSize: 12, color: '#9a3412' }}>
+                          Deleting this dataset hides it from active workspace lists and blocks future reruns that require the original CSV.
+                        </p>
+                      </div>
+                    </div>
+                    <Button variant="danger" size="sm" onClick={() => showDeleteImpact(selected)} disabled={deleting}>
+                      <Trash2 size={14} /> Delete
+                    </Button>
+                  </div>
+                  {impact && (
+                    <div style={{ marginTop: 10, display: 'grid', gap: 8 }}>
+                      <p style={{ margin: 0, fontSize: 12, color: '#7c2d12' }}>
+                        Impact: rerun disabled, {impact.linked_analysis_runs || 0} runs, {impact.linked_reports || 0} reports, {impact.linked_prediction_apis || 0} prediction APIs affected.
+                      </p>
+                      <p style={{ margin: 0, fontSize: 12, color: '#7c2d12' }}>{impact.retention_note}</p>
+                      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                        <Button variant="secondary" size="sm" onClick={() => setImpact(null)}>Cancel</Button>
+                        <Button variant="danger" size="sm" onClick={() => deleteDataset(selected)} disabled={deleting}>
+                          {deleting && <span className="spinner" />} Confirm delete
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                {message && (
+                  <div className={message.includes('deleted') ? 'banner-success' : 'banner-warning'}>
+                    <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)' }}>{message}</p>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         )}

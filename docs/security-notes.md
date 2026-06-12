@@ -25,6 +25,10 @@ Current safeguards include:
 - public prediction invocation kept separate from private model metadata access
 - owner-scoped project history, run history, and report metadata endpoints
 - owner-scoped lightweight training job status endpoints
+- owner-scoped dataset list/detail/delete and project archive/delete impact
+  endpoints
+- disabled prediction API state for artifacts linked to deleted datasets or
+  projects
 - user-facing failure recovery messages
 - documentation warning users not to upload secrets or sensitive data
 - environment-variable based deployment configuration
@@ -83,6 +87,30 @@ item.
 
 This is an MVP access-control foundation, not enterprise-grade access control,
 SOC2 readiness, complete tenant isolation, or full RBAC.
+
+## Dataset Delete And Retention Security Notes
+
+Commercialization PR-17 adds an MVP dataset management and delete foundation.
+Dataset list, detail, delete-impact, and delete routes require the current user
+to own the dataset. Project delete/archive routes also require project
+ownership. User B should not be able to read or delete User A's dataset or
+project by guessing an id.
+
+Current delete behavior is intentionally conservative:
+
+- dataset deletion is a soft-delete metadata state;
+- active queued/running training jobs block deletion;
+- deleted datasets are hidden from active dataset lists;
+- deleted datasets or archived projects are blocked from future training/rerun
+  requests;
+- deployed prediction metadata linked to deleted artifacts can be marked
+  disabled;
+- public prediction calls for disabled artifacts return a friendly disabled
+  response instead of a raw server error.
+
+This is MVP dataset deletion and delete-impact handling. It is not complete data
+governance, audit logging, automatic retention enforcement, or enterprise
+compliance.
 
 ## Railway Deployment Notes
 
