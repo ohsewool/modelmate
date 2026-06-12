@@ -559,6 +559,10 @@ html.dark .banner-danger  { background: rgba(244,63,94,0.1);   border-color: rgb
 
   .home-hero-grid,
   .home-step-grid,
+  .login-grid,
+  .report-stat-grid,
+  .evidence-split-grid,
+  .xai-grid,
   .pricing-grid,
   .demo-dataset-grid {
     grid-template-columns: 1fr !important;

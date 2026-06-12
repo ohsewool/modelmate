@@ -11,6 +11,15 @@ const ttStyle = {
   borderRadius: 12, fontSize: 11, color: 'var(--text)',
   boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
 }
+const jobStatusLabel = status => ({
+  created: '생성됨',
+  queued: '대기 중',
+  running: '실행 중',
+  succeeded: '완료',
+  failed: '실패',
+  cancelled: '취소됨',
+  needs_review: '검토 필요',
+}[status] || status || '상태 확인')
 
 const OPTUNA_MIN_TRIALS = 5
 const OPTUNA_MAX_TRIALS = 50
@@ -203,45 +212,45 @@ export default function ModelLab() {
 
       <StatusRecoveryPanel status={operationalStatus} limits={usageLimits} compact />
 
-      <div className="card" style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center' }}>
+      <div className="card" style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center', borderColor: 'var(--border)' }}>
         <div>
-          <h2 style={{ fontSize: 16, color: 'var(--text)', margin: '0 0 5px' }}>Background training job</h2>
+          <h2 style={{ fontSize: 16, color: 'var(--text)', margin: '0 0 5px' }}>저장되는 분석 작업</h2>
           <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.55, margin: 0 }}>
             {user && !user.is_guest
-              ? 'Start training as a saved job so status survives refreshes and appears in My Projects.'
-              : 'Sign in to save training jobs and reopen their status from My Projects.'}
+              ? '분석을 저장된 작업으로 시작하면 새로고침 후에도 상태를 확인하고 내 프로젝트에서 다시 열 수 있습니다.'
+              : '로그인하면 분석 작업 상태를 저장하고 내 프로젝트에서 다시 열 수 있습니다.'}
           </p>
           {trainingJob && (
             <p style={{ fontSize: 12, color: 'var(--text-label)', margin: '6px 0 0' }}>
-              {trainingJob.status} / {trainingJob.progress_message || 'No message'} / {trainingJob.progress_percent ?? 0}%
+              {jobStatusLabel(trainingJob.status)} / {trainingJob.progress_message || '진행 메시지 없음'} / {trainingJob.progress_percent ?? 0}%
             </p>
           )}
           {trainingJob?.status === 'failed' && (
             <p style={{ fontSize: 12, color: '#b91c1c', margin: '6px 0 0' }}>
-              {trainingJob.error_type || 'training_failed'}: {trainingJob.error_message || 'Training failed.'}
+              {trainingJob.error_message || '분석 작업을 완료하지 못했습니다. 타깃 컬럼이나 데이터 형식을 확인한 뒤 다시 실행해 주세요.'}
             </p>
           )}
           {trainingJob?.duplicate_guard && (
             <p style={{ fontSize: 12, color: '#b45309', margin: '6px 0 0' }}>
-              A training job is already active for this project.
+              이 프로젝트에서 이미 실행 중인 분석 작업이 있습니다.
             </p>
           )}
         </div>
         <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
           {trainingJob?.job_id && (
             <button className="btn-secondary" onClick={() => refreshTrainingJob()} disabled={!!loading}>
-              Refresh
+              상태 새로고침
             </button>
           )}
           {trainingJob?.status === 'failed' && (
             <button className="btn-secondary" onClick={rerunTrainingJob} disabled={!!loading}>
               {loading === 'job-rerun' && <span className="spinner" />}
-              Retry job
+              다시 실행
             </button>
           )}
           <button className="btn-primary" onClick={startTrainingJob} disabled={!!loading || !user || user.is_guest}>
             {loading === 'job' && <span className="spinner" />}
-            Start job
+            저장 작업 시작
           </button>
         </div>
       </div>

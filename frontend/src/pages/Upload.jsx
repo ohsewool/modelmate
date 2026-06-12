@@ -41,21 +41,14 @@ export default function Upload() {
       setOperationalStatus(r.data?.analysis_status || null)
       setUsageLimits(r.data?.usage_limits || null)
       if (!r.data?.has_data) {
-        clearUploadState('이전 화면 정보가 남아 있었지만 서버에 실제 CSV가 없어 초기화했습니다. 같은 CSV를 다시 올려주세요.')
+        clearUploadState('이전 화면 정보가 남아 있었지만 서버에 실제 CSV가 없어 초기화했습니다. 같은 CSV를 다시 올려 주세요.')
       }
     }).catch(() => {})
   }, [])
 
   useEffect(() => {
     if (!uploadInfo) return
-    saveUploadDraft({
-      uploadInfo,
-      aiAnalysis,
-      target,
-      dropCols,
-      colLabels,
-      edaInfo,
-    })
+    saveUploadDraft({ uploadInfo, aiAnalysis, target, dropCols, colLabels, edaInfo })
   }, [uploadInfo, aiAnalysis, target, dropCols, colLabels, edaInfo])
 
   async function handleFile(file) {
@@ -140,7 +133,7 @@ export default function Upload() {
         })
       }
       if (String(message).includes('파일 없음') || String(message).includes('데이터가 없습니다') || String(message).includes('업로드 원본')) {
-        clearUploadState('서버 재시작 또는 배포로 업로드 원본이 사라졌습니다. 같은 CSV를 다시 올려주세요.')
+        clearUploadState('서버 재시작 또는 배포로 업로드 원본이 사라졌습니다. 같은 CSV를 다시 올려 주세요.')
       } else {
         setTargetError(message)
       }
@@ -184,25 +177,20 @@ export default function Upload() {
   return (
     <div className="animate-fade-in" style={{ padding: 32, maxWidth: 1240 }}>
       <section style={{
-        borderRadius: 10, padding: '22px 24px', marginBottom: 18,
-        background: 'var(--surface)',
-        color: 'var(--text)', border: '1px solid var(--border)',
+        borderRadius: 8, padding: '22px 24px', marginBottom: 18,
+        background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border)',
         boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
       }}>
-        <p style={{ fontSize: 12, fontWeight: 800, color: '#2563eb', margin: '0 0 8px' }}>분석 흐름 · 데이터 넣기</p>
-        <h1 style={{ fontSize: 22, fontWeight: 900, margin: '0 0 6px', letterSpacing: 0 }}>
-          CSV 업로드
-        </h1>
+        <p style={{ fontSize: 12, fontWeight: 900, color: '#2563eb', margin: '0 0 8px' }}>분석 흐름 · 데이터 넣기</p>
+        <h1 style={{ fontSize: 22, fontWeight: 900, margin: '0 0 6px', letterSpacing: 0 }}>CSV 업로드</h1>
         <p style={{ fontSize: 13, lineHeight: 1.55, color: 'var(--text-2)', margin: 0 }}>
-          파일을 올리면 AI가 예측할 값과 제외할 정보를 정리합니다.
+          파일을 올리면 데이터 구조를 점검하고 예측할 값과 제외할 정보를 먼저 정리합니다.
         </p>
       </section>
 
       {!uploadInfo ? (
         <div style={{ display: 'grid', gap: 14 }}>
-          {reanalysisItem && (
-            <ReanalysisNotice item={reanalysisItem} onClear={clearReanalysis} />
-          )}
+          {reanalysisItem && <ReanalysisNotice item={reanalysisItem} onClear={clearReanalysis} />}
           <StatusRecoveryPanel status={operationalStatus} limits={usageLimits} compact />
           <DemoDatasetGuide />
           <div
@@ -212,36 +200,36 @@ export default function Upload() {
             onClick={() => fileRef.current.click()}
             style={{
               border: `2px dashed ${dragging ? '#2563eb' : 'rgba(37,99,235,0.24)'}`,
-              borderRadius: 10, padding: '56px 32px', textAlign: 'center', cursor: 'pointer',
+              borderRadius: 8, padding: '56px 32px', textAlign: 'center', cursor: 'pointer',
               background: dragging ? 'rgba(37,99,235,0.07)' : 'var(--surface)',
               transition: 'all 0.2s',
             }}
           >
-          <input ref={fileRef} type="file" accept=".csv,.tsv,.txt" style={{ display: 'none' }} onChange={e => handleFile(e.target.files[0])} />
-          {loading ? (
-            <div style={{ display: 'grid', justifyItems: 'center', gap: 14 }}>
-              <span className="spinner" />
-              <p style={{ color: 'var(--text)', fontWeight: 800, margin: 0 }}>
-                {loading === 'ai' ? 'AI가 데이터 구조를 읽는 중입니다' : '파일을 올리는 중입니다'}
-              </p>
-              <p style={{ color: 'var(--text-2)', fontSize: 13, margin: 0 }}>잠시만 기다려주세요.</p>
-            </div>
-          ) : (
-            <>
-              <div style={{ width: 56, height: 56, borderRadius: 10, margin: '0 auto 18px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(37,99,235,0.08)', color: '#2563eb' }}>
-                <UploadIcon />
+            <input ref={fileRef} type="file" accept=".csv,.tsv,.txt" style={{ display: 'none' }} onChange={e => handleFile(e.target.files[0])} />
+            {loading ? (
+              <div style={{ display: 'grid', justifyItems: 'center', gap: 14 }}>
+                <span className="spinner" />
+                <p style={{ color: 'var(--text)', fontWeight: 800, margin: 0 }}>
+                  {loading === 'ai' ? '데이터 구조를 읽는 중입니다' : '파일을 올리는 중입니다'}
+                </p>
+                <p style={{ color: 'var(--text-2)', fontSize: 13, margin: 0 }}>잠시만 기다려 주세요.</p>
               </div>
-              <p style={{ color: 'var(--text)', fontWeight: 900, fontSize: 18, margin: '0 0 8px' }}>
-                파일을 끌어오거나 클릭해서 선택하세요
-              </p>
-              <p style={{ color: 'var(--text-2)', fontSize: 13, margin: '0 0 18px' }}>
-                CSV, TSV, TXT 파일을 지원합니다. 한글 CSV도 자동으로 읽도록 처리했습니다.
-              </p>
-              <Button asChild>
-                <span style={{ pointerEvents: 'none' }}>파일 선택</span>
-              </Button>
-            </>
-          )}
+            ) : (
+              <>
+                <div style={{ width: 56, height: 56, borderRadius: 8, margin: '0 auto 18px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(37,99,235,0.08)', color: '#2563eb' }}>
+                  <UploadIcon />
+                </div>
+                <p style={{ color: 'var(--text)', fontWeight: 900, fontSize: 18, margin: '0 0 8px' }}>
+                  파일을 끌어오거나 클릭해서 선택하세요
+                </p>
+                <p style={{ color: 'var(--text-2)', fontSize: 13, margin: '0 0 18px' }}>
+                  CSV, TSV, TXT 파일을 지원합니다. 첫 행에는 컬럼명이 있어야 합니다.
+                </p>
+                <Button asChild>
+                  <span style={{ pointerEvents: 'none' }}>파일 선택</span>
+                </Button>
+              </>
+            )}
           </div>
           <DatasetQualityCard error={uploadError} onRetry={() => fileRef.current.click()} />
         </div>
@@ -277,68 +265,68 @@ export default function Upload() {
             )}
 
             <div className="card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'flex-start', marginBottom: 18 }}>
-              <div>
-                <h2 style={{ fontSize: 18, color: 'var(--text)', margin: '0 0 6px' }}>AI가 먼저 정리한 데이터 사용 방법</h2>
-                <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6, margin: 0 }}>
-                  {uploadInfo.filename ? `${uploadInfo.filename} 기준으로 ` : ''}모델이 무엇을 예측하고 어떤 정보를 참고할지 정하는 단계입니다. 필요하면 직접 바꿀 수 있습니다.
-                </p>
-              </div>
-              <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-                <Button onClick={handleSetTarget} disabled={!!loading || needsReupload}>
-                  {loading === 'target' && <span className="spinner" />}
-                  이 설정으로 분석 준비
-                </Button>
-                <Button onClick={reset} variant="secondary">다시 올리기</Button>
-              </div>
-            </div>
-
-            {aiAnalysis?.dataset_summary && (
-              <div style={{ padding: 14, borderRadius: 12, border: '1px solid rgba(37,99,235,0.16)', background: 'rgba(37,99,235,0.06)', marginBottom: 14 }}>
-                <p style={{ fontSize: 12, fontWeight: 900, color: '#2563eb', margin: '0 0 6px' }}>AI 요약</p>
-                <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.7, margin: 0 }}>{aiAnalysis.dataset_summary}</p>
-                {aiAnalysis?.target_category && (
-                  <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.6, margin: '8px 0 0' }}>
-                    데이터 종류: <strong style={{ color: 'var(--text)' }}>{datasetDomain}</strong> · 맞힐 값: <strong style={{ color: 'var(--text)' }}>{targetCategory}</strong> · 확신도 {targetConfidence}
-                    <br />{targetReason}
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'flex-start', marginBottom: 18 }}>
+                <div>
+                  <h2 style={{ fontSize: 18, color: 'var(--text)', margin: '0 0 6px' }}>분석에 사용할 설정</h2>
+                  <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6, margin: 0 }}>
+                    {uploadInfo.filename ? `${uploadInfo.filename} 기준으로 ` : ''}모델이 무엇을 예측하고 어떤 정보를 참고할지 정하는 단계입니다. 필요하면 직접 바꿀 수 있습니다.
                   </p>
-                )}
+                </div>
+                <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                  <Button onClick={handleSetTarget} disabled={!!loading || needsReupload}>
+                    {loading === 'target' && <span className="spinner" />}
+                    이 설정으로 분석 준비
+                  </Button>
+                  <Button onClick={reset} variant="secondary">다시 올리기</Button>
+                </div>
               </div>
-            )}
 
-            {targetError && (
-              <div className="banner-warning" style={{ marginBottom: 14 }}>
-                <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)' }}>{targetError}</p>
+              {aiAnalysis?.dataset_summary && (
+                <div style={{ padding: 14, borderRadius: 8, border: '1px solid rgba(37,99,235,0.16)', background: 'rgba(37,99,235,0.06)', marginBottom: 14 }}>
+                  <p style={{ fontSize: 12, fontWeight: 900, color: '#2563eb', margin: '0 0 6px' }}>데이터 판단 요약</p>
+                  <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.7, margin: 0 }}>{aiAnalysis.dataset_summary}</p>
+                  {aiAnalysis?.target_category && (
+                    <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.6, margin: '8px 0 0' }}>
+                      데이터 종류: <strong style={{ color: 'var(--text)' }}>{datasetDomain}</strong> · 맞힐 값: <strong style={{ color: 'var(--text)' }}>{targetCategory}</strong> · 확신도 {targetConfidence}
+                      <br />{targetReason}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {targetError && (
+                <div className="banner-warning" style={{ marginBottom: 14 }}>
+                  <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)' }}>{targetError}</p>
+                </div>
+              )}
+
+              <div style={{ display: 'grid', gap: 14 }}>
+                <SettingPanel
+                  title="맞히려는 값"
+                  desc={`예측 모델이 최종적으로 맞혀야 하는 값입니다. 이 파일은 ${datasetDomain} 데이터로 보이며, 현재 값은 ${targetCategory}로 해석했습니다.`}
+                  color="#2563eb"
+                >
+                  <select value={target} onChange={e => { setTarget(e.target.value); setDropCols(prev => prev.filter(c => c !== e.target.value)) }} className="input" style={{ maxWidth: 360 }}>
+                    {uploadInfo.columns.map(c => <option key={c} value={c}>{labelFor(c, colLabels)}</option>)}
+                  </select>
+                </SettingPanel>
+
+                <SettingPanel
+                  title={`예측에 사용할 정보 ${activeCols.length}개`}
+                  desc="모델이 정답을 맞히기 위해 참고할 정보입니다. 누르면 제외 목록으로 이동합니다."
+                  color="#059669"
+                >
+                  <ChipList items={activeCols} colLabels={colLabels} empty="사용할 컬럼이 없습니다." onClick={toggleDrop} tone="green" />
+                </SettingPanel>
+
+                <SettingPanel
+                  title={`예측에서 제외할 정보 ${dropCols.length}개`}
+                  desc="ID, 날짜, 이미 정답을 알려주는 컬럼처럼 예측을 방해할 수 있는 정보입니다. 누르면 다시 포함됩니다."
+                  color="#dc2626"
+                >
+                  <ChipList items={dropCols} colLabels={colLabels} empty="제외할 컬럼이 없습니다." onClick={toggleDrop} tone="red" />
+                </SettingPanel>
               </div>
-            )}
-
-            <div style={{ display: 'grid', gap: 14 }}>
-              <SettingPanel
-                title="AI가 맞히려는 정답"
-                desc={`예측 모델이 최종적으로 맞혀야 하는 값입니다. 이 파일은 ${datasetDomain} 데이터로 보이며, 현재 값은 ${targetCategory}로 해석했습니다.`}
-                color="#2563eb"
-              >
-                <select value={target} onChange={e => { setTarget(e.target.value); setDropCols(prev => prev.filter(c => c !== e.target.value)) }} className="input" style={{ maxWidth: 360 }}>
-                  {uploadInfo.columns.map(c => <option key={c} value={c}>{labelFor(c, colLabels)}</option>)}
-                </select>
-              </SettingPanel>
-
-              <SettingPanel
-                title={`예측에 사용할 정보 ${activeCols.length}개`}
-                desc="모델이 정답을 맞히기 위해 참고할 정보입니다. 누르면 제외 목록으로 이동합니다."
-                color="#059669"
-              >
-                <ChipList items={activeCols} colLabels={colLabels} empty="사용할 컬럼이 없습니다." onClick={toggleDrop} tone="green" />
-              </SettingPanel>
-
-              <SettingPanel
-                title={`예측에서 제외할 정보 ${dropCols.length}개`}
-                desc="ID, 날짜, 이미 정답을 알려주는 컬럼처럼 예측을 방해할 수 있는 정보입니다. 누르면 다시 포함됩니다."
-                color="#dc2626"
-              >
-                <ChipList items={dropCols} colLabels={colLabels} empty="제외할 컬럼이 없습니다." onClick={toggleDrop} tone="red" />
-              </SettingPanel>
-            </div>
             </div>
 
             {edaInfo && (
@@ -347,7 +335,7 @@ export default function Upload() {
                   <div>
                     <h2 style={{ fontSize: 18, color: 'var(--text)', margin: '0 0 6px' }}>분석 준비가 끝났습니다</h2>
                     <p style={{ fontSize: 13, color: 'var(--text-2)', margin: 0 }}>
-                      이제 여러 AI 모델을 비교해서 이 데이터에 가장 잘 맞는 모델을 찾을 수 있습니다.
+                      이제 여러 모델을 비교해서 이 데이터에 가장 잘 맞는 모델을 찾을 수 있습니다.
                     </p>
                   </div>
                   <Button onClick={() => nav('/model-lab')}>모델 비교하러 가기</Button>
@@ -388,7 +376,7 @@ export default function Upload() {
 
 function SettingPanel({ title, desc, color, children }) {
   return (
-    <div style={{ borderRadius: 12, padding: 16, border: `1px solid ${color}33`, background: `${color}0d` }}>
+    <div style={{ borderRadius: 8, padding: 16, border: `1px solid ${color}33`, background: `${color}0d` }}>
       <p style={{ fontSize: 14, fontWeight: 900, color, margin: '0 0 4px' }}>{title}</p>
       <p style={{ fontSize: 12, color: 'var(--text-2)', margin: '0 0 12px', lineHeight: 1.55 }}>{desc}</p>
       {children}
@@ -402,7 +390,7 @@ function ChipList({ items, colLabels, empty, onClick, tone }) {
   return (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
       {items.map(col => (
-        <button key={col} onClick={() => onClick(col)} style={{
+        <button key={col} type="button" onClick={() => onClick(col)} style={{
           padding: '7px 11px', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 700,
           border: `1px solid ${isGreen ? 'rgba(5,150,105,0.28)' : 'rgba(220,38,38,0.28)'}`,
           background: isGreen ? 'rgba(5,150,105,0.08)' : 'rgba(220,38,38,0.08)',

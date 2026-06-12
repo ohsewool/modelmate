@@ -21,22 +21,22 @@ export default function EvidenceSummaryPanel({ summary, models, primaryMetric, f
   ].slice(0, 3)
 
   const items = [
-    ['Selected target', dataset.target_col || '-'],
-    ['Task type', taskLabel(dataset.task_type)],
-    ['Best model', summary?.model_selection?.best_model || '-'],
-    ['Best metric', primaryMetric ? `${primaryMetric}: ${fmt(top[primaryMetric])}` : '-'],
-    ['Recommended next action', business.next_actions?.[0] || business.recommended_decision || '이유 보기와 새 데이터 예측으로 이어가세요.'],
+    ['선택 타깃', dataset.target_col || '-'],
+    ['예측 유형', taskLabel(dataset.task_type)],
+    ['최고 모델', summary?.model_selection?.best_model || '-'],
+    ['대표 지표', primaryMetric ? `${primaryMetric}: ${fmt(top[primaryMetric])}` : '-'],
+    ['추천 다음 행동', business.next_actions?.[0] || business.recommended_decision || '이유 보기와 새 데이터 예측으로 이어가세요.'],
   ]
 
   return (
     <section className="card">
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-        <span style={{ width: 32, height: 32, borderRadius: 10, display: 'grid', placeItems: 'center', background: 'rgba(124,58,237,0.1)', color: '#7c3aed' }}>
+        <span style={{ width: 32, height: 32, borderRadius: 8, display: 'grid', placeItems: 'center', background: 'rgba(124,58,237,0.1)', color: '#7c3aed' }}>
           <FileText size={17} />
         </span>
         <div>
-          <p style={{ margin: '0 0 3px', fontSize: 12, fontWeight: 900, color: '#7c3aed' }}>Evidence-based report</p>
-          <h2 style={{ margin: 0, fontSize: 18, fontWeight: 900 }}>보고서 근거 요약</h2>
+          <p style={{ margin: '0 0 3px', fontSize: 12, fontWeight: 900, color: '#7c3aed' }}>근거 기반 보고서</p>
+          <h2 style={{ margin: 0, fontSize: 18, fontWeight: 900 }}>보고서가 참고한 핵심 근거</h2>
         </div>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 10, marginBottom: 12 }}>
@@ -47,16 +47,16 @@ export default function EvidenceSummaryPanel({ summary, models, primaryMetric, f
           </div>
         ))}
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }} className="evidence-split-grid">
         <div>
-          <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 900 }}>Top features</p>
+          <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 900 }}>주요 변수</p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {(features || []).slice(0, 5).map(item => <span key={item.feature} className="badge badge-cyan">{item.feature}</span>)}
             {!features?.length && <span style={{ fontSize: 12, color: 'var(--text-2)' }}>설명 근거가 아직 없습니다.</span>}
           </div>
         </div>
         <div>
-          <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 900 }}>Key limitations</p>
+          <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 900 }}>한계와 주의사항</p>
           <div style={{ display: 'grid', gap: 6 }}>
             {limitations.length ? limitations.map(item => <span key={item} style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.45 }}>{item}</span>) : <span style={{ fontSize: 12, color: 'var(--text-2)' }}>현재 보고서에 별도 한계 메모가 없습니다.</span>}
           </div>

@@ -1,20 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
-import {
-  AlertCircle,
-  BarChart3,
-  Brain,
-  CheckCircle2,
-  Loader2,
-  RefreshCw,
-  Search,
-} from 'lucide-react'
+import { AlertCircle, BarChart3, CheckCircle2, Loader2, RefreshCw, Search } from 'lucide-react'
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import api from '../api'
 
 const tooltipStyle = {
   background: '#ffffff',
   border: '1px solid var(--border)',
-  borderRadius: 10,
+  borderRadius: 8,
   fontSize: 12,
   color: 'var(--text)',
   boxShadow: '0 8px 24px rgba(15,23,42,0.12)',
@@ -32,18 +24,18 @@ const taskLabel = value => ({
 const directionLabel = value => ({
   high: '높을수록 영향',
   low: '낮을수록 영향',
-  neutral: '영향 있음',
-}[value] || value || '영향 있음')
+  neutral: '방향 불명확',
+}[value] || value || '방향 불명확')
 const limitationText = item => ({
-  'Feature importance shows signal strength, not guaranteed causality.': '중요도는 예측에 영향을 준 정도를 보여주지만, 실제 원인이라고 단정할 수는 없습니다.',
-  'Local explanations are approximations when SHAP values are unavailable.': 'SHAP 값을 사용할 수 없을 때의 개별 설명은 근사치일 수 있습니다.',
+  'Feature importance shows signal strength, not guaranteed causality.': '중요도는 모델이 참고한 신호의 강도를 보여주며, 반드시 실제 원인을 의미하지는 않습니다.',
+  'Local explanations are approximations when SHAP values are unavailable.': 'SHAP 값을 사용할 수 없는 경우 개별 설명은 근사치일 수 있습니다.',
 }[item] || item)
 
 function SourceBadge({ source }) {
   const label = {
     feature_importance: '중요도 기준',
     model_coefficient: '모델 계수 기준',
-    target_correlation: '정답과의 관계 기준',
+    target_correlation: '타깃 상관 기준',
   }[source] || source || '설명 기준'
   return <span className="badge badge-cyan">{label}</span>
 }
@@ -51,9 +43,9 @@ function SourceBadge({ source }) {
 function EmptyState({ error, onRetry }) {
   return (
     <div className="card empty-state">
-      <AlertCircle size={42} color="#e11d48" />
-      <p className="empty-title" style={{ marginTop: 16 }}>아직 이유 분석이 준비되지 않았습니다</p>
-      <p className="empty-desc">{error || '먼저 데이터 업로드, 정답 선택, 모델 비교를 진행해주세요.'}</p>
+      <AlertCircle size={42} color="#dc2626" />
+      <p className="empty-title" style={{ marginTop: 16 }}>아직 예측 이유가 준비되지 않았습니다</p>
+      <p className="empty-desc">{error || '먼저 데이터 업로드, 타깃 선택, 모델 비교를 진행해 주세요.'}</p>
       {onRetry && <button className="btn-secondary" onClick={onRetry} style={{ marginTop: 16 }}><RefreshCw size={14} /> 다시 시도</button>}
     </div>
   )
@@ -61,7 +53,7 @@ function EmptyState({ error, onRetry }) {
 
 function FeatureBars({ items, valueKey = 'importance', signed = false }) {
   const data = useMemo(() => [...(items || [])].slice(0, 10).reverse(), [items])
-  if (!data.length) return <p style={{ margin: 0, color: 'var(--text-2)', fontSize: 13 }}>아직 보여줄 근거 정보가 없습니다.</p>
+  if (!data.length) return <p style={{ margin: 0, color: 'var(--text-2)', fontSize: 13 }}>보여줄 설명 근거가 없습니다.</p>
   return (
     <ResponsiveContainer width="100%" height={Math.max(260, data.length * 38)}>
       <BarChart data={data} layout="vertical" barSize={14} margin={{ left: 12, right: 16 }}>
@@ -70,7 +62,7 @@ function FeatureBars({ items, valueKey = 'importance', signed = false }) {
         <Tooltip contentStyle={tooltipStyle} formatter={v => [fmt(v), signed ? '영향도' : '중요도']} />
         <Bar dataKey={valueKey} radius={[0, 6, 6, 0]}>
           {data.map((row, idx) => (
-            <Cell key={`${row.feature}-${idx}`} fill={signed && row[valueKey] < 0 ? '#6366f1' : '#059669'} />
+            <Cell key={`${row.feature}-${idx}`} fill={signed && row[valueKey] < 0 ? '#2563eb' : '#059669'} />
           ))}
         </Bar>
       </BarChart>
@@ -117,7 +109,6 @@ export default function XAI() {
 
   const topFeature = summary?.items?.[0]
   const localTop = local?.features?.[0]
-  const summaryTitle = topFeature ? '핵심 근거' : '예측 근거'
 
   if (loading) {
     return (
@@ -140,16 +131,16 @@ export default function XAI() {
         <div className="card">
           <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'center', gap: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              <div style={{ width: 44, height: 44, borderRadius: 10, display: 'grid', placeItems: 'center', background: 'rgba(5,150,105,0.1)', color: '#059669' }}>
-                <Brain size={27} />
+              <div style={{ width: 44, height: 44, borderRadius: 8, display: 'grid', placeItems: 'center', background: 'rgba(5,150,105,0.1)', color: '#059669' }}>
+                <BarChart3 size={25} />
               </div>
               <div>
-                <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 800, color: '#059669' }}>예측 이유 보기</p>
+                <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 900, color: '#059669' }}>이유 보기</p>
                 <h1 style={{ margin: '0 0 6px', fontSize: 24, fontWeight: 900, color: 'var(--text)', letterSpacing: 0 }}>
-                  {summaryTitle}
+                  모델이 참고한 주요 신호
                 </h1>
                 <p style={{ margin: 0, color: 'var(--text-2)', fontSize: 13 }}>
-                  {topFeature ? `${topFeature.feature}가 가장 큰 영향을 주었습니다.` : '중요한 정보를 순서대로 보여줍니다.'}
+                  {topFeature ? `${topFeature.feature} 변수가 현재 모델에서 가장 큰 신호로 나타났습니다.` : '중요도 정보를 순서대로 보여줍니다.'}
                 </p>
                 <p style={{ margin: '6px 0 0', color: 'var(--text-label)', fontSize: 12 }}>
                   사용 모델 {summary.model} / 예측 유형 {taskLabel(summary.task_type)} / <SourceBadge source={summary.source} />
@@ -167,12 +158,12 @@ export default function XAI() {
             전체 데이터 기준
           </button>
           <button onClick={() => setTab('local')} className={tab === 'local' ? 'tab-item tab-item-active' : 'tab-item tab-item-inactive'}>
-            한 행 자세히 보기
+            개별 예측 보기
           </button>
         </div>
 
         {tab === 'global' && (
-          <div className="animate-slide-up" style={{ display: 'grid', gridTemplateColumns: '0.8fr 1.2fr', gap: 18 }}>
+          <div className="animate-slide-up xai-grid" style={{ display: 'grid', gridTemplateColumns: '0.8fr 1.2fr', gap: 18 }}>
             <section className="card">
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
                 <CheckCircle2 size={18} color="#059669" />
@@ -182,7 +173,7 @@ export default function XAI() {
                 {topFeature?.feature || '-'}
               </p>
               <p style={{ margin: '0 0 18px', color: 'var(--text-2)', fontSize: 13, lineHeight: 1.7 }}>
-                이 정보가 현재 모델의 예측에 가장 큰 영향을 주었습니다. 모델이 무엇을 먼저 보는지 이해하는 데 도움이 됩니다.
+                이 값은 모델이 예측할 때 크게 참고한 신호입니다. 실제 원인을 단정하기보다, 확인해야 할 후보 변수로 해석하세요.
               </p>
               <div style={{ display: 'grid', gap: 10 }}>
                 {(summary.items || []).slice(0, 4).map(item => (
@@ -199,8 +190,8 @@ export default function XAI() {
             <section className="card">
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <BarChart3 size={18} color="#4f46e5" />
-                  <h2 style={{ margin: 0, fontSize: 15, fontWeight: 800 }}>중요 정보 순위</h2>
+                  <BarChart3 size={18} color="#2563eb" />
+                  <h2 style={{ margin: 0, fontSize: 15, fontWeight: 800 }}>중요 변수 순위</h2>
                 </div>
                 <SourceBadge source={summary.source} />
               </div>
@@ -216,7 +207,7 @@ export default function XAI() {
                 <div>
                   <p className="section-title" style={{ marginBottom: 8 }}>개별 데이터 설명</p>
                   <p style={{ margin: 0, color: 'var(--text-2)', fontSize: 13 }}>
-                    학습 데이터의 행 번호를 입력하면 그 행에서 왜 그런 예측이 나왔는지 확인할 수 있습니다.
+                    학습 데이터의 행 번호를 입력하면 해당 행에서 어떤 변수가 예측에 영향을 주었는지 확인할 수 있습니다.
                   </p>
                 </div>
                 <div style={{ display: 'flex', gap: 10 }}>
@@ -230,10 +221,10 @@ export default function XAI() {
             </section>
 
             {local ? (
-              <div style={{ display: 'grid', gridTemplateColumns: '0.9fr 1.1fr', gap: 18 }}>
+              <div className="xai-grid" style={{ display: 'grid', gridTemplateColumns: '0.9fr 1.1fr', gap: 18 }}>
                 <section className="card">
                   <p className="section-title">예측 결과</p>
-                  <p style={{ margin: '0 0 8px', fontSize: 30, fontWeight: 900, color: '#4f46e5' }}>
+                  <p style={{ margin: '0 0 8px', fontSize: 30, fontWeight: 900, color: '#2563eb' }}>
                     {local.prediction_label || fmt(local.prediction)}
                   </p>
                   <p style={{ margin: '0 0 18px', color: 'var(--text-2)', fontSize: 13 }}>
@@ -241,7 +232,7 @@ export default function XAI() {
                   </p>
                   {local.confidence !== undefined && (
                     <div className="card-elevated">
-                      <p style={{ margin: '0 0 6px', fontSize: 11, fontWeight: 800, color: 'var(--text-label)', textTransform: 'uppercase' }}>확신도</p>
+                      <p style={{ margin: '0 0 6px', fontSize: 11, fontWeight: 800, color: 'var(--text-label)' }}>신뢰도</p>
                       <p style={{ margin: 0, fontSize: 24, fontWeight: 850, color: '#059669' }}>{fmt(local.confidence)}</p>
                     </div>
                   )}
@@ -262,17 +253,17 @@ export default function XAI() {
               </div>
             ) : (
               <div className="card empty-state" style={{ padding: 56 }}>
-                <Search size={36} color="#6366f1" />
-                <p className="empty-title" style={{ marginTop: 16 }}>설명할 샘플을 선택해주세요</p>
+                <Search size={36} color="#2563eb" />
+                <p className="empty-title" style={{ marginTop: 16 }}>설명할 샘플을 선택해 주세요</p>
               </div>
             )}
           </div>
         )}
 
         <section className="card">
-          <p className="section-title">주의할 점</p>
+          <p className="section-title">주의사항</p>
           <div style={{ display: 'grid', gap: 8 }}>
-            {(summary.limitations || []).map(item => (
+            {(summary.limitations || ['중요도는 모델의 참고 신호이며, 반드시 원인을 의미하지는 않습니다.']).map(item => (
               <div key={item} className="banner-info" style={{ padding: 10 }}>
                 <AlertCircle size={14} />
                 <p style={{ margin: 0, fontSize: 12, color: 'var(--text-2)' }}>{limitationText(item)}</p>

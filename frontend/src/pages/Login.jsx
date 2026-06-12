@@ -1,37 +1,41 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { GoogleLogin } from '@react-oauth/google'
+import { ArrowRight, Eye, EyeOff, ShieldCheck } from 'lucide-react'
 import { useAuth } from '../AuthContext'
 import api from '../api'
+import { Button } from '../components/ui/button'
 
 export default function Login() {
   const { user, login, startGuest } = useAuth()
   const nav = useNavigate()
 
-  const [mode,     setMode]     = useState('login')
-  const [email,    setEmail]    = useState('')
+  const [mode, setMode] = useState('login')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [name,     setName]     = useState('')
+  const [name, setName] = useState('')
   const [remember, setRemember] = useState(false)
-  const [loading,  setLoading]  = useState(false)
-  const [error,    setError]    = useState('')
-  const [showPw,   setShowPw]   = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [showPw, setShowPw] = useState(false)
 
-  useEffect(() => { if (user) nav('/upload') }, [user])
+  useEffect(() => { if (user) nav('/upload') }, [user, nav])
 
   async function handleEmailSubmit(e) {
     e.preventDefault()
-    setError(''); setLoading(true)
+    setError('')
+    setLoading(true)
     try {
       const endpoint = mode === 'login' ? '/auth/login' : '/auth/signup'
       const body = mode === 'login' ? { email, password } : { email, password, name }
       const { data } = await api.post(endpoint, body)
       login(data.token, data.user)
       nav(data.user?.role === 'admin' ? '/history' : '/upload')
-    } catch(e) {
-      setError(e.response?.data?.detail || '오류가 발생했습니다')
+    } catch (e) {
+      setError(e.response?.data?.detail || '로그인을 완료하지 못했습니다. 입력값을 확인하고 다시 시도해 주세요.')
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   async function handleGoogleSuccess(credentialResponse) {
@@ -39,7 +43,9 @@ export default function Login() {
       const { data } = await api.post('/auth/google', { credential: credentialResponse.credential })
       login(data.token, data.user)
       nav(data.user?.role === 'admin' ? '/history' : '/upload')
-    } catch(e) { setError('Google 로그인에 실패했습니다') }
+    } catch (e) {
+      setError('Google 로그인에 실패했습니다. 잠시 후 다시 시도해 주세요.')
+    }
   }
 
   async function handleGuestStart() {
@@ -49,170 +55,169 @@ export default function Login() {
       await startGuest()
       nav('/upload')
     } catch (e) {
-      setError('게스트 데모 세션을 시작하지 못했습니다. 잠시 후 다시 시도해주세요.')
+      setError('게스트 데모 세션을 시작하지 못했습니다. 잠시 후 다시 시도해 주세요.')
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
-  }
-
-  const inputStyle = {
-    width: '100%', padding: '11px 14px', borderRadius: 8, fontSize: 14,
-    border: '1px solid #e5e7eb', background: '#fff', color: '#111827',
-    outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit',
-    transition: 'border-color 0.15s, box-shadow 0.15s',
   }
 
   return (
     <div style={{
-      minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: 'linear-gradient(135deg, #ede9fe 0%, #f5f3ff 40%, #e0e7ff 100%)',
-      padding: 24, position: 'relative', overflow: 'hidden',
+      minHeight: '100vh',
+      display: 'grid',
+      placeItems: 'center',
+      background: 'var(--bg)',
+      padding: 24,
     }}>
-      {/* 배경 장식 */}
-      <div style={{ position:'absolute', top:-160, left:-160, width:500, height:500, borderRadius:'50%', background:'rgba(99,102,241,0.08)', pointerEvents:'none' }} />
-      <div style={{ position:'absolute', bottom:-100, right:-100, width:400, height:400, borderRadius:'50%', background:'rgba(124,58,237,0.08)', pointerEvents:'none' }} />
-      <div style={{ position:'absolute', top:'30%', right:'8%', width:200, height:200, borderRadius:'50%', background:'rgba(167,139,250,0.1)', pointerEvents:'none' }} />
-
-      {/* 로그인 카드 */}
       <div style={{
-        width: '100%', maxWidth: 420, position: 'relative',
-        background: '#ffffff', borderRadius: 24,
-        boxShadow: '0 20px 60px rgba(99,102,241,0.15), 0 4px 16px rgba(0,0,0,0.06)',
-        padding: '40px 40px 32px',
-      }}>
-        {/* 로고 */}
-        <div style={{ display:'flex', flexDirection:'column', alignItems:'center', marginBottom: 32 }}>
-          <div style={{
-            width: 52, height: 52, borderRadius: 16, marginBottom: 14,
-            background: 'linear-gradient(135deg, #6366f1, #7c3aed)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 8px 20px rgba(99,102,241,0.35)',
+        width: 'min(960px, 100%)',
+        display: 'grid',
+        gridTemplateColumns: 'minmax(0, 0.9fr) minmax(360px, 420px)',
+        gap: 28,
+        alignItems: 'center',
+      }} className="login-grid">
+        <section style={{ padding: '16px 0' }}>
+          <button onClick={() => nav('/')} style={{
+            display: 'inline-flex', alignItems: 'center', gap: 10, border: 0,
+            background: 'transparent', padding: 0, cursor: 'pointer', color: 'var(--text)',
+            marginBottom: 26,
           }}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
-            </svg>
-          </div>
-          <h1 style={{ fontSize: 22, fontWeight: 800, color: '#111827', margin: 0, letterSpacing: '-0.02em' }}>ModelMate</h1>
-          <p style={{ fontSize: 13, color: '#9ca3af', margin: '4px 0 0', fontWeight: 400 }}>
-            {mode === 'login' ? '이메일 또는 Google로 로그인하세요' : '이메일 또는 Google로 계정을 만들 수 있습니다'}
-          </p>
-        </div>
-
-        {/* 탭 */}
-        <div style={{
-          display: 'flex', background: '#f3f4f6', borderRadius: 10, padding: 3, marginBottom: 24,
-        }}>
-          {['login', 'signup'].map(m => (
-            <button key={m} onClick={() => { setMode(m); setError('') }} style={{
-              flex: 1, padding: '8px', borderRadius: 8, border: 'none', cursor: 'pointer',
-              fontFamily: 'inherit', fontSize: 13, fontWeight: 600, transition: 'all 0.15s',
-              background: mode === m ? '#ffffff' : 'transparent',
-              color: mode === m ? '#6366f1' : '#9ca3af',
-              boxShadow: mode === m ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
-            }}>
-              {m === 'login' ? '로그인' : '회원가입'}
-            </button>
-          ))}
-        </div>
-
-        {/* 폼 */}
-        <form onSubmit={handleEmailSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {mode === 'signup' && (
-            <div>
-              <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>이름</label>
-              <input type="text" value={name} onChange={e => setName(e.target.value)}
-                placeholder="홍길동" style={inputStyle} required
-                onFocus={e => { e.target.style.borderColor='#6366f1'; e.target.style.boxShadow='0 0 0 3px rgba(99,102,241,0.1)' }}
-                onBlur={e => { e.target.style.borderColor='#e5e7eb'; e.target.style.boxShadow='none' }} />
-            </div>
-          )}
-
-          <div>
-            <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>이메일</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-              placeholder="user@example.com" style={inputStyle} required
-              onFocus={e => { e.target.style.borderColor='#6366f1'; e.target.style.boxShadow='0 0 0 3px rgba(99,102,241,0.1)' }}
-              onBlur={e => { e.target.style.borderColor='#e5e7eb'; e.target.style.boxShadow='none' }} />
-          </div>
-
-          <div>
-            <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>비밀번호</label>
-            <div style={{ position: 'relative' }}>
-              <input type={showPw ? 'text' : 'password'} value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder={mode === 'signup' ? '8자 이상 입력' : '비밀번호 입력'}
-                style={{ ...inputStyle, paddingRight: 44 }} required
-                onFocus={e => { e.target.style.borderColor='#6366f1'; e.target.style.boxShadow='0 0 0 3px rgba(99,102,241,0.1)' }}
-                onBlur={e => { e.target.style.borderColor='#e5e7eb'; e.target.style.boxShadow='none' }} />
-              <button type="button" onClick={() => setShowPw(v => !v)} style={{
-                position:'absolute', right:12, top:'50%', transform:'translateY(-50%)',
-                background:'none', border:'none', cursor:'pointer', color:'#9ca3af', padding:0,
-              }}>
-                {showPw
-                  ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                  : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                }
-              </button>
-            </div>
-          </div>
-
-          {mode === 'login' && (
-            <label style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer', userSelect:'none' }}>
-              <input type="checkbox" checked={remember} onChange={e => setRemember(e.target.checked)}
-                style={{ width:15, height:15, accentColor:'#6366f1' }} />
-              <span style={{ fontSize:12, color:'#6b7280' }}>로그인 상태 유지</span>
-            </label>
-          )}
-
-          {error && (
-            <p style={{ fontSize:12, color:'#e11d48', margin:0, padding:'8px 12px', background:'#fff1f2', borderRadius:8, border:'1px solid #fecdd3' }}>{error}</p>
-          )}
-
-          <button type="submit" disabled={loading} style={{
-            width:'100%', padding:'12px', borderRadius:10, border:'none',
-            cursor: loading ? 'not-allowed' : 'pointer',
-            background:'linear-gradient(135deg, #6366f1, #7c3aed)',
-            color:'#fff', fontWeight:700, fontSize:14, fontFamily:'inherit',
-            boxShadow:'0 4px 14px rgba(99,102,241,0.35)',
-            opacity: loading ? 0.7 : 1, transition:'all 0.15s',
-          }}
-          onMouseEnter={e => { if(!loading) e.currentTarget.style.transform='translateY(-1px)' }}
-          onMouseLeave={e => e.currentTarget.style.transform=''}>
-            {loading ? '처리 중...' : mode === 'login' ? '이메일로 로그인' : '이메일로 회원가입'}
+            <span style={{ width: 36, height: 36, borderRadius: 8, display: 'grid', placeItems: 'center', background: '#2563eb', color: '#fff' }}>
+              <LogoIcon />
+            </span>
+            <span style={{ fontSize: 18, fontWeight: 900 }}>ModelMate</span>
           </button>
-        </form>
+          <p style={{ margin: '0 0 10px', color: '#2563eb', fontSize: 12, fontWeight: 900 }}>GUIDED CSV ANALYSIS</p>
+          <h1 style={{ margin: 0, fontSize: 'clamp(32px, 5vw, 48px)', lineHeight: 1.08, fontWeight: 950, letterSpacing: 0 }}>
+            분석 기록을 저장하고 다시 이어가세요
+          </h1>
+          <p style={{ margin: '16px 0 0', fontSize: 15, lineHeight: 1.7, color: 'var(--text-2)', maxWidth: 520 }}>
+            로그인하면 CSV 분석, 보고서, 재실행 기록을 내 프로젝트로 보관할 수 있습니다. 바로 확인만 하고 싶다면 게스트 데모로 시작할 수 있습니다.
+          </p>
+          <div style={{ display: 'grid', gap: 10, marginTop: 24, maxWidth: 500 }}>
+            {['내 프로젝트와 분석 기록 저장', '보고서와 예측 API 재사용', '게스트 데모와 개인 프로젝트 분리'].map(item => (
+              <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--text-2)', fontSize: 13, fontWeight: 700 }}>
+                <ShieldCheck size={16} color="#059669" />
+                {item}
+              </div>
+            ))}
+          </div>
+        </section>
 
-        {/* 구분선 */}
-        <div style={{ display:'flex', alignItems:'center', gap:12, margin:'20px 0' }}>
-          <div style={{ flex:1, height:1, background:'#f3f4f6' }} />
-          <span style={{ fontSize:11, color:'#d1d5db' }}>또는</span>
-          <div style={{ flex:1, height:1, background:'#f3f4f6' }} />
-        </div>
+        <section className="card" style={{ padding: 28, borderRadius: 8, boxShadow: '0 10px 28px rgba(15,23,42,0.08)' }}>
+          <div style={{ marginBottom: 22 }}>
+            <h2 style={{ fontSize: 22, fontWeight: 900, color: 'var(--text)', margin: '0 0 6px', letterSpacing: 0 }}>
+              {mode === 'login' ? '로그인' : '계정 만들기'}
+            </h2>
+            <p style={{ fontSize: 13, color: 'var(--text-2)', margin: 0, lineHeight: 1.55 }}>
+              {mode === 'login' ? '저장된 프로젝트와 분석 결과를 다시 열어봅니다.' : '이메일로 ModelMate 프로젝트 공간을 만듭니다.'}
+            </p>
+          </div>
 
-        {/* Google 로그인 */}
-        <div style={{ display:'flex', justifyContent:'center' }}>
-          <GoogleLogin
-            onSuccess={handleGoogleSuccess}
-            onError={() => setError('Google 로그인에 실패했습니다')}
-            width="340"
-            size="large"
-            text="signin_with"
-            shape="rectangular"
-          />
-        </div>
+          <div className="tab-bar" style={{ marginBottom: 20 }}>
+            {['login', 'signup'].map(m => (
+              <button key={m} type="button" onClick={() => { setMode(m); setError('') }} className={mode === m ? 'tab-item tab-item-active' : 'tab-item tab-item-inactive'} style={{ flex: 1 }}>
+                {m === 'login' ? '로그인' : '회원가입'}
+              </button>
+            ))}
+          </div>
 
-        <button type="button" onClick={handleGuestStart} disabled={loading} style={{
-          width:'100%', marginTop: 14, padding:'11px', borderRadius:10,
-          border:'1px solid #c7d2fe', background:'#eef2ff', color:'#3730a3',
-          cursor: loading ? 'not-allowed' : 'pointer', fontWeight:800,
-          fontSize:13, fontFamily:'inherit',
-        }}>
-          로그인 없이 게스트 데모로 시작
-        </button>
-        <p style={{ fontSize:11, color:'#6b7280', lineHeight:1.5, margin:'10px 0 0', textAlign:'center' }}>
-          게스트 데모는 업로드와 분석 흐름 확인용이며, 계정별 프로젝트 저장은 로그인 후 사용할 수 있습니다.
-        </p>
+          <form onSubmit={handleEmailSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {mode === 'signup' && (
+              <Field label="이름">
+                <input className="input" type="text" value={name} onChange={e => setName(e.target.value)} placeholder="홍길동" required />
+              </Field>
+            )}
 
+            <Field label="이메일">
+              <input className="input" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="user@example.com" required />
+            </Field>
+
+            <Field label="비밀번호">
+              <div style={{ position: 'relative' }}>
+                <input
+                  className="input"
+                  type={showPw ? 'text' : 'password'}
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder={mode === 'signup' ? '8자 이상 입력' : '비밀번호 입력'}
+                  style={{ paddingRight: 42 }}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPw(v => !v)}
+                  aria-label={showPw ? '비밀번호 숨기기' : '비밀번호 보기'}
+                  style={{
+                    position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
+                    background: 'transparent', border: 0, cursor: 'pointer', color: 'var(--text-3)', padding: 4,
+                  }}
+                >
+                  {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </Field>
+
+            {mode === 'login' && (
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', userSelect: 'none' }}>
+                <input type="checkbox" checked={remember} onChange={e => setRemember(e.target.checked)} style={{ width: 15, height: 15, accentColor: '#2563eb' }} />
+                <span style={{ fontSize: 12, color: 'var(--text-2)' }}>로그인 상태 유지</span>
+              </label>
+            )}
+
+            {error && (
+              <p style={{ fontSize: 12, color: '#b91c1c', margin: 0, padding: '9px 11px', background: '#fff1f2', borderRadius: 8, border: '1px solid #fecdd3', lineHeight: 1.5 }}>{error}</p>
+            )}
+
+            <Button type="submit" disabled={loading} style={{ width: '100%', justifyContent: 'center' }}>
+              {loading && <span className="spinner" />}
+              {mode === 'login' ? '이메일로 로그인' : '이메일로 회원가입'}
+            </Button>
+          </form>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '20px 0' }}>
+            <div style={{ flex: 1, height: 1, background: 'var(--border-sub)' }} />
+            <span style={{ fontSize: 11, color: 'var(--text-label)' }}>또는</span>
+            <div style={{ flex: 1, height: 1, background: 'var(--border-sub)' }} />
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => setError('Google 로그인에 실패했습니다.')}
+              width="340"
+              size="large"
+              text="signin_with"
+              shape="rectangular"
+            />
+          </div>
+
+          <button type="button" onClick={handleGuestStart} disabled={loading} style={{
+            width: '100%', marginTop: 14, padding: '11px 12px', borderRadius: 8,
+            border: '1px solid var(--border)', background: 'var(--surface-alt)', color: 'var(--text-2)',
+            cursor: loading ? 'not-allowed' : 'pointer', fontWeight: 800,
+            fontSize: 13, fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          }}>
+            게스트 데모로 시작 <ArrowRight size={14} />
+          </button>
+          <p style={{ fontSize: 11, color: 'var(--text-3)', lineHeight: 1.5, margin: '10px 0 0', textAlign: 'center' }}>
+            게스트 데모는 흐름 확인용입니다. 프로젝트 저장과 재실행은 로그인 후 사용할 수 있습니다.
+          </p>
+        </section>
       </div>
     </div>
   )
+}
+
+function Field({ label, children }) {
+  return (
+    <label style={{ display: 'grid', gap: 6 }}>
+      <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--text-2)' }}>{label}</span>
+      {children}
+    </label>
+  )
+}
+
+function LogoIcon() {
+  return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z" /><path d="M2 17l10 5 10-5" /><path d="M2 12l10 5 10-5" /></svg>
 }
