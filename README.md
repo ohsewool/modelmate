@@ -136,6 +136,7 @@ Final demo and beta QA documents:
 - Beta MVP release notes: `docs/release-notes-beta.md`
 - Beta tester guide: `docs/beta-tester-guide.md`
 - Beta feedback message draft: `docs/beta-feedback-message.md`
+- Automated QA guide: `docs/automated-qa.md`
 - Deployment checklist: `docs/deployment-checklist.md`
 - Final QA checklist: `docs/final-qa.md`
 - Demo QA checklist: `docs/demo-qa-checklist.md`
@@ -164,6 +165,17 @@ Screenshots to add before a wider public demo:
 - Prediction API documentation
 - Project history/rerun
 - Privacy/terms/pricing links
+
+Release QA can be run with:
+
+```bash
+python scripts/run_release_qa.py --base-url https://web-production-5d6fa.up.railway.app --skip-training
+python scripts/run_product_smoke.py --base-url https://web-production-5d6fa.up.railway.app
+```
+
+Automated QA checks endpoints, sample upload, target selection, report export,
+and deployment smoke paths. Human review is still needed for usability, copy
+clarity, visual layout, and whether beta users find the report persuasive.
 
 Commercial SaaS MVP trust documents are drafted, not finalized legal policies:
 
