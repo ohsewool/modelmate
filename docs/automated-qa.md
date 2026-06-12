@@ -13,6 +13,7 @@ python scripts/run_full_qa.py --skip-slow
 python scripts/run_auth_smoke.py --base-url http://localhost:8000
 python scripts/run_ownership_smoke.py --base-url http://localhost:8000
 python scripts/run_project_history_smoke.py --base-url http://localhost:8000
+python scripts/run_background_jobs_smoke.py --base-url http://localhost:8000
 ```
 
 ## Product Smoke Test
@@ -61,6 +62,9 @@ python scripts/run_release_qa.py --base-url https://web-production-5d6fa.up.rail
   user A's agent analysis run;
 - project history smoke can open project detail, run history, and report
   metadata for the owner while blocking another user;
+- background job smoke can create a signed-in training job, poll job status,
+  confirm owner-only job access, confirm project job history, and verify guest
+  demo mode remains available;
 - upload validation QA passes;
 - full QA quick path passes;
 - training benchmark can run when not skipped;
@@ -94,6 +98,9 @@ python scripts/run_release_qa.py --base-url https://web-production-5d6fa.up.rail
 - report summary lacks evidence/trust data: run training before checking report.
 - project history smoke fails: verify `/api/projects/{id}`, `/runs`, and
   `/reports` are deployed and ownership checks are active.
+- background job smoke fails: verify `/api/training/jobs`,
+  `/api/training/jobs/{job_id}`, and `/api/projects/{id}/jobs` are deployed and
+  owner-scoped.
 
 ## Release Blockers
 
@@ -106,3 +113,5 @@ python scripts/run_release_qa.py --base-url https://web-production-5d6fa.up.rail
 - Railway root route does not load.
 - user B can access user A's project, dataset, agent run, or private deployed
   model metadata by guessing an id.
+- user B can access user A's training job or project job history by guessing an
+  id.

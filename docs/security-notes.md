@@ -24,6 +24,7 @@ Current safeguards include:
 - private project lists scoped by `user_id`
 - public prediction invocation kept separate from private model metadata access
 - owner-scoped project history, run history, and report metadata endpoints
+- owner-scoped lightweight training job status endpoints
 - user-facing failure recovery messages
 - documentation warning users not to upload secrets or sensitive data
 - environment-variable based deployment configuration
@@ -55,6 +56,16 @@ Project history endpoints added in PR-14 are also owner-scoped:
 - `GET /api/projects/{project_id}`;
 - `GET /api/projects/{project_id}/runs`;
 - `GET /api/projects/{project_id}/reports`.
+
+Training job endpoints added in PR-15 are owner-scoped:
+
+- `POST /api/training/jobs`;
+- `GET /api/training/jobs/{job_id}`;
+- `GET /api/projects/{project_id}/jobs`.
+
+These endpoints provide MVP job status tracking for signed-in users. They do not
+provide enterprise-grade job isolation, distributed worker recovery, or a full
+queue system.
 
 Guest demo mode remains separate. Ownerless demo or legacy data should not be
 treated as another user's private project, and public prediction endpoints are

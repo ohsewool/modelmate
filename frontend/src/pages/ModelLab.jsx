@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Bar, BarChart, Cell, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import api from '../api'
+import { useAuth } from '../AuthContext'
 import KPICard from '../components/KPICard'
 import StatusRecoveryPanel from '../components/StatusRecoveryPanel'
 
@@ -26,8 +27,10 @@ export default function ModelLab() {
   const [optRes, setOptRes] = useState(null)
   const [nTrials, setNTrials] = useState(20)
   const [loading, setLoading] = useState('')
+  const [trainingJob, setTrainingJob] = useState(null)
   const [operationalStatus, setOperationalStatus] = useState(null)
   const [usageLimits, setUsageLimits] = useState(null)
+  const { user } = useAuth()
   const nav = useNavigate()
 
   useEffect(() => {
@@ -39,6 +42,12 @@ export default function ModelLab() {
       if (r.data.optuna_result) setOptRes(r.data.optuna_result)
     }).catch(() => {})
   }, [])
+
+  useEffect(() => {
+    if (!trainingJob?.job_id || !['queued', 'running'].includes(trainingJob.status)) return undefined
+    const timer = setInterval(() => refreshTrainingJob(trainingJob.job_id), 2500)
+    return () => clearInterval(timer)
+  }, [trainingJob?.job_id, trainingJob?.status])
 
   async function runCV() {
     setLoading('cv')
@@ -63,6 +72,52 @@ export default function ModelLab() {
       alert(detail?.user_friendly_message || detail || e.message)
     } finally {
       setLoading('')
+    }
+  }
+
+  async function startTrainingJob() {
+    setLoading('job')
+    try {
+      const currentDataset = state?.current_dataset || {}
+      const { data } = await api.post('/training/jobs', {
+        project_id: currentDataset.project_id || undefined,
+        dataset_id: currentDataset.dataset_id || undefined,
+      })
+      setTrainingJob(data)
+      setOperationalStatus({
+        status: data.status,
+        current_step: data.current_step,
+        progress_message: data.progress_message,
+        recommended_next_action: data.recommended_next_action,
+      })
+    } catch (e) {
+      const detail = e.response?.data?.detail
+      alert(detail?.user_friendly_message || detail || e.message)
+    } finally {
+      setLoading('')
+    }
+  }
+
+  async function refreshTrainingJob(jobId = trainingJob?.job_id) {
+    if (!jobId) return
+    try {
+      const { data } = await api.get(`/training/jobs/${jobId}`)
+      setTrainingJob(data)
+      setOperationalStatus({
+        status: data.status,
+        current_step: data.current_step,
+        progress_message: data.progress_message,
+        error_message: data.error_message,
+        recommended_next_action: data.recommended_next_action,
+      })
+      if (data.status === 'succeeded') {
+        const fresh = await api.get('/state')
+        setState(fresh.data)
+        setUsageLimits(fresh.data.usage_limits || null)
+        if (fresh.data.cv_results) setResult({ results: fresh.data.cv_results, best_model: fresh.data.best_model })
+      }
+    } catch (_) {
+      // Keep the existing UI stable if the lightweight job endpoint is unavailable.
     }
   }
 
@@ -126,6 +181,33 @@ export default function ModelLab() {
       </section>
 
       <StatusRecoveryPanel status={operationalStatus} limits={usageLimits} compact />
+
+      <div className="card" style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center' }}>
+        <div>
+          <h2 style={{ fontSize: 16, color: 'var(--text)', margin: '0 0 5px' }}>Background training job</h2>
+          <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.55, margin: 0 }}>
+            {user && !user.is_guest
+              ? 'Start training as a saved job so status survives refreshes and appears in My Projects.'
+              : 'Sign in to save training jobs and reopen their status from My Projects.'}
+          </p>
+          {trainingJob && (
+            <p style={{ fontSize: 12, color: 'var(--text-label)', margin: '6px 0 0' }}>
+              {trainingJob.status} / {trainingJob.progress_message || 'No message'} / {trainingJob.progress_percent ?? 0}%
+            </p>
+          )}
+        </div>
+        <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+          {trainingJob?.job_id && (
+            <button className="btn-secondary" onClick={() => refreshTrainingJob()} disabled={!!loading}>
+              Refresh
+            </button>
+          )}
+          <button className="btn-primary" onClick={startTrainingJob} disabled={!!loading || !user || user.is_guest}>
+            {loading === 'job' && <span className="spinner" />}
+            Start job
+          </button>
+        </div>
+      </div>
 
       <div className="card" style={{ marginBottom: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'flex-start' }}>

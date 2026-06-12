@@ -12,6 +12,10 @@ project-history implementation plan.
   metadata, prediction API metadata, warnings, and next action guidance.
 - Signed-in users can call `/api/projects/{project_id}/runs` and
   `/api/projects/{project_id}/reports` for owner-scoped project history.
+- Signed-in users can see the latest linked background training job status on
+  project list/detail responses when a job was started for that project.
+- Signed-in users can call `/api/projects/{project_id}/jobs` for owner-scoped
+  training job history.
 - Guest demo users can run the CSV demo flow, but guest work is not treated as a
   private user-owned project.
 - The existing AutoML, report, and prediction flows remain compatible with guest
@@ -32,6 +36,9 @@ Commercialization PR-14 keeps those checks and adds owner-scoped project history
 read endpoints. User B cannot open User A's project detail, run history, or
 report metadata by guessing an id.
 
+Commercialization PR-15 adds owner-scoped lightweight training job status. User
+B cannot read User A's `job_id` or project job list by guessing identifiers.
+
 The project list route keeps a compatibility behavior for unauthenticated users:
 it returns an empty list instead of exposing private records.
 
@@ -41,6 +48,7 @@ The following are intentionally left for later PRs:
 
 - full persisted HTML report bodies per report id;
 - explicit project rerun execution endpoint with ownership checks;
+- durable distributed job recovery after server restart;
 - dataset deletion;
 - report-id based private HTML export;
 - prediction token ownership hardening;
@@ -59,8 +67,13 @@ Next PRs should continue from this project history foundation:
 
 ```bash
 python scripts/run_project_history_smoke.py --base-url http://localhost:8000
+python scripts/run_background_jobs_smoke.py --base-url http://localhost:8000
 ```
 
 The smoke test creates two users, creates a project for User A, links a mock
 analysis run, confirms User A can open project history, and confirms User B
 cannot open User A's project detail or run history.
+
+The background jobs smoke test creates a training job for User A, confirms job
+status is readable by the owner, confirms User B cannot read it, and confirms
+project detail includes the latest job status.

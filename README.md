@@ -128,6 +128,13 @@ My Projects, see linked dataset metadata, recent run summaries, report metadata,
 prediction API metadata, and a rerun entrypoint. Guest demo results remain
 separate from private project history. See `docs/project-rerun.md`.
 
+Lightweight background training jobs are available at MVP foundation level.
+Signed-in users can start a training job, poll persistent job status, reopen the
+latest job state from My Projects, and see friendly failure guidance. This is an
+in-process FastAPI background wrapper around the existing AutoML flow, not a
+distributed queue or enterprise job orchestration system. See
+`docs/operational-readiness.md`.
+
 Available without signing in:
 
 - landing page and product docs;
@@ -143,6 +150,7 @@ Requires signing in:
 - project detail access;
 - account-scoped analysis history;
 - project run history and report metadata;
+- background training job status for owned projects;
 - private agent analysis run trace access;
 - private deployed model metadata and deletion.
 
@@ -218,13 +226,14 @@ python scripts/run_release_qa.py --base-url https://web-production-5d6fa.up.rail
 python scripts/run_auth_smoke.py --base-url https://web-production-5d6fa.up.railway.app
 python scripts/run_ownership_smoke.py --base-url https://web-production-5d6fa.up.railway.app
 python scripts/run_project_history_smoke.py --base-url https://web-production-5d6fa.up.railway.app
+python scripts/run_background_jobs_smoke.py --base-url https://web-production-5d6fa.up.railway.app
 python scripts/run_product_smoke.py --base-url https://web-production-5d6fa.up.railway.app
 ```
 
 Automated QA checks endpoints, sample upload, target selection, report export,
 auth-lite session context, register/login/logout smoke, MVP ownership smoke,
-project history smoke, guest demo session start, and deployment smoke paths.
-Human review is still needed for usability, copy
+project history smoke, background job smoke, guest demo session start, and
+deployment smoke paths. Human review is still needed for usability, copy
 clarity, visual layout, and whether beta users find the report persuasive.
 
 Commercial SaaS MVP trust documents are drafted, not finalized legal policies:
@@ -284,6 +293,7 @@ python scripts/run_training_benchmark.py
 python scripts/run_full_qa.py --skip-slow
 python scripts/run_ownership_smoke.py --base-url http://localhost:8000
 python scripts/run_project_history_smoke.py --base-url http://localhost:8000
+python scripts/run_background_jobs_smoke.py --base-url http://localhost:8000
 ```
 
 ## Demo Scenario

@@ -10,8 +10,8 @@ ModelMate uses the following canonical analysis status values:
 | Status | Meaning |
 | --- | --- |
 | `created` | A run or screen state exists but analysis has not started. |
-| `queued` | Reserved for future async job queue work. Not currently used as a real queue. |
-| `running` | The current request is processing upload, target setup, or model comparison. |
+| `queued` | A lightweight background training job was created and is waiting to run. |
+| `running` | The current request or background job is processing upload, target setup, or model comparison. |
 | `succeeded` | The current step completed successfully. |
 | `failed` | The current step failed and recovery guidance should be shown. |
 | `cancelled` | Reserved for future cancellation flow. |
@@ -19,6 +19,33 @@ ModelMate uses the following canonical analysis status values:
 
 Compatibility aliases such as `ok`, `done`, `success`, `error`, and `draft` can
 be mapped to the canonical values without changing existing API behavior.
+
+## Lightweight Training Jobs
+
+Commercialization PR-15 adds MVP training job tracking for signed-in users:
+
+- `POST /api/training/jobs`
+- `GET /api/training/jobs/{job_id}`
+- `GET /api/projects/{project_id}/jobs`
+
+The job endpoint creates a persistent `training_jobs` record with `queued`,
+`running`, `succeeded`, or `failed` status. Execution uses FastAPI
+`BackgroundTasks` as an in-process wrapper around the existing `/api/run-cv`
+AutoML flow. The existing synchronous `/api/run-cv` endpoint remains available
+for compatibility.
+
+This is not a distributed training platform. On Railway beta deployment, a
+server restart can interrupt an in-process job. The persisted job record keeps
+the latest known status and friendly failure guidance, but it does not guarantee
+automatic recovery of interrupted training.
+
+Stored job fields include:
+
+- `job_id`, `user_id`, `project_id`, `analysis_run_id`, `dataset_id`
+- `status`, `current_step`, `progress_message`, `progress_percent`
+- `created_at`, `queued_at`, `started_at`, `finished_at`, `failed_at`
+- `error_type`, `error_message`, `recommended_next_action`
+- `result_summary`, `artifact_refs`
 
 ## Status Payload
 
@@ -65,6 +92,11 @@ Current covered stages:
 Future stages can reuse the same shape for report generation, prediction API
 errors, deployment checks, and human review handoff.
 
+Training job failures are stored on the job record with `error_type`,
+`error_message`, `failed_at`, and `recommended_next_action`. User-facing
+responses should avoid stack traces and explain whether the user should choose a
+different target, re-upload a CSV, or review missing/identifier-heavy columns.
+
 ## Retry Guidance
 
 Common recovery actions:
@@ -100,7 +132,10 @@ job scheduling.
 
 ## Current Limitations
 
-- Training runs are request-based, not handled by a Redis/Celery job queue.
+- Training runs can be tracked through lightweight in-process background jobs,
+  but they are not handled by a Redis/Celery job queue.
+- In-process background jobs are best-effort on Railway beta deployment and do
+  not provide fully reliable restart recovery.
 - There is no account-based quota or billing system.
 - There is no full MLOps monitoring, model drift detection, or automatic
   retraining loop.
@@ -110,7 +145,7 @@ job scheduling.
 
 ## Future Work
 
-- Real async job queue with durable run records
+- Real async job queue with durable worker recovery
 - Auth-based usage quotas
 - Billing and plan limits
 - Run cancellation

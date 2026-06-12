@@ -53,6 +53,9 @@ analysis runs, and deployed model metadata are associated with that user's
 detail routes are intended to show only the signed-in user's resources.
 Project detail, project run history, and project report metadata are also
 scoped by `user_id` at the MVP application layer.
+Lightweight training job records, including job status, progress messages,
+failure messages, and result summaries, are also associated with the signed-in
+user and project when available.
 
 Guest demo mode remains available for sample-data evaluation. Guest/demo data is
 treated separately from private user projects and should not be used for

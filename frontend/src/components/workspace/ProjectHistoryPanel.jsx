@@ -67,10 +67,20 @@ export default function ProjectHistoryPanel({ projects = [], user, onRerun }) {
                   <Badge variant={project.last_status === 'failed' ? 'danger' : project.last_status ? 'success' : 'secondary'}>
                     {project.last_status || 'no runs'}
                   </Badge>
+                  {project.last_job_status && (
+                    <Badge variant={project.last_job_status === 'failed' ? 'danger' : project.last_job_status === 'succeeded' ? 'success' : 'secondary'}>
+                      job {project.last_job_status}
+                    </Badge>
+                  )}
                 </div>
                 <p style={{ margin: 0, fontSize: 12, color: 'var(--text-2)' }}>
                   {project.dataset_name || 'No dataset'} / {project.last_target || 'No target'} / {project.last_best_model || 'No model'} / {fmtMetric(project)}
                 </p>
+                {project.last_job_progress_message && (
+                  <p style={{ margin: '5px 0 0', fontSize: 12, color: 'var(--text-label)' }}>
+                    Latest job: {project.last_job_progress_message}
+                  </p>
+                )}
               </div>
               <span style={{ fontSize: 12, color: 'var(--text-label)', whiteSpace: 'nowrap' }}>
                 {loadingId === project.id ? 'Opening...' : String(project.updated_at || '').slice(0, 10)}
@@ -86,6 +96,11 @@ export default function ProjectHistoryPanel({ projects = [], user, onRerun }) {
                 <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--text-2)' }}>
                   {detail.run_count} runs / {detail.datasets?.length || 0} datasets / {detail.has_prediction_api ? 'Prediction API linked' : 'No prediction API'}
                 </p>
+                {detail.last_job_status && (
+                  <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--text-label)' }}>
+                    Latest job: {detail.last_job_status} / {detail.last_job_progress_message || 'No message'}
+                  </p>
+                )}
               </div>
               <Button variant="secondary" size="sm" onClick={() => onRerun?.(detail)}>
                 <RefreshCw size={14} /> Rerun

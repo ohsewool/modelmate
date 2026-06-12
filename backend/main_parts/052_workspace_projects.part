@@ -91,6 +91,26 @@ def _project_prediction_metadata(conn, project_id, user_id):
     return out
 
 
+def _project_last_job(conn, project_id, user_id):
+    try:
+        row = conn.execute(
+            "SELECT * FROM training_jobs WHERE project_id=? AND user_id=? ORDER BY created_at DESC LIMIT 1",
+            (project_id, user_id),
+        ).fetchone()
+    except sqlite3.OperationalError:
+        return None
+    if not row:
+        return None
+    return {
+        "job_id": row["job_id"],
+        "status": row["status"],
+        "progress_message": row["progress_message"],
+        "finished_at": row["finished_at"],
+        "failed_at": row["failed_at"],
+        "error_message": row["error_message"],
+    }
+
+
 def _project_runs(conn, project_id, user_id):
     runs = []
     rows = conn.execute(
@@ -129,7 +149,7 @@ def _project_reports(conn, project_id, user_id):
     return reports
 
 
-def _project_summary(project, datasets, runs, prediction_meta):
+def _project_summary(project, datasets, runs, prediction_meta, last_job=None):
     last_run = runs[0] if runs else None
     latest_dataset = datasets[0] if datasets else None
     return {
@@ -153,6 +173,11 @@ def _project_summary(project, datasets, runs, prediction_meta):
         "run_count": len(runs),
         "has_report": any(row.get("report_id") for row in runs),
         "has_prediction_api": bool(prediction_meta),
+        "last_job_id": last_job.get("job_id") if last_job else None,
+        "last_job_status": last_job.get("status") if last_job else None,
+        "last_job_progress_message": last_job.get("progress_message") if last_job else None,
+        "last_job_finished_at": last_job.get("finished_at") if last_job else None,
+        "last_job_error_message": last_job.get("error_message") if last_job else None,
     }
 
 
@@ -237,7 +262,8 @@ async def list_projects(user=Depends(get_current_user)):
         ).fetchall()
         runs = _project_runs(conn, project["id"], user["sub"])
         prediction_meta = _project_prediction_metadata(conn, project["id"], user["sub"])
-        summary = _project_summary(project, datasets, runs, prediction_meta)
+        last_job = _project_last_job(conn, project["id"], user["sub"])
+        summary = _project_summary(project, datasets, runs, prediction_meta, last_job)
         summary["dataset_count"] = len(datasets)
         out.append(summary)
     conn.close()
@@ -256,6 +282,7 @@ async def get_project_detail(project_id: str, user=Depends(get_current_user)):
         runs = _project_runs(conn, project_id, project["user_id"])
         reports = _project_reports(conn, project_id, project["user_id"])
         prediction_meta = _project_prediction_metadata(conn, project_id, project["user_id"])
+        last_job = _project_last_job(conn, project_id, project["user_id"])
     finally:
         conn.close()
     known_warnings = []
@@ -263,7 +290,7 @@ async def get_project_detail(project_id: str, user=Depends(get_current_user)):
         known_warnings.append("No dataset metadata is linked to this project yet.")
     if not runs:
         known_warnings.append("No analysis run history is linked to this project yet.")
-    summary = _project_summary(project, datasets, runs, prediction_meta)
+    summary = _project_summary(project, datasets, runs, prediction_meta, last_job)
     return {
         **summary,
         "datasets": [dict(r) for r in datasets],

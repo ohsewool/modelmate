@@ -1,0 +1,213 @@
+from fastapi import BackgroundTasks
+
+
+class TrainingJobBody(BaseModel):
+    project_id: str | None = None
+    dataset_id: str | None = None
+    analysis_run_id: str | None = None
+    run_config: dict | None = None
+
+
+def ensure_training_jobs_table():
+    conn = get_db()
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS training_jobs (
+            job_id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
+            project_id TEXT,
+            analysis_run_id TEXT,
+            dataset_id TEXT,
+            status TEXT NOT NULL,
+            current_step TEXT,
+            progress_message TEXT,
+            progress_percent INTEGER DEFAULT 0,
+            created_at TEXT,
+            queued_at TEXT,
+            started_at TEXT,
+            finished_at TEXT,
+            failed_at TEXT,
+            error_type TEXT,
+            error_message TEXT,
+            recommended_next_action TEXT,
+            result_summary TEXT,
+            artifact_refs TEXT
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+
+def _job_now():
+    return datetime.now().isoformat(timespec="seconds")
+
+
+def _job_row_to_dict(row):
+    if not row:
+        return None
+    item = dict(row)
+    item["result_summary"] = _safe_json(item.get("result_summary"), {}) or {}
+    item["artifact_refs"] = _safe_json(item.get("artifact_refs"), {}) or {}
+    return item
+
+
+def _update_training_job(job_id, **fields):
+    if not fields:
+        return
+    keys = list(fields.keys())
+    sql = ", ".join(f"{key}=?" for key in keys)
+    conn = get_db()
+    conn.execute(
+        f"UPDATE training_jobs SET {sql} WHERE job_id=?",
+        [fields[key] for key in keys] + [job_id],
+    )
+    conn.commit()
+    conn.close()
+
+
+def _get_training_job_owned(user, job_id):
+    require_current_user(user)
+    conn = get_db()
+    try:
+        row = conn.execute("SELECT * FROM training_jobs WHERE job_id=?", (job_id,)).fetchone()
+    finally:
+        conn.close()
+    if not row:
+        _resource_not_found()
+    if is_admin_user(user) or _owner_matches(user, row["user_id"]):
+        return _job_row_to_dict(row)
+    _resource_not_found()
+
+
+def _friendly_job_error(exc):
+    detail = getattr(exc, "detail", None)
+    if isinstance(detail, dict):
+        return {
+            "error_type": detail.get("failed_stage") or "automl_training",
+            "error_message": detail.get("technical_message") or detail.get("user_friendly_message") or str(detail),
+            "progress_message": detail.get("user_friendly_message") or "Training failed while preparing the dataset.",
+            "recommended_next_action": detail.get("recommended_next_action") or "Check the selected target and dataset, then try again.",
+        }
+    return {
+        "error_type": "automl_training",
+        "error_message": str(detail or exc),
+        "progress_message": "The training job failed. Please check the dataset and try again.",
+        "recommended_next_action": "Confirm the CSV has usable feature columns and a valid target column.",
+    }
+
+
+def _training_result_summary(data):
+    results = data.get("results") or []
+    best = data.get("best_model")
+    task_type = data.get("task_type") or STATE.get("task_type")
+    first = next((row for row in results if row.get("model") == best), results[0] if results else {})
+    metric_name = "R2" if task_type == "regression" else "ROC-AUC"
+    metric_value = first.get("r2") if task_type == "regression" else first.get("roc_auc", first.get("accuracy"))
+    return {
+        "best_model": best,
+        "task_type": task_type,
+        "target": STATE.get("target_col"),
+        "metric_name": metric_name,
+        "metric_value": metric_value,
+        "model_count": len(results),
+        "analysis_status": data.get("analysis_status"),
+    }
+
+
+def _execute_training_job(job_id, user_payload):
+    _update_training_job(
+        job_id,
+        status="running",
+        current_step="automl_training",
+        progress_message="Training candidate models.",
+        progress_percent=20,
+        started_at=_job_now(),
+    )
+    try:
+        data = asyncio.run(run_cv(user=user_payload))
+        summary = _training_result_summary(data)
+        _update_training_job(
+            job_id,
+            status="succeeded",
+            current_step="analysis_completed",
+            progress_message="Analysis completed.",
+            progress_percent=100,
+            finished_at=_job_now(),
+            result_summary=json.dumps(summary, ensure_ascii=False),
+            artifact_refs=json.dumps({"state_result": True}, ensure_ascii=False),
+            recommended_next_action="Open the report or project history to review the saved result.",
+        )
+    except Exception as exc:
+        err = _friendly_job_error(exc)
+        _update_training_job(
+            job_id,
+            status="failed",
+            current_step=err["error_type"],
+            progress_message=err["progress_message"],
+            progress_percent=100,
+            failed_at=_job_now(),
+            error_type=err["error_type"],
+            error_message=err["error_message"],
+            recommended_next_action=err["recommended_next_action"],
+        )
+
+
+ensure_training_jobs_table()
+
+
+@app.post("/api/training/jobs")
+async def create_training_job(body: TrainingJobBody, background_tasks: BackgroundTasks, user=Depends(get_current_user)):
+    require_current_user(user)
+    if body.project_id:
+        assert_project_owner(user, body.project_id)
+    if body.dataset_id:
+        assert_dataset_owner(user, body.dataset_id)
+    import uuid
+    now = _job_now()
+    job_id = str(uuid.uuid4())
+    conn = get_db()
+    conn.execute(
+        """
+        INSERT INTO training_jobs
+        (job_id,user_id,project_id,analysis_run_id,dataset_id,status,current_step,progress_message,progress_percent,created_at,queued_at,recommended_next_action,result_summary,artifact_refs)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        """,
+        (
+            job_id,
+            user["sub"],
+            body.project_id,
+            body.analysis_run_id,
+            body.dataset_id,
+            "queued",
+            "queued",
+            "Training job created.",
+            0,
+            now,
+            now,
+            "Wait for the job status to update, then open the result or report.",
+            json.dumps({}, ensure_ascii=False),
+            json.dumps({}, ensure_ascii=False),
+        ),
+    )
+    conn.commit()
+    conn.close()
+    background_tasks.add_task(_execute_training_job, job_id, dict(user))
+    return _get_training_job_owned(user, job_id)
+
+
+@app.get("/api/training/jobs/{job_id}")
+async def get_training_job(job_id: str, user=Depends(get_current_user)):
+    return _get_training_job_owned(user, job_id)
+
+
+@app.get("/api/projects/{project_id}/jobs")
+async def get_project_training_jobs(project_id: str, user=Depends(get_current_user)):
+    project = assert_project_owner(user, project_id)
+    conn = get_db()
+    try:
+        rows = conn.execute(
+            "SELECT * FROM training_jobs WHERE project_id=? AND user_id=? ORDER BY created_at DESC LIMIT 50",
+            (project_id, project["user_id"]),
+        ).fetchall()
+    finally:
+        conn.close()
+    return [_job_row_to_dict(row) for row in rows]
