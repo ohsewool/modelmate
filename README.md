@@ -116,6 +116,21 @@ See `sample_data/metadata.json`, `docs/onboarding.md`, and
 `docs/demo-agentic-automl.md` for recommended targets, task types, demo goals,
 and guided demo flow.
 
+Beta testing is prepared for a small 5-15 user feedback round. This is a
+feedback-driven commercialization step for a guided CSV predictive analysis MVP,
+not a claim of production readiness. Use these documents before inviting beta
+users:
+
+- Beta-ready checklist: `docs/beta-readiness.md`
+- Feedback questions: `docs/feedback-guide.md`
+- Demo QA checklist: `docs/demo-qa-checklist.md`
+- GitHub issue templates: `.github/ISSUE_TEMPLATE/`
+
+To report bugs or beta feedback, open a GitHub issue using the bug report,
+feature request, or beta feedback template. Known limitations remain: no
+payment, no account-based quota, no full async job queue, no enterprise
+compliance program, and no complete autonomous AI analyst runtime.
+
 Commercial SaaS MVP trust documents are drafted, not finalized legal policies:
 
 - Privacy and data handling draft: `docs/privacy.md`
