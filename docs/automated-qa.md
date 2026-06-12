@@ -16,6 +16,7 @@ python scripts/run_project_history_smoke.py --base-url http://localhost:8000
 python scripts/run_background_jobs_smoke.py --base-url http://localhost:8000
 python scripts/run_failure_recovery_smoke.py --base-url http://localhost:8000
 python scripts/run_dataset_delete_smoke.py --base-url http://localhost:8000
+python scripts/run_prediction_token_smoke.py --base-url http://localhost:8000
 ```
 
 ## Product Smoke Test
@@ -87,7 +88,9 @@ python scripts/run_release_qa.py --base-url https://web-production-5d6fa.up.rail
 - AutoML training endpoint works when not skipped;
 - report summary can expose trace/trust/evidence information after training;
 - invalid CSV returns a friendly failure response;
-- docs for privacy, terms, pricing, prediction API, and sample metadata exist.
+- docs for privacy, terms, pricing, prediction API, and sample metadata exist;
+- project-scoped prediction token metadata is owner-protected;
+- invalid/revoked prediction tokens are rejected without exposing sensitive details.
 
 ## What Still Requires Human Review
 

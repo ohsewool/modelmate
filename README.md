@@ -150,6 +150,14 @@ CSV. Historical report summaries may remain, and prediction API metadata linked
 to deleted datasets or projects can be marked disabled. This is a
 delete/retention foundation, not complete data lifecycle management.
 
+Project-scoped prediction API tokens are available at MVP foundation level.
+Signed-in project owners can create, list, revoke, and regenerate API tokens for
+projects with an active dataset and deployed model. Tokens are stored as hashes,
+the plaintext token is shown only once, and token usage metadata is tracked.
+Deleted datasets or archived projects disable linked project API tokens. This is
+not an enterprise API gateway or billing-grade quota system. See
+`docs/prediction-api.md`.
+
 Available without signing in:
 
 - landing page and product docs;
@@ -167,7 +175,8 @@ Requires signing in:
 - project run history and report metadata;
 - background training job status for owned projects;
 - private agent analysis run trace access;
-- private deployed model metadata and deletion.
+- private deployed model metadata and deletion;
+- project-scoped prediction API token management;
 - private dataset list/detail/delete and project archive/delete impact flows.
 
 First-time users can try ModelMate without preparing their own CSV. The upload
@@ -317,6 +326,7 @@ python scripts/run_project_history_smoke.py --base-url http://localhost:8000
 python scripts/run_background_jobs_smoke.py --base-url http://localhost:8000
 python scripts/run_failure_recovery_smoke.py --base-url http://localhost:8000
 python scripts/run_dataset_delete_smoke.py --base-url http://localhost:8000
+python scripts/run_prediction_token_smoke.py --base-url http://localhost:8000
 ```
 
 ## Demo Scenario

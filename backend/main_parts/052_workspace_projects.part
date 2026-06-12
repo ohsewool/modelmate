@@ -569,6 +569,8 @@ async def delete_dataset(dataset_id: str, user=Depends(get_current_user)):
             "UPDATE deployed_models SET disabled_at=?, disabled_reason=? WHERE user_id=? AND dataset_ref LIKE ?",
             (now, "linked_dataset_deleted", row["user_id"], f"%{dataset_id}%"),
         )
+        if "disable_prediction_tokens_for_project" in globals():
+            disable_prediction_tokens_for_project(conn, row["project_id"], row["user_id"], "linked_dataset_deleted")
         conn.commit()
         return {
             "ok": True,
@@ -631,6 +633,8 @@ async def delete_project(project_id: str, user=Depends(get_current_user)):
             "UPDATE deployed_models SET disabled_at=?, disabled_reason=? WHERE user_id=? AND dataset_ref LIKE ?",
             (now, "linked_project_deleted", project["user_id"], f"%{project_id}%"),
         )
+        if "disable_prediction_tokens_for_project" in globals():
+            disable_prediction_tokens_for_project(conn, project_id, project["user_id"], "linked_project_deleted")
         conn.commit()
         return {
             "ok": True,

@@ -20,6 +20,7 @@ import ModelAssetPanel from '../components/deploy/ModelAssetPanel'
 import ApiUsageExamplePanel from '../components/deploy/ApiUsageExamplePanel'
 import ModelVersionPanel from '../components/deploy/ModelVersionPanel'
 import ApiPrivacyPanel from '../components/deploy/ApiPrivacyPanel'
+import ProjectPredictionTokensPanel from '../components/deploy/ProjectPredictionTokensPanel'
 
 const fmt = value => {
   if (value === null || value === undefined || value === '') return '-'
@@ -295,6 +296,8 @@ export default function Deploy() {
         <ModelLifecyclePanel models={models} />
 
         <ApiAccessPanel models={models} />
+
+        <ProjectPredictionTokensPanel models={models} />
 
         <ApiPrivacyPanel models={models} />
 
