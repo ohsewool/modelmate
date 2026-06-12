@@ -158,6 +158,12 @@ Deleted datasets or archived projects disable linked project API tokens. This is
 not an enterprise API gateway or billing-grade quota system. See
 `docs/prediction-api.md`.
 
+Usage limits and plan flags are available at MVP foundation level. New users
+start on the `free` plan, while `pro_mock`, `team_mock`, and `admin` are internal
+beta/pilot flags. ModelMate can show current usage, soft-block actions that
+exceed plan limits, and return friendly structured limit errors. This is not a
+payment or billing integration. See `docs/usage-limits.md`.
+
 Available without signing in:
 
 - landing page and product docs;
@@ -177,6 +183,7 @@ Requires signing in:
 - private agent analysis run trace access;
 - private deployed model metadata and deletion;
 - project-scoped prediction API token management;
+- account usage summary and plan-limit guarded actions;
 - private dataset list/detail/delete and project archive/delete impact flows.
 
 First-time users can try ModelMate without preparing their own CSV. The upload
@@ -211,6 +218,7 @@ Final demo and beta QA documents:
 - Beta tester guide: `docs/beta-tester-guide.md`
 - Beta feedback message draft: `docs/beta-feedback-message.md`
 - Automated QA guide: `docs/automated-qa.md`
+- Usage limits and plan flags: `docs/usage-limits.md`
 - Auth-lite session foundation: `docs/auth-lite-session.md`
 - Project rerun and PR-14 notes: `docs/project-rerun.md`
 - Commercialization roadmap: `docs/commercialization-roadmap.md`
@@ -327,6 +335,7 @@ python scripts/run_background_jobs_smoke.py --base-url http://localhost:8000
 python scripts/run_failure_recovery_smoke.py --base-url http://localhost:8000
 python scripts/run_dataset_delete_smoke.py --base-url http://localhost:8000
 python scripts/run_prediction_token_smoke.py --base-url http://localhost:8000
+python scripts/run_usage_limits_smoke.py --base-url http://localhost:8000
 ```
 
 ## Demo Scenario

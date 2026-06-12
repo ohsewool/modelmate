@@ -257,6 +257,14 @@ def _create_training_job_record(user, background_tasks, body, *, rerun_of=None, 
                 "user_friendly_message": "This dataset was deleted and cannot be used for rerun or training.",
                 "recommended_next_action": "Upload the CSV again or choose another dataset.",
             })
+    active = _find_active_training_job(user["sub"], body.project_id)
+    if active:
+        active["duplicate_guard"] = True
+        active["progress_message"] = active.get("progress_message") or "A training job is already running for this project."
+        active["recommended_next_action"] = "A training job is already running for this project. Please wait for it to finish or check the current job status."
+        return active
+    if "enforce_training_job_limits" in globals():
+        enforce_training_job_limits(user)
     if body.run_config and body.run_config.get("smoke_force_failure"):
         import uuid
         now = _job_now()
@@ -292,13 +300,9 @@ def _create_training_job_record(user, background_tasks, body, *, rerun_of=None, 
         )
         conn.commit()
         conn.close()
+        if "increment_daily_usage" in globals():
+            increment_daily_usage(user["sub"], "jobs_today")
         return _get_training_job_owned(user, job_id)
-    active = _find_active_training_job(user["sub"], body.project_id)
-    if active:
-        active["duplicate_guard"] = True
-        active["progress_message"] = active.get("progress_message") or "A training job is already running for this project."
-        active["recommended_next_action"] = "A training job is already running for this project. Please wait for it to finish or check the current job status."
-        return active
     import uuid
     now = _job_now()
     job_id = str(uuid.uuid4())
@@ -330,6 +334,8 @@ def _create_training_job_record(user, background_tasks, body, *, rerun_of=None, 
     )
     conn.commit()
     conn.close()
+    if "increment_daily_usage" in globals():
+        increment_daily_usage(user["sub"], "jobs_today")
     background_tasks.add_task(_execute_training_job, job_id, dict(user))
     return _get_training_job_owned(user, job_id)
 

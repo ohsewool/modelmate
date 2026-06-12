@@ -4,6 +4,7 @@ import { GoogleLogin } from '@react-oauth/google'
 import api from '../api'
 import { useTheme } from '../ThemeContext'
 import { useAuth } from '../AuthContext'
+import UsagePlanCard from './UsagePlanCard'
 
 const CORE_NAV = [
   { to: '/upload', icon: UploadIcon, label: '데이터 넣기', step: 1 },
@@ -114,6 +115,8 @@ export default function Sidebar({ isOpen, onClose }) {
             {state.cv_results && <StatusRow label="성능 확인" active value="완료" accent />}
           </div>
         </div>
+
+        <UsagePlanCard />
 
         <div style={{ margin: '0 10px 12px' }}>
           {user ? (

@@ -201,6 +201,8 @@ async def create_project_prediction_token(project_id: str, body: dict = None, us
                 "recommended_next_action": "데이터셋과 학습된 공유 모델이 준비된 뒤 다시 시도하세요.",
                 "availability": availability,
             })
+        if "enforce_prediction_token_limit" in globals():
+            enforce_prediction_token_limit(user, project_id)
         plaintext, row = _create_project_token(conn, project_id, project["user_id"], (body or {}).get("label"))
         conn.commit()
         return {
@@ -318,6 +320,8 @@ async def predict_with_project_token(
         model_row = _model_for_project_prediction(conn, project_id, token_row["owner_user_id"])
         if not model_row:
             _prediction_error(409, "model_not_ready", "No active trained model is ready for this project.", "Run training and create a shared model first.")
+        if "enforce_prediction_call_limit" in globals():
+            enforce_prediction_call_limit(token_row["owner_user_id"])
 
         bundle = joblib.load(deployed_model_path(model_row["id"]))
         rows = body.get("rows") or body.get("records")
@@ -346,6 +350,8 @@ async def predict_with_project_token(
             "UPDATE prediction_api_tokens SET usage_count=COALESCE(usage_count, 0)+1, last_used_at=? WHERE token_id=?",
             (now, token_row["token_id"]),
         )
+        if "increment_daily_usage" in globals():
+            increment_daily_usage(token_row["owner_user_id"], "prediction_api_calls_today")
         conn.commit()
         return {
             "status": "ok",

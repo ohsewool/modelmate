@@ -1,0 +1,357 @@
+PLAN_LIMITS = {
+    "free": {
+        "max_projects": 3,
+        "max_datasets": 3,
+        "max_file_size_mb": 10,
+        "max_rows_per_dataset": 5000,
+        "max_columns_per_dataset": 100,
+        "max_jobs_per_day": 5,
+        "max_concurrent_jobs": 1,
+        "max_prediction_tokens_per_project": 1,
+        "max_prediction_api_calls_per_day": 100,
+        "max_report_exports_per_day": 10,
+    },
+    "pro_mock": {
+        "max_projects": 30,
+        "max_datasets": 30,
+        "max_file_size_mb": 50,
+        "max_rows_per_dataset": 50000,
+        "max_columns_per_dataset": 300,
+        "max_jobs_per_day": 50,
+        "max_concurrent_jobs": 3,
+        "max_prediction_tokens_per_project": 5,
+        "max_prediction_api_calls_per_day": 5000,
+        "max_report_exports_per_day": 100,
+    },
+    "team_mock": {
+        "max_projects": 100,
+        "max_datasets": 100,
+        "max_file_size_mb": 100,
+        "max_rows_per_dataset": 100000,
+        "max_columns_per_dataset": 500,
+        "max_jobs_per_day": 150,
+        "max_concurrent_jobs": 8,
+        "max_prediction_tokens_per_project": 20,
+        "max_prediction_api_calls_per_day": 25000,
+        "max_report_exports_per_day": 500,
+    },
+    "admin": {
+        "max_projects": 100000,
+        "max_datasets": 100000,
+        "max_file_size_mb": 500,
+        "max_rows_per_dataset": 1000000,
+        "max_columns_per_dataset": 2000,
+        "max_jobs_per_day": 100000,
+        "max_concurrent_jobs": 1000,
+        "max_prediction_tokens_per_project": 1000,
+        "max_prediction_api_calls_per_day": 1000000,
+        "max_report_exports_per_day": 100000,
+    },
+}
+
+
+def ensure_usage_limit_storage():
+    conn = get_db()
+    user_cols = [r[1] for r in conn.execute("PRAGMA table_info(users)").fetchall()]
+    for name, ddl in {
+        "plan": "TEXT DEFAULT 'free'",
+        "plan_status": "TEXT DEFAULT 'active'",
+        "plan_source": "TEXT DEFAULT 'default'",
+        "trial_ends_at": "TEXT",
+        "updated_at": "TEXT",
+    }.items():
+        if name not in user_cols:
+            conn.execute(f"ALTER TABLE users ADD COLUMN {name} {ddl}")
+    conn.execute("UPDATE users SET plan='admin', plan_status='internal', plan_source='seed' WHERE role='admin'")
+    conn.execute("UPDATE users SET plan=COALESCE(plan, 'free'), plan_status=COALESCE(plan_status, 'active'), plan_source=COALESCE(plan_source, 'default')")
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS user_usage_daily (
+            user_id TEXT NOT NULL,
+            usage_date TEXT NOT NULL,
+            jobs_count INTEGER DEFAULT 0,
+            prediction_calls_count INTEGER DEFAULT 0,
+            report_exports_count INTEGER DEFAULT 0,
+            updated_at TEXT,
+            PRIMARY KEY (user_id, usage_date)
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+
+def _usage_today():
+    return datetime.now().date().isoformat()
+
+
+def _usage_now():
+    return datetime.now().isoformat(timespec="seconds")
+
+
+def normalize_plan(plan, role=None):
+    if role == "admin":
+        return "admin"
+    return plan if plan in PLAN_LIMITS else "free"
+
+
+def _user_id_from_payload(user):
+    return user.get("sub") if user else None
+
+
+def get_user_plan(user):
+    if not user:
+        return "free"
+    if user.get("role") == "admin":
+        return "admin"
+    conn = get_db()
+    try:
+        row = conn.execute("SELECT plan, role FROM users WHERE id=?", (_user_id_from_payload(user),)).fetchone()
+    finally:
+        conn.close()
+    return normalize_plan(row["plan"] if row else user.get("plan"), row["role"] if row else user.get("role"))
+
+
+def get_plan_limits(user_or_plan):
+    plan = user_or_plan if isinstance(user_or_plan, str) else get_user_plan(user_or_plan)
+    limits = dict(PLAN_LIMITS.get(plan, PLAN_LIMITS["free"]))
+    env_map = {
+        "max_file_size_mb": "MODELMATE_MAX_FILE_SIZE_MB",
+        "max_rows_per_dataset": "MODELMATE_MAX_ROWS_PER_DATASET",
+        "max_columns_per_dataset": "MODELMATE_MAX_COLUMNS_PER_DATASET",
+    }
+    for key, env_name in env_map.items():
+        if os.getenv(env_name):
+            try:
+                limits[key] = int(os.getenv(env_name))
+            except ValueError:
+                pass
+    return limits
+
+
+def ensure_usage_day(conn, user_id):
+    today = _usage_today()
+    conn.execute(
+        "INSERT OR IGNORE INTO user_usage_daily (user_id, usage_date, updated_at) VALUES (?, ?, ?)",
+        (user_id, today, _usage_now()),
+    )
+    return today
+
+
+def get_daily_usage(user_id):
+    if not user_id:
+        return {"jobs_today": 0, "prediction_api_calls_today": 0, "report_exports_today": 0}
+    conn = get_db()
+    try:
+        today = ensure_usage_day(conn, user_id)
+        conn.commit()
+        row = conn.execute("SELECT * FROM user_usage_daily WHERE user_id=? AND usage_date=?", (user_id, today)).fetchone()
+    finally:
+        conn.close()
+    return {
+        "jobs_today": row["jobs_count"] if row else 0,
+        "prediction_api_calls_today": row["prediction_calls_count"] if row else 0,
+        "report_exports_today": row["report_exports_count"] if row else 0,
+    }
+
+
+def increment_daily_usage(user_id, key, amount=1):
+    if not user_id:
+        return
+    column = {
+        "jobs_today": "jobs_count",
+        "prediction_api_calls_today": "prediction_calls_count",
+        "report_exports_today": "report_exports_count",
+    }.get(key)
+    if not column:
+        return
+    conn = get_db()
+    try:
+        today = ensure_usage_day(conn, user_id)
+        conn.execute(
+            f"UPDATE user_usage_daily SET {column}=COALESCE({column}, 0)+?, updated_at=? WHERE user_id=? AND usage_date=?",
+            (amount, _usage_now(), user_id, today),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def get_account_usage(user):
+    user_id = _user_id_from_payload(user)
+    if not user_id:
+        return {
+            "projects": 0,
+            "datasets": 0,
+            "jobs_today": 0,
+            "active_jobs": 0,
+            "prediction_api_calls_today": 0,
+            "report_exports_today": 0,
+        }
+    conn = get_db()
+    try:
+        projects = conn.execute(
+            "SELECT COUNT(*) FROM projects WHERE user_id=? AND COALESCE(archive_status,'active')='active' AND deleted_at IS NULL",
+            (user_id,),
+        ).fetchone()[0]
+        datasets = conn.execute(
+            "SELECT COUNT(*) FROM datasets WHERE user_id=? AND deleted_at IS NULL",
+            (user_id,),
+        ).fetchone()[0]
+        active_jobs = conn.execute(
+            "SELECT COUNT(*) FROM training_jobs WHERE user_id=? AND status IN ('created','queued','running')",
+            (user_id,),
+        ).fetchone()[0]
+        today = ensure_usage_day(conn, user_id)
+        conn.commit()
+        daily = conn.execute("SELECT * FROM user_usage_daily WHERE user_id=? AND usage_date=?", (user_id, today)).fetchone()
+    finally:
+        conn.close()
+    return {
+        "projects": projects,
+        "datasets": datasets,
+        "jobs_today": daily["jobs_count"] if daily else 0,
+        "active_jobs": active_jobs,
+        "prediction_api_calls_today": daily["prediction_calls_count"] if daily else 0,
+        "report_exports_today": daily["report_exports_count"] if daily else 0,
+    }
+
+
+def usage_limit_error(limit_key, current, limit, plan, message=None):
+    return HTTPException(429, {
+        "code": "usage_limit_exceeded",
+        "limit_key": limit_key,
+        "current": current,
+        "limit": limit,
+        "plan": plan,
+        "message": message or f"{plan} plan limit reached for {limit_key}.",
+        "upgrade_placeholder": "베타 기간에는 플랜 변경을 수동으로 처리합니다. 필요하면 관리자에게 문의하세요.",
+    })
+
+
+def enforce_limit(user, limit_key, current, message=None):
+    plan = get_user_plan(user)
+    limit = get_plan_limits(plan).get(limit_key)
+    if limit is not None and current >= limit:
+        raise usage_limit_error(limit_key, current, limit, plan, message)
+
+
+def enforce_project_creation_limit(user):
+    if not user:
+        return
+    usage = get_account_usage(user)
+    enforce_limit(user, "max_projects", usage["projects"], "현재 플랜에서 만들 수 있는 프로젝트 수를 모두 사용했습니다.")
+
+
+def enforce_dataset_upload_limits(user, file_size_bytes, rows, columns):
+    limits = get_plan_limits(user or "free")
+    plan = get_user_plan(user) if user else "free"
+    file_mb = file_size_bytes / (1024 * 1024)
+    checks = [
+        ("max_file_size_mb", file_mb, limits["max_file_size_mb"], "업로드 가능한 CSV 파일 크기 제한을 넘었습니다."),
+        ("max_rows_per_dataset", rows, limits["max_rows_per_dataset"], "현재 플랜에서 처리할 수 있는 행 수를 넘었습니다."),
+        ("max_columns_per_dataset", columns, limits["max_columns_per_dataset"], "현재 플랜에서 처리할 수 있는 컬럼 수를 넘었습니다."),
+    ]
+    for key, current, limit, message in checks:
+        if current > limit:
+            raise usage_limit_error(key, int(current), limit, plan, message)
+    if user:
+        usage = get_account_usage(user)
+        enforce_limit(user, "max_datasets", usage["datasets"], "현재 플랜에서 저장 가능한 데이터셋 수를 모두 사용했습니다.")
+
+
+def enforce_training_job_limits(user):
+    usage = get_account_usage(user)
+    enforce_limit(user, "max_jobs_per_day", usage["jobs_today"], "오늘 실행 가능한 분석 작업 수를 모두 사용했습니다.")
+    enforce_limit(user, "max_concurrent_jobs", usage["active_jobs"], "동시에 실행 가능한 분석 작업 수를 모두 사용했습니다.")
+
+
+def enforce_prediction_token_limit(user, project_id):
+    plan = get_user_plan(user)
+    limit = get_plan_limits(plan)["max_prediction_tokens_per_project"]
+    conn = get_db()
+    try:
+        count = conn.execute(
+            "SELECT COUNT(*) FROM prediction_api_tokens WHERE project_id=? AND owner_user_id=? AND status='active'",
+            (project_id, _user_id_from_payload(user)),
+        ).fetchone()[0]
+    finally:
+        conn.close()
+    if count >= limit:
+        raise usage_limit_error("max_prediction_tokens_per_project", count, limit, plan, "이 프로젝트에서 만들 수 있는 API 토큰 수를 모두 사용했습니다.")
+
+
+def enforce_prediction_call_limit(owner_user_id):
+    user = {"sub": owner_user_id}
+    conn = get_db()
+    try:
+        row = conn.execute("SELECT plan, role FROM users WHERE id=?", (owner_user_id,)).fetchone()
+    finally:
+        conn.close()
+    if row:
+        user["plan"] = row["plan"]
+        user["role"] = row["role"]
+    usage = get_daily_usage(owner_user_id)
+    enforce_limit(user, "max_prediction_api_calls_per_day", usage["prediction_api_calls_today"], "오늘 예측 API 호출 한도에 도달했습니다.")
+
+
+def build_usage_summary(user):
+    if not user:
+        return {
+            "mode": "guest_demo",
+            "plan": "free",
+            "limits": get_plan_limits("free"),
+            "usage": {},
+            "warnings": [],
+            "upgrade": {"available": False, "message": "로그인하면 프로젝트별 사용량을 확인할 수 있습니다."},
+        }
+    plan = get_user_plan(user)
+    limits = get_plan_limits(plan)
+    usage = get_account_usage(user)
+    mapping = {
+        "projects": "max_projects",
+        "datasets": "max_datasets",
+        "jobs_today": "max_jobs_per_day",
+        "active_jobs": "max_concurrent_jobs",
+        "prediction_api_calls_today": "max_prediction_api_calls_per_day",
+        "report_exports_today": "max_report_exports_per_day",
+    }
+    percent_used = {}
+    warnings = []
+    for usage_key, limit_key in mapping.items():
+        limit = limits.get(limit_key) or 0
+        current = usage.get(usage_key, 0)
+        percent = round(current / limit, 2) if limit else 0
+        percent_used[usage_key] = percent
+        if percent >= 0.8:
+            warnings.append({
+                "limit_key": limit_key,
+                "message": f"{usage_key} 사용량이 한도에 가까워졌습니다.",
+                "current": current,
+                "limit": limit,
+            })
+    return {
+        "mode": "authenticated",
+        "plan": plan,
+        "plan_status": "internal" if plan == "admin" else "active",
+        "limits": limits,
+        "usage": usage,
+        "percent_used": percent_used,
+        "warnings": warnings,
+        "capabilities": {
+            "can_create_project": usage["projects"] < limits["max_projects"],
+            "can_upload_dataset": usage["datasets"] < limits["max_datasets"],
+            "can_start_job": usage["jobs_today"] < limits["max_jobs_per_day"] and usage["active_jobs"] < limits["max_concurrent_jobs"],
+            "can_call_prediction_api": usage["prediction_api_calls_today"] < limits["max_prediction_api_calls_per_day"],
+        },
+        "upgrade": {
+            "available": False,
+            "message": "베타 기간에는 플랜 변경을 수동으로 처리합니다. Pro/Team mock 플랜은 관리자에게 문의하세요.",
+        },
+    }
+
+
+ensure_usage_limit_storage()
+
+
+@app.get("/api/me/usage")
+async def me_usage(user=Depends(get_current_user)):
+    return build_usage_summary(user)

@@ -489,6 +489,8 @@ async def get_project_reports(project_id: str, user=Depends(get_current_user)):
 async def create_project(body: ProjectBody, user=Depends(get_current_user)):
     if not user:
         raise HTTPException(401, "로그인이 필요합니다")
+    if "enforce_project_creation_limit" in globals():
+        enforce_project_creation_limit(user)
     import uuid
     project_id = str(uuid.uuid4())[:8]
     now = datetime.now().isoformat()

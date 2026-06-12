@@ -26,6 +26,7 @@ export default function ProjectPredictionTokensPanel({ models = [] }) {
   const [loading, setLoading] = useState(false)
   const [tokens, setTokens] = useState([])
   const [availability, setAvailability] = useState(null)
+  const [usage, setUsage] = useState(null)
   const [plainToken, setPlainToken] = useState('')
   const [message, setMessage] = useState('')
   const endpoint = projectId ? `${window.location.origin}/api/predict/${projectId}` : ''
@@ -38,6 +39,7 @@ export default function ProjectPredictionTokensPanel({ models = [] }) {
       const res = await api.get(`/projects/${projectId}/prediction-tokens`)
       setTokens(res.data.tokens || [])
       setAvailability(res.data.availability || null)
+      api.get('/me/usage').then(usageRes => setUsage(usageRes.data)).catch(() => setUsage(null))
     } catch (err) {
       setMessage(err.response?.data?.detail?.user_friendly_message || '토큰 정보를 불러오지 못했습니다. 로그인 또는 프로젝트 소유권을 확인하세요.')
     } finally {
@@ -89,6 +91,9 @@ response = requests.post(
     json={"rows": [{"feature_a": 1, "feature_b": "value"}]},
 )
 print(response.json())`
+  const activeTokens = tokens.filter(token => token.status === 'active').length
+  const tokenLimit = usage?.limits?.max_prediction_tokens_per_project
+  const tokenLimitReached = tokenLimit !== undefined && activeTokens >= tokenLimit
 
   if (!projectId) {
     return (
@@ -118,9 +123,10 @@ print(response.json())`
 
       <div className="banner-success" style={{ alignItems: 'flex-start' }}>
         {availability?.available ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
-        <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)', lineHeight: 1.55 }}>
-          모델: {availability?.model_ready ? '준비됨' : '아직 없음'} · 데이터셋: {availability?.dataset_active ? '활성' : '삭제됨/없음'} · 상태: {fmt(availability?.reason)}
-        </p>
+          <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)', lineHeight: 1.55 }}>
+            모델: {availability?.model_ready ? '준비됨' : '아직 없음'} · 데이터셋: {availability?.dataset_active ? '활성' : '삭제됨/없음'} · 상태: {fmt(availability?.reason)}
+            {tokenLimit !== undefined ? ` · 토큰 ${activeTokens}/${tokenLimit}` : ''}
+          </p>
       </div>
 
       {plainToken && (
@@ -134,11 +140,16 @@ print(response.json())`
       {message && <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)' }}>{message}</p>}
 
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        <button className="btn-primary" type="button" disabled={loading || !availability?.available} onClick={createToken}>
+        <button className="btn-primary" type="button" disabled={loading || !availability?.available || tokenLimitReached} onClick={createToken}>
           <KeyRound size={15} /> API 토큰 만들기
         </button>
         <CopyButton value={endpoint} label="엔드포인트 복사" />
       </div>
+      {tokenLimitReached && (
+        <p style={{ margin: 0, fontSize: 13, color: '#b45309' }}>
+          현재 플랜에서 이 프로젝트에 만들 수 있는 API 토큰 수를 모두 사용했습니다. 기존 토큰을 재발급하거나 비활성화하세요.
+        </p>
+      )}
 
       <div style={{ display: 'grid', gap: 8 }}>
         {tokens.length ? tokens.map(token => (

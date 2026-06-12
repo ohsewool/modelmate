@@ -1,0 +1,115 @@
+# ModelMate Usage Limits and Plan Flags
+
+PR-19 adds MVP plan flags and soft usage limits. This is not a paid billing
+system and does not integrate Stripe, Toss, Paddle, or any payment provider.
+
+## Plan Flags
+
+Supported plan flags:
+
+- `free`
+- `pro_mock`
+- `team_mock`
+- `admin`
+
+New email/password users default to `free`. Admin seed users are normalized to
+`admin`. Mock plans are product flags for beta/pilot testing, not paid plans.
+
+## Default Limits
+
+| Limit | Free | Pro mock | Team mock |
+| --- | ---: | ---: | ---: |
+| Projects | 3 | 30 | 100 |
+| Datasets | 3 | 30 | 100 |
+| CSV file size | 10 MB | 50 MB | 100 MB |
+| Rows per dataset | 5,000 | 50,000 | 100,000 |
+| Columns per dataset | 100 | 300 | 500 |
+| Jobs per day | 5 | 50 | 150 |
+| Concurrent jobs | 1 | 3 | 8 |
+| Tokens per project | 1 | 5 | 20 |
+| Prediction API calls per day | 100 | 5,000 | 25,000 |
+| Report exports per day | 10 | 100 | 500 |
+
+Admin has very high internal limits for development and demos.
+
+## Usage Summary Endpoint
+
+```text
+GET /api/me/usage
+```
+
+The endpoint returns:
+
+- current plan
+- usage counters
+- plan limits
+- percent-used hints
+- warnings near a limit
+- capability flags such as `can_create_project`
+- upgrade/contact placeholder metadata
+
+Guest users receive a guest/demo response and are not treated as paid accounts.
+
+## Soft Enforcement
+
+ModelMate returns friendly structured errors instead of crashing.
+
+Example:
+
+```json
+{
+  "detail": {
+    "code": "usage_limit_exceeded",
+    "limit_key": "max_projects",
+    "current": 3,
+    "limit": 3,
+    "plan": "free",
+    "message": "현재 플랜에서 만들 수 있는 프로젝트 수를 모두 사용했습니다.",
+    "upgrade_placeholder": "베타 기간에는 플랜 변경을 수동으로 처리합니다. 필요하면 관리자에게 문의하세요."
+  }
+}
+```
+
+## Enforcement Points
+
+PR-19 applies soft checks to:
+
+- project creation
+- CSV upload file size
+- parsed dataset row/column limits
+- saved dataset count
+- background training job daily limit
+- concurrent training job limit
+- project prediction token creation
+- project prediction API daily calls
+
+`max_report_exports_per_day` is included in the plan configuration and usage
+summary for future Report Center work, but PR-19 does not force a report export
+block because the existing HTML export path is still a session-level demo flow.
+
+## Daily Counters
+
+Daily counters are stored in `user_usage_daily` by `user_id` and date:
+
+- `jobs_count`
+- `prediction_calls_count`
+- `report_exports_count`
+
+The implementation is intentionally simple for the SaaS MVP. It is not a
+distributed quota service.
+
+## Current Limitations
+
+- No payment integration.
+- No account-based billing cycle.
+- No rate-limit middleware or API gateway.
+- No team billing or seat management.
+- Plan changes are manual/admin/dev work for now.
+- Usage limits are MVP guardrails for beta testing and demo stability.
+
+## QA
+
+```bash
+python scripts/run_usage_limits_smoke.py --base-url http://localhost:8000
+python scripts/run_release_qa.py --base-url http://localhost:8000 --skip-training
+```

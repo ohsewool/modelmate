@@ -2,7 +2,9 @@
 async def upload(file: UploadFile = File(...), user=Depends(get_current_user)):
     set_analysis_status("running", "csv_upload", "CSV 파일을 읽고 데이터셋으로 사용할 수 있는지 확인하는 중입니다.")
     raw_bytes = await file.read()
-    max_bytes = MVP_USAGE_LIMITS["max_csv_file_size_mb"] * 1024 * 1024
+    upload_limits = get_plan_limits(user or "free") if "get_plan_limits" in globals() else MVP_USAGE_LIMITS
+    max_file_mb = upload_limits.get("max_file_size_mb", MVP_USAGE_LIMITS["max_csv_file_size_mb"])
+    max_bytes = max_file_mb * 1024 * 1024
     if len(raw_bytes) > max_bytes:
         detail = failure_detail(
             "csv_validation",
@@ -11,6 +13,7 @@ async def upload(file: UploadFile = File(...), user=Depends(get_current_user)):
             retry_possible=True,
             recommended_next_action="CSV를 샘플링하거나 불필요한 컬럼을 줄인 뒤 다시 업로드하세요.",
         )
+        detail.update({"code": "usage_limit_exceeded", "limit_key": "max_file_size_mb", "current": round(len(raw_bytes) / (1024 * 1024), 2), "limit": max_file_mb})
         raise HTTPException(413, detail)
     raw, encoding = decode_upload_bytes(raw_bytes)
     is_txt = file.filename.lower().endswith(".txt")
@@ -38,6 +41,8 @@ async def upload(file: UploadFile = File(...), user=Depends(get_current_user)):
             retry_possible=True,
             recommended_next_action="첫 행에 컬럼명이 있는 CSV/TSV/TXT 파일을 다시 올려주세요.",
         ))
+    if "enforce_dataset_upload_limits" in globals():
+        enforce_dataset_upload_limits(user, len(raw_bytes), int(df.shape[0]), int(df.shape[1]))
     ok, message, quality = validate_dataset_file(df, file.filename)
     if not ok:
         detail = failure_detail(
