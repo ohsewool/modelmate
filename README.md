@@ -51,6 +51,8 @@ claim that ModelMate is already a complete autonomous AI data scientist.
 - Reusable prediction API documentation for shared models
 - Auth-lite session foundation with guest demo mode
 - Email/password register, login, `/auth/me`, and logout smoke checks
+- User-owned project foundation with MVP ownership checks for saved projects,
+  datasets, agent analysis runs, and private deployed model metadata
 
 ## Agentic AutoML Upgrade Status
 
@@ -114,6 +116,12 @@ so the next PR can attach user-owned project rules. Email/password auth uses
 PBKDF2 password hashing and bearer-token session revocation on logout. This is
 not full RBAC, payment, enterprise SSO, or account-based quota. See
 `docs/auth-lite-session.md`.
+
+User-owned projects are handled at MVP foundation level. Signed-in users see
+their own saved projects and private analysis metadata, while guest demo mode
+stays available for sample-data evaluation. This is MVP access control, not
+enterprise-grade tenant isolation. See `docs/security-notes.md` and
+`docs/privacy.md`.
 
 First-time users can try ModelMate without preparing their own CSV. The upload
 screen links to three small synthetic sample datasets:
@@ -182,12 +190,13 @@ Release QA can be run with:
 ```bash
 python scripts/run_release_qa.py --base-url https://web-production-5d6fa.up.railway.app --skip-training
 python scripts/run_auth_smoke.py --base-url https://web-production-5d6fa.up.railway.app
+python scripts/run_ownership_smoke.py --base-url https://web-production-5d6fa.up.railway.app
 python scripts/run_product_smoke.py --base-url https://web-production-5d6fa.up.railway.app
 ```
 
 Automated QA checks endpoints, sample upload, target selection, report export,
-auth-lite session context, register/login/logout smoke, guest demo session start,
-and deployment smoke paths. Human review is still needed for usability, copy
+auth-lite session context, register/login/logout smoke, MVP ownership smoke,
+guest demo session start, and deployment smoke paths. Human review is still needed for usability, copy
 clarity, visual layout, and whether beta users find the report persuasive.
 
 Commercial SaaS MVP trust documents are drafted, not finalized legal policies:
@@ -245,6 +254,7 @@ python -m compileall backend
 python scripts/run_upload_validation_qa.py
 python scripts/run_training_benchmark.py
 python scripts/run_full_qa.py --skip-slow
+python scripts/run_ownership_smoke.py --base-url http://localhost:8000
 ```
 
 ## Demo Scenario

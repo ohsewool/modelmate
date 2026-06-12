@@ -1,0 +1,90 @@
+# MVP ownership/access-control helpers for saved resources.
+
+def require_current_user(user):
+    if not user:
+        raise HTTPException(401, "Sign in to access saved private resources.")
+    return user
+
+
+def is_admin_user(user):
+    return bool(user and user.get("role") == "admin")
+
+
+def _resource_not_found():
+    raise HTTPException(404, "Resource not found or access is not allowed.")
+
+
+def _owner_matches(user, owner_user_id):
+    return bool(user and owner_user_id and owner_user_id == user.get("sub"))
+
+
+def assert_project_owner(user, project_id):
+    require_current_user(user)
+    conn = get_db()
+    try:
+        row = conn.execute("SELECT * FROM projects WHERE id=?", (project_id,)).fetchone()
+    finally:
+        conn.close()
+    if not row:
+        _resource_not_found()
+    if is_admin_user(user) or _owner_matches(user, row["user_id"]):
+        return dict(row)
+    _resource_not_found()
+
+
+def assert_dataset_owner(user, dataset_id):
+    require_current_user(user)
+    conn = get_db()
+    try:
+        row = conn.execute("SELECT * FROM datasets WHERE id=?", (dataset_id,)).fetchone()
+    finally:
+        conn.close()
+    if not row:
+        _resource_not_found()
+    if is_admin_user(user) or _owner_matches(user, row["user_id"]):
+        return dict(row)
+    _resource_not_found()
+
+
+def assert_analysis_run_owner(user, analysis_run_id, allow_guest_legacy=False):
+    conn = get_db()
+    try:
+        try:
+            row = conn.execute("SELECT * FROM analysis_runs WHERE id=?", (analysis_run_id,)).fetchone()
+        except sqlite3.OperationalError:
+            row = None
+    finally:
+        conn.close()
+    if not row:
+        _resource_not_found()
+    owner_user_id = row["user_id"]
+    if owner_user_id is None and allow_guest_legacy and not user:
+        return dict(row)
+    require_current_user(user)
+    if is_admin_user(user) or _owner_matches(user, owner_user_id):
+        return dict(row)
+    _resource_not_found()
+
+
+def assert_deployed_model_owner(user, model_id, allow_public_metadata=False):
+    conn = get_db()
+    try:
+        row = conn.execute("SELECT * FROM deployed_models WHERE id=?", (model_id,)).fetchone()
+    finally:
+        conn.close()
+    if not row:
+        _resource_not_found()
+    owner_user_id = row["user_id"]
+    if owner_user_id is None and allow_public_metadata:
+        return dict(row)
+    require_current_user(user)
+    if is_admin_user(user) or _owner_matches(user, owner_user_id):
+        return dict(row)
+    _resource_not_found()
+
+
+def assert_project_and_dataset_access(user, project_id=None, dataset_id=None):
+    if project_id:
+        assert_project_owner(user, project_id)
+    if dataset_id:
+        assert_dataset_owner(user, dataset_id)

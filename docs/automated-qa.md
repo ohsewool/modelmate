@@ -11,6 +11,7 @@ python scripts/run_upload_validation_qa.py
 python scripts/run_training_benchmark.py
 python scripts/run_full_qa.py --skip-slow
 python scripts/run_auth_smoke.py --base-url http://localhost:8000
+python scripts/run_ownership_smoke.py --base-url http://localhost:8000
 ```
 
 ## Product Smoke Test
@@ -52,6 +53,9 @@ python scripts/run_release_qa.py --base-url https://web-production-5d6fa.up.rail
 - backend compiles;
 - auth smoke can register, login, call `/api/auth/me`, logout, and confirm token
   revocation when a base URL is provided;
+- ownership smoke can register two users, create a project for user A, confirm
+  user B cannot list or open user A's project, and confirm user B cannot read
+  user A's agent analysis run;
 - upload validation QA passes;
 - full QA quick path passes;
 - training benchmark can run when not skipped;
@@ -93,3 +97,5 @@ python scripts/run_release_qa.py --base-url https://web-production-5d6fa.up.rail
 - prediction API docs mention an endpoint that does not exist;
 - invalid CSV returns a raw server error;
 - Railway root route does not load.
+- user B can access user A's project, dataset, agent run, or private deployed
+  model metadata by guessing an id.

@@ -35,6 +35,7 @@ async def create_agent_mock_plan(
     body: AgentMockPlanBody,
     user=Depends(get_current_user),
 ):
+    assert_project_and_dataset_access(user, body.project_id, body.dataset_id)
     planner = SupervisorPlanner()
     plan = planner.create_initial_plan(body.user_goal)
     conn = get_db()
@@ -63,6 +64,7 @@ async def create_agent_mock_plan(
 
 @app.get("/api/agent/runs/{analysis_run_id}")
 async def get_agent_mock_run(analysis_run_id: str, user=Depends(get_current_user)):
+    assert_analysis_run_owner(user, analysis_run_id, allow_guest_legacy=True)
     conn = get_db()
     try:
         trace = get_analysis_run_trace(conn, analysis_run_id)
@@ -82,6 +84,7 @@ async def create_agent_mock_timeline(
     body: AgentMockPlanBody,
     user=Depends(get_current_user),
 ):
+    assert_project_and_dataset_access(user, body.project_id, body.dataset_id)
     conn = get_db()
     try:
         user_id = user.get("sub") if user else None
@@ -107,6 +110,7 @@ async def create_agent_mock_timeline(
 
 @app.get("/api/agent/runs/{analysis_run_id}/timeline")
 async def get_agent_mock_timeline(analysis_run_id: str, user=Depends(get_current_user)):
+    assert_analysis_run_owner(user, analysis_run_id, allow_guest_legacy=True)
     conn = get_db()
     try:
         timeline = get_analysis_timeline(conn, analysis_run_id)

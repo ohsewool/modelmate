@@ -39,10 +39,25 @@ yet provide a complete commercial data governance program.
 Current limitations include:
 
 - auth-lite exists, but no full production-grade authentication policy
-- no formal user-level data isolation guarantee
+- MVP user-owned project checks exist, but no formal user-level data isolation
+  guarantee
 - no formal retention/deletion request workflow
 - no complete audit log policy
 - no enterprise encryption/compliance policy
+
+## Authenticated Projects and Guest Demo Data
+
+When a user signs in, newly saved projects, uploaded dataset metadata, agent
+analysis runs, and deployed model metadata are associated with that user's
+`user_id` at the MVP application layer. Project lists and private resource
+detail routes are intended to show only the signed-in user's resources.
+
+Guest demo mode remains available for sample-data evaluation. Guest/demo data is
+treated separately from private user projects and should not be used for
+sensitive or production data.
+
+This ownership layer is a foundation for commercialization work. It is not a
+complete commercial privacy, retention, deletion, audit, or compliance program.
 
 ## Recommended User Practice
 

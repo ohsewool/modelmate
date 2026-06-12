@@ -81,6 +81,24 @@ async def list_projects(user=Depends(get_current_user)):
     return [dict(r) for r in rows]
 
 
+@app.get("/api/projects/{project_id}")
+async def get_project_detail(project_id: str, user=Depends(get_current_user)):
+    project = assert_project_owner(user, project_id)
+    conn = get_db()
+    try:
+        datasets = conn.execute(
+            "SELECT * FROM datasets WHERE project_id=? AND user_id=? ORDER BY created_at DESC",
+            (project_id, project["user_id"]),
+        ).fetchall()
+    finally:
+        conn.close()
+    return {
+        **project,
+        "datasets": [dict(r) for r in datasets],
+        "ownership": "owned",
+    }
+
+
 @app.post("/api/projects")
 async def create_project(body: ProjectBody, user=Depends(get_current_user)):
     if not user:

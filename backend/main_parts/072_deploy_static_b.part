@@ -31,7 +31,7 @@ async def list_deployed(user=Depends(get_current_user)):
         rows = conn.execute("SELECT * FROM deployed_models ORDER BY created_at DESC").fetchall()
     elif user:
         rows = conn.execute(
-            "SELECT * FROM deployed_models WHERE user_id=? OR user_id IS NULL ORDER BY created_at DESC",
+            "SELECT * FROM deployed_models WHERE user_id=? ORDER BY created_at DESC",
             (user["sub"],),
         ).fetchall()
     else:
@@ -72,17 +72,39 @@ async def list_deployed(user=Depends(get_current_user)):
         })
     return out
 
+@app.get("/api/deployed/{model_id}")
+async def get_deployed_metadata(model_id: str, user=Depends(get_current_user)):
+    row = assert_deployed_model_owner(user, model_id, allow_public_metadata=False)
+    features = json.loads(row["features"])
+    metrics = json.loads(row["metrics"])
+    dataset_ref = json.loads(row["dataset_ref"]) if row["dataset_ref"] else None
+    return {
+        "id": row["id"],
+        "name": row["name"],
+        "task_type": row["task_type"],
+        "best_model_name": row["best_model_name"],
+        "target_col": row["target_col"],
+        "features": features,
+        "metrics": metrics,
+        "dataset_ref": dataset_ref,
+        "created_at": row["created_at"],
+        "owner_scope": "owned",
+        "predict_url": f"/api/v2/{model_id}/predict",
+        "metadata_access": "private_owner_required",
+    }
+
 @app.delete("/api/deployed/{model_id}")
 async def delete_deployed(model_id: str, user=Depends(get_current_user)):
-    fp = os.path.join(MODELS_DIR, f"{model_id}.pkl")
-    if os.path.exists(fp): os.remove(fp)
+    row = assert_deployed_model_owner(user, model_id, allow_public_metadata=False)
     conn = get_db()
-    row = conn.execute("SELECT user_id FROM deployed_models WHERE id=?", (model_id,)).fetchone()
     if row and row["user_id"] and (not user or (user.get("role") != "admin" and row["user_id"] != user.get("sub"))):
         conn.close()
         raise HTTPException(403, "이 모델을 삭제할 권한이 없습니다.")
     conn.execute("DELETE FROM deployed_models WHERE id=?", (model_id,))
     conn.commit(); conn.close()
+    fp = os.path.join(MODELS_DIR, f"{row['id']}.pkl")
+    if os.path.exists(fp):
+        os.remove(fp)
     return {"ok": True}
 
 @app.post("/api/v1/{model_id}/predict")
