@@ -90,6 +90,18 @@ deletion or enterprise-grade data governance.
 For presentations, evaluation, and portfolio review, use small demo datasets or
 datasets that do not contain sensitive personal information.
 
+## Paid Pilot Inquiries
+
+Pilot inquiries are used for manual pilot access and usage-limit review. They
+store contact details, use-case notes, desired plan, and a safe usage summary.
+
+Do not enter payment information, raw CSV contents, API tokens, passwords,
+secrets, 주민번호, 결제정보, 의료정보, or other sensitive data in a pilot
+inquiry.
+
+The current MVP does not implement billing, invoices, automatic plan upgrades,
+or payment security handling.
+
 ## Future Commercialization Requirements
 
 Before commercial use, ModelMate should add:

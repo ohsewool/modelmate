@@ -112,6 +112,24 @@ This is MVP dataset deletion and delete-impact handling. It is not complete data
 governance, audit logging, automatic retention enforcement, or enterprise
 compliance.
 
+## Paid Pilot Inquiry Security Notes
+
+Commercialization PR-23 adds a lightweight pilot inquiry flow. It is protected
+as a manual SaaS MVP workflow, not a billing system.
+
+- `POST /api/pilot-inquiries` accepts guest or signed-in inquiries.
+- `GET /api/admin/pilot-inquiries` and inquiry status updates require admin
+  access.
+- The backend filters unsafe usage snapshot keys such as token, secret,
+  payment, card, API key, raw CSV, and authorization data.
+- The UI tells users not to enter payment data, raw CSV contents, API tokens, or
+  secrets.
+- No Stripe, Toss Payments, PayPal, subscription, invoice, or billing security
+  scope is implemented.
+
+This is MVP paid-pilot readiness, not enterprise sales automation or production
+payment handling.
+
 ## Railway Deployment Notes
 
 When deploying on Railway or a similar platform:

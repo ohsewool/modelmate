@@ -388,3 +388,21 @@ The admin account can be configured through environment variables:
 - `ADMIN_PASSWORD`
 
 Default values are `admin@modelmate.local` / `admin1234`.
+
+## Paid Pilot Readiness
+
+ModelMate includes a lightweight paid-pilot inquiry flow for manual pilot
+operations.
+
+- Free / Pro Pilot / Team Pilot pricing copy is pilot planning copy, not active
+  billing.
+- Real payment, invoices, subscriptions, and automatic upgrades are not
+  connected.
+- Users can request pilot access or higher usage limits from the landing page,
+  pricing page, usage card, or workspace settings.
+- Admin users can review pilot inquiries through the protected admin endpoint
+  and small settings review panel.
+- Pilot inquiries must not include payment information, raw CSV contents, API
+  tokens, passwords, or secrets.
+
+See `docs/paid-pilot-readiness.md` for the current manual pilot policy.

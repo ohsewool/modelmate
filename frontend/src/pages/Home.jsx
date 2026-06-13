@@ -1,10 +1,12 @@
 import { Link, useNavigate } from 'react-router-dom'
+import { useState } from 'react'
 import { BarChart3, CheckCircle2, Moon, Play, ShieldCheck, Sun, Upload } from 'lucide-react'
 import { useTheme } from '../ThemeContext'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
 import ValidationProof from '../components/ValidationProof'
 import { STARTER_PACKS } from '../data/starterPacks'
+import PilotInquiryDialog from '../components/PilotInquiryDialog'
 
 const steps = [
   ['CSV 업로드', '파일 구조와 데이터 품질을 먼저 확인하고 분석 가능한 상태인지 판단합니다.'],
@@ -20,6 +22,7 @@ const examples = ['고객 이탈', '수요 예측', '설비 고장', '마케팅 
 export default function Home() {
   const nav = useNavigate()
   const { dark, toggle } = useTheme()
+  const [pilotOpen, setPilotOpen] = useState(false)
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)', overflowX: 'hidden' }}>
@@ -68,6 +71,7 @@ export default function Home() {
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 22 }}>
                   <Button size="lg" onClick={() => nav('/login')}><Upload size={17} /> CSV 분석 시작</Button>
                   <Button size="lg" variant="secondary" onClick={() => nav('/login')}>샘플로 체험하기</Button>
+                  <Button size="lg" variant="secondary" onClick={() => setPilotOpen(true)}>파일럿 문의하기</Button>
                 </div>
 
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -133,8 +137,21 @@ export default function Home() {
             </div>
           </div>
         </section>
+        <section style={{ padding: '0 28px 48px' }}>
+          <div className="card" style={{ width: 'min(1100px, 100%)', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16, alignItems: 'center' }}>
+            <div>
+              <p className="section-title">베타 사용 안내</p>
+              <h2 style={{ margin: '0 0 8px', fontSize: 24, fontWeight: 900 }}>파일럿 사용을 준비하고 있습니다</h2>
+              <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.65 }}>
+                실제 결제는 아직 연결되어 있지 않습니다. CSV 예측 분석, 근거 기반 보고서, 예측 API 재사용이 필요한 팀은 파일럿 문의로 사용 목적과 필요한 한도를 남길 수 있습니다.
+              </p>
+            </div>
+            <Button onClick={() => setPilotOpen(true)}>파일럿 문의하기</Button>
+          </div>
+        </section>
         <ValidationProof />
       </main>
+      <PilotInquiryDialog open={pilotOpen} onClose={() => setPilotOpen(false)} initial={{ source_route: '/' }} />
     </div>
   )
 }

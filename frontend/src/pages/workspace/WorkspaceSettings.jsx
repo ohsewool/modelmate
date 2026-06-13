@@ -3,6 +3,7 @@ import { useAuth } from '../../AuthContext'
 import api from '../../api'
 import { CopyButton, LoadingState, StatusBadge, WorkspacePageHeader } from '../../components/workspace-shell/WorkspaceStates'
 import FeedbackDialog from '../../components/FeedbackDialog'
+import PilotInquiryDialog from '../../components/PilotInquiryDialog'
 
 function usageState(current, limit) {
   if (!limit) return { pct: 0, label: '제한 없음', status: 'active' }
@@ -124,11 +125,70 @@ function FeedbackReviewPanel({ onOpenFeedback }) {
   )
 }
 
+function PilotInquiryReviewPanel({ onOpenPilot }) {
+  const [state, setState] = useState({ loading: true, items: [], message: '' })
+
+  function load() {
+    setState(prev => ({ ...prev, loading: true }))
+    api.get('/admin/pilot-inquiries?limit=5')
+      .then(res => setState({ loading: false, items: res.data?.items || [], message: '' }))
+      .catch(err => {
+        const status = err.response?.status
+        const message = status === 403 || status === 401
+          ? '관리자 권한이 있는 계정에서만 파일럿 문의 목록을 볼 수 있습니다.'
+          : '파일럿 문의 목록을 불러오지 못했습니다.'
+        setState({ loading: false, items: [], message })
+      })
+  }
+
+  useEffect(() => { load() }, [])
+
+  async function mark(inquiryId, status) {
+    await api.post(`/admin/pilot-inquiries/${inquiryId}/status`, { status })
+    load()
+  }
+
+  if (state.loading) return <LoadingState label="파일럿 문의 상태를 불러오는 중입니다." />
+
+  return (
+    <section className="card" style={{ display: 'grid', gap: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
+        <div>
+          <p className="section-title">파일럿 문의</p>
+          <p style={{ margin: 0, color: 'var(--text-2)', fontSize: 13 }}>플랜 변경과 한도 조정은 결제 없이 수동으로 확인합니다.</p>
+        </div>
+        <button className="btn-primary" type="button" onClick={onOpenPilot}>파일럿 문의하기</button>
+      </div>
+      {state.message && <div className="banner-warning"><p style={{ margin: 0 }}>{state.message}</p></div>}
+      {!state.message && !state.items.length && <p style={{ margin: 0, color: 'var(--text-2)' }}>아직 접수된 파일럿 문의가 없습니다.</p>}
+      {!!state.items.length && (
+        <div style={{ display: 'grid', gap: 8 }}>
+          {state.items.map(item => (
+            <div key={item.inquiry_id} className="card-compact" style={{ display: 'grid', gap: 7 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
+                <strong>{item.name} / {item.desired_plan}</strong>
+                <StatusBadge status={item.status === 'new' ? 'created' : item.status === 'closed' ? 'succeeded' : 'running'} />
+              </div>
+              <p style={{ margin: 0, color: 'var(--text-2)', fontSize: 13 }}>{item.email} / {item.organization || '소속 없음'} / {item.created_at}</p>
+              <p style={{ margin: 0, color: 'var(--text-2)', fontSize: 13 }}>{item.use_case}</p>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <button className="btn-secondary" type="button" onClick={() => mark(item.inquiry_id, 'contacted')}>연락함</button>
+                <button className="btn-secondary" type="button" onClick={() => mark(item.inquiry_id, 'closed')}>닫기</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  )
+}
+
 export default function WorkspaceSettings() {
   const { user } = useAuth()
   const [usage, setUsage] = useState(null)
   const [session, setSession] = useState(null)
   const [feedbackOpen, setFeedbackOpen] = useState(false)
+  const [pilotOpen, setPilotOpen] = useState(false)
 
   useEffect(() => {
     Promise.all([
@@ -167,6 +227,9 @@ export default function WorkspaceSettings() {
             {usage.upgrade?.message || '베타 기간에는 플랜 변경을 수동으로 처리합니다.'}
           </p>
           <p style={{ color: 'var(--text-label)', fontSize: 12 }}>결제 기능이 완성된 제품처럼 보이지 않도록 의도적으로 안내 수준으로 표시합니다.</p>
+          <button className="btn-secondary" type="button" onClick={() => setPilotOpen(true)} style={{ marginTop: 12 }}>
+            한도 조정 문의
+          </button>
         </section>
       </div>
       <section className="card" style={{ marginTop: 18, display: 'grid', gap: 16 }}>
@@ -191,7 +254,15 @@ export default function WorkspaceSettings() {
       <div style={{ marginTop: 18 }}>
         <FeedbackReviewPanel onOpenFeedback={() => setFeedbackOpen(true)} />
       </div>
+      <div style={{ marginTop: 18 }}>
+        <PilotInquiryReviewPanel onOpenPilot={() => setPilotOpen(true)} />
+      </div>
       <FeedbackDialog open={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
+      <PilotInquiryDialog
+        open={pilotOpen}
+        onClose={() => setPilotOpen(false)}
+        initial={{ usage, current_plan: usage?.plan, source_route: '/workspace/settings' }}
+      />
     </div>
   )
 }

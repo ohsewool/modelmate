@@ -137,6 +137,10 @@ python scripts/run_release_qa.py --base-url https://web-production-5d6fa.up.rail
 - feedback smoke confirms `/api/feedback` accepts authenticated and guest beta
   feedback, rejects invalid category/severity values, avoids echoing full
   tokens, and keeps admin feedback review protected.
+- pilot inquiry smoke confirms `/api/pilot-inquiries` accepts safe guest or
+  authenticated inquiries, rejects invalid email addresses, avoids storing
+  blocked token/payment/raw CSV context, and keeps admin inquiry review
+  protected.
 
 ## What Still Requires Human Review
 
@@ -168,6 +172,9 @@ python scripts/run_release_qa.py --base-url https://web-production-5d6fa.up.rail
   and that error responses include `request_id`.
 - feedback smoke fails: verify `/api/feedback` is deployed, category/severity
   validation is active, and `/api/admin/feedback` remains admin-only.
+- pilot inquiry smoke fails: verify `/api/pilot-inquiries` is deployed, email
+  validation is active, blocked context keys are filtered, and
+  `/api/admin/pilot-inquiries` remains admin-only.
 
 ## Release Blockers
 
@@ -189,3 +196,5 @@ python scripts/run_release_qa.py --base-url https://web-production-5d6fa.up.rail
   prediction token is echoed in a response.
 - feedback smoke leaks a full token, accepts invalid category/severity values,
   or exposes admin feedback lists to guests/non-admin users.
+- pilot inquiry smoke stores payment details, API tokens, raw CSV content, or
+  exposes admin inquiry lists to guests/non-admin users.

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import api from '../api'
+import PilotInquiryDialog from './PilotInquiryDialog'
 
 function usageLine(label, current, limit) {
   if (current === undefined || limit === undefined) return `${label}: -`
@@ -8,6 +9,7 @@ function usageLine(label, current, limit) {
 
 export default function UsagePlanCard() {
   const [summary, setSummary] = useState(null)
+  const [pilotOpen, setPilotOpen] = useState(false)
 
   useEffect(() => {
     let mounted = true
@@ -46,6 +48,14 @@ export default function UsagePlanCard() {
           한도에 가까워졌습니다. 베타 기간에는 플랜 변경을 수동으로 문의하세요.
         </p>
       )}
+      <button className="btn-secondary" type="button" onClick={() => setPilotOpen(true)} style={{ padding: '6px 8px', fontSize: 11 }}>
+        한도 조정 문의
+      </button>
+      <PilotInquiryDialog
+        open={pilotOpen}
+        onClose={() => setPilotOpen(false)}
+        initial={{ usage: summary, current_plan: summary.plan, source_route: 'usage-card' }}
+      />
     </div>
   )
 }

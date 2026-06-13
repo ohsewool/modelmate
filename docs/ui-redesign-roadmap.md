@@ -234,7 +234,7 @@ Implementation notes:
 9. UI-04: ops UX polish.
 10. PR-21: beta feedback loop and support surface.
 11. PR-22: use-case starter packs.
-12. PR-23: privacy/security hardening follow-up.
+12. PR-23: paid pilot readiness and manual sales-ops flow.
 13. UI-05: launch polish.
 14. PR-24: final beta release QA and deployment readiness.
 
@@ -267,3 +267,17 @@ Each UI PR should report:
 ModelMate should become a guided CSV predictive analysis SaaS MVP. The UI should
 make the product feel like a reliable workspace for projects, runs, reports, and
 prediction APIs. It should not look like an AI novelty demo.
+
+## PR-23: Paid Pilot Readiness
+
+This PR adds a small commercialization layer, not a redesign. Landing, pricing,
+usage, and settings screens should use calm Korean-first copy that explains:
+
+- Free / Pro Pilot / Team Pilot are pilot planning tiers.
+- Real payment and automatic upgrades are not connected.
+- Plan changes and usage-limit adjustments are reviewed manually.
+- Pilot inquiries must not include payment data, API tokens, secrets, or raw
+  CSV contents.
+
+Do not expand this into billing, a CRM dashboard, or a large pricing redesign
+until the product has validated the pilot flow.

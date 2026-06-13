@@ -113,3 +113,17 @@ distributed quota service.
 python scripts/run_usage_limits_smoke.py --base-url http://localhost:8000
 python scripts/run_release_qa.py --base-url http://localhost:8000 --skip-training
 ```
+
+## Paid Pilot Manual Adjustments
+
+During the paid-pilot readiness stage, usage-limit increases are not automatic.
+Users can submit a pilot inquiry when they need a higher CSV, project,
+training, report, or prediction API limit.
+
+- Real payment and automatic upgrades are not connected.
+- A maintainer reviews pilot inquiries manually.
+- The inquiry should describe the use case and expected dataset size.
+- Users must not include payment information, API tokens, secrets, or raw CSV
+  contents in the inquiry.
+
+See `docs/paid-pilot-readiness.md` for the manual pilot flow.

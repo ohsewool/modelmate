@@ -13,7 +13,7 @@ Intended for small demos and portfolio review.
 - limited prediction API calls
 - demo limitation or watermark concept
 
-## Pro - $19-29/month, planned
+## Pro Pilot - $19-29/month, planned
 
 Intended for individual users who need reusable reports and prediction flows.
 
@@ -24,7 +24,7 @@ Intended for individual users who need reusable reports and prediction flows.
 - project rerun
 - advanced evidence summary
 
-## Team - $79-149/month, planned
+## Team Pilot - $79-149/month, planned
 
 Intended as a future direction for small teams. Not currently implemented.
 
@@ -39,3 +39,16 @@ Intended as a future direction for small teams. Not currently implemented.
 The current repository does not implement Stripe, Toss Payments, PayPal, billing
 APIs, account-based quota, or team administration. Pricing is a mock/planned
 commercialization artifact only.
+
+## Pilot Inquiry Flow
+
+Users can request pilot access or higher limits through the in-app pilot inquiry
+form. This is a manual review flow.
+
+- No payment information is collected.
+- No billing provider is connected.
+- Plan changes are not automatic.
+- Admin users can review inquiry status as `new`, `contacted`, or `closed`.
+
+Do not describe the current pricing page as active billing or production-ready
+subscription management.
