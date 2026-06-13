@@ -1,0 +1,428 @@
+from fastapi import Request
+from fastapi.responses import JSONResponse
+import re
+import time
+
+
+REQUEST_ID_HEADER = "X-Request-ID"
+ERROR_ID_HEADER = "X-Error-ID"
+MAX_MONITORING_EVENTS = int(os.getenv("MODEL_MATE_MAX_MONITORING_EVENTS", "1000"))
+REQUEST_ID_RE = re.compile(r"^[A-Za-z0-9_.:-]{6,80}$")
+
+
+def _monitoring_now():
+    return datetime.now().isoformat(timespec="seconds")
+
+
+def _safe_request_id(raw=None):
+    if raw and REQUEST_ID_RE.match(str(raw)):
+        return str(raw)
+    return "req_" + secrets.token_urlsafe(12).replace("-", "").replace("_", "")[:18]
+
+
+def _request_user_id(request):
+    auth = request.headers.get("authorization") or ""
+    if not auth.lower().startswith("bearer "):
+        return None
+    try:
+        payload = jose_jwt.decode(auth.split(" ", 1)[1].strip(), JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        return payload.get("sub")
+    except Exception:
+        return None
+
+
+def _safe_context(data):
+    if not isinstance(data, dict):
+        return {}
+    blocked = {"password", "token", "plaintext_token", "authorization", "csv", "raw", "secret", "session"}
+    safe = {}
+    for key, value in data.items():
+        low = str(key).lower()
+        if any(item in low for item in blocked):
+            continue
+        if isinstance(value, (str, int, float, bool)) or value is None:
+            safe[key] = value
+        elif isinstance(value, (list, tuple)):
+            safe[key] = f"{len(value)} items"
+        elif isinstance(value, dict):
+            safe[key] = {
+                k: v
+                for k, v in value.items()
+                if isinstance(v, (str, int, float, bool)) and not any(item in str(k).lower() for item in blocked)
+            }
+    return safe
+
+
+def ensure_monitoring_tables():
+    conn = get_db()
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS monitoring_events (
+            error_id TEXT PRIMARY KEY,
+            request_id TEXT,
+            user_id TEXT,
+            project_id TEXT,
+            run_id TEXT,
+            job_id TEXT,
+            dataset_id TEXT,
+            event_type TEXT NOT NULL,
+            error_code TEXT,
+            message TEXT,
+            safe_details TEXT,
+            route TEXT,
+            method TEXT,
+            status_code INTEGER,
+            severity TEXT,
+            created_at TEXT NOT NULL,
+            resolved_at TEXT
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+
+def persist_monitoring_event(
+    *,
+    event_type,
+    request_id=None,
+    user_id=None,
+    project_id=None,
+    run_id=None,
+    job_id=None,
+    dataset_id=None,
+    error_code=None,
+    message="",
+    safe_details=None,
+    route=None,
+    method=None,
+    status_code=None,
+    severity="info",
+):
+    error_id = "err_" + secrets.token_urlsafe(10).replace("-", "").replace("_", "")[:16]
+    details = json.dumps(_safe_context(safe_details or {}), ensure_ascii=False)
+    conn = get_db()
+    try:
+        conn.execute(
+            """
+            INSERT INTO monitoring_events
+            (error_id,request_id,user_id,project_id,run_id,job_id,dataset_id,event_type,error_code,message,safe_details,route,method,status_code,severity,created_at)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+            """,
+            (
+                error_id,
+                request_id,
+                user_id,
+                project_id,
+                run_id,
+                job_id,
+                dataset_id,
+                event_type,
+                error_code,
+                str(message or "")[:500],
+                details,
+                route,
+                method,
+                status_code,
+                severity,
+                _monitoring_now(),
+            ),
+        )
+        total = conn.execute("SELECT COUNT(*) FROM monitoring_events").fetchone()[0]
+        if total > MAX_MONITORING_EVENTS:
+            overflow = total - MAX_MONITORING_EVENTS
+            conn.execute(
+                "DELETE FROM monitoring_events WHERE error_id IN (SELECT error_id FROM monitoring_events ORDER BY created_at ASC LIMIT ?)",
+                (overflow,),
+            )
+        conn.commit()
+    finally:
+        conn.close()
+    return error_id
+
+
+def log_structured_event(level="info", event_type="api.event", **fields):
+    record = {
+        "timestamp": _monitoring_now(),
+        "level": level,
+        "event_type": event_type,
+        **{key: value for key, value in fields.items() if value is not None},
+    }
+    print(json.dumps(record, ensure_ascii=False, default=str))
+
+
+def _event_type_for_request(request, status_code):
+    path = request.url.path
+    method = request.method.upper()
+    if path.startswith("/api/predict/"):
+        return "prediction_api.called" if status_code < 400 else "prediction_api.failed"
+    if "/prediction-tokens" in path:
+        if method == "POST" and path.endswith("/revoke"):
+            return "prediction_token.revoked"
+        if method == "POST" and path.endswith("/regenerate"):
+            return "prediction_token.regenerated"
+        if method == "POST":
+            return "prediction_token.created"
+    if path.startswith("/api/datasets/") and method == "DELETE":
+        return "dataset.deleted" if status_code < 400 else "dataset.delete_blocked"
+    if path.startswith("/api/training/jobs") and method == "POST":
+        return "job.created" if status_code < 400 else "job.failed"
+    if "/rerun" in path and method == "POST":
+        return "project.rerun_requested" if status_code < 400 else "job.failed"
+    if status_code >= 400:
+        return "api.error"
+    return "api.request"
+
+
+def _error_code_from_detail(detail, status_code):
+    if isinstance(detail, dict):
+        return detail.get("code") or detail.get("error_type") or detail.get("error_code") or f"http_{status_code}"
+    if status_code == 401:
+        return "unauthorized"
+    if status_code == 403:
+        return "forbidden"
+    if status_code == 404:
+        return "not_found"
+    return f"http_{status_code}"
+
+
+def _friendly_message_action(detail, status_code):
+    if isinstance(detail, dict):
+        message = detail.get("user_friendly_message") or detail.get("message") or "요청을 처리하지 못했습니다."
+        action = detail.get("recommended_next_action") or detail.get("action") or "입력값과 현재 프로젝트 상태를 확인한 뒤 다시 시도하세요."
+        return message, action
+    if isinstance(detail, str) and detail:
+        return detail, "다시 시도하거나 대시보드에서 현재 상태를 확인하세요."
+    if status_code == 401:
+        return "로그인이 필요합니다.", "로그인한 뒤 다시 시도하세요."
+    if status_code == 403:
+        return "접근 권한이 없습니다.", "프로젝트 소유 계정으로 로그인했는지 확인하세요."
+    if status_code == 404:
+        return "요청한 리소스를 찾을 수 없습니다.", "프로젝트 또는 데이터셋 상태를 확인하세요."
+    return "요청을 처리하지 못했습니다.", "잠시 후 다시 시도하세요."
+
+
+ensure_monitoring_tables()
+
+
+@app.middleware("http")
+async def request_id_logging_middleware(request: Request, call_next):
+    request_id = _safe_request_id(request.headers.get(REQUEST_ID_HEADER))
+    request.state.request_id = request_id
+    started = time.perf_counter()
+    try:
+        response = await call_next(request)
+    except Exception as exc:
+        duration_ms = round((time.perf_counter() - started) * 1000, 2)
+        error_id = persist_monitoring_event(
+            event_type="api.error",
+            request_id=request_id,
+            user_id=_request_user_id(request),
+            error_code="internal_error",
+            message=str(exc),
+            safe_details={"exception_type": exc.__class__.__name__},
+            route=request.url.path,
+            method=request.method,
+            status_code=500,
+            severity="error",
+        )
+        log_structured_event(
+            "error",
+            "api.error",
+            request_id=request_id,
+            error_id=error_id,
+            route=request.url.path,
+            method=request.method,
+            status_code=500,
+            duration_ms=duration_ms,
+            error_code="internal_error",
+            message="Unhandled backend error",
+        )
+        return JSONResponse(
+            status_code=500,
+            content={
+                "detail": "예상하지 못한 내부 오류가 발생했습니다.",
+                "error": {
+                    "code": "internal_error",
+                    "message": "예상하지 못한 내부 오류가 발생했습니다.",
+                    "request_id": request_id,
+                    "error_id": error_id,
+                    "action": "잠시 후 다시 시도하거나 관리자에게 error ID를 전달하세요.",
+                },
+            },
+            headers={REQUEST_ID_HEADER: request_id, ERROR_ID_HEADER: error_id},
+        )
+    duration_ms = round((time.perf_counter() - started) * 1000, 2)
+    response.headers[REQUEST_ID_HEADER] = request_id
+    event_type = _event_type_for_request(request, response.status_code)
+    level = "error" if response.status_code >= 500 else "warning" if response.status_code >= 400 else "info"
+    user_id = _request_user_id(request)
+    log_structured_event(
+        level,
+        event_type,
+        request_id=request_id,
+        user_id=user_id,
+        route=request.url.path,
+        method=request.method,
+        status_code=response.status_code,
+        duration_ms=duration_ms,
+    )
+    if response.status_code >= 400 and not response.headers.get(ERROR_ID_HEADER):
+        persist_monitoring_event(
+            event_type=event_type,
+            request_id=request_id,
+            user_id=user_id,
+            error_code=f"http_{response.status_code}",
+            message=f"{request.method} {request.url.path} returned {response.status_code}",
+            route=request.url.path,
+            method=request.method,
+            status_code=response.status_code,
+            severity="error" if response.status_code >= 500 else "warning",
+        )
+    return response
+
+
+@app.exception_handler(HTTPException)
+async def monitoring_http_exception_handler(request: Request, exc: HTTPException):
+    request_id = getattr(request.state, "request_id", _safe_request_id(request.headers.get(REQUEST_ID_HEADER)))
+    detail = exc.detail
+    error_code = _error_code_from_detail(detail, exc.status_code)
+    message, action = _friendly_message_action(detail, exc.status_code)
+    event_type = _event_type_for_request(request, exc.status_code)
+    error_id = persist_monitoring_event(
+        event_type=event_type,
+        request_id=request_id,
+        user_id=_request_user_id(request),
+        error_code=error_code,
+        message=message,
+        safe_details=detail if isinstance(detail, dict) else {"detail": detail},
+        route=request.url.path,
+        method=request.method,
+        status_code=exc.status_code,
+        severity="error" if exc.status_code >= 500 else "warning",
+    )
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "detail": detail,
+            "error": {
+                "code": error_code,
+                "message": message,
+                "request_id": request_id,
+                "error_id": error_id,
+                "action": action,
+            },
+        },
+        headers={REQUEST_ID_HEADER: request_id, ERROR_ID_HEADER: error_id},
+    )
+
+
+@app.get("/api/health")
+async def health_check(request: Request):
+    request_id = getattr(request.state, "request_id", None)
+    storage_ok = True
+    try:
+        conn = get_db()
+        conn.execute("SELECT 1").fetchone()
+        conn.close()
+    except Exception:
+        storage_ok = False
+    return {
+        "status": "ok" if storage_ok else "degraded",
+        "service": "ModelMate",
+        "timestamp": _monitoring_now(),
+        "environment": os.getenv("RAILWAY_ENVIRONMENT_NAME") or os.getenv("ENVIRONMENT", "local"),
+        "storage": {"reachable": storage_ok},
+        "request_id": request_id,
+    }
+
+
+@app.post("/api/monitoring/frontend-error")
+async def report_frontend_error(body: dict, request: Request):
+    request_id = _safe_request_id(body.get("request_id") or getattr(request.state, "request_id", None))
+    route = str(body.get("route") or "")[:300]
+    message = str(body.get("message") or "Frontend error")[:500]
+    error_id = persist_monitoring_event(
+        event_type="frontend.error_reported",
+        request_id=request_id,
+        user_id=_request_user_id(request),
+        project_id=body.get("project_id"),
+        run_id=body.get("run_id"),
+        error_code="frontend_error",
+        message=message,
+        safe_details={
+            "name": body.get("name"),
+            "route": route,
+            "user_agent": str(body.get("user_agent") or "")[:300],
+        },
+        route=route,
+        method="FRONTEND",
+        status_code=0,
+        severity="error",
+    )
+    log_structured_event("error", "frontend.error_reported", request_id=request_id, error_id=error_id, route=route, message=message)
+    return {"ok": True, "request_id": request_id, "error_id": error_id}
+
+
+def _monitoring_event_payload(row):
+    item = dict(row)
+    item["safe_details"] = _safe_json(item.get("safe_details"), {}) or {}
+    return item
+
+
+@app.get("/api/admin/monitoring/errors")
+async def list_monitoring_errors(
+    event_type: str = None,
+    error_code: str = None,
+    project_id: str = None,
+    run_id: str = None,
+    limit: int = 50,
+    user=Depends(get_current_user),
+):
+    if not is_admin_user(user):
+        raise HTTPException(403, "관리자 권한이 필요합니다.")
+    limit = max(1, min(int(limit or 50), 200))
+    clauses = ["severity IN ('warning','error','critical')"]
+    params = []
+    for col, value in [("event_type", event_type), ("error_code", error_code), ("project_id", project_id), ("run_id", run_id)]:
+        if value:
+            clauses.append(f"{col}=?")
+            params.append(value)
+    sql = f"SELECT * FROM monitoring_events WHERE {' AND '.join(clauses)} ORDER BY created_at DESC LIMIT ?"
+    params.append(limit)
+    conn = get_db()
+    try:
+        rows = conn.execute(sql, params).fetchall()
+    finally:
+        conn.close()
+    return {"items": [_monitoring_event_payload(row) for row in rows], "limit": limit}
+
+
+@app.get("/api/admin/monitoring/events")
+async def list_monitoring_events(event_type: str = None, limit: int = 50, user=Depends(get_current_user)):
+    if not is_admin_user(user):
+        raise HTTPException(403, "관리자 권한이 필요합니다.")
+    limit = max(1, min(int(limit or 50), 200))
+    params = []
+    clause = ""
+    if event_type:
+        clause = "WHERE event_type=?"
+        params.append(event_type)
+    conn = get_db()
+    try:
+        rows = conn.execute(f"SELECT * FROM monitoring_events {clause} ORDER BY created_at DESC LIMIT ?", params + [limit]).fetchall()
+    finally:
+        conn.close()
+    return {"items": [_monitoring_event_payload(row) for row in rows], "limit": limit}
+
+
+@app.get("/api/admin/monitoring/errors/{error_id}")
+async def get_monitoring_error(error_id: str, user=Depends(get_current_user)):
+    if not is_admin_user(user):
+        raise HTTPException(403, "관리자 권한이 필요합니다.")
+    conn = get_db()
+    try:
+        row = conn.execute("SELECT * FROM monitoring_events WHERE error_id=?", (error_id,)).fetchone()
+    finally:
+        conn.close()
+    if not row:
+        raise HTTPException(404, "오류 기록을 찾을 수 없습니다.")
+    return _monitoring_event_payload(row)

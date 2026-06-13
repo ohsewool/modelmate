@@ -164,6 +164,13 @@ beta/pilot flags. ModelMate can show current usage, soft-block actions that
 exceed plan limits, and return friendly structured limit errors. This is not a
 payment or billing integration. See `docs/usage-limits.md`.
 
+Monitoring and error reporting are available at MVP foundation level. Backend
+responses include `X-Request-ID`, friendly error objects include `request_id`
+and `error_id`, important events are stored in a bounded `monitoring_events`
+table, and the frontend has a Korean-first error boundary with a sanitized error
+report endpoint. This is lightweight beta diagnostics, not enterprise
+observability. See `docs/monitoring-and-error-reporting.md`.
+
 Available without signing in:
 
 - landing page and product docs;
@@ -219,6 +226,7 @@ Final demo and beta QA documents:
 - Beta feedback message draft: `docs/beta-feedback-message.md`
 - Automated QA guide: `docs/automated-qa.md`
 - Usage limits and plan flags: `docs/usage-limits.md`
+- Monitoring and error reporting: `docs/monitoring-and-error-reporting.md`
 - Auth-lite session foundation: `docs/auth-lite-session.md`
 - Project rerun and PR-14 notes: `docs/project-rerun.md`
 - Commercialization roadmap: `docs/commercialization-roadmap.md`
@@ -264,15 +272,16 @@ python scripts/run_project_history_smoke.py --base-url https://web-production-5d
 python scripts/run_background_jobs_smoke.py --base-url https://web-production-5d6fa.up.railway.app
 python scripts/run_failure_recovery_smoke.py --base-url https://web-production-5d6fa.up.railway.app
 python scripts/run_dataset_delete_smoke.py --base-url https://web-production-5d6fa.up.railway.app
+python scripts/run_monitoring_smoke.py --base-url https://web-production-5d6fa.up.railway.app
 python scripts/run_product_smoke.py --base-url https://web-production-5d6fa.up.railway.app
 ```
 
 Automated QA checks endpoints, sample upload, target selection, report export,
 auth-lite session context, register/login/logout smoke, MVP ownership smoke,
 project history smoke, background job smoke, failure recovery smoke, guest demo
-session start, dataset delete smoke, and deployment smoke paths. Human review is
-still needed for usability, copy clarity, visual layout, and whether beta users
-find the report persuasive.
+session start, dataset delete smoke, monitoring smoke, and deployment smoke
+paths. Human review is still needed for usability, copy clarity, visual layout,
+and whether beta users find the report persuasive.
 
 Commercial SaaS MVP trust documents are drafted, not finalized legal policies:
 
@@ -336,6 +345,7 @@ python scripts/run_failure_recovery_smoke.py --base-url http://localhost:8000
 python scripts/run_dataset_delete_smoke.py --base-url http://localhost:8000
 python scripts/run_prediction_token_smoke.py --base-url http://localhost:8000
 python scripts/run_usage_limits_smoke.py --base-url http://localhost:8000
+python scripts/run_monitoring_smoke.py --base-url http://localhost:8000
 ```
 
 ## Demo Scenario

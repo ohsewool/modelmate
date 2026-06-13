@@ -18,6 +18,7 @@ python scripts/run_failure_recovery_smoke.py --base-url http://localhost:8000
 python scripts/run_dataset_delete_smoke.py --base-url http://localhost:8000
 python scripts/run_prediction_token_smoke.py --base-url http://localhost:8000
 python scripts/run_usage_limits_smoke.py --base-url http://localhost:8000
+python scripts/run_monitoring_smoke.py --base-url http://localhost:8000
 ```
 
 ## Product Smoke Test
@@ -39,6 +40,24 @@ For faster deployed checks, skip the training endpoint:
 ```bash
 python scripts/run_product_smoke.py --base-url https://web-production-5d6fa.up.railway.app --skip-training
 ```
+
+## Monitoring Smoke Test
+
+Run against a local server:
+
+```bash
+python scripts/run_monitoring_smoke.py --base-url http://localhost:8000
+```
+
+Run against Railway:
+
+```bash
+python scripts/run_monitoring_smoke.py --base-url https://web-production-5d6fa.up.railway.app
+```
+
+This checks `/api/health`, `X-Request-ID`, friendly error objects, sanitized
+frontend error reporting, protected admin monitoring endpoints, and a prediction
+API invalid-token failure that must not echo the full token.
 
 ## Release QA Wrapper
 
@@ -93,6 +112,9 @@ python scripts/run_release_qa.py --base-url https://web-production-5d6fa.up.rail
 - project-scoped prediction token metadata is owner-protected;
 - invalid/revoked prediction tokens are rejected without exposing sensitive details;
 - usage summary returns plan/limits/usage and project limits block extra project creation.
+- monitoring smoke confirms `/api/health` returns a `request_id`, admin
+  monitoring endpoints are protected, frontend error reports can be stored, and
+  invalid prediction token responses do not leak the full token.
 
 ## What Still Requires Human Review
 
@@ -119,6 +141,9 @@ python scripts/run_release_qa.py --base-url https://web-production-5d6fa.up.rail
   `/api/training/jobs/{job_id}/rerun` keeps ownership and duplicate guards.
 - dataset delete smoke fails: verify `/api/datasets`, dataset delete-impact,
   dataset delete, and deleted-resource training guards are deployed.
+- monitoring smoke fails: verify `/api/health`,
+  `/api/monitoring/frontend-error`, and `/api/admin/monitoring/*` are deployed
+  and that error responses include `request_id`.
 
 ## Release Blockers
 
@@ -136,3 +161,5 @@ python scripts/run_release_qa.py --base-url https://web-production-5d6fa.up.rail
 - user B can rerun user A's failed job or failed project run.
 - user B can delete user A's dataset or project.
 - a deleted dataset can still be used to start a new training/rerun job.
+- monitoring smoke fails because errors lack `request_id` or an invalid
+  prediction token is echoed in a response.

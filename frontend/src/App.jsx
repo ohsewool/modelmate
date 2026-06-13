@@ -3,6 +3,7 @@ import { GoogleOAuthProvider } from '@react-oauth/google'
 import { AuthProvider } from './AuthContext'
 import { useAuth } from './AuthContext'
 import AppLayout from './components/AppLayout'
+import ErrorBoundary from './components/ErrorBoundary'
 import Home from './pages/Home'
 import Upload from './pages/Upload'
 import ModelLab from './pages/ModelLab'
@@ -42,40 +43,42 @@ export default function App() {
   return (
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <AuthProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/pricing" element={<Pricing />} />
-            <Route path="/*" element={
-              <RequireAuth>
-                <AppLayout>
-                  <Routes>
-                    <Route path="/dashboard" element={<WorkspaceDashboard />} />
-                    <Route path="/projects" element={<WorkspaceProjects />} />
-                    <Route path="/projects/:projectId" element={<ProjectDetail />} />
-                    <Route path="/projects/:projectId/runs/:runId" element={<RunDetail />} />
-                    <Route path="/jobs" element={<WorkspaceJobs />} />
-                    <Route path="/reports" element={<WorkspaceReports />} />
-                    <Route path="/prediction-apis" element={<WorkspacePredictionApis />} />
-                    <Route path="/settings" element={<WorkspaceSettings />} />
-                    <Route path="/new" element={<Navigate to="/upload" replace />} />
-                    <Route path="/analysis/new" element={<Navigate to="/upload" replace />} />
-                    <Route path="/upload"    element={<Upload />} />
-                    <Route path="/agent"     element={<Agent />} />
-                    <Route path="/model-lab" element={<ModelLab />} />
-                    <Route path="/predict"  element={<Predict />} />
-                    <Route path="/deploy"   element={<Deploy />} />
-                    <Route path="/xai"       element={<XAI />} />
-                    <Route path="/history"   element={<History />} />
-                    <Route path="/report"    element={<Report />} />
-                    <Route path="*"          element={<Navigate to="/dashboard" replace />} />
-                  </Routes>
-                </AppLayout>
-              </RequireAuth>
-            } />
-          </Routes>
-        </BrowserRouter>
+        <ErrorBoundary>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/pricing" element={<Pricing />} />
+              <Route path="/*" element={
+                <RequireAuth>
+                  <AppLayout>
+                    <Routes>
+                      <Route path="/dashboard" element={<WorkspaceDashboard />} />
+                      <Route path="/projects" element={<WorkspaceProjects />} />
+                      <Route path="/projects/:projectId" element={<ProjectDetail />} />
+                      <Route path="/projects/:projectId/runs/:runId" element={<RunDetail />} />
+                      <Route path="/jobs" element={<WorkspaceJobs />} />
+                      <Route path="/reports" element={<WorkspaceReports />} />
+                      <Route path="/prediction-apis" element={<WorkspacePredictionApis />} />
+                      <Route path="/settings" element={<WorkspaceSettings />} />
+                      <Route path="/new" element={<Navigate to="/upload" replace />} />
+                      <Route path="/analysis/new" element={<Navigate to="/upload" replace />} />
+                      <Route path="/upload"    element={<Upload />} />
+                      <Route path="/agent"     element={<Agent />} />
+                      <Route path="/model-lab" element={<ModelLab />} />
+                      <Route path="/predict"  element={<Predict />} />
+                      <Route path="/deploy"   element={<Deploy />} />
+                      <Route path="/xai"       element={<XAI />} />
+                      <Route path="/history"   element={<History />} />
+                      <Route path="/report"    element={<Report />} />
+                      <Route path="*"          element={<Navigate to="/dashboard" replace />} />
+                    </Routes>
+                  </AppLayout>
+                </RequireAuth>
+              } />
+            </Routes>
+          </BrowserRouter>
+        </ErrorBoundary>
       </AuthProvider>
     </GoogleOAuthProvider>
   )

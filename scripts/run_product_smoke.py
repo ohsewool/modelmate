@@ -66,6 +66,15 @@ def run_smoke(base_url, skip_training=False):
     pricing = request("GET", join(base_url, "/pricing"))
     add_result(results, "pricing page route loads", pricing["ok"] and pricing["status"] == 200, "GET /pricing", pricing["status"])
 
+    health = request("GET", join(base_url, "/api/health"))
+    health_body = {}
+    try:
+        health_body = json.loads(health["text"])
+    except Exception:
+        health_body = {}
+    health_ok = health["status"] == 200 and health_body.get("status") in {"ok", "degraded"} and bool(health_body.get("request_id"))
+    add_result(results, "health endpoint returns request ID", health_ok, "GET /api/health", health["status"])
+
     state = request("GET", join(base_url, "/api/state"))
     add_result(results, "state API exists", state["status"] == 200 and contains_any(state["text"], ["has_data", "analysis_status"]), "GET /api/state", state["status"])
 

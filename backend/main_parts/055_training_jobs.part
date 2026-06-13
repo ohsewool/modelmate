@@ -204,6 +204,16 @@ def _execute_training_job(job_id, user_payload):
             artifact_refs=json.dumps({"state_result": True}, ensure_ascii=False),
             recommended_next_action="Open the report or project history to review the saved result.",
         )
+        if "persist_monitoring_event" in globals():
+            persist_monitoring_event(
+                event_type="job.succeeded",
+                user_id=user_payload.get("sub"),
+                job_id=job_id,
+                error_code=None,
+                message="Training job completed.",
+                safe_details=summary,
+                severity="info",
+            )
     except Exception as exc:
         err = _friendly_job_error(exc)
         _update_training_job(
@@ -217,6 +227,16 @@ def _execute_training_job(job_id, user_payload):
             error_message=err["error_message"],
             recommended_next_action=err["recommended_next_action"],
         )
+        if "persist_monitoring_event" in globals():
+            persist_monitoring_event(
+                event_type="job.failed",
+                user_id=user_payload.get("sub"),
+                job_id=job_id,
+                error_code=err["error_type"],
+                message=err["progress_message"],
+                safe_details={"error_type": err["error_type"], "recommended_next_action": err["recommended_next_action"]},
+                severity="error",
+            )
 
 
 ensure_training_jobs_table()
