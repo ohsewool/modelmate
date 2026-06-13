@@ -78,7 +78,8 @@ Implementation notes:
   existing upload/new-analysis flow.
 - Existing upload, model comparison, report, reason, prediction, deploy, and
   history screens are preserved.
-- Project detail and run detail tabs are intentionally left for UI-03.
+- Project detail and run detail tabs were left to UI-03 and are now covered in
+  the UI-03 implementation notes below.
 - Missing or partial backend metadata is handled with empty states and graceful
   placeholders rather than new backend architecture.
 
