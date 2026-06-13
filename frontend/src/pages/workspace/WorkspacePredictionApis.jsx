@@ -16,18 +16,18 @@ export default function WorkspacePredictionApis() {
     api.get('/projects').then(res => loadPredictionApiRows(res.data || [])).then(setRows).catch(() => setRows([]))
   }, [])
 
-  if (!rows) return <div style={{ padding: 24 }}><LoadingState label="Loading prediction APIs." /></div>
+  if (!rows) return <div style={{ padding: 24 }}><LoadingState label="예측 API 상태를 불러오는 중입니다." /></div>
 
   const visible = rows.filter(row => row.availability || row.tokens.length)
   return (
     <div className="animate-fade-in" style={{ padding: 24, maxWidth: 1180 }}>
-      <WorkspacePageHeader title="Prediction APIs" description="Review projects that can reuse trained models through project-scoped prediction API tokens." action={<button className="btn-primary" onClick={() => nav('/deploy')}>Manage tokens</button>} />
+      <WorkspacePageHeader title="예측 API" description="프로젝트별 예측 API token으로 학습된 모델을 재사용할 수 있는 프로젝트를 확인합니다." action={<button className="btn-primary" onClick={() => nav('/deploy')}>token 관리</button>} />
       {!visible.length ? (
-        <EmptyState title="No prediction APIs are ready yet." description="Create or share a model from the existing deploy screen to generate reusable prediction API metadata." action={<button className="btn-primary" onClick={() => nav('/deploy')}>Open deploy screen</button>} />
+        <EmptyState title="아직 사용할 수 있는 예측 API가 없습니다." description="분석이 완료된 프로젝트에서 예측 API를 만들면 여기에 표시됩니다." action={<button className="btn-primary" onClick={() => nav('/deploy')}>API 설정 열기</button>} />
       ) : (
         <section className="card" style={{ overflowX: 'auto' }}>
           <table className="data-table">
-            <thead><tr><th>Project</th><th>API status</th><th>Tokens</th><th>Last used</th><th>Calls</th><th>Dataset/model</th><th>Actions</th></tr></thead>
+            <thead><tr><th>프로젝트</th><th>API 상태</th><th>token</th><th>마지막 사용</th><th>호출 수</th><th>데이터셋/모델</th><th>작업</th></tr></thead>
             <tbody>{visible.map(row => {
               const active = row.tokens.filter(token => token.status === 'active')
               const calls = row.tokens.reduce((sum, token) => sum + Number(token.usage_count || 0), 0)
@@ -35,11 +35,11 @@ export default function WorkspacePredictionApis() {
                 <tr key={row.project.id}>
                   <td><Link to={`/projects/${row.project.id}?tab=api`}><strong>{row.project.name}</strong></Link><br /><span style={{ color: 'var(--text-label)' }}>{row.project.id}</span></td>
                   <td><StatusBadge status={row.availability?.available ? 'ready' : 'warning'} /></td>
-                  <td>{active.length} active / {row.tokens.length} total</td>
+                  <td>{active.length} 활성 / {row.tokens.length} 전체</td>
                   <td>{latestUsed(row.tokens)}</td>
                   <td>{calls}</td>
-                  <td>{row.availability?.dataset_active ? 'Dataset active' : fmt(row.availability?.reason)} - {row.availability?.model_ready ? 'Model ready' : 'Model needed'}</td>
-                  <td><button className="btn-secondary" onClick={() => nav(`/projects/${row.project.id}?tab=api`)}>Manage tokens</button></td>
+                  <td>{row.availability?.dataset_active ? '데이터셋 활성' : fmt(row.availability?.reason)} - {row.availability?.model_ready ? '모델 준비됨' : '모델 필요'}</td>
+                  <td><button className="btn-secondary" onClick={() => nav(`/projects/${row.project.id}?tab=api`)}>token 관리</button></td>
                 </tr>
               )
             })}</tbody>

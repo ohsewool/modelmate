@@ -7,21 +7,21 @@ const plans = [
   {
     name: 'Free',
     price: '$0/month',
-    note: 'demo MVP',
+    note: '데모 MVP',
     items: ['작은 CSV 데모', '제한된 프로젝트 수', '기본 보고서 미리보기', '제한된 예측 API 호출', '데모 제한 안내'],
   },
   {
     name: 'Pro',
     price: '$19-29/month',
-    note: 'planned',
+    note: '예정',
     items: ['더 큰 CSV 한도', '보고서 export', '더 많은 프로젝트', '더 많은 예측 API 호출', '프로젝트 재실행', '고급 evidence summary'],
     highlight: true,
   },
   {
     name: 'Team',
     price: '$79-149/month',
-    note: 'planned',
-    items: ['공유 workspace 개념', '검토/승인 흐름 개념', '더 높은 사용량 한도', '브랜드 보고서', '팀 프로젝트 관리 개념'],
+    note: '예정',
+    items: ['공유 워크스페이스 개념', '검토/승인 흐름 개념', '더 높은 사용량 한도', '브랜드 보고서', '팀 프로젝트 관리 개념'],
   },
 ]
 
@@ -56,7 +56,7 @@ export default function Pricing() {
                 <Badge variant={plan.highlight ? 'default' : 'secondary'}>{plan.note}</Badge>
               </div>
               <p style={{ margin: '16px 0 4px', fontSize: 28, fontWeight: 950 }}>{plan.price}</p>
-              <p style={{ margin: '0 0 18px', color: 'var(--text-label)', fontSize: 12, fontWeight: 750 }}>Mock pricing only. Billing is not implemented.</p>
+              <p style={{ margin: '0 0 18px', color: 'var(--text-label)', fontSize: 12, fontWeight: 750 }}>MVP 검증용 예시 요금입니다. 실제 결제는 아직 구현되어 있지 않습니다.</p>
               <div style={{ display: 'grid', gap: 10 }}>
                 {plan.items.map(item => (
                   <div key={item} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', color: 'var(--text-2)', fontSize: 13, lineHeight: 1.5 }}>
@@ -70,9 +70,9 @@ export default function Pricing() {
         </section>
 
         <section className="card" style={{ marginTop: 18, padding: 20 }}>
-          <h2 style={{ margin: '0 0 8px', fontSize: 18, fontWeight: 900 }}>현재 한계</h2>
+          <h2 style={{ margin: '0 0 8px', fontSize: 18, fontWeight: 900 }}>현재 제한</h2>
           <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.7 }}>
-            실제 결제, 계정별 quota, 팀 관리, enterprise 보안/컴플라이언스는 아직 구현하지 않았습니다. 민감정보가 포함된 CSV보다는 데모 또는 테스트 데이터를 사용하는 것을 권장합니다.
+            실제 결제, 계정별 quota, 팀 관리, enterprise 보안/컴플라이언스는 아직 구현하지 않았습니다. 민감정보가 포함된 CSV보다 데모 또는 테스트 데이터를 사용하는 것을 권장합니다.
           </p>
         </section>
       </main>

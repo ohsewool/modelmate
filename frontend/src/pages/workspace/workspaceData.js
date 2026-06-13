@@ -60,7 +60,7 @@ export function primaryMetric(item) {
 }
 
 export function projectDatasetName(project) {
-  return project?.dataset_name || project?.dataset_summary?.filename || project?.latest_dataset?.filename || 'No dataset'
+  return project?.dataset_name || project?.dataset_summary?.filename || project?.latest_dataset?.filename || '데이터셋 없음'
 }
 
 export function projectTarget(project) {

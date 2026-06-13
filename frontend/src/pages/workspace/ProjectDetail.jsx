@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { AlertTriangle, Database, FileText, KeyRound, RefreshCw, Settings, Trash2 } from 'lucide-react'
+import { AlertTriangle, FileText, KeyRound, RefreshCw, Trash2 } from 'lucide-react'
 import api from '../../api'
 import { EmptyState, ErrorState, LoadingState, StatusBadge, WorkspacePageHeader } from '../../components/workspace-shell/WorkspaceStates'
 import { fmt, projectDatasetName, projectTarget } from './workspaceData'
@@ -18,12 +18,17 @@ import {
 } from './projectDetailData'
 
 function Stat({ label, value }) {
-  return <div className="card-compact"><p style={{ margin: '0 0 5px', fontSize: 11, color: 'var(--text-label)', fontWeight: 800 }}>{label}</p><strong>{fmt(value)}</strong></div>
+  return (
+    <div className="card-compact">
+      <p style={{ margin: '0 0 5px', fontSize: 11, color: 'var(--text-label)', fontWeight: 800 }}>{label}</p>
+      <strong>{fmt(value)}</strong>
+    </div>
+  )
 }
 
 function ProjectTabs({ active, onChange }) {
   return (
-    <div className="tab-bar" role="tablist" aria-label="Project sections" style={{ flexWrap: 'wrap', marginBottom: 18 }}>
+    <div className="tab-bar" role="tablist" aria-label="프로젝트 섹션" style={{ flexWrap: 'wrap', marginBottom: 18 }}>
       {PROJECT_TABS.map(tab => (
         <button key={tab.id} type="button" role="tab" aria-selected={active === tab.id} onClick={() => onChange(tab.id)} className={`tab-item ${active === tab.id ? 'tab-item-active' : 'tab-item-inactive'}`}>
           {tab.label}
@@ -43,7 +48,7 @@ function Timeline({ items }) {
             <StatusBadge status={item.status} />
           </div>
           <p style={{ margin: 0, color: 'var(--text-2)', fontSize: 13, lineHeight: 1.55 }}>{item.observation}</p>
-          <p style={{ margin: 0, color: 'var(--text-label)', fontSize: 12 }}>Decision: {item.decision}</p>
+          <p style={{ margin: 0, color: 'var(--text-label)', fontSize: 12 }}>판단: {item.decision}</p>
           {item.error && <div className="banner-danger"><AlertTriangle size={15} /><p style={{ margin: 0, fontSize: 13 }}>{item.error}</p></div>}
           {item.timestamp && <span style={{ color: 'var(--text-label)', fontSize: 11 }}>{item.timestamp}</span>}
         </div>
@@ -56,8 +61,8 @@ function FailurePanel({ run, project, onRerun }) {
   const dataset = activeDataset(project)
   const deleted = dataset?.deleted_at || dataset?.delete_status === 'deleted'
   if (!run || (run.status !== 'failed' && !deleted)) return null
-  const title = deleted ? '데이터셋이 삭제되어 재실행할 수 없습니다.' : '분석을 완료하지 못했습니다.'
-  const cause = deleted ? '원본 CSV가 필요한 재분석과 예측 API 사용이 제한됩니다.' : (run.failure_message || '데이터 형식, 타깃 컬럼, 학습 설정 중 하나에서 문제가 발생했습니다.')
+  const title = deleted ? '데이터셋이 삭제되어 다시 실행할 수 없습니다.' : '분석을 완료하지 못했습니다.'
+  const cause = deleted ? '원본 CSV가 필요한 재실행과 예측 API 사용이 제한됩니다.' : (run.failure_message || '데이터 형식, 타깃 컬럼, 학습 설정 중 하나에서 문제가 발생했습니다.')
   return (
     <section className="card" style={{ display: 'grid', gap: 12, borderColor: '#fecdd3' }}>
       <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
@@ -114,18 +119,18 @@ export default function ProjectDetail() {
       setMessage(`재실행 작업이 시작되었습니다. Job: ${res.data.job_id || '-'}`)
       await reload()
     } catch (err) {
-      setMessage(err.response?.data?.detail?.user_friendly_message || '재실행을 시작하지 못했습니다. 데이터셋 상태와 사용량 제한을 확인하세요.')
+      setMessage(err.response?.data?.detail?.user_friendly_message || '재실행을 시작하지 못했습니다. 데이터셋 상태와 사용 제한을 확인하세요.')
     }
   }
 
   async function createToken() {
     setMessage('')
     try {
-      const res = await api.post(`/projects/${projectId}/prediction-tokens`, { label: 'Project API token' })
-      setMessage(`토큰이 생성되었습니다. 지금 한 번만 표시됩니다: ${res.data.plaintext_token}`)
+      const res = await api.post(`/projects/${projectId}/prediction-tokens`, { label: '프로젝트 API token' })
+      setMessage(`token이 생성되었습니다. 전체 token은 지금 한 번만 표시됩니다: ${res.data.plaintext_token}`)
       await reload()
     } catch (err) {
-      setMessage(err.response?.data?.detail?.user_friendly_message || '예측 API 토큰을 만들 수 없습니다.')
+      setMessage(err.response?.data?.detail?.user_friendly_message || '예측 API token을 만들 수 없습니다.')
     }
   }
 
@@ -158,7 +163,7 @@ export default function ProjectDetail() {
   return (
     <div className="animate-fade-in" style={{ padding: 24, maxWidth: 1180 }}>
       <WorkspacePageHeader
-        eyebrow="Project"
+        eyebrow="프로젝트"
         title={project.name}
         description={projectSummaryText(project)}
         action={<div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -180,7 +185,7 @@ export default function ProjectDetail() {
       {tab === 'runs' && <RunsTab project={project} jobs={data.jobs} onRerun={rerun} />}
       {tab === 'report' && <ReportTab project={project} report={report} />}
       {tab === 'api' && <ApiTab data={data} onCreate={createToken} />}
-      {tab === 'dataset' && <DatasetTab project={project} dataset={dataset} onDelete={deleteDataset} />}
+      {tab === 'dataset' && <DatasetTab dataset={dataset} onDelete={deleteDataset} />}
       {tab === 'settings' && <SettingsTab project={project} onDelete={deleteProject} />}
     </div>
   )
@@ -199,13 +204,13 @@ function OverviewTab({ project, run, dataset, data, timeline, onRerun }) {
           <Stat label="실행 수" value={project.run_count} />
           <Stat label="보고서" value={project.has_report ? '있음' : '없음'} />
           <Stat label="API" value={data.tokens?.availability?.available ? '준비됨' : '확인 필요'} />
-          <Stat label="데이터 상태" value={deleted ? 'deleted' : 'active'} />
+          <Stat label="데이터 상태" value={deleted ? '삭제됨' : '활성'} />
         </div>
       </section>
       <section className="card" style={{ display: 'grid', gap: 12 }}>
-        <p className="section-title">Trust / warning summary</p>
+        <p className="section-title">신뢰 / 경고 요약</p>
         {(project.known_warnings || []).length ? project.known_warnings.map(item => <div key={item} className="banner-warning"><p style={{ margin: 0 }}>{item}</p></div>) : <p style={{ margin: 0, color: 'var(--text-2)' }}>현재 프로젝트 요약에서 차단 경고는 확인되지 않았습니다.</p>}
-        <p style={{ margin: 0, color: 'var(--text-label)', fontSize: 12 }}>Recommended next action: {project.next_recommended_action}</p>
+        <p style={{ margin: 0, color: 'var(--text-label)', fontSize: 12 }}>다음 추천 행동: {project.next_recommended_action}</p>
       </section>
       {run ? <section className="card"><p className="section-title">최근 실행 trace</p><Timeline items={timeline} /></section> : <EmptyState title="아직 실행 기록이 없습니다." description="분석을 시작하면 실행 기록과 판단 흐름이 이 프로젝트에 저장됩니다." />}
     </div>
@@ -248,7 +253,7 @@ function ReportTab({ project, report }) {
         <div><p className="section-title">보고서 요약</p><h2 style={{ margin: 0 }}>{report.title}</h2></div>
         <StatusBadge status={report.status || 'ready'} />
       </div>
-      <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.6 }}>Best model: {fmt(project.last_best_model)} / Metric: {projectMetric(project)}</p>
+      <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.6 }}>추천 모델: {fmt(project.last_best_model)} / 주요 지표: {projectMetric(project)}</p>
       <p style={{ margin: 0, color: 'var(--text-label)', fontSize: 12 }}>{report.message || '보고서는 업로드된 데이터와 현재 검증 결과에 기반합니다.'}</p>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         <Link className="btn-primary" to="/report"><FileText size={15} /> 전체 보고서 보기</Link>
@@ -264,17 +269,17 @@ function ApiTab({ data, onCreate }) {
   return (
     <section className="card" style={{ display: 'grid', gap: 12 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-        <div><p className="section-title">예측 API</p><p style={{ margin: 0, color: 'var(--text-2)' }}>프로젝트 단위 토큰으로 학습 모델을 재사용합니다. 전체 토큰 값은 생성 직후 한 번만 표시됩니다.</p></div>
+        <div><p className="section-title">예측 API</p><p style={{ margin: 0, color: 'var(--text-2)' }}>프로젝트 단위 token으로 학습 모델을 재사용합니다. 전체 token 값은 생성 직후 한 번만 표시됩니다.</p></div>
         <StatusBadge status={availability?.available ? 'ready' : 'warning'} />
       </div>
-      <div className="banner-warning"><p style={{ margin: 0 }}>Model: {availability?.model_ready ? 'ready' : 'needed'} / Dataset: {availability?.dataset_active ? 'active' : 'not active'} / Reason: {fmt(availability?.reason)}</p></div>
-      <button className="btn-primary" type="button" disabled={!availability?.available} onClick={onCreate}><KeyRound size={15} /> 토큰 만들기</button>
+      <div className="banner-warning"><p style={{ margin: 0 }}>모델: {availability?.model_ready ? '준비됨' : '필요'} / 데이터셋: {availability?.dataset_active ? '활성' : '비활성'} / 사유: {fmt(availability?.reason)}</p></div>
+      <button className="btn-primary" type="button" disabled={!availability?.available} onClick={onCreate}><KeyRound size={15} /> token 만들기</button>
       {tokens.length ? tokens.map(token => (
         <div key={token.token_id} className="card-compact">
           <strong>{token.token_prefix}</strong> <StatusBadge status={token.status} />
-          <p style={{ margin: '6px 0 0', color: 'var(--text-2)', fontSize: 12 }}>created {fmt(token.created_at)} / calls {token.usage_count || 0} / last used {fmt(token.last_used_at)}</p>
+          <p style={{ margin: '6px 0 0', color: 'var(--text-2)', fontSize: 12 }}>생성 {fmt(token.created_at)} / 호출 {token.usage_count || 0} / 마지막 사용 {fmt(token.last_used_at)}</p>
         </div>
-      )) : <p style={{ margin: 0, color: 'var(--text-2)' }}>아직 생성된 프로젝트 API 토큰이 없습니다.</p>}
+      )) : <p style={{ margin: 0, color: 'var(--text-2)' }}>아직 생성된 프로젝트 API token이 없습니다.</p>}
       <details>
         <summary style={{ cursor: 'pointer', fontWeight: 800 }}>사용 예시 보기</summary>
         <pre style={{ whiteSpace: 'pre-wrap', marginTop: 10, padding: 12, border: '1px solid var(--border)', borderRadius: 8, background: 'var(--surface-alt)' }}>{`curl -X POST "/api/predict/${data.project.id}" \\\n  -H "Authorization: Bearer <MODEL_MATE_TOKEN>" \\\n  -H "Content-Type: application/json" \\\n  -d '{"rows":[{"feature_a":1}]}'`}</pre>
@@ -283,7 +288,7 @@ function ApiTab({ data, onCreate }) {
   )
 }
 
-function DatasetTab({ project, dataset, onDelete }) {
+function DatasetTab({ dataset, onDelete }) {
   const [impact, setImpact] = useState(null)
 
   useEffect(() => {
@@ -308,7 +313,7 @@ function DatasetTab({ project, dataset, onDelete }) {
           <Stat label="열" value={dataset.column_count || dataset.columns} />
           <Stat label="상태" value={dataset.delete_status || 'active'} />
         </div>
-        <p style={{ margin: '12px 0 0', color: 'var(--text-label)', fontSize: 12 }}>linked runs {fmt(dataset.linked_analysis_run_count)} / reports {fmt(dataset.linked_report_count)} / API {dataset.has_prediction_api ? 'yes' : 'no'}</p>
+        <p style={{ margin: '12px 0 0', color: 'var(--text-label)', fontSize: 12 }}>연결 실행 {fmt(dataset.linked_analysis_run_count)} / 보고서 {fmt(dataset.linked_report_count)} / API {dataset.has_prediction_api ? '있음' : '없음'}</p>
       </section>
       {impact && (
         <section className="card" style={{ display: 'grid', gap: 10 }}>
@@ -323,7 +328,7 @@ function DatasetTab({ project, dataset, onDelete }) {
         </section>
       )}
       <section className="card" style={{ borderColor: '#fecdd3', display: 'grid', gap: 10 }}>
-        <p className="section-title">Danger Zone</p>
+        <p className="section-title">위험 작업</p>
         <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.6 }}>데이터셋을 삭제하면 원본 CSV가 필요한 재실행은 불가능해질 수 있습니다. 기존 보고서는 이력 요약으로 남을 수 있습니다.</p>
         <button className="btn-secondary" type="button" disabled={deleted} onClick={onDelete}><Trash2 size={15} /> 데이터셋 삭제</button>
       </section>
@@ -339,8 +344,8 @@ function SettingsTab({ project, onDelete }) {
       <Stat label="상태" value={project.archive_status || 'active'} />
       <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.6 }}>프로젝트 소유권과 접근 제어는 MVP 수준으로 적용되어 있습니다. 팀 권한, RBAC, enterprise 설정은 아직 범위 밖입니다.</p>
       <div className="card-compact" style={{ borderColor: '#fecdd3' }}>
-        <strong>Danger Zone</strong>
-        <p style={{ color: 'var(--text-2)', fontSize: 13 }}>프로젝트를 삭제하면 기본 목록에서 숨겨지고 연결 데이터셋도 삭제 상태로 전환될 수 있습니다.</p>
+        <strong>위험 작업</strong>
+        <p style={{ color: 'var(--text-2)', fontSize: 13 }}>프로젝트를 삭제하면 기본 목록에서 숨겨지고 연결 데이터셋이 삭제 상태로 전환될 수 있습니다.</p>
         <button className="btn-secondary" type="button" onClick={onDelete}><Trash2 size={15} /> 프로젝트 삭제</button>
       </div>
     </section>

@@ -29,7 +29,7 @@ export function projectPrimaryAction(project) {
   const dataset = activeDataset(project)
   if (!dataset) return { label: '새 데이터로 분석', path: '/new', disabled: false }
   if (dataset.deleted_at || dataset.delete_status === 'deleted') return { label: '삭제된 데이터셋', path: null, disabled: true }
-  if (project.last_run_id) return { label: '같은 설정으로 재실행', runId: project.last_run_id, disabled: false }
+  if (project.last_run_id) return { label: '같은 설정으로 다시 실행', runId: project.last_run_id, disabled: false }
   return { label: '분석 시작', path: '/new', disabled: false }
 }
 
@@ -49,7 +49,7 @@ export function projectSummaryText(project) {
   const target = projectTarget(project)
   const dataset = projectDatasetName(project)
   if (!target || target === '-') return `${dataset} 데이터셋을 기반으로 저장된 분석 프로젝트입니다.`
-  return `${dataset} 데이터셋에서 ${target} 예측을 관리하는 프로젝트입니다.`
+  return `${dataset} 데이터셋에서 ${target} 예측 흐름을 관리하는 프로젝트입니다.`
 }
 
 export function runMetric(run) {
@@ -73,73 +73,73 @@ export function makeRunTimeline(run, project, jobs = []) {
   const unavailable = '아직 상세 실행 로그가 저장되지 않았습니다.'
   return [
     {
-      name: 'Goal / plan',
+      name: '목표 / 계획',
       status: run?.goal ? 'succeeded' : 'unknown',
       observation: run?.goal || unavailable,
       decision: run?.target ? `${run.target} 예측 흐름으로 진행` : '저장된 목표 정보가 부족합니다.',
       timestamp: run?.created_at,
     },
     {
-      name: 'Data profiling',
+      name: '데이터 구조 분석',
       status: project?.dataset_summary ? 'succeeded' : 'unknown',
-      observation: project?.dataset_summary ? `${fmt(project.dataset_summary.rows || project.dataset_summary.row_count)} rows, ${fmt(project.dataset_summary.columns || project.dataset_summary.column_count)} columns` : unavailable,
+      observation: project?.dataset_summary ? `${fmt(project.dataset_summary.rows || project.dataset_summary.row_count)}행 / ${fmt(project.dataset_summary.columns || project.dataset_summary.column_count)}열` : unavailable,
       decision: project?.dataset_summary?.deleted_at ? '데이터셋 삭제로 재실행 제한' : '학습 가능한 데이터셋으로 기록됨',
     },
     {
-      name: 'Schema validation',
+      name: '스키마 검증',
       status: project?.known_warnings?.length ? 'warning' : 'succeeded',
       observation: project?.known_warnings?.[0] || '차단 이슈 없이 저장된 프로젝트입니다.',
       decision: project?.known_warnings?.length ? '검토 후 진행 필요' : '다음 단계 진행 가능',
     },
     {
-      name: 'Target recommendation',
+      name: '타깃 추천',
       status: run?.target ? 'succeeded' : 'unknown',
-      observation: run?.target ? `Target: ${run.target}` : unavailable,
-      decision: run?.task_type ? `Task type: ${run.task_type}` : '작업 유형 정보가 없습니다.',
+      observation: run?.target ? `타깃: ${run.target}` : unavailable,
+      decision: run?.task_type ? `작업 유형: ${run.task_type}` : '작업 유형 정보가 없습니다.',
     },
     {
-      name: 'Leakage check',
+      name: '누수 가능성 점검',
       status: run?.warnings_count ? 'warning' : 'unknown',
-      observation: run?.warnings_count ? `${run.warnings_count} warning(s) recorded` : unavailable,
-      decision: run?.warnings_count ? '특징/누수 경고 검토 필요' : '저장된 상세 경고 없음',
+      observation: run?.warnings_count ? `${run.warnings_count}개 경고가 기록되었습니다.` : unavailable,
+      decision: run?.warnings_count ? '식별자/누수 경고 검토 필요' : '저장된 상세 경고 없음',
     },
     {
-      name: 'Model training',
+      name: '모델 학습',
       status: failed ? 'failed' : run?.best_model ? 'succeeded' : status,
-      observation: run?.best_model ? `Best model: ${run.best_model}` : (job?.progress_message || unavailable),
+      observation: run?.best_model ? `추천 모델: ${run.best_model}` : (job?.progress_message || unavailable),
       decision: failed ? '학습이 완료되지 않았습니다.' : '후보 모델 결과 저장됨',
       error: failed ? (run?.failure_message || job?.error_message) : '',
       timestamp: job?.finished_at || job?.failed_at,
     },
     {
-      name: 'Evaluation',
+      name: '성능 평가',
       status: run?.metric_value !== null && run?.metric_value !== undefined ? 'succeeded' : 'unknown',
       observation: runMetric(run),
-      decision: run?.metric_value !== null && run?.metric_value !== undefined ? '성능 지표를 보고서/비교 화면에서 확인 가능' : unavailable,
+      decision: run?.metric_value !== null && run?.metric_value !== undefined ? '성능 지표를 보고서와 비교 화면에서 확인할 수 있습니다.' : unavailable,
     },
     {
-      name: 'Explanation / XAI',
-      status: run?.best_model ? 'unknown' : 'unknown',
+      name: '설명 가능성 / XAI',
+      status: 'unknown',
       observation: unavailable,
-      decision: '이전 설명 화면에서 가능한 범위의 근거를 확인합니다.',
+      decision: '설명 화면에서 가능한 범위의 근거를 확인합니다.',
     },
     {
-      name: 'Validation / trust check',
+      name: '검증 / 신뢰 점검',
       status: run?.warnings_count ? 'warning' : 'unknown',
       observation: run?.warnings_count ? '경고가 있는 결과입니다.' : unavailable,
       decision: run?.warnings_count ? '보고서에서 제한사항 확인 필요' : '추가 검토 정보 없음',
     },
     {
-      name: 'Report generation',
+      name: '보고서 생성',
       status: run?.report_id ? 'succeeded' : 'unknown',
-      observation: run?.report_id ? `Report metadata: ${run.report_id}` : unavailable,
+      observation: run?.report_id ? `보고서 메타데이터: ${run.report_id}` : unavailable,
       decision: run?.report_id ? '보고서 탭에서 요약 확인 가능' : '성공한 실행 후 보고서를 확인하세요.',
     },
     {
-      name: 'API readiness',
+      name: 'API 준비 상태',
       status: project?.has_prediction_api ? 'ready' : 'unknown',
-      observation: project?.has_prediction_api ? 'Prediction API metadata exists.' : 'API token is not ready yet.',
-      decision: project?.has_prediction_api ? 'API 탭에서 토큰 상태 확인' : '모델 공유 후 API를 만들 수 있습니다.',
+      observation: project?.has_prediction_api ? '예측 API 메타데이터가 있습니다.' : 'API token이 아직 준비되지 않았습니다.',
+      decision: project?.has_prediction_api ? 'API 탭에서 token 상태 확인' : '모델 공유 후 API를 만들 수 있습니다.',
     },
   ]
 }
@@ -148,8 +148,8 @@ export function failureMessage(run, project) {
   const dataset = activeDataset(project)
   if (dataset?.deleted_at || dataset?.delete_status === 'deleted') {
     return {
-      title: '데이터셋이 삭제되어 재실행할 수 없습니다.',
-      cause: '원본 CSV가 필요한 재분석과 API 사용이 제한됩니다.',
+      title: '데이터셋이 삭제되어 다시 실행할 수 없습니다.',
+      cause: '원본 CSV가 필요한 재실행과 API 사용이 제한됩니다.',
       action: '새 데이터셋을 업로드해 다시 분석하세요.',
     }
   }
@@ -157,7 +157,7 @@ export function failureMessage(run, project) {
     return {
       title: '분석을 완료하지 못했습니다.',
       cause: run.failure_message || '데이터 형식, 타깃 컬럼, 학습 설정 중 하나에서 문제가 발생했습니다.',
-      action: run.can_rerun ? '설정을 확인한 뒤 같은 프로젝트에서 재실행할 수 있습니다.' : '새 분석으로 돌아가 데이터와 타깃을 다시 선택하세요.',
+      action: run.can_rerun ? '설정을 확인한 뒤 같은 프로젝트에서 다시 실행할 수 있습니다.' : '새 분석으로 돌아가 데이터와 타깃을 다시 선택하세요.',
     }
   }
   return null

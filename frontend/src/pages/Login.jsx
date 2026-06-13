@@ -62,32 +62,16 @@ export default function Login() {
   }
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'grid',
-      placeItems: 'center',
-      background: 'var(--bg)',
-      padding: 24,
-    }}>
-      <div style={{
-        width: 'min(960px, 100%)',
-        display: 'grid',
-        gridTemplateColumns: 'minmax(0, 0.9fr) minmax(360px, 420px)',
-        gap: 28,
-        alignItems: 'center',
-      }} className="login-grid">
+    <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: 'var(--bg)', padding: 24 }}>
+      <div style={{ width: 'min(960px, 100%)', display: 'grid', gridTemplateColumns: 'minmax(0, 0.9fr) minmax(360px, 420px)', gap: 28, alignItems: 'center' }} className="login-grid">
         <section style={{ padding: '16px 0' }}>
-          <button onClick={() => nav('/')} style={{
-            display: 'inline-flex', alignItems: 'center', gap: 10, border: 0,
-            background: 'transparent', padding: 0, cursor: 'pointer', color: 'var(--text)',
-            marginBottom: 26,
-          }}>
+          <button onClick={() => nav('/')} style={{ display: 'inline-flex', alignItems: 'center', gap: 10, border: 0, background: 'transparent', padding: 0, cursor: 'pointer', color: 'var(--text)', marginBottom: 26 }}>
             <span style={{ width: 36, height: 36, borderRadius: 8, display: 'grid', placeItems: 'center', background: '#2563eb', color: '#fff' }}>
               <LogoIcon />
             </span>
             <span style={{ fontSize: 18, fontWeight: 900 }}>ModelMate</span>
           </button>
-          <p style={{ margin: '0 0 10px', color: '#2563eb', fontSize: 12, fontWeight: 900 }}>CSV 분석 workspace</p>
+          <p style={{ margin: '0 0 10px', color: '#2563eb', fontSize: 12, fontWeight: 900 }}>CSV 분석 워크스페이스</p>
           <h1 style={{ margin: 0, fontSize: 'clamp(32px, 5vw, 48px)', lineHeight: 1.08, fontWeight: 950, letterSpacing: 0 }}>
             분석 기록을 저장하고 다시 이어가세요
           </h1>
@@ -144,15 +128,7 @@ export default function Login() {
                   style={{ paddingRight: 42 }}
                   required
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPw(v => !v)}
-                  aria-label={showPw ? '비밀번호 숨기기' : '비밀번호 보기'}
-                  style={{
-                    position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
-                    background: 'transparent', border: 0, cursor: 'pointer', color: 'var(--text-3)', padding: 4,
-                  }}
-                >
+                <button type="button" onClick={() => setShowPw(v => !v)} aria-label={showPw ? '비밀번호 숨기기' : '비밀번호 보기'} style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 0, cursor: 'pointer', color: 'var(--text-3)', padding: 4 }}>
                   {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
@@ -165,9 +141,7 @@ export default function Login() {
               </label>
             )}
 
-            {error && (
-              <p style={{ fontSize: 12, color: '#b91c1c', margin: 0, padding: '9px 11px', background: '#fff1f2', borderRadius: 8, border: '1px solid #fecdd3', lineHeight: 1.5 }}>{error}</p>
-            )}
+            {error && <p style={{ fontSize: 12, color: '#b91c1c', margin: 0, padding: '9px 11px', background: '#fff1f2', borderRadius: 8, border: '1px solid #fecdd3', lineHeight: 1.5 }}>{error}</p>}
 
             <Button type="submit" disabled={loading} style={{ width: '100%', justifyContent: 'center' }}>
               {loading && <span className="spinner" />}
@@ -182,22 +156,10 @@ export default function Login() {
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'center' }}>
-            <GoogleLogin
-              onSuccess={handleGoogleSuccess}
-              onError={() => setError('Google 로그인에 실패했습니다.')}
-              width="340"
-              size="large"
-              text="signin_with"
-              shape="rectangular"
-            />
+            <GoogleLogin onSuccess={handleGoogleSuccess} onError={() => setError('Google 로그인에 실패했습니다.')} width="340" size="large" text="signin_with" shape="rectangular" />
           </div>
 
-          <button type="button" onClick={handleGuestStart} disabled={loading} style={{
-            width: '100%', marginTop: 14, padding: '11px 12px', borderRadius: 8,
-            border: '1px solid var(--border)', background: 'var(--surface-alt)', color: 'var(--text-2)',
-            cursor: loading ? 'not-allowed' : 'pointer', fontWeight: 800,
-            fontSize: 13, fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-          }}>
+          <button type="button" onClick={handleGuestStart} disabled={loading} style={{ width: '100%', marginTop: 14, padding: '11px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface-alt)', color: 'var(--text-2)', cursor: loading ? 'not-allowed' : 'pointer', fontWeight: 800, fontSize: 13, fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
             게스트 데모로 시작 <ArrowRight size={14} />
           </button>
           <p style={{ fontSize: 11, color: 'var(--text-3)', lineHeight: 1.5, margin: '10px 0 0', textAlign: 'center' }}>

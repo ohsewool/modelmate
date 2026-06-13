@@ -13,17 +13,19 @@ export function StatusBadge({ status }) {
     warning: 'badge-amber',
   }
   const labels = {
-    queued: 'Queued',
-    running: 'Running',
-    succeeded: 'Succeeded',
-    failed: 'Failed',
-    cancelled: 'Cancelled',
-    ready: 'Ready',
-    active: 'Active',
-    disabled: 'Disabled',
-    deleted: 'Deleted',
-    warning: 'Warning',
-    unknown: 'Needs check',
+    created: '생성됨',
+    queued: '대기 중',
+    running: '실행 중',
+    succeeded: '완료',
+    failed: '실패',
+    cancelled: '취소됨',
+    needs_review: '검토 필요',
+    ready: '준비됨',
+    active: '활성',
+    disabled: '비활성',
+    deleted: '삭제됨',
+    warning: '주의',
+    unknown: '확인 필요',
   }
   return <span className={`badge ${styles[value] || 'badge-blue'}`}>{labels[value] || value}</span>
 }
@@ -51,7 +53,7 @@ export function EmptyState({ title, description, action }) {
   )
 }
 
-export function LoadingState({ label = 'Loading workspace data.' }) {
+export function LoadingState({ label = '워크스페이스 정보를 불러오는 중입니다.' }) {
   return (
     <div className="card" style={{ padding: 28, display: 'flex', gap: 12, alignItems: 'center' }}>
       <span className="spinner-lg" />
@@ -60,6 +62,6 @@ export function LoadingState({ label = 'Loading workspace data.' }) {
   )
 }
 
-export function ErrorState({ message = 'Could not load this workspace data.' }) {
+export function ErrorState({ message = '워크스페이스 정보를 불러오지 못했습니다.' }) {
   return <div className="banner-warning"><p style={{ margin: 0, fontSize: 13 }}>{message}</p></div>
 }

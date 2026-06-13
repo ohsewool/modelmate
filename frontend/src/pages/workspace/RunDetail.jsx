@@ -16,7 +16,7 @@ function Timeline({ items }) {
             <StatusBadge status={item.status} />
           </div>
           <p style={{ margin: 0, color: 'var(--text-2)', fontSize: 13, lineHeight: 1.55 }}>{item.observation}</p>
-          <p style={{ margin: 0, color: 'var(--text-label)', fontSize: 12 }}>Decision: {item.decision}</p>
+          <p style={{ margin: 0, color: 'var(--text-label)', fontSize: 12 }}>판단: {item.decision}</p>
           {item.error && <div className="banner-danger"><AlertTriangle size={15} /><p style={{ margin: 0, fontSize: 13 }}>{item.error}</p></div>}
         </div>
       ))}
@@ -63,7 +63,7 @@ export default function RunDetail() {
   return (
     <div className="animate-fade-in" style={{ padding: 24, maxWidth: 980 }}>
       <WorkspacePageHeader
-        eyebrow="Run detail"
+        eyebrow="실행 상세"
         title={run.analysis_run_id}
         description={`${project.name} / ${projectDatasetName(project)}`}
         action={<div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}><StatusBadge status={run.status} /><Link className="btn-secondary" to={`/projects/${projectId}?tab=runs`}>프로젝트로 돌아가기</Link></div>}
@@ -80,7 +80,7 @@ export default function RunDetail() {
         <section className="card" style={{ display: 'grid', gap: 12, borderColor: '#fecdd3', marginBottom: 18 }}>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}><AlertTriangle size={18} color="#dc2626" /><strong>{failure.title}</strong></div>
           <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.6 }}>{failure.cause}</p>
-          <p style={{ margin: 0, color: 'var(--text-label)', fontSize: 12 }}>Next action: {failure.action}</p>
+          <p style={{ margin: 0, color: 'var(--text-label)', fontSize: 12 }}>다음 행동: {failure.action}</p>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <button className="btn-primary" type="button" disabled={!run.can_rerun} onClick={rerun}><RefreshCw size={15} /> 다시 실행</button>
             <button className="btn-secondary" type="button" onClick={() => nav('/new')}>새 데이터셋 업로드</button>
@@ -88,7 +88,7 @@ export default function RunDetail() {
         </section>
       )}
       <section className="card">
-        <p className="section-title">Agent / run timeline</p>
+        <p className="section-title">실행 trace</p>
         <p style={{ margin: '0 0 14px', color: 'var(--text-2)', fontSize: 13 }}>실제 저장된 실행 메타데이터를 기반으로 표시합니다. 세부 로그가 없는 단계는 명확히 표시합니다.</p>
         <Timeline items={timeline} />
       </section>

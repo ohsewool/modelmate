@@ -11,17 +11,17 @@ export default function WorkspaceProjects() {
     loadWorkspaceOverview().then(setData).catch(() => setData({ projects: [] }))
   }, [])
 
-  if (!data) return <div style={{ padding: 24 }}><LoadingState label="Loading projects." /></div>
+  if (!data) return <div style={{ padding: 24 }}><LoadingState label="프로젝트를 불러오는 중입니다." /></div>
 
   return (
     <div className="animate-fade-in" style={{ padding: 24, maxWidth: 1180 }}>
-      <WorkspacePageHeader title="Projects" description="Review saved analyses, linked datasets, latest runs, and reusable outputs by project." action={<button className="btn-primary" onClick={() => nav('/new')}>New analysis</button>} />
+      <WorkspacePageHeader title="프로젝트" description="저장된 분석, 연결된 데이터셋, 최근 실행 기록, 재사용 가능한 결과물을 프로젝트별로 확인합니다." action={<button className="btn-primary" onClick={() => nav('/new')}>새 분석 시작</button>} />
       {!data.projects.length ? (
-        <EmptyState title="No saved projects yet." description="Upload a CSV or use sample data to start a guided predictive analysis." action={<button className="btn-primary" onClick={() => nav('/new')}>New analysis</button>} />
+        <EmptyState title="아직 저장된 프로젝트가 없습니다." description="CSV를 업로드하거나 샘플 데이터로 예측 분석을 시작하세요." action={<button className="btn-primary" onClick={() => nav('/new')}>새 분석 시작</button>} />
       ) : (
         <section className="card" style={{ overflowX: 'auto' }}>
           <table className="data-table">
-            <thead><tr><th>Project</th><th>Status</th><th>Target</th><th>Dataset</th><th>Latest run</th><th>Best model</th><th>Metric</th><th>Actions</th></tr></thead>
+            <thead><tr><th>프로젝트</th><th>상태</th><th>타깃</th><th>데이터셋</th><th>최근 실행</th><th>추천 모델</th><th>주요 지표</th><th>작업</th></tr></thead>
             <tbody>{data.projects.map(project => (
               <tr key={project.id}>
                 <td><Link to={`/projects/${project.id}`}><strong>{project.name}</strong></Link><br /><span style={{ color: 'var(--text-label)' }}>{project.id}</span></td>
@@ -32,9 +32,9 @@ export default function WorkspaceProjects() {
                 <td>{fmt(project.last_best_model)}</td>
                 <td>{primaryMetric(project)}</td>
                 <td style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  <button className="btn-secondary" onClick={() => nav(`/projects/${project.id}`)}>Open</button>
-                  <Link to={`/projects/${project.id}?tab=report`}>Reports</Link>
-                  <Link to={`/projects/${project.id}?tab=api`}>APIs</Link>
+                  <button className="btn-secondary" onClick={() => nav(`/projects/${project.id}`)}>열기</button>
+                  <Link to={`/projects/${project.id}?tab=report`}>보고서</Link>
+                  <Link to={`/projects/${project.id}?tab=api`}>API</Link>
                 </td>
               </tr>
             ))}</tbody>
