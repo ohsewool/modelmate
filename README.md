@@ -234,6 +234,7 @@ Final demo and beta QA documents:
 - Deployment checklist: `docs/deployment-checklist.md`
 - Final QA checklist: `docs/final-qa.md`
 - Demo QA checklist: `docs/demo-qa-checklist.md`
+- Beta feedback loop: `docs/beta-feedback-loop.md`
 - Frontend design guide: `docs/frontend-design-guide.md`
 - UI redesign roadmap: `docs/ui-redesign-roadmap.md`
 
@@ -273,6 +274,7 @@ python scripts/run_background_jobs_smoke.py --base-url https://web-production-5d
 python scripts/run_failure_recovery_smoke.py --base-url https://web-production-5d6fa.up.railway.app
 python scripts/run_dataset_delete_smoke.py --base-url https://web-production-5d6fa.up.railway.app
 python scripts/run_monitoring_smoke.py --base-url https://web-production-5d6fa.up.railway.app
+python scripts/run_feedback_smoke.py --base-url https://web-production-5d6fa.up.railway.app
 python scripts/run_product_smoke.py --base-url https://web-production-5d6fa.up.railway.app
 ```
 
@@ -280,8 +282,10 @@ Automated QA checks endpoints, sample upload, target selection, report export,
 auth-lite session context, register/login/logout smoke, MVP ownership smoke,
 project history smoke, background job smoke, failure recovery smoke, guest demo
 session start, dataset delete smoke, monitoring smoke, and deployment smoke
-paths. Human review is still needed for usability, copy clarity, visual layout,
-and whether beta users find the report persuasive.
+paths. PR-21 also adds feedback smoke checks for authenticated/guest feedback,
+invalid category/severity handling, token redaction, and protected admin review.
+Human review is still needed for usability, copy clarity, visual layout, and
+whether beta users find the report persuasive.
 
 Commercial SaaS MVP trust documents are drafted, not finalized legal policies:
 
@@ -346,6 +350,7 @@ python scripts/run_dataset_delete_smoke.py --base-url http://localhost:8000
 python scripts/run_prediction_token_smoke.py --base-url http://localhost:8000
 python scripts/run_usage_limits_smoke.py --base-url http://localhost:8000
 python scripts/run_monitoring_smoke.py --base-url http://localhost:8000
+python scripts/run_feedback_smoke.py --base-url http://localhost:8000
 ```
 
 ## Demo Scenario

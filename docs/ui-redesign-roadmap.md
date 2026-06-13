@@ -160,6 +160,36 @@ Goal:
 
 - Prepare a coherent public demo and portfolio presentation.
 
+## PR-21: Beta Feedback Loop
+
+Scope:
+
+- Lightweight in-app feedback entry points.
+- Sanitized feedback persistence.
+- Admin/dev feedback review surface.
+- Feedback smoke test and QA documentation.
+
+Goal:
+
+- Let beta users report bugs, confusing UX, wrong results, report issues,
+  prediction API issues, dataset problems, performance issues, and feature
+  requests without introducing a full support platform.
+
+Implementation notes:
+
+- Added a Korean-first feedback dialog in the workspace shell and Settings.
+- Added frontend error-boundary integration that can submit sanitized error
+  context with `request ID` and `error ID`.
+- Added `/api/feedback` for authenticated and guest/demo feedback submission.
+- Added protected admin/dev feedback review endpoints under `/api/admin/feedback`.
+- Stored only safe context such as route, page URL, resource IDs, request/error
+  IDs, and prediction API token prefixes; raw CSV, full tokens, passwords, and
+  session secrets are not attached.
+- Added `scripts/run_feedback_smoke.py` and included it in release QA when a
+  base URL is provided.
+- Kept existing app routes, auth/session behavior, AutoML flows, prediction API
+  flows, report export, and workspace reuse intact.
+
 ## Implementation Order
 
 1. PR-17 completed: dataset management, delete flow, retention foundation.

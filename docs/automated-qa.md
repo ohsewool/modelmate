@@ -19,6 +19,7 @@ python scripts/run_dataset_delete_smoke.py --base-url http://localhost:8000
 python scripts/run_prediction_token_smoke.py --base-url http://localhost:8000
 python scripts/run_usage_limits_smoke.py --base-url http://localhost:8000
 python scripts/run_monitoring_smoke.py --base-url http://localhost:8000
+python scripts/run_feedback_smoke.py --base-url http://localhost:8000
 ```
 
 ## Product Smoke Test
@@ -58,6 +59,24 @@ python scripts/run_monitoring_smoke.py --base-url https://web-production-5d6fa.u
 This checks `/api/health`, `X-Request-ID`, friendly error objects, sanitized
 frontend error reporting, protected admin monitoring endpoints, and a prediction
 API invalid-token failure that must not echo the full token.
+
+## Feedback Smoke Test
+
+Run against a local server:
+
+```bash
+python scripts/run_feedback_smoke.py --base-url http://localhost:8000
+```
+
+Run against Railway:
+
+```bash
+python scripts/run_feedback_smoke.py --base-url https://web-production-5d6fa.up.railway.app
+```
+
+This checks authenticated feedback submission, guest feedback submission,
+invalid category/severity validation, token redaction, and admin feedback
+endpoint protection.
 
 ## Release QA Wrapper
 
@@ -115,6 +134,9 @@ python scripts/run_release_qa.py --base-url https://web-production-5d6fa.up.rail
 - monitoring smoke confirms `/api/health` returns a `request_id`, admin
   monitoring endpoints are protected, frontend error reports can be stored, and
   invalid prediction token responses do not leak the full token.
+- feedback smoke confirms `/api/feedback` accepts authenticated and guest beta
+  feedback, rejects invalid category/severity values, avoids echoing full
+  tokens, and keeps admin feedback review protected.
 
 ## What Still Requires Human Review
 
@@ -144,6 +166,8 @@ python scripts/run_release_qa.py --base-url https://web-production-5d6fa.up.rail
 - monitoring smoke fails: verify `/api/health`,
   `/api/monitoring/frontend-error`, and `/api/admin/monitoring/*` are deployed
   and that error responses include `request_id`.
+- feedback smoke fails: verify `/api/feedback` is deployed, category/severity
+  validation is active, and `/api/admin/feedback` remains admin-only.
 
 ## Release Blockers
 
@@ -163,3 +187,5 @@ python scripts/run_release_qa.py --base-url https://web-production-5d6fa.up.rail
 - a deleted dataset can still be used to start a new training/rerun job.
 - monitoring smoke fails because errors lack `request_id` or an invalid
   prediction token is echoed in a response.
+- feedback smoke leaks a full token, accepts invalid category/severity values,
+  or exposes admin feedback lists to guests/non-admin users.

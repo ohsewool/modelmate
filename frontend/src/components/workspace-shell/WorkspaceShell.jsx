@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { BarChart3, Briefcase, FileText, KeyRound, ListChecks, LogOut, Menu, Plus, Settings, X } from 'lucide-react'
+import { BarChart3, Briefcase, FileText, KeyRound, ListChecks, LogOut, Menu, MessageSquare, Plus, Settings, X } from 'lucide-react'
 import api from '../../api'
 import { useAuth } from '../../AuthContext'
 import { useTheme } from '../../ThemeContext'
+import FeedbackDialog from '../FeedbackDialog'
 
 const NAV = [
   { to: '/dashboard', label: '대시보드', icon: BarChart3 },
@@ -32,6 +33,7 @@ export default function WorkspaceShell({ children }) {
   const { dark, toggle } = useTheme()
   const [open, setOpen] = useState(false)
   const [usage, setUsage] = useState(null)
+  const [feedbackOpen, setFeedbackOpen] = useState(false)
 
   useEffect(() => {
     api.get('/me/usage').then(res => setUsage(res.data)).catch(() => setUsage(null))
@@ -74,11 +76,14 @@ export default function WorkspaceShell({ children }) {
           </div>
         )}
         <div style={{ marginTop: 'auto', padding: 12, borderTop: '1px solid var(--border-sub)', display: 'grid', gap: 10 }}>
+          <button className="btn-secondary" type="button" onClick={() => setFeedbackOpen(true)} style={{ justifyContent: 'center' }}>
+            <MessageSquare size={15} /> 피드백 보내기
+          </button>
           <div style={{ padding: 10, border: '1px solid var(--border)', borderRadius: 8, background: 'var(--surface-alt)', fontSize: 12, color: 'var(--text-2)' }}>
             <UsageMini usage={usage} />
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <button className="theme-toggle" onClick={toggle} title={dark ? '밝은 화면' : '어두운 화면'}>{dark ? '밝' : '밤'}</button>
+            <button className="theme-toggle" onClick={toggle} title={dark ? '밝은 화면' : '어두운 화면'}>{dark ? '밝' : '어둠'}</button>
             <div style={{ minWidth: 0, flex: 1 }}>
               <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.name || '게스트 데모'}</div>
               <div style={{ fontSize: 10, color: 'var(--text-label)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.email || '샘플 워크스페이스'}</div>
@@ -90,7 +95,7 @@ export default function WorkspaceShell({ children }) {
       <div style={{ minWidth: 0, display: 'grid', gridTemplateRows: '56px minmax(0, 1fr)' }}>
         <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '0 20px', borderBottom: '1px solid var(--border)', background: 'var(--surface)' }}>
           <button className="hamburger-btn" onClick={() => setOpen(true)} style={{ border: '1px solid var(--border)', background: 'var(--surface)', borderRadius: 8, padding: 8 }}><Menu size={18} /></button>
-          <div style={{ flex: 1, minWidth: 0, color: 'var(--text-2)', fontSize: 13 }}>저장된 프로젝트, 작업, 보고서, 예측 API를 한곳에서 관리합니다.</div>
+          <div style={{ flex: 1, minWidth: 0, color: 'var(--text-2)', fontSize: 13 }}>저장된 프로젝트, 작업, 보고서, 예측 API를 한 곳에서 관리합니다.</div>
           <button className="btn-primary" onClick={() => nav('/new')}><Plus size={15} /> 새 분석</button>
           <button className="btn-secondary workspace-close-mobile" onClick={() => setOpen(false)}><X size={16} /></button>
         </header>
@@ -98,6 +103,7 @@ export default function WorkspaceShell({ children }) {
           {children}
         </main>
       </div>
+      <FeedbackDialog open={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
     </div>
   )
 }

@@ -79,6 +79,8 @@ def main():
         results.append(run_step("usage_limits_smoke", usage_limits_cmd, 180))
         monitoring_cmd = [sys.executable, str(ROOT / "scripts" / "run_monitoring_smoke.py"), "--base-url", args.base_url]
         results.append(run_step("monitoring_smoke", monitoring_cmd, 180))
+        feedback_cmd = [sys.executable, str(ROOT / "scripts" / "run_feedback_smoke.py"), "--base-url", args.base_url]
+        results.append(run_step("feedback_smoke", feedback_cmd, 180))
         smoke_cmd = [sys.executable, str(ROOT / "scripts" / "run_product_smoke.py"), "--base-url", args.base_url]
         if args.skip_training:
             smoke_cmd.append("--skip-training")
@@ -93,6 +95,7 @@ def main():
         results.append({"name": "prediction_token_smoke", "status": "skipped", "reason": "--base-url not provided"})
         results.append({"name": "usage_limits_smoke", "status": "skipped", "reason": "--base-url not provided"})
         results.append({"name": "monitoring_smoke", "status": "skipped", "reason": "--base-url not provided"})
+        results.append({"name": "feedback_smoke", "status": "skipped", "reason": "--base-url not provided"})
         results.append({"name": "product_smoke", "status": "skipped", "reason": "--base-url not provided"})
 
     allowed = {"pass", "skipped"}

@@ -1,0 +1,265 @@
+from fastapi import Request
+
+
+FEEDBACK_CATEGORIES = {
+    "bug",
+    "confusing_ux",
+    "wrong_result",
+    "report_issue",
+    "prediction_api_issue",
+    "dataset_issue",
+    "performance_issue",
+    "feature_request",
+    "other",
+}
+FEEDBACK_SEVERITIES = {"low", "medium", "high", "blocking"}
+FEEDBACK_STATUSES = {"new", "reviewed", "planned", "resolved", "dismissed"}
+
+
+def _feedback_now():
+    return datetime.now().isoformat(timespec="seconds")
+
+
+def _feedback_id():
+    return "fb_" + secrets.token_urlsafe(10).replace("-", "").replace("_", "")[:16]
+
+
+def _text_limit(value, limit):
+    return str(value or "").strip()[:limit]
+
+
+def _feedback_request_id(request, body):
+    raw = body.get("request_id") or getattr(request.state, "request_id", None) or request.headers.get("X-Request-ID")
+    if "_safe_request_id" in globals():
+        return _safe_request_id(raw)
+    return _text_limit(raw, 80) or "req_" + secrets.token_urlsafe(8)
+
+
+def _safe_feedback_details(body):
+    blocked = {"password", "token", "plaintext_token", "authorization", "csv", "raw", "secret", "session"}
+    safe = {}
+    for key in ["route", "page_url", "project_id", "run_id", "job_id", "report_id", "dataset_id", "request_id", "error_id"]:
+        value = body.get(key)
+        if value:
+            safe[key] = _text_limit(value, 300)
+    prefix = body.get("prediction_api_token_prefix")
+    if prefix:
+        safe["prediction_api_token_prefix"] = _text_limit(prefix, 32)
+    for key in list(body.keys()):
+        if any(part in str(key).lower() for part in blocked):
+            safe.pop(key, None)
+    return safe
+
+
+def ensure_feedback_table():
+    conn = get_db()
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS beta_feedback (
+            feedback_id TEXT PRIMARY KEY,
+            user_id TEXT,
+            user_email TEXT,
+            project_id TEXT,
+            run_id TEXT,
+            job_id TEXT,
+            report_id TEXT,
+            dataset_id TEXT,
+            prediction_api_token_prefix TEXT,
+            request_id TEXT,
+            error_id TEXT,
+            category TEXT NOT NULL,
+            severity TEXT NOT NULL,
+            title TEXT NOT NULL,
+            message TEXT NOT NULL,
+            page_url TEXT,
+            route TEXT,
+            user_agent TEXT,
+            status TEXT NOT NULL,
+            safe_context TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            admin_note TEXT
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+
+def _user_email(user):
+    if not user:
+        return None
+    email = user.get("email")
+    if email:
+        return email
+    user_id = user.get("sub")
+    if not user_id:
+        return None
+    conn = get_db()
+    try:
+        row = conn.execute("SELECT email FROM users WHERE id=?", (user_id,)).fetchone()
+    finally:
+        conn.close()
+    return row["email"] if row else None
+
+
+def _feedback_payload(row):
+    item = dict(row)
+    item["safe_context"] = _safe_json(item.get("safe_context"), {}) or {}
+    return item
+
+
+ensure_feedback_table()
+
+
+@app.post("/api/feedback")
+async def submit_beta_feedback(body: dict, request: Request, user=Depends(get_current_user)):
+    category = _text_limit(body.get("category"), 40) or "other"
+    severity = _text_limit(body.get("severity"), 20) or "medium"
+    if category not in FEEDBACK_CATEGORIES:
+        raise HTTPException(400, {
+            "code": "validation_failed",
+            "message": "지원하지 않는 피드백 유형입니다.",
+            "recommended_next_action": "피드백 유형을 다시 선택해 주세요.",
+        })
+    if severity not in FEEDBACK_SEVERITIES:
+        raise HTTPException(400, {
+            "code": "validation_failed",
+            "message": "지원하지 않는 중요도입니다.",
+            "recommended_next_action": "중요도를 다시 선택해 주세요.",
+        })
+    title = _text_limit(body.get("title"), 160)
+    message = _text_limit(body.get("message"), 3000)
+    if not title or not message:
+        raise HTTPException(400, {
+            "code": "validation_failed",
+            "message": "제목과 자세한 내용을 입력해 주세요.",
+            "recommended_next_action": "불편했던 점이나 개선 아이디어를 짧게 적어 주세요.",
+        })
+
+    safe = _safe_feedback_details(body)
+    feedback_id = _feedback_id()
+    now = _feedback_now()
+    user_id = user.get("sub") if user else None
+    user_email = _text_limit(body.get("user_email") or _user_email(user), 240)
+    request_id = _feedback_request_id(request, body)
+    error_id = _text_limit(body.get("error_id"), 80)
+    conn = get_db()
+    try:
+        conn.execute(
+            """
+            INSERT INTO beta_feedback
+            (feedback_id,user_id,user_email,project_id,run_id,job_id,report_id,dataset_id,prediction_api_token_prefix,request_id,error_id,category,severity,title,message,page_url,route,user_agent,status,safe_context,created_at,updated_at)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+            """,
+            (
+                feedback_id,
+                user_id,
+                user_email,
+                safe.get("project_id"),
+                safe.get("run_id"),
+                safe.get("job_id"),
+                safe.get("report_id"),
+                safe.get("dataset_id"),
+                safe.get("prediction_api_token_prefix"),
+                request_id,
+                error_id,
+                category,
+                severity,
+                title,
+                message,
+                _text_limit(body.get("page_url"), 500),
+                _text_limit(body.get("route"), 300),
+                _text_limit(request.headers.get("user-agent") or body.get("user_agent"), 500),
+                "new",
+                json.dumps(safe, ensure_ascii=False),
+                now,
+                now,
+            ),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    if "persist_monitoring_event" in globals():
+        persist_monitoring_event(
+            event_type="feedback.submitted",
+            request_id=request_id,
+            user_id=user_id,
+            project_id=safe.get("project_id"),
+            run_id=safe.get("run_id"),
+            dataset_id=safe.get("dataset_id"),
+            error_code=None,
+            message=f"Beta feedback submitted: {category}",
+            safe_details={"feedback_id": feedback_id, "category": category, "severity": severity, "error_id": error_id},
+            route=str(request.url.path),
+            method=request.method,
+            status_code=200,
+            severity="info",
+        )
+    return {
+        "feedback_id": feedback_id,
+        "message": "피드백이 접수되었습니다.",
+        "next_action": "베타 기간 동안 보내주신 의견은 제품 개선에 반영하겠습니다.",
+    }
+
+
+@app.get("/api/admin/feedback")
+async def list_beta_feedback(
+    category: str = None,
+    severity: str = None,
+    status: str = None,
+    project_id: str = None,
+    limit: int = 50,
+    user=Depends(get_current_user),
+):
+    if not is_admin_user(user):
+        raise HTTPException(403, "관리자 권한이 필요합니다.")
+    limit = max(1, min(int(limit or 50), 200))
+    clauses = []
+    params = []
+    for col, value in [("category", category), ("severity", severity), ("status", status), ("project_id", project_id)]:
+        if value:
+            clauses.append(f"{col}=?")
+            params.append(value)
+    where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+    conn = get_db()
+    try:
+        rows = conn.execute(f"SELECT * FROM beta_feedback {where} ORDER BY created_at DESC LIMIT ?", params + [limit]).fetchall()
+    finally:
+        conn.close()
+    return {"items": [_feedback_payload(row) for row in rows], "limit": limit}
+
+
+@app.get("/api/admin/feedback/{feedback_id}")
+async def get_beta_feedback(feedback_id: str, user=Depends(get_current_user)):
+    if not is_admin_user(user):
+        raise HTTPException(403, "관리자 권한이 필요합니다.")
+    conn = get_db()
+    try:
+        row = conn.execute("SELECT * FROM beta_feedback WHERE feedback_id=?", (feedback_id,)).fetchone()
+    finally:
+        conn.close()
+    if not row:
+        raise HTTPException(404, "피드백을 찾을 수 없습니다.")
+    return _feedback_payload(row)
+
+
+@app.post("/api/admin/feedback/{feedback_id}/status")
+async def update_beta_feedback_status(feedback_id: str, body: dict, user=Depends(get_current_user)):
+    if not is_admin_user(user):
+        raise HTTPException(403, "관리자 권한이 필요합니다.")
+    next_status = _text_limit(body.get("status"), 40)
+    if next_status not in FEEDBACK_STATUSES:
+        raise HTTPException(400, "지원하지 않는 피드백 상태입니다.")
+    admin_note = _text_limit(body.get("admin_note"), 1000)
+    conn = get_db()
+    try:
+        row = conn.execute("SELECT feedback_id FROM beta_feedback WHERE feedback_id=?", (feedback_id,)).fetchone()
+        if not row:
+            raise HTTPException(404, "피드백을 찾을 수 없습니다.")
+        conn.execute(
+            "UPDATE beta_feedback SET status=?, admin_note=?, updated_at=? WHERE feedback_id=?",
+            (next_status, admin_note, _feedback_now(), feedback_id),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return {"feedback_id": feedback_id, "status": next_status, "message": "피드백 상태가 변경되었습니다."}

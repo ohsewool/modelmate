@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useAuth } from '../../AuthContext'
 import api from '../../api'
 import { CopyButton, LoadingState, StatusBadge, WorkspacePageHeader } from '../../components/workspace-shell/WorkspaceStates'
+import FeedbackDialog from '../../components/FeedbackDialog'
 
 function usageState(current, limit) {
   if (!limit) return { pct: 0, label: '제한 없음', status: 'active' }
@@ -77,10 +78,57 @@ function MonitoringPanel() {
   )
 }
 
+function FeedbackReviewPanel({ onOpenFeedback }) {
+  const [state, setState] = useState({ loading: true, items: [], message: '' })
+
+  useEffect(() => {
+    api.get('/admin/feedback?limit=5')
+      .then(res => setState({ loading: false, items: res.data?.items || [], message: '' }))
+      .catch(err => {
+        const status = err.response?.status
+        const message = status === 403 || status === 401
+          ? '관리자 권한이 있는 계정에서만 피드백 목록을 볼 수 있습니다.'
+          : '피드백 목록을 불러오지 못했습니다.'
+        setState({ loading: false, items: [], message })
+      })
+  }, [])
+
+  if (state.loading) return <LoadingState label="피드백 상태를 불러오는 중입니다." />
+
+  return (
+    <section className="card" style={{ display: 'grid', gap: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
+        <div>
+          <p className="section-title">베타 피드백</p>
+          <p style={{ margin: 0, color: 'var(--text-2)', fontSize: 13 }}>ModelMate는 현재 베타 MVP 단계입니다. 사용 중 불편한 점을 보내 주세요.</p>
+        </div>
+        <button className="btn-primary" type="button" onClick={onOpenFeedback}>피드백 보내기</button>
+      </div>
+      {state.message && <div className="banner-warning"><p style={{ margin: 0 }}>{state.message}</p></div>}
+      {!state.message && !state.items.length && <p style={{ margin: 0, color: 'var(--text-2)' }}>아직 접수된 피드백이 없습니다.</p>}
+      {!!state.items.length && (
+        <div style={{ display: 'grid', gap: 8 }}>
+          {state.items.map(item => (
+            <div key={item.feedback_id} className="card-compact" style={{ display: 'grid', gap: 6 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
+                <strong>{item.title}</strong>
+                <StatusBadge status={item.status === 'new' ? 'created' : item.status === 'resolved' ? 'succeeded' : 'needs_review'} />
+              </div>
+              <p style={{ margin: 0, color: 'var(--text-2)', fontSize: 13 }}>{item.category} / {item.severity} / {item.created_at}</p>
+              <p style={{ margin: 0, color: 'var(--text-label)', fontSize: 12 }}>feedback ID: {item.feedback_id} / request ID: {item.request_id || '-'}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  )
+}
+
 export default function WorkspaceSettings() {
   const { user } = useAuth()
   const [usage, setUsage] = useState(null)
   const [session, setSession] = useState(null)
+  const [feedbackOpen, setFeedbackOpen] = useState(false)
 
   useEffect(() => {
     Promise.all([
@@ -140,6 +188,10 @@ export default function WorkspaceSettings() {
           </div>
         </section>
       </div>
+      <div style={{ marginTop: 18 }}>
+        <FeedbackReviewPanel onOpenFeedback={() => setFeedbackOpen(true)} />
+      </div>
+      <FeedbackDialog open={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
     </div>
   )
 }
