@@ -87,12 +87,12 @@ export default function Login() {
             </span>
             <span style={{ fontSize: 18, fontWeight: 900 }}>ModelMate</span>
           </button>
-          <p style={{ margin: '0 0 10px', color: '#2563eb', fontSize: 12, fontWeight: 900 }}>GUIDED CSV ANALYSIS</p>
+          <p style={{ margin: '0 0 10px', color: '#2563eb', fontSize: 12, fontWeight: 900 }}>CSV 분석 workspace</p>
           <h1 style={{ margin: 0, fontSize: 'clamp(32px, 5vw, 48px)', lineHeight: 1.08, fontWeight: 950, letterSpacing: 0 }}>
             분석 기록을 저장하고 다시 이어가세요
           </h1>
           <p style={{ margin: '16px 0 0', fontSize: 15, lineHeight: 1.7, color: 'var(--text-2)', maxWidth: 520 }}>
-            로그인하면 CSV 분석, 보고서, 재실행 기록을 내 프로젝트로 보관할 수 있습니다. 바로 확인만 하고 싶다면 게스트 데모로 시작할 수 있습니다.
+            로그인하면 CSV 분석, 보고서, 재실행 기록을 프로젝트로 저장할 수 있습니다. 먼저 흐름만 확인하고 싶다면 게스트 데모로 시작할 수 있습니다.
           </p>
           <div style={{ display: 'grid', gap: 10, marginTop: 24, maxWidth: 500 }}>
             {['내 프로젝트와 분석 기록 저장', '보고서와 예측 API 재사용', '게스트 데모와 개인 프로젝트 분리'].map(item => (

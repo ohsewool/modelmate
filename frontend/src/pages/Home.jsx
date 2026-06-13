@@ -6,12 +6,12 @@ import { Badge } from '../components/ui/badge'
 import ValidationProof from '../components/ValidationProof'
 
 const steps = [
-  ['CSV 업로드', '파일 구조와 데이터 품질을 먼저 점검해 분석 가능 여부를 확인합니다.'],
-  ['데이터 점검', '결측값, 식별자성 컬럼, 누수 위험처럼 결과 신뢰도에 영향을 주는 신호를 정리합니다.'],
-  ['타깃 추천', '무엇을 예측하면 좋은지 후보와 이유를 함께 보여줍니다.'],
-  ['모델 비교', '여러 모델을 같은 기준으로 비교하고 가장 안정적인 모델을 선택합니다.'],
-  ['설명/보고서', '성능, 주요 변수, 한계, 다음 행동을 근거 기반 보고서로 정리합니다.'],
-  ['예측 API', '학습 결과를 새 데이터 예측과 재사용 가능한 API 흐름으로 이어갑니다.'],
+  ['CSV 업로드', '파일 구조와 데이터 품질을 먼저 확인하고 분석 가능한 상태인지 점검합니다.'],
+  ['데이터 구조 분석', '결측값, 고유값, 식별자성 컬럼, 학습에 방해되는 신호를 정리합니다.'],
+  ['타깃 변수 추천', '무엇을 예측하면 좋은지 후보와 이유를 함께 보여줍니다.'],
+  ['모델 비교', '여러 모델을 같은 기준으로 비교하고 가장 안정적인 후보를 선택합니다.'],
+  ['근거 기반 보고서', '성능, 주요 변수, 위험 요인, 다음 행동을 보고서로 정리합니다.'],
+  ['예측 API 재사용', '학습 결과를 새 데이터 예측과 재사용 가능한 API 흐름으로 이어갑니다.'],
 ]
 
 const examples = ['이탈 예측', '수요 예측', '불량 감지', '가입 건수 예측']
@@ -38,8 +38,8 @@ export default function Home() {
         </button>
 
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          <Link to="/pricing" style={{ fontSize: 13, fontWeight: 750, color: 'var(--text-2)', textDecoration: 'none' }}>Pricing</Link>
-          <a href="https://github.com/ohsewool/-/blob/main/docs/privacy.md" style={{ fontSize: 13, fontWeight: 750, color: 'var(--text-2)', textDecoration: 'none' }}>Privacy</a>
+          <Link to="/pricing" style={{ fontSize: 13, fontWeight: 750, color: 'var(--text-2)', textDecoration: 'none' }}>요금 안내</Link>
+          <a href="https://github.com/ohsewool/-/blob/main/docs/privacy.md" style={{ fontSize: 13, fontWeight: 750, color: 'var(--text-2)', textDecoration: 'none' }}>개인정보 안내</a>
           <button onClick={toggle} title={dark ? '밝은 화면' : '어두운 화면'} className="theme-toggle">
             {dark ? <Sun size={15} /> : <Moon size={15} />}
           </button>
@@ -53,20 +53,20 @@ export default function Home() {
           <div style={{ width: 'min(1100px, 100%)', margin: '0 auto' }}>
             <div className="home-hero-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 0.92fr) minmax(360px, 1fr)', gap: 28, alignItems: 'center' }}>
               <div>
-                <Badge variant="secondary" style={{ marginBottom: 18 }}>Guided CSV predictive analysis</Badge>
+                <Badge variant="secondary" style={{ marginBottom: 18 }}>가이드형 CSV 예측 분석</Badge>
                 <h1 style={{ margin: 0, fontSize: 'clamp(42px, 7vw, 68px)', lineHeight: 1.02, fontWeight: 950, letterSpacing: 0 }}>
-                  CSV를 예측 결과와 보고서로 바꾸는 분석 워크플로
+                  CSV 데이터를 설명 가능한 예측 보고서와 재사용 가능한 API로 바꾸세요
                 </h1>
                 <p style={{ margin: '18px 0 0', fontSize: 20, lineHeight: 1.42, fontWeight: 800 }}>
-                  ModelMate는 CSV 데이터를 설명 가능한 예측, 근거 기반 보고서, 재사용 가능한 예측 API로 바꿔주는 가이드형 AI 분석 서비스입니다.
+                  ModelMate는 CSV를 업로드하면 데이터 구조를 분석하고, 예측 타깃을 추천하며, 모델 비교·근거 기반 보고서·예측 API까지 하나의 흐름으로 제공합니다.
                 </p>
                 <p style={{ margin: '12px 0 26px', fontSize: 15, lineHeight: 1.7, color: 'var(--text-2)', maxWidth: 600 }}>
-                  머신러닝 지식이 없어도 파일 업로드부터 데이터 점검, 타깃 추천, 모델 비교, 신뢰도 요약, 리포트 내보내기까지 한 흐름으로 확인할 수 있습니다.
+                  비전문가도 이해할 수 있도록 데이터 품질, 모델 성능, 예측 이유, 주의사항을 차분하게 정리합니다. 현재는 상용 SaaS MVP 방향의 베타 서비스입니다.
                 </p>
 
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 22 }}>
                   <Button size="lg" onClick={() => nav('/login')}><Upload size={17} /> CSV 분석 시작</Button>
-                  <Button size="lg" variant="secondary" onClick={() => nav('/login')}>데모 데이터로 체험</Button>
+                  <Button size="lg" variant="secondary" onClick={() => nav('/login')}>샘플로 체험하기</Button>
                 </div>
 
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -85,6 +85,9 @@ export default function Home() {
         </section>
 
         <section style={{ padding: '0 28px 42px' }}>
+          <div style={{ width: 'min(1100px, 100%)', margin: '0 auto 18px' }}>
+            <p className="section-title">작동 방식</p>
+          </div>
           <div className="home-step-grid" style={{
             width: 'min(1100px, 100%)', margin: '0 auto', display: 'grid',
             gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 12,
@@ -130,9 +133,9 @@ function ProductPreview() {
         <div className="card-elevated" style={{ padding: 14 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
             <BarChart3 size={16} color="#2563eb" />
-            <strong style={{ fontSize: 14 }}>근거 기반 설명</strong>
+            <strong style={{ fontSize: 14 }}>예측 이유 설명</strong>
           </div>
-          {['최근 이용 횟수', '문의 건수', '가입 기간'].map((label, idx) => (
+          {['최근 이용 점수', '문의 건수', '가입 기간'].map((label, idx) => (
             <div key={label} style={{ display: 'grid', gridTemplateColumns: '92px 1fr', gap: 10, alignItems: 'center', marginBottom: 10 }}>
               <span style={{ fontSize: 12, color: 'var(--text-2)', fontWeight: 700 }}>{label}</span>
               <span style={{ height: 8, borderRadius: 99, background: 'var(--border-sub)', overflow: 'hidden' }}>
