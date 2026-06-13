@@ -194,15 +194,19 @@ Requires signing in:
 - private dataset list/detail/delete and project archive/delete impact flows.
 
 First-time users can try ModelMate without preparing their own CSV. The upload
-screen links to three small synthetic sample datasets:
+screen includes Korean-first use-case starter packs with small synthetic CSV
+files:
 
-- `sample_data/customer_churn_demo.csv`
-- `sample_data/manufacturing_quality_demo.csv`
-- `sample_data/public_bike_signup_demo.csv`
+- 고객 이탈 예측: `frontend/public/samples/customer_churn_demo.csv`
+- 매출/수요 예측: `frontend/public/samples/sales_demand_demo.csv`
+- 설비 고장 위험 예측: `frontend/public/samples/equipment_failure_demo.csv`
+- 마케팅 전환 예측: `frontend/public/samples/marketing_conversion_demo.csv`
+- 학생 성과 예측: `frontend/public/samples/student_performance_demo.csv`
 
-See `sample_data/metadata.json`, `docs/onboarding.md`, and
-`docs/demo-agentic-automl.md` for recommended targets, task types, demo goals,
-and guided demo flow.
+See `docs/use-case-starter-packs.md`, `frontend/public/samples/starter_packs.json`,
+`docs/onboarding.md`, and `docs/demo-agentic-automl.md` for recommended targets,
+task types, demo goals, and guided demo flow. Starter pack data is synthetic demo
+data and should not be treated as real customer or business records.
 
 Beta testing is prepared for a small 5-15 user feedback round. This is a
 feedback-driven commercialization step for a guided CSV predictive analysis MVP,
@@ -235,6 +239,7 @@ Final demo and beta QA documents:
 - Final QA checklist: `docs/final-qa.md`
 - Demo QA checklist: `docs/demo-qa-checklist.md`
 - Beta feedback loop: `docs/beta-feedback-loop.md`
+- Use-case starter packs: `docs/use-case-starter-packs.md`
 - Frontend design guide: `docs/frontend-design-guide.md`
 - UI redesign roadmap: `docs/ui-redesign-roadmap.md`
 
@@ -267,6 +272,7 @@ Release QA can be run with:
 
 ```bash
 python scripts/run_release_qa.py --base-url https://web-production-5d6fa.up.railway.app --skip-training
+python scripts/run_starter_pack_smoke.py
 python scripts/run_auth_smoke.py --base-url https://web-production-5d6fa.up.railway.app
 python scripts/run_ownership_smoke.py --base-url https://web-production-5d6fa.up.railway.app
 python scripts/run_project_history_smoke.py --base-url https://web-production-5d6fa.up.railway.app
@@ -284,6 +290,8 @@ project history smoke, background job smoke, failure recovery smoke, guest demo
 session start, dataset delete smoke, monitoring smoke, and deployment smoke
 paths. PR-21 also adds feedback smoke checks for authenticated/guest feedback,
 invalid category/severity handling, token redaction, and protected admin review.
+PR-22 adds starter pack smoke checks for sample metadata, CSV existence, and
+recommended target columns.
 Human review is still needed for usability, copy clarity, visual layout, and
 whether beta users find the report persuasive.
 
@@ -339,6 +347,7 @@ npm run build
 
 ```bash
 python -m compileall backend
+python scripts/run_starter_pack_smoke.py
 python scripts/run_upload_validation_qa.py
 python scripts/run_training_benchmark.py
 python scripts/run_full_qa.py --skip-slow

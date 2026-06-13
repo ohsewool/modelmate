@@ -86,7 +86,7 @@ export function ErrorState({ message = '워크스페이스 정보를 불러오�
       <p style={{ margin: 0, fontSize: 13 }}>{message}</p>
       {(requestId || errorId) && (
         <p style={{ margin: 0, fontSize: 12, color: 'var(--text-label)' }}>
-          {errorId && <>오류 ID: {errorId}</>}
+          {errorId && <>error ID: {errorId}</>}
           {errorId && requestId && ' / '}
           {requestId && <>request ID: {requestId}</>}
         </p>

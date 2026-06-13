@@ -4,17 +4,18 @@ import { useTheme } from '../ThemeContext'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
 import ValidationProof from '../components/ValidationProof'
+import { STARTER_PACKS } from '../data/starterPacks'
 
 const steps = [
-  ['CSV 업로드', '파일 구조와 데이터 품질을 먼저 확인하고 분석 가능한 상태인지 점검합니다.'],
-  ['데이터 구조 분석', '결측값, 고유값, 식별자성 컬럼, 학습에 방해되는 신호를 정리합니다.'],
+  ['CSV 업로드', '파일 구조와 데이터 품질을 먼저 확인하고 분석 가능한 상태인지 판단합니다.'],
+  ['데이터 구조 분석', '결측값, 고유값, 식별자성 컬럼, 학습을 방해할 수 있는 신호를 정리합니다.'],
   ['타깃 변수 추천', '무엇을 예측하면 좋은지 후보와 이유를 함께 보여줍니다.'],
-  ['모델 비교', '여러 모델을 같은 기준으로 비교하고 가장 안정적인 후보를 선택합니다.'],
+  ['모델 비교', '여러 모델을 같은 기준으로 비교하고 안정적인 후보를 선택합니다.'],
   ['근거 기반 보고서', '성능, 주요 변수, 위험 요인, 다음 행동을 보고서로 정리합니다.'],
   ['예측 API 재사용', '학습 결과를 새 데이터 예측과 재사용 가능한 API 흐름으로 이어갑니다.'],
 ]
 
-const examples = ['이탈 예측', '수요 예측', '불량 감지', '가입 건수 예측']
+const examples = ['고객 이탈', '수요 예측', '설비 고장', '마케팅 전환']
 
 export default function Home() {
   const nav = useNavigate()
@@ -61,7 +62,7 @@ export default function Home() {
                   ModelMate는 CSV를 업로드하면 데이터 구조를 분석하고, 예측 타깃을 추천하며, 모델 비교·근거 기반 보고서·예측 API까지 하나의 흐름으로 제공합니다.
                 </p>
                 <p style={{ margin: '12px 0 26px', fontSize: 15, lineHeight: 1.7, color: 'var(--text-2)', maxWidth: 600 }}>
-                  비전문가도 이해할 수 있도록 데이터 품질, 모델 성능, 예측 이유, 주의사항을 차분하게 정리합니다. 현재는 상용 SaaS MVP 방향의 베타 서비스입니다.
+                  비전문가도 이해할 수 있도록 데이터 점검, 모델 성능, 예측 이유, 주의사항을 차분하게 정리합니다. 현재는 베타 SaaS MVP 단계입니다.
                 </p>
 
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 22 }}>
@@ -106,6 +107,30 @@ export default function Home() {
                 <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6, color: 'var(--text-2)' }}>{desc}</p>
               </div>
             ))}
+          </div>
+        </section>
+
+        <section style={{ padding: '0 28px 46px' }}>
+          <div style={{ width: 'min(1100px, 100%)', margin: '0 auto', display: 'grid', gap: 14 }}>
+            <div>
+              <p className="section-title">샘플 사용 사례</p>
+              <h2 style={{ margin: '4px 0 8px', fontSize: 26, fontWeight: 900 }}>처음이라면 샘플 CSV로 흐름을 확인하세요</h2>
+              <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.65 }}>
+                고객 이탈, 수요 예측, 설비 고장 위험처럼 자주 쓰이는 예측 문제를 합성 샘플 데이터로 바로 체험할 수 있습니다.
+              </p>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 12 }} className="home-step-grid">
+              {STARTER_PACKS.slice(0, 4).map(pack => (
+                <div key={pack.id} className="card" style={{ padding: 16 }}>
+                  <Badge variant="secondary">{pack.category}</Badge>
+                  <h3 style={{ margin: '12px 0 8px', fontSize: 16 }}>{pack.title}</h3>
+                  <p style={{ margin: 0, color: 'var(--text-2)', fontSize: 13, lineHeight: 1.55 }}>{pack.shortDescription}</p>
+                </div>
+              ))}
+            </div>
+            <div>
+              <Button variant="secondary" onClick={() => nav('/login')}>샘플로 체험하기</Button>
+            </div>
           </div>
         </section>
         <ValidationProof />

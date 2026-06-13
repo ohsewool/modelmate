@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import DemoDatasetGuide from '../../components/upload/DemoDatasetGuide'
 import { EmptyState, LoadingState, StatusBadge, WorkspacePageHeader } from '../../components/workspace-shell/WorkspaceStates'
 import { fmt, loadWorkspaceOverview, primaryMetric, projectDatasetName, projectTarget } from './workspaceData'
 
@@ -9,8 +10,8 @@ function MetricCard({ label, value, sub }) {
 
 function usageSummary(usage) {
   if (!usage?.limits) return '사용량 정보를 확인할 수 없습니다.'
-  const jobs = `${usage.usage?.jobs_today || 0} / ${usage.limits?.max_jobs_per_day ?? '무제한'}`
-  const api = `${usage.usage?.prediction_api_calls_today || 0} / ${usage.limits?.max_prediction_api_calls_per_day ?? '무제한'}`
+  const jobs = `${usage.usage?.jobs_today || 0} / ${usage.limits?.max_jobs_per_day ?? '제한 없음'}`
+  const api = `${usage.usage?.prediction_api_calls_today || 0} / ${usage.limits?.max_prediction_api_calls_per_day ?? '제한 없음'}`
   return `오늘 작업 ${jobs}, API 호출 ${api}`
 }
 
@@ -40,7 +41,14 @@ export default function WorkspaceDashboard() {
         action={<button className="btn-primary" onClick={() => nav('/new')}>새 분석 시작</button>}
       />
       {data.projects.length === 0 ? (
-        <EmptyState title="아직 저장된 프로젝트가 없습니다." description="CSV를 업로드하거나 샘플 데이터로 첫 분석 프로젝트를 시작하세요." action={<button className="btn-primary" onClick={() => nav('/new')}>새 분석 시작</button>} />
+        <div style={{ display: 'grid', gap: 14 }}>
+          <EmptyState
+            title="아직 저장된 프로젝트가 없습니다."
+            description="CSV를 업로드하거나 사용 사례 샘플로 첫 분석을 시작하세요."
+            action={<div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}><button className="btn-primary" onClick={() => nav('/new')}>CSV 업로드</button><button className="btn-secondary" onClick={() => nav('/new')}>샘플로 체험하기</button></div>}
+          />
+          <DemoDatasetGuide compact onStart={() => nav('/new')} />
+        </div>
       ) : (
         <div style={{ display: 'grid', gap: 18 }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 12 }} className="admin-stat-grid">
@@ -65,7 +73,7 @@ export default function WorkspaceDashboard() {
               {failedJobs.length ? failedJobs.map(job => (
                 <p key={job.job_id} style={{ display: 'grid', gap: 3 }}>
                   <strong>{job.project?.name || job.job_id}</strong>
-                  <span style={{ color: 'var(--text-2)', fontSize: 13 }}>{job.error_message || '재실행 전에 오류 원인을 확인하세요.'}</span>
+                  <span style={{ color: 'var(--text-2)', fontSize: 13 }}>{job.error_message || '실패 원인을 확인하세요.'}</span>
                 </p>
               )) : <p style={{ color: 'var(--text-2)' }}>최근 실패한 작업이 없습니다.</p>}
               <Link to="/jobs">실패 작업 확인</Link>

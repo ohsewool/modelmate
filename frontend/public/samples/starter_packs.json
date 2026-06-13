@@ -1,0 +1,52 @@
+[
+  {
+    "id": "customer-churn",
+    "title": "고객 이탈 예측",
+    "category": "고객/구독",
+    "problem_type": "classification",
+    "sample_file": "customer_churn_demo.csv",
+    "recommended_target": "churn",
+    "recommended_metric": "ROC-AUC or F1",
+    "business_question": "어떤 고객이 다음 기간에 이탈할 가능성이 높은가?"
+  },
+  {
+    "id": "sales-demand",
+    "title": "매출/수요 예측",
+    "category": "영업/운영",
+    "problem_type": "regression",
+    "sample_file": "sales_demand_demo.csv",
+    "recommended_target": "demand",
+    "recommended_metric": "MAE or RMSE",
+    "business_question": "상품과 운영 조건에 따라 예상 수요가 얼마나 달라지는가?"
+  },
+  {
+    "id": "equipment-failure",
+    "title": "설비 고장 위험 예측",
+    "category": "제조/설비",
+    "problem_type": "classification",
+    "sample_file": "equipment_failure_demo.csv",
+    "recommended_target": "failure_risk",
+    "recommended_metric": "F1 or ROC-AUC",
+    "business_question": "어떤 설비 상태가 고장 위험이 높은가?"
+  },
+  {
+    "id": "marketing-conversion",
+    "title": "마케팅 전환 예측",
+    "category": "마케팅",
+    "problem_type": "classification",
+    "sample_file": "marketing_conversion_demo.csv",
+    "recommended_target": "converted",
+    "recommended_metric": "ROC-AUC or F1",
+    "business_question": "어떤 고객과 캠페인 조건에서 전환 가능성이 높은가?"
+  },
+  {
+    "id": "student-performance",
+    "title": "학생 성과 예측",
+    "category": "교육",
+    "problem_type": "classification",
+    "sample_file": "student_performance_demo.csv",
+    "recommended_target": "passed",
+    "recommended_metric": "F1",
+    "business_question": "어떤 학습자가 성과 위험군에 가까운가?"
+  }
+]

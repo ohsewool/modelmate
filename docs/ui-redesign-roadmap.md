@@ -190,6 +190,37 @@ Implementation notes:
 - Kept existing app routes, auth/session behavior, AutoML flows, prediction API
   flows, report export, and workspace reuse intact.
 
+## PR-22: Use-case Starter Packs
+
+Scope:
+
+- Practical starter packs for first-time users.
+- Small synthetic sample CSV files.
+- Korean-first starter pack gallery on the upload flow.
+- Dashboard/projects empty-state guidance.
+- Starter pack metadata smoke test and documentation.
+
+Goal:
+
+- Help new users understand which CSV to try, what target to predict, how to
+  read the report, and how prediction API reuse fits into the workflow.
+
+Implementation notes:
+
+- Added five starter packs: customer churn, sales/demand, equipment failure,
+  marketing conversion, and student performance.
+- Added local static sample CSV files under `frontend/public/samples/`.
+- Added metadata in `frontend/src/data/starterPacks.js` and
+  `frontend/public/samples/starter_packs.json`.
+- The upload page can start analysis from a starter pack by loading the local
+  CSV and sending it through the existing `/api/upload` flow.
+- Recommended targets are preselected when present in the sample CSV.
+- Landing, dashboard empty state, and projects empty state now point first-time
+  users toward starter packs without creating fake results.
+- Added `scripts/run_starter_pack_smoke.py` and release QA integration.
+- Kept existing upload, AutoML, report, prediction API, project, monitoring,
+  usage limit, dataset lifecycle, and feedback flows intact.
+
 ## Implementation Order
 
 1. PR-17 completed: dataset management, delete flow, retention foundation.
@@ -202,8 +233,8 @@ Implementation notes:
 8. PR-20: report persistence/export hardening.
 9. UI-04: ops UX polish.
 10. PR-21: beta feedback loop and support surface.
-11. PR-22: privacy/security hardening follow-up.
-12. PR-23: demo data, examples, and public docs polish.
+11. PR-22: use-case starter packs.
+12. PR-23: privacy/security hardening follow-up.
 13. UI-05: launch polish.
 14. PR-24: final beta release QA and deployment readiness.
 

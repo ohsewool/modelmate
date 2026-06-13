@@ -50,6 +50,7 @@ def main():
 
     steps = [
         ("backend_compile", [sys.executable, "-m", "compileall", "backend"], 120),
+        ("starter_pack_smoke", [sys.executable, str(ROOT / "scripts" / "run_starter_pack_smoke.py")], 60),
         ("upload_validation_qa", [sys.executable, str(ROOT / "scripts" / "run_upload_validation_qa.py")], 180),
         ("full_qa_skip_slow", [sys.executable, str(ROOT / "scripts" / "run_full_qa.py"), "--skip-slow"], 360),
     ]

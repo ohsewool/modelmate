@@ -28,6 +28,7 @@ export default function Upload() {
   const [sideTab, setSideTab] = useState('readiness')
   const [sideOpen, setSideOpen] = useState(false)
   const [loading, setLoading] = useState('')
+  const [selectedStarterPack, setSelectedStarterPack] = useState(null)
   const fileRef = useRef()
   const nav = useNavigate()
   const location = useLocation()
@@ -41,7 +42,7 @@ export default function Upload() {
       setOperationalStatus(r.data?.analysis_status || null)
       setUsageLimits(r.data?.usage_limits || null)
       if (!r.data?.has_data) {
-        clearUploadState('이전 화면 정보가 남아 있었지만 서버에 실제 CSV가 없어 초기화했습니다. 같은 CSV를 다시 올려 주세요.')
+        clearUploadState('이전 화면 정보는 남아 있지만 서버에 원본 CSV가 없습니다. 같은 CSV를 다시 올려 주세요.')
       }
     }).catch(() => {})
   }, [])
@@ -51,25 +52,52 @@ export default function Upload() {
     saveUploadDraft({ uploadInfo, aiAnalysis, target, dropCols, colLabels, edaInfo })
   }, [uploadInfo, aiAnalysis, target, dropCols, colLabels, edaInfo])
 
-  async function handleFile(file) {
+  async function handleStarterPack(pack) {
+    setUploadError(null)
+    setSelectedStarterPack(pack)
+    setLoading('sample')
+    try {
+      const response = await fetch(pack.samplePath)
+      if (!response.ok) throw new Error('샘플 CSV를 불러오지 못했습니다.')
+      const blob = await response.blob()
+      const file = new File([blob], pack.sampleFile, { type: 'text/csv' })
+      await handleFile(file, pack)
+    } catch (error) {
+      setLoading('')
+      setUploadError({
+        message: error.message || '샘플 데이터를 준비하지 못했습니다.',
+        tips: ['직접 CSV를 업로드하거나 잠시 후 다시 시도해 주세요.'],
+      })
+    }
+  }
+
+  async function handleFile(file, starterPack = null) {
     if (!file) return
     setUploadError(null)
-    setLoading('upload')
+    setLoading(starterPack ? 'sample' : 'upload')
+    if (starterPack) setSelectedStarterPack(starterPack)
     const fd = new FormData()
     fd.append('file', file)
     try {
       const { data } = await api.post('/upload', fd)
       setOperationalStatus(data.analysis_status || null)
       setUsageLimits(data.usage_guardrails?.limits || null)
+
+      const preferredTarget = starterPack?.recommendedTarget
       const reuseTarget = reanalysisItem?.target_col || reanalysisItem?.target
-      const canReuseTarget = reuseTarget && data.columns?.includes(reuseTarget)
+      const targetToUse = preferredTarget && data.columns?.includes(preferredTarget)
+        ? preferredTarget
+        : reuseTarget && data.columns?.includes(reuseTarget)
+          ? reuseTarget
+          : data.default_target || data.columns?.at(-1) || ''
       const reuseDrops = [
         ...(reanalysisItem?.drop_cols || []),
         ...(reanalysisItem?.auto_drop_cols || []),
-      ].filter(c => data.columns?.includes(c) && c !== reuseTarget)
+      ].filter(c => data.columns?.includes(c) && c !== targetToUse)
+
       setUploadInfo(data)
       setNeedsReupload(false)
-      setTarget(canReuseTarget ? reuseTarget : data.default_target || data.columns?.at(-1) || '')
+      setTarget(targetToUse)
       setDropCols(reuseDrops.length ? [...new Set(reuseDrops)] : data.suggested_drop || [])
       setEdaInfo(null)
 
@@ -78,9 +106,11 @@ export default function Upload() {
         const { data: ai } = await api.post('/analyze-columns')
         setAiAnalysis(ai)
         if (ai.col_labels) setColLabels(ai.col_labels)
-        if (!canReuseTarget && ai.target_suggestion && data.columns.includes(ai.target_suggestion)) setTarget(ai.target_suggestion)
+        if (!preferredTarget && !reuseTarget && ai.target_suggestion && data.columns.includes(ai.target_suggestion)) {
+          setTarget(ai.target_suggestion)
+        }
         if (!reuseDrops.length && ai.drop_suggestions?.length) {
-          setDropCols(ai.drop_suggestions.map(d => d.col).filter(c => data.columns.includes(c)))
+          setDropCols(ai.drop_suggestions.map(d => d.col).filter(c => data.columns.includes(c) && c !== targetToUse))
         }
       } catch (_) {
         setAiAnalysis(null)
@@ -100,12 +130,12 @@ export default function Upload() {
           status: 'failed',
           current_step: 'csv_upload',
           progress_message: detail || e.message,
-          recommended_next_action: 'CSV 파일인지, 첫 행에 컬럼명이 있는지 확인한 뒤 다시 업로드하세요.',
+          recommended_next_action: 'CSV 파일 형식과 첫 행의 컬럼명을 확인한 뒤 다시 업로드하세요.',
         })
       }
       setUploadError(typeof detail === 'object'
         ? { ...detail, message: detail.message || detail.user_friendly_message }
-        : { message: detail || e.message, tips: ['CSV 파일인지, 첫 행에 컬럼명이 있는지 확인해 주세요.'] })
+        : { message: detail || e.message, tips: ['CSV 파일 형식과 첫 행의 컬럼명을 확인해 주세요.'] })
     } finally {
       setLoading('')
     }
@@ -157,7 +187,8 @@ export default function Upload() {
     setDropCols([])
     setColLabels({})
     setEdaInfo(null)
-    setUploadError(message ? { message, tips: ['파일 선택을 눌러 같은 CSV를 다시 올리면 새 분석을 시작할 수 있습니다.'] } : null)
+    setSelectedStarterPack(null)
+    setUploadError(message ? { message, tips: ['파일 선택을 눌러 같은 CSV를 다시 올리면 분석을 이어갈 수 있습니다.'] } : null)
     setTargetError('')
     setNeedsReupload(false)
     clearUploadDraft()
@@ -168,11 +199,13 @@ export default function Upload() {
   }
 
   const activeCols = uploadInfo?.columns?.filter(c => c !== target && !dropCols.includes(c)) || []
-  const targetCategory = aiAnalysis?.target_category || (aiAnalysis?.task_type === 'regression' ? '연속값 예측' : '목적 확인 필요')
-  const targetReason = aiAnalysis?.target_category_reason || '데이터 구조만으로는 실제 업무 의미를 정확히 알기 어렵습니다.'
-  const targetConfidence = aiAnalysis?.target_category_confidence || '낮음'
-  const datasetDomain = aiAnalysis?.dataset_domain || '도메인 확인 필요'
-  const domainConfidence = aiAnalysis?.dataset_domain_confidence || targetConfidence
+  const targetCategory = selectedStarterPack
+    ? (selectedStarterPack.problemType === 'regression' ? '회귀 예측' : '분류 예측')
+    : aiAnalysis?.target_category || (aiAnalysis?.task_type === 'regression' ? '연속값 예측' : '목표 확인 필요')
+  const targetReason = selectedStarterPack?.businessQuestion || aiAnalysis?.target_category_reason || '데이터 구조만으로는 실제 업무 의미를 완전히 판단하기 어렵습니다.'
+  const targetConfidence = aiAnalysis?.target_category_confidence || '중간'
+  const datasetDomain = selectedStarterPack?.category || aiAnalysis?.dataset_domain || '도메인 확인 필요'
+  const domainConfidence = selectedStarterPack ? '높음' : aiAnalysis?.dataset_domain_confidence || targetConfidence
 
   return (
     <div className="animate-fade-in" style={{ padding: 32, maxWidth: 1240 }}>
@@ -184,7 +217,7 @@ export default function Upload() {
         <p style={{ fontSize: 12, fontWeight: 900, color: '#2563eb', margin: '0 0 8px' }}>분석 흐름 · 데이터 넣기</p>
         <h1 style={{ fontSize: 22, fontWeight: 900, margin: '0 0 6px', letterSpacing: 0 }}>CSV 업로드</h1>
         <p style={{ fontSize: 13, lineHeight: 1.55, color: 'var(--text-2)', margin: 0 }}>
-          파일을 올리면 데이터 구조를 점검하고 예측할 값과 제외할 정보를 먼저 정리합니다.
+          CSV를 직접 올리거나 사용 사례 샘플로 시작하세요. ModelMate가 데이터 구조, 추천 타깃, 제외 후보를 먼저 정리합니다.
         </p>
       </section>
 
@@ -192,7 +225,7 @@ export default function Upload() {
         <div style={{ display: 'grid', gap: 14 }}>
           {reanalysisItem && <ReanalysisNotice item={reanalysisItem} onClear={clearReanalysis} />}
           <StatusRecoveryPanel status={operationalStatus} limits={usageLimits} compact />
-          <DemoDatasetGuide />
+          <DemoDatasetGuide onStart={handleStarterPack} />
           <div
             onDragOver={e => { e.preventDefault(); setDragging(true) }}
             onDragLeave={() => setDragging(false)}
@@ -210,7 +243,7 @@ export default function Upload() {
               <div style={{ display: 'grid', justifyItems: 'center', gap: 14 }}>
                 <span className="spinner" />
                 <p style={{ color: 'var(--text)', fontWeight: 800, margin: 0 }}>
-                  {loading === 'ai' ? '데이터 구조를 읽는 중입니다' : '파일을 올리는 중입니다'}
+                  {loading === 'sample' ? '샘플 CSV를 준비하는 중입니다' : loading === 'ai' ? '데이터 구조를 읽는 중입니다' : '파일을 올리는 중입니다'}
                 </p>
                 <p style={{ color: 'var(--text-2)', fontSize: 13, margin: 0 }}>잠시만 기다려 주세요.</p>
               </div>
@@ -220,7 +253,7 @@ export default function Upload() {
                   <UploadIcon />
                 </div>
                 <p style={{ color: 'var(--text)', fontWeight: 900, fontSize: 18, margin: '0 0 8px' }}>
-                  파일을 끌어오거나 클릭해서 선택하세요
+                  CSV 파일을 끌어오거나 클릭해서 선택하세요
                 </p>
                 <p style={{ color: 'var(--text-2)', fontSize: 13, margin: '0 0 18px' }}>
                   CSV, TSV, TXT 파일을 지원합니다. 첫 행에는 컬럼명이 있어야 합니다.
@@ -236,6 +269,14 @@ export default function Upload() {
       ) : (
         <div className={`animate-slide-up upload-workspace ${sideOpen ? 'upload-workspace-open' : ''}`}>
           <div className="upload-main-flow">
+            {selectedStarterPack && (
+              <div className="banner-success">
+                <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6 }}>
+                  <strong style={{ color: 'var(--text)' }}>{selectedStarterPack.title}</strong> 샘플로 시작했습니다. 이 데이터는 기능 시연을 위한 합성 데이터이며 실제 의사결정에는 사용자의 실제 CSV로 다시 검증해야 합니다.
+                </p>
+              </div>
+            )}
+
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
               <KPICard label="데이터 행" value={uploadInfo.shape?.[0]?.toLocaleString?.() || uploadInfo.shape?.[0]} color="blue" />
               <KPICard label="전체 컬럼" value={uploadInfo.shape?.[1]} color="cyan" />
@@ -272,7 +313,7 @@ export default function Upload() {
                     {uploadInfo.filename ? `${uploadInfo.filename} 기준으로 ` : ''}모델이 무엇을 예측하고 어떤 정보를 참고할지 정하는 단계입니다. 필요하면 직접 바꿀 수 있습니다.
                   </p>
                 </div>
-                <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                <div style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap' }}>
                   <Button onClick={handleSetTarget} disabled={!!loading || needsReupload}>
                     {loading === 'target' && <span className="spinner" />}
                     이 설정으로 분석 준비
@@ -281,13 +322,21 @@ export default function Upload() {
                 </div>
               </div>
 
+              {selectedStarterPack && (
+                <div style={{ padding: 14, borderRadius: 8, border: '1px solid rgba(5,150,105,0.2)', background: 'rgba(5,150,105,0.07)', marginBottom: 14 }}>
+                  <p style={{ fontSize: 12, fontWeight: 900, color: '#059669', margin: '0 0 6px' }}>사용 사례 설명</p>
+                  <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.7, margin: 0 }}>{selectedStarterPack.businessQuestion}</p>
+                  <p style={{ fontSize: 12, color: 'var(--text-label)', lineHeight: 1.6, margin: '8px 0 0' }}>{selectedStarterPack.expectedReportFraming}</p>
+                </div>
+              )}
+
               {aiAnalysis?.dataset_summary && (
                 <div style={{ padding: 14, borderRadius: 8, border: '1px solid rgba(37,99,235,0.16)', background: 'rgba(37,99,235,0.06)', marginBottom: 14 }}>
                   <p style={{ fontSize: 12, fontWeight: 900, color: '#2563eb', margin: '0 0 6px' }}>데이터 판단 요약</p>
                   <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.7, margin: 0 }}>{aiAnalysis.dataset_summary}</p>
                   {aiAnalysis?.target_category && (
                     <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.6, margin: '8px 0 0' }}>
-                      데이터 종류: <strong style={{ color: 'var(--text)' }}>{datasetDomain}</strong> · 맞힐 값: <strong style={{ color: 'var(--text)' }}>{targetCategory}</strong> · 확신도 {targetConfidence}
+                      데이터 종류: <strong style={{ color: 'var(--text)' }}>{datasetDomain}</strong> · 맞힐 값: <strong style={{ color: 'var(--text)' }}>{targetCategory}</strong> · 신뢰도 {targetConfidence}
                       <br />{targetReason}
                     </p>
                   )}
@@ -303,7 +352,7 @@ export default function Upload() {
               <div style={{ display: 'grid', gap: 14 }}>
                 <SettingPanel
                   title="맞히려는 값"
-                  desc={`예측 모델이 최종적으로 맞혀야 하는 값입니다. 이 파일은 ${datasetDomain} 데이터로 보이며, 현재 값은 ${targetCategory}로 해석했습니다.`}
+                  desc={`예측 모델이 최종적으로 맞혀야 하는 값입니다. 현재는 ${targetCategory} 문제로 보고 있습니다.`}
                   color="#2563eb"
                 >
                   <select value={target} onChange={e => { setTarget(e.target.value); setDropCols(prev => prev.filter(c => c !== e.target.value)) }} className="input" style={{ maxWidth: 360 }}>
@@ -321,7 +370,7 @@ export default function Upload() {
 
                 <SettingPanel
                   title={`예측에서 제외할 정보 ${dropCols.length}개`}
-                  desc="ID, 날짜, 이미 정답을 알려주는 컬럼처럼 예측을 방해할 수 있는 정보입니다. 누르면 다시 포함됩니다."
+                  desc="ID, 날짜, 이미 정답을 알려주는 컬럼처럼 예측을 방해할 수 있는 정보입니다. 누르면 다시 포함합니다."
                   color="#dc2626"
                 >
                   <ChipList items={dropCols} colLabels={colLabels} empty="제외할 컬럼이 없습니다." onClick={toggleDrop} tone="red" />

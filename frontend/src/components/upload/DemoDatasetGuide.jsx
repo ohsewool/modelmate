@@ -1,45 +1,19 @@
-import { Database, Factory, TrainFront, UsersRound } from 'lucide-react'
+import { BarChart3, Database, Factory, GraduationCap, Megaphone, UsersRound } from 'lucide-react'
+import { STARTER_PACKS, taskTypeLabel } from '../../data/starterPacks'
 import { Badge } from '../ui/badge'
 
-const RAW_BASE = 'https://raw.githubusercontent.com/ohsewool/-/main/sample_data'
+const icons = {
+  'customer-churn': UsersRound,
+  'sales-demand': BarChart3,
+  'equipment-failure': Factory,
+  'marketing-conversion': Megaphone,
+  'student-performance': GraduationCap,
+}
 
-const demos = [
-  {
-    name: 'Customer Churn Demo',
-    file: 'customer_churn_demo.csv',
-    useCase: '고객 이탈 가능성 예측',
-    target: 'churn',
-    task: 'classification',
-    output: '이탈 위험 고객과 주요 근거를 확인',
-    goal: 'I want to predict which customers may churn.',
-    icon: UsersRound,
-    tone: '#2563eb',
-  },
-  {
-    name: 'Manufacturing Quality Demo',
-    file: 'manufacturing_quality_demo.csv',
-    useCase: '제조 불량 여부 예측',
-    target: 'defect',
-    task: 'classification',
-    output: '불량 위험과 설비 신호를 확인',
-    goal: 'I want to predict manufacturing defects from machine signals.',
-    icon: Factory,
-    tone: '#7c3aed',
-  },
-  {
-    name: 'Public Bike Signup Demo',
-    file: 'public_bike_signup_demo.csv',
-    useCase: '공공자전거 가입 건수 예측',
-    target: 'signup_count',
-    task: 'regression',
-    output: '월별 가입 수요와 영향 요인을 확인',
-    goal: 'I want to estimate public bike signups from historical CSV data.',
-    icon: TrainFront,
-    tone: '#059669',
-  },
-]
+const tones = ['#2563eb', '#059669', '#7c3aed', '#db2777', '#ea580c']
 
-export default function DemoDatasetGuide() {
+export default function DemoDatasetGuide({ onStart, compact = false }) {
+  const packs = compact ? STARTER_PACKS.slice(0, 4) : STARTER_PACKS
   return (
     <section className="card" style={{ padding: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', marginBottom: 14 }}>
@@ -48,33 +22,45 @@ export default function DemoDatasetGuide() {
             <Database size={18} />
           </span>
           <div>
-            <p style={{ margin: 0, fontSize: 15, fontWeight: 900, color: 'var(--text)' }}>샘플 데이터로 먼저 체험</p>
-            <p style={{ margin: '3px 0 0', fontSize: 12, color: 'var(--text-label)' }}>CSV가 없어도 전체 흐름을 빠르게 확인할 수 있습니다.</p>
+            <p style={{ margin: 0, fontSize: 15, fontWeight: 900, color: 'var(--text)' }}>사용 사례로 시작하기</p>
+            <p style={{ margin: '3px 0 0', fontSize: 12, color: 'var(--text-label)' }}>
+              샘플 CSV로 업로드부터 보고서와 예측 API 흐름까지 빠르게 체험할 수 있습니다.
+            </p>
           </div>
         </div>
-        <Badge variant="secondary">3 samples</Badge>
+        <Badge variant="secondary">{packs.length}개</Badge>
       </div>
 
-      <div className="demo-dataset-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 10 }}>
-        {demos.map(item => {
-          const Icon = item.icon
+      <div className="demo-dataset-grid" style={{ display: 'grid', gridTemplateColumns: compact ? 'repeat(2, minmax(0, 1fr))' : 'repeat(auto-fit, minmax(210px, 1fr))', gap: 10 }}>
+        {packs.map((item, idx) => {
+          const Icon = icons[item.id] || Database
+          const tone = tones[idx % tones.length]
           return (
-            <article key={item.file} style={{ padding: 13, borderRadius: 10, border: '1px solid var(--border-sub)', background: 'var(--surface-alt)', minWidth: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                <Icon size={16} color={item.tone} />
-                <strong style={{ fontSize: 12, color: item.tone }}>{item.name}</strong>
+            <article key={item.id} style={{ padding: 13, borderRadius: 10, border: '1px solid var(--border-sub)', background: 'var(--surface-alt)', minWidth: 0, display: 'grid', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                  <Icon size={16} color={tone} />
+                  <strong style={{ fontSize: 13, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</strong>
+                </div>
+                <Badge variant="secondary">{taskTypeLabel(item.problemType)}</Badge>
               </div>
-              <p style={{ margin: '0 0 7px', fontSize: 13, fontWeight: 850, color: 'var(--text)' }}>{item.useCase}</p>
-              <p style={{ margin: '0 0 8px', fontSize: 12, lineHeight: 1.45, color: 'var(--text-2)' }}>
-                Target <b>{item.target}</b> · {item.task}<br />
-                {item.output}
-              </p>
-              <p style={{ margin: '0 0 10px', fontSize: 11, color: 'var(--text-label)', lineHeight: 1.45 }}>
-                Goal: {item.goal}
-              </p>
-              <a href={`${RAW_BASE}/${item.file}`} download style={{ fontSize: 12, fontWeight: 850, color: '#2563eb', textDecoration: 'none' }}>
-                CSV 다운로드
-              </a>
+              <p style={{ margin: 0, fontSize: 12, lineHeight: 1.5, color: 'var(--text-2)' }}>{item.shortDescription}</p>
+              <div style={{ display: 'grid', gap: 4, fontSize: 12, color: 'var(--text-2)' }}>
+                <span>추천 타깃: <b style={{ color: 'var(--text)' }}>{item.recommendedTarget}</b></span>
+                <span>권장 지표: <b style={{ color: 'var(--text)' }}>{item.recommendedMetric}</b></span>
+              </div>
+              {!compact && (
+                <details style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>
+                  <summary style={{ cursor: 'pointer', fontWeight: 800, color: tone }}>자세히 보기</summary>
+                  <p style={{ margin: '7px 0 0' }}>{item.businessQuestion}</p>
+                  <p style={{ margin: '6px 0 0' }}>{item.expectedReportFraming}</p>
+                  <p style={{ margin: '6px 0 0', color: 'var(--text-label)' }}>{item.limitations}</p>
+                </details>
+              )}
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 2 }}>
+                <button className="btn-primary" type="button" onClick={() => onStart?.(item)}>샘플로 시작</button>
+                <a className="btn-secondary" href={item.samplePath} download={item.sampleFile}>CSV 받기</a>
+              </div>
             </article>
           )
         })}

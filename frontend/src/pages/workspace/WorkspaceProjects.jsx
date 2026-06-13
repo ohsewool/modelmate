@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import DemoDatasetGuide from '../../components/upload/DemoDatasetGuide'
 import { EmptyState, LoadingState, StatusBadge, WorkspacePageHeader } from '../../components/workspace-shell/WorkspaceStates'
 import { fmt, loadWorkspaceOverview, primaryMetric, projectDatasetName, projectTarget } from './workspaceData'
 
@@ -21,11 +22,14 @@ export default function WorkspaceProjects() {
         action={<button className="btn-primary" onClick={() => nav('/new')}>새 분석 시작</button>}
       />
       {!data.projects.length ? (
-        <EmptyState
-          title="아직 저장된 프로젝트가 없습니다."
-          description="CSV를 업로드하거나 샘플 데이터로 예측 분석을 시작하세요."
-          action={<button className="btn-primary" onClick={() => nav('/new')}>새 분석 시작</button>}
-        />
+        <div style={{ display: 'grid', gap: 14 }}>
+          <EmptyState
+            title="저장된 프로젝트가 아직 없습니다."
+            description="샘플 사용 사례로 ModelMate의 전체 흐름을 먼저 확인할 수 있습니다."
+            action={<div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}><button className="btn-primary" onClick={() => nav('/new')}>CSV 업로드</button><button className="btn-secondary" onClick={() => nav('/new')}>샘플로 체험하기</button></div>}
+          />
+          <DemoDatasetGuide compact onStart={() => nav('/new')} />
+        </div>
       ) : (
         <section className="card" style={{ overflowX: 'auto' }}>
           <table className="data-table">
