@@ -25,24 +25,24 @@ export async function loadProjectDetail(projectId) {
   }
 }
 
-export function projectPrimaryAction(project) {
-  const dataset = activeDataset(project)
-  if (!dataset) return { label: '새 데이터로 분석', path: '/new', disabled: false }
-  if (dataset.deleted_at || dataset.delete_status === 'deleted') return { label: '삭제된 데이터셋', path: null, disabled: true }
-  if (project.last_run_id) return { label: '같은 설정으로 다시 실행', runId: project.last_run_id, disabled: false }
-  return { label: '분석 시작', path: '/new', disabled: false }
-}
-
 export function activeDataset(project) {
-  return (project.datasets || []).find(item => !item.deleted_at && item.delete_status !== 'deleted') || project.dataset_summary || null
+  return (project?.datasets || []).find(item => !item.deleted_at && item.delete_status !== 'deleted') || project?.dataset_summary || null
 }
 
 export function latestRun(project) {
-  return (project.analysis_runs || [])[0] || null
+  return (project?.analysis_runs || [])[0] || null
 }
 
 export function latestReport(project) {
-  return (project.available_reports || [])[0] || null
+  return (project?.available_reports || [])[0] || null
+}
+
+export function projectPrimaryAction(project) {
+  const dataset = activeDataset(project)
+  if (!dataset) return { label: '데이터로 분석', path: '/new', disabled: false }
+  if (dataset.deleted_at || dataset.delete_status === 'deleted') return { label: '삭제된 데이터셋', path: null, disabled: true }
+  if (project.last_run_id) return { label: '같은 설정으로 재실행', runId: project.last_run_id, disabled: false }
+  return { label: '분석 시작', path: '/new', disabled: false }
 }
 
 export function projectSummaryText(project) {
@@ -63,7 +63,7 @@ export function projectMetric(project) {
 }
 
 export function runFromProject(project, runId) {
-  return (project.analysis_runs || []).find(item => item.analysis_run_id === runId) || null
+  return (project?.analysis_runs || []).find(item => item.analysis_run_id === runId) || null
 }
 
 export function makeRunTimeline(run, project, jobs = []) {
@@ -73,7 +73,7 @@ export function makeRunTimeline(run, project, jobs = []) {
   const unavailable = '아직 상세 실행 로그가 저장되지 않았습니다.'
   return [
     {
-      name: '목표 / 계획',
+      name: '목표와 계획',
       status: run?.goal ? 'succeeded' : 'unknown',
       observation: run?.goal || unavailable,
       decision: run?.target ? `${run.target} 예측 흐름으로 진행` : '저장된 목표 정보가 부족합니다.',
@@ -98,16 +98,16 @@ export function makeRunTimeline(run, project, jobs = []) {
       decision: run?.task_type ? `작업 유형: ${run.task_type}` : '작업 유형 정보가 없습니다.',
     },
     {
-      name: '누수 가능성 점검',
+      name: '누수 가능성 평가',
       status: run?.warnings_count ? 'warning' : 'unknown',
       observation: run?.warnings_count ? `${run.warnings_count}개 경고가 기록되었습니다.` : unavailable,
-      decision: run?.warnings_count ? '식별자/누수 경고 검토 필요' : '저장된 상세 경고 없음',
+      decision: run?.warnings_count ? '결과 해석 전 경고 검토 필요' : '저장된 상세 경고 없음',
     },
     {
       name: '모델 학습',
       status: failed ? 'failed' : run?.best_model ? 'succeeded' : status,
       observation: run?.best_model ? `추천 모델: ${run.best_model}` : (job?.progress_message || unavailable),
-      decision: failed ? '학습이 완료되지 않았습니다.' : '후보 모델 결과 저장됨',
+      decision: failed ? '학습을 완료하지 못했습니다.' : '후보 모델 결과 저장됨',
       error: failed ? (run?.failure_message || job?.error_message) : '',
       timestamp: job?.finished_at || job?.failed_at,
     },
@@ -122,12 +122,6 @@ export function makeRunTimeline(run, project, jobs = []) {
       status: 'unknown',
       observation: unavailable,
       decision: '설명 화면에서 가능한 범위의 근거를 확인합니다.',
-    },
-    {
-      name: '검증 / 신뢰 점검',
-      status: run?.warnings_count ? 'warning' : 'unknown',
-      observation: run?.warnings_count ? '경고가 있는 결과입니다.' : unavailable,
-      decision: run?.warnings_count ? '보고서에서 제한사항 확인 필요' : '추가 검토 정보 없음',
     },
     {
       name: '보고서 생성',

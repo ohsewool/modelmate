@@ -15,13 +15,32 @@ export default function WorkspaceProjects() {
 
   return (
     <div className="animate-fade-in" style={{ padding: 24, maxWidth: 1180 }}>
-      <WorkspacePageHeader title="프로젝트" description="저장된 분석, 연결된 데이터셋, 최근 실행 기록, 재사용 가능한 결과물을 프로젝트별로 확인합니다." action={<button className="btn-primary" onClick={() => nav('/new')}>새 분석 시작</button>} />
+      <WorkspacePageHeader
+        title="프로젝트"
+        description="저장된 분석, 연결된 데이터셋, 최근 실행 기록, 재사용 가능한 결과물을 프로젝트별로 확인합니다."
+        action={<button className="btn-primary" onClick={() => nav('/new')}>새 분석 시작</button>}
+      />
       {!data.projects.length ? (
-        <EmptyState title="아직 저장된 프로젝트가 없습니다." description="CSV를 업로드하거나 샘플 데이터로 예측 분석을 시작하세요." action={<button className="btn-primary" onClick={() => nav('/new')}>새 분석 시작</button>} />
+        <EmptyState
+          title="아직 저장된 프로젝트가 없습니다."
+          description="CSV를 업로드하거나 샘플 데이터로 예측 분석을 시작하세요."
+          action={<button className="btn-primary" onClick={() => nav('/new')}>새 분석 시작</button>}
+        />
       ) : (
         <section className="card" style={{ overflowX: 'auto' }}>
           <table className="data-table">
-            <thead><tr><th>프로젝트</th><th>상태</th><th>타깃</th><th>데이터셋</th><th>최근 실행</th><th>추천 모델</th><th>주요 지표</th><th>작업</th></tr></thead>
+            <thead>
+              <tr>
+                <th>프로젝트</th>
+                <th>상태</th>
+                <th>타깃</th>
+                <th>데이터셋</th>
+                <th>최근 실행</th>
+                <th>추천 모델</th>
+                <th>주요 지표</th>
+                <th>작업</th>
+              </tr>
+            </thead>
             <tbody>{data.projects.map(project => (
               <tr key={project.id}>
                 <td><Link to={`/projects/${project.id}`}><strong>{project.name}</strong></Link><br /><span style={{ color: 'var(--text-label)' }}>{project.id}</span></td>

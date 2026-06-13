@@ -41,12 +41,11 @@ export async function loadReportsForProjects(projects) {
 }
 
 export async function loadPredictionApiRows(projects) {
-  const rows = await Promise.all(projects.map(project =>
+  return Promise.all(projects.map(project =>
     api.get(`/projects/${project.id}/prediction-tokens`)
       .then(res => ({ project, availability: res.data.availability, tokens: res.data.tokens || [] }))
       .catch(() => ({ project, availability: null, tokens: [] }))
   ))
-  return rows
 }
 
 export function primaryMetric(item) {

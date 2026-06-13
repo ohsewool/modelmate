@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { AlertTriangle, RefreshCw } from 'lucide-react'
 import api from '../../api'
-import { EmptyState, ErrorState, LoadingState, StatusBadge, WorkspacePageHeader } from '../../components/workspace-shell/WorkspaceStates'
+import { CopyButton, EmptyState, ErrorState, LoadingState, StatusBadge, WorkspacePageHeader } from '../../components/workspace-shell/WorkspaceStates'
 import { fmt, projectDatasetName } from './workspaceData'
 import { failureMessage, loadProjectDetail, makeRunTimeline, runFromProject, runMetric } from './projectDetailData'
 
@@ -44,12 +44,13 @@ export default function RunDetail() {
   const run = project ? runFromProject(project, runId) : null
   const timeline = useMemo(() => run && project ? makeRunTimeline(run, project, state.data.jobs) : [], [run, project, state.data])
   const failure = run && project ? failureMessage(run, project) : null
+  const idText = [run?.error_id && `오류 ID: ${run.error_id}`, run?.request_id && `request ID: ${run.request_id}`].filter(Boolean).join(' / ')
 
   async function rerun() {
     setMessage('')
     try {
       const res = await api.post(`/projects/${projectId}/runs/${runId}/rerun`)
-      setMessage(`재실행 작업이 시작되었습니다. Job: ${res.data.job_id || '-'}`)
+      setMessage(`재실행 작업을 시작했습니다. Job: ${res.data.job_id || '-'}`)
       await load()
     } catch (err) {
       setMessage(err.response?.data?.detail?.user_friendly_message || '재실행을 시작하지 못했습니다.')
@@ -81,15 +82,21 @@ export default function RunDetail() {
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}><AlertTriangle size={18} color="#dc2626" /><strong>{failure.title}</strong></div>
           <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.6 }}>{failure.cause}</p>
           <p style={{ margin: 0, color: 'var(--text-label)', fontSize: 12 }}>다음 행동: {failure.action}</p>
+          {idText && <p style={{ margin: 0, color: 'var(--text-label)', fontSize: 12 }}>{idText}</p>}
+          <details>
+            <summary style={{ cursor: 'pointer', fontWeight: 800 }}>기술 정보 보기</summary>
+            <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', marginTop: 10, padding: 12, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface-alt)' }}>{run.failure_message || '저장된 기술 상세 정보가 없습니다.'}</pre>
+          </details>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <button className="btn-primary" type="button" disabled={!run.can_rerun} onClick={rerun}><RefreshCw size={15} /> 다시 실행</button>
             <button className="btn-secondary" type="button" onClick={() => nav('/new')}>새 데이터셋 업로드</button>
+            <CopyButton value={idText} label="오류 정보 복사" />
           </div>
         </section>
       )}
       <section className="card">
         <p className="section-title">실행 trace</p>
-        <p style={{ margin: '0 0 14px', color: 'var(--text-2)', fontSize: 13 }}>실제 저장된 실행 메타데이터를 기반으로 표시합니다. 세부 로그가 없는 단계는 명확히 표시합니다.</p>
+        <p style={{ margin: '0 0 14px', color: 'var(--text-2)', fontSize: 13 }}>실제 저장된 실행 메타데이터를 기반으로 표시합니다. 없는 단계는 명확히 표시합니다.</p>
         <Timeline items={timeline} />
       </section>
     </div>

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { AlertTriangle, FileText, KeyRound, RefreshCw, Trash2 } from 'lucide-react'
 import api from '../../api'
-import { EmptyState, ErrorState, LoadingState, StatusBadge, WorkspacePageHeader } from '../../components/workspace-shell/WorkspaceStates'
+import { CopyButton, EmptyState, ErrorState, LoadingState, StatusBadge, WorkspacePageHeader } from '../../components/workspace-shell/WorkspaceStates'
 import { fmt, projectDatasetName, projectTarget } from './workspaceData'
 import {
   PROJECT_TABS,
@@ -61,8 +61,9 @@ function FailurePanel({ run, project, onRerun }) {
   const dataset = activeDataset(project)
   const deleted = dataset?.deleted_at || dataset?.delete_status === 'deleted'
   if (!run || (run.status !== 'failed' && !deleted)) return null
-  const title = deleted ? '데이터셋이 삭제되어 다시 실행할 수 없습니다.' : '분석을 완료하지 못했습니다.'
-  const cause = deleted ? '원본 CSV가 필요한 재실행과 예측 API 사용이 제한됩니다.' : (run.failure_message || '데이터 형식, 타깃 컬럼, 학습 설정 중 하나에서 문제가 발생했습니다.')
+  const title = deleted ? '연결된 데이터셋이 삭제되어 다시 실행할 수 없습니다.' : '분석을 완료하지 못했습니다.'
+  const cause = deleted ? '원본 CSV가 필요한 재실행과 예측 API 사용이 제한됩니다.' : (run.failure_message || '데이터 형식이나 타깃 컬럼을 확인한 뒤 다시 실행하세요.')
+  const idText = [run.error_id && `오류 ID: ${run.error_id}`, run.request_id && `request ID: ${run.request_id}`].filter(Boolean).join(' / ')
   return (
     <section className="card" style={{ display: 'grid', gap: 12, borderColor: '#fecdd3' }}>
       <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
@@ -70,13 +71,15 @@ function FailurePanel({ run, project, onRerun }) {
         <strong>{title}</strong>
       </div>
       <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.6 }}>{cause}</p>
+      {idText && <p style={{ margin: 0, color: 'var(--text-label)', fontSize: 12 }}>{idText}</p>}
       <details>
-        <summary style={{ cursor: 'pointer', fontWeight: 800 }}>실패 원인 자세히 보기</summary>
+        <summary style={{ cursor: 'pointer', fontWeight: 800 }}>기술 정보 보기</summary>
         <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', marginTop: 10, padding: 12, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface-alt)' }}>{run.failure_message || '저장된 기술 상세 정보가 없습니다.'}</pre>
       </details>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         <button className="btn-primary" type="button" disabled={deleted || !run.can_rerun} onClick={onRerun}><RefreshCw size={15} /> 다시 실행</button>
         <Link className="btn-secondary" to="/new">새 데이터셋 업로드</Link>
+        <CopyButton value={idText} label="오류 정보 복사" />
       </div>
     </section>
   )
@@ -116,10 +119,10 @@ export default function ProjectDetail() {
     setMessage('')
     try {
       const res = await api.post(`/projects/${projectId}/runs/${runId}/rerun`)
-      setMessage(`재실행 작업이 시작되었습니다. Job: ${res.data.job_id || '-'}`)
+      setMessage(`재실행 작업을 시작했습니다. Job: ${res.data.job_id || '-'}`)
       await reload()
     } catch (err) {
-      setMessage(err.response?.data?.detail?.user_friendly_message || '재실행을 시작하지 못했습니다. 데이터셋 상태와 사용 제한을 확인하세요.')
+      setMessage(err.response?.data?.detail?.user_friendly_message || '재실행을 시작하지 못했습니다. 데이터셋 상태와 사용 한도를 확인하세요.')
     }
   }
 
@@ -127,7 +130,7 @@ export default function ProjectDetail() {
     setMessage('')
     try {
       const res = await api.post(`/projects/${projectId}/prediction-tokens`, { label: '프로젝트 API token' })
-      setMessage(`token이 생성되었습니다. 전체 token은 지금 한 번만 표시됩니다: ${res.data.plaintext_token}`)
+      setMessage(`token을 생성했습니다. 전체 token은 지금 한 번만 표시됩니다: ${res.data.plaintext_token}`)
       await reload()
     } catch (err) {
       setMessage(err.response?.data?.detail?.user_friendly_message || '예측 API token을 만들 수 없습니다.')
@@ -136,10 +139,10 @@ export default function ProjectDetail() {
 
   async function deleteDataset() {
     if (!dataset?.dataset_id && !dataset?.id) return
-    if (!window.confirm('이 데이터셋을 삭제하면 원본 CSV가 필요한 재실행이 제한됩니다. 계속할까요?')) return
+    if (!window.confirm('이 데이터셋을 삭제하면 원본 CSV가 필요한 재실행과 예측 API 사용이 제한될 수 있습니다. 계속할까요?')) return
     try {
       await api.delete(`/datasets/${dataset.dataset_id || dataset.id}`)
-      setMessage('데이터셋이 삭제 처리되었습니다.')
+      setMessage('데이터셋을 삭제 처리했습니다.')
       await reload()
     } catch (err) {
       setMessage(err.response?.data?.detail?.user_friendly_message || '데이터셋을 삭제하지 못했습니다.')
@@ -147,7 +150,7 @@ export default function ProjectDetail() {
   }
 
   async function deleteProject() {
-    if (!window.confirm('프로젝트를 삭제/보관 처리하면 기본 목록에서 숨겨집니다. 계속할까요?')) return
+    if (!window.confirm('프로젝트를 삭제 또는 보관 처리하면 기본 목록에서 숨겨집니다. 계속할까요?')) return
     try {
       await api.delete(`/projects/${projectId}`)
       nav('/projects')
@@ -209,10 +212,10 @@ function OverviewTab({ project, run, dataset, data, timeline, onRerun }) {
       </section>
       <section className="card" style={{ display: 'grid', gap: 12 }}>
         <p className="section-title">신뢰 / 경고 요약</p>
-        {(project.known_warnings || []).length ? project.known_warnings.map(item => <div key={item} className="banner-warning"><p style={{ margin: 0 }}>{item}</p></div>) : <p style={{ margin: 0, color: 'var(--text-2)' }}>현재 프로젝트 요약에서 차단 경고는 확인되지 않았습니다.</p>}
-        <p style={{ margin: 0, color: 'var(--text-label)', fontSize: 12 }}>다음 추천 행동: {project.next_recommended_action}</p>
+        {(project.known_warnings || []).length ? project.known_warnings.map(item => <div key={item} className="banner-warning"><p style={{ margin: 0 }}>{item}</p></div>) : <p style={{ margin: 0, color: 'var(--text-2)' }}>현재 프로젝트 요약에서 차단 경고가 확인되지 않았습니다.</p>}
+        <p style={{ margin: 0, color: 'var(--text-label)', fontSize: 12 }}>다음 추천 행동: {project.next_recommended_action || '보고서와 API 상태를 확인하세요.'}</p>
       </section>
-      {run ? <section className="card"><p className="section-title">최근 실행 trace</p><Timeline items={timeline} /></section> : <EmptyState title="아직 실행 기록이 없습니다." description="분석을 시작하면 실행 기록과 판단 흐름이 이 프로젝트에 저장됩니다." />}
+      {run ? <section className="card"><p className="section-title">최근 실행 trace</p><Timeline items={timeline} /></section> : <EmptyState title="아직 실행 기록이 없습니다." description="분석을 시작하면 실행 기록과 판단 흐름이 프로젝트에 저장됩니다." />}
     </div>
   )
 }
@@ -254,7 +257,7 @@ function ReportTab({ project, report }) {
         <StatusBadge status={report.status || 'ready'} />
       </div>
       <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.6 }}>추천 모델: {fmt(project.last_best_model)} / 주요 지표: {projectMetric(project)}</p>
-      <p style={{ margin: 0, color: 'var(--text-label)', fontSize: 12 }}>{report.message || '보고서는 업로드된 데이터와 현재 검증 결과에 기반합니다.'}</p>
+      <p style={{ margin: 0, color: 'var(--text-label)', fontSize: 12 }}>{report.message || '보고서는 업로드된 데이터와 현재 검증 결과를 기반으로 합니다.'}</p>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         <Link className="btn-primary" to="/report"><FileText size={15} /> 전체 보고서 보기</Link>
         <Link className="btn-secondary" to={`/projects/${project.id}/runs/${report.analysis_run_id}`}>관련 실행 보기</Link>
@@ -266,18 +269,20 @@ function ReportTab({ project, report }) {
 function ApiTab({ data, onCreate }) {
   const availability = data.tokens?.availability
   const tokens = data.tokens?.tokens || []
+  const disabledReason = availability?.dataset_active === false ? '연결된 데이터셋이 삭제되어 예측 API를 사용할 수 없습니다.' : availability?.model_ready === false ? '모델이 아직 준비되지 않았습니다.' : fmt(availability?.reason)
   return (
     <section className="card" style={{ display: 'grid', gap: 12 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
         <div><p className="section-title">예측 API</p><p style={{ margin: 0, color: 'var(--text-2)' }}>프로젝트 단위 token으로 학습 모델을 재사용합니다. 전체 token 값은 생성 직후 한 번만 표시됩니다.</p></div>
-        <StatusBadge status={availability?.available ? 'ready' : 'warning'} />
+        <StatusBadge status={availability?.available ? 'active' : 'disabled'} />
       </div>
-      <div className="banner-warning"><p style={{ margin: 0 }}>모델: {availability?.model_ready ? '준비됨' : '필요'} / 데이터셋: {availability?.dataset_active ? '활성' : '비활성'} / 사유: {fmt(availability?.reason)}</p></div>
+      <div className="banner-warning"><p style={{ margin: 0 }}>모델: {availability?.model_ready ? '준비됨' : '준비 필요'} / 데이터셋: {availability?.dataset_active ? '활성' : '비활성'} / 상태: {availability?.available ? '사용 가능' : disabledReason}</p></div>
       <button className="btn-primary" type="button" disabled={!availability?.available} onClick={onCreate}><KeyRound size={15} /> token 만들기</button>
       {tokens.length ? tokens.map(token => (
         <div key={token.token_id} className="card-compact">
           <strong>{token.token_prefix}</strong> <StatusBadge status={token.status} />
           <p style={{ margin: '6px 0 0', color: 'var(--text-2)', fontSize: 12 }}>생성 {fmt(token.created_at)} / 호출 {token.usage_count || 0} / 마지막 사용 {fmt(token.last_used_at)}</p>
+          <p style={{ margin: '6px 0 0', color: 'var(--text-label)', fontSize: 12 }}>목록에는 전체 token을 다시 표시하지 않습니다.</p>
         </div>
       )) : <p style={{ margin: 0, color: 'var(--text-2)' }}>아직 생성된 프로젝트 API token이 없습니다.</p>}
       <details>
@@ -304,14 +309,14 @@ function DatasetTab({ dataset, onDelete }) {
   const deleted = dataset.deleted_at || dataset.delete_status === 'deleted'
   return (
     <div style={{ display: 'grid', gap: 18 }}>
-      {deleted && <div className="banner-danger"><p style={{ margin: 0 }}>이 데이터셋은 삭제되었습니다. 기존 보고서는 남을 수 있지만 재실행과 예측 API는 제한됩니다.</p></div>}
+      {deleted && <div className="banner-danger"><p style={{ margin: 0 }}>이 데이터셋은 삭제되었습니다. 기존 보고서는 남을 수 있지만 재실행과 예측 API는 사용할 수 없습니다.</p></div>}
       <section className="card">
         <p className="section-title">데이터셋</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 10 }} className="admin-stat-grid">
           <Stat label="파일명" value={dataset.original_filename || dataset.filename} />
           <Stat label="행" value={dataset.row_count || dataset.rows} />
           <Stat label="열" value={dataset.column_count || dataset.columns} />
-          <Stat label="상태" value={dataset.delete_status || 'active'} />
+          <Stat label="상태" value={deleted ? '삭제됨' : dataset.delete_status || '활성'} />
         </div>
         <p style={{ margin: '12px 0 0', color: 'var(--text-label)', fontSize: 12 }}>연결 실행 {fmt(dataset.linked_analysis_run_count)} / 보고서 {fmt(dataset.linked_report_count)} / API {dataset.has_prediction_api ? '있음' : '없음'}</p>
       </section>

@@ -130,6 +130,23 @@ Goal:
 
 - Make operational states visible without introducing enterprise complexity.
 
+Implementation notes:
+
+- Polished the Jobs center with filters for all, active, and failed jobs.
+- Added Korean-first failure summaries, recovery actions, and copyable
+  request/error context where job metadata provides it.
+- Added compact dashboard operational sections for running jobs, failed jobs,
+  usage summary, and next recommended action.
+- Polished project detail and run detail recovery panels, trace labels, dataset
+  deletion states, token states, and danger-zone explanations.
+- Polished Prediction API workspace rows so active, revoked, disabled, deleted
+  dataset, and model-not-ready states are easier to understand.
+- Polished Settings usage cards with progress bars, warning/blocked states, and
+  a lightweight monitoring/support section that uses PR-20 admin monitoring
+  endpoints when the current user has access.
+- Kept backend APIs unchanged and did not add billing, RBAC, enterprise admin
+  console, or external monitoring dependencies.
+
 ## UI-05: Launch Polish
 
 Scope:

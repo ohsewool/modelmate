@@ -7,6 +7,13 @@ function MetricCard({ label, value, sub }) {
   return <div className="card"><p className="section-title">{label}</p><strong style={{ fontSize: 26 }}>{value}</strong><p style={{ margin: '6px 0 0', color: 'var(--text-2)', fontSize: 12 }}>{sub}</p></div>
 }
 
+function usageSummary(usage) {
+  if (!usage?.limits) return '사용량 정보를 확인할 수 없습니다.'
+  const jobs = `${usage.usage?.jobs_today || 0} / ${usage.limits?.max_jobs_per_day ?? '무제한'}`
+  const api = `${usage.usage?.prediction_api_calls_today || 0} / ${usage.limits?.max_prediction_api_calls_per_day ?? '무제한'}`
+  return `오늘 작업 ${jobs}, API 호출 ${api}`
+}
+
 export default function WorkspaceDashboard() {
   const nav = useNavigate()
   const [data, setData] = useState(null)
@@ -21,6 +28,7 @@ export default function WorkspaceDashboard() {
 
   const recentProjects = data.projects.slice(0, 5)
   const activeJobs = data.jobs.filter(job => ['created', 'queued', 'running'].includes(job.status)).slice(0, 4)
+  const failedJobs = data.jobs.filter(job => job.status === 'failed' || job.error_type || job.error_message).slice(0, 4)
   const latestRun = data.history[0]
 
   return (
@@ -28,7 +36,7 @@ export default function WorkspaceDashboard() {
       <WorkspacePageHeader
         eyebrow="워크스페이스"
         title="대시보드"
-        description="저장된 프로젝트, 진행 중인 작업, 보고서, 재사용 가능한 예측 API를 한눈에 확인합니다."
+        description="저장된 프로젝트, 진행 중인 작업, 사용량, 최근 오류와 예측 API 상태를 한눈에 확인합니다."
         action={<button className="btn-primary" onClick={() => nav('/new')}>새 분석 시작</button>}
       />
       {data.projects.length === 0 ? (
@@ -41,6 +49,43 @@ export default function WorkspaceDashboard() {
             <MetricCard label="오늘 작업" value={data.usage?.usage?.jobs_today ?? 0} sub={`${data.usage?.plan || 'free'} 플랜`} />
             <MetricCard label="예측 API" value={data.deployed.length} sub="공유 모델 기록" />
           </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }} className="admin-detail-grid">
+            <section className="card">
+              <p className="section-title">진행 중인 작업</p>
+              {activeJobs.length ? activeJobs.map(job => (
+                <p key={job.job_id} style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
+                  <span>{job.project?.name || job.job_id}</span><StatusBadge status={job.status} />
+                </p>
+              )) : <p style={{ color: 'var(--text-2)' }}>현재 실행 중인 작업이 없습니다.</p>}
+              <Link to="/jobs">모든 작업 보기</Link>
+            </section>
+            <section className="card">
+              <p className="section-title">실패한 작업</p>
+              {failedJobs.length ? failedJobs.map(job => (
+                <p key={job.job_id} style={{ display: 'grid', gap: 3 }}>
+                  <strong>{job.project?.name || job.job_id}</strong>
+                  <span style={{ color: 'var(--text-2)', fontSize: 13 }}>{job.error_message || '재실행 전에 오류 원인을 확인하세요.'}</span>
+                </p>
+              )) : <p style={{ color: 'var(--text-2)' }}>최근 실패한 작업이 없습니다.</p>}
+              <Link to="/jobs">실패 작업 확인</Link>
+            </section>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }} className="admin-detail-grid">
+            <section className="card">
+              <p className="section-title">사용량 요약</p>
+              <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.6 }}>{usageSummary(data.usage)}</p>
+              <Link to="/settings">사용량 보기</Link>
+            </section>
+            <section className="card">
+              <p className="section-title">다음 추천 행동</p>
+              <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.6 }}>
+                {latestRun ? `${fmt(latestRun.target)} 결과를 보고서 또는 예측 API로 재사용할 수 있습니다.` : '새 분석을 시작해 첫 프로젝트를 만들어보세요.'}
+              </p>
+            </section>
+          </div>
+
           <section className="card">
             <p className="section-title">최근 프로젝트</p>
             <table className="data-table">
@@ -55,20 +100,6 @@ export default function WorkspaceDashboard() {
               ))}</tbody>
             </table>
           </section>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }} className="admin-detail-grid">
-            <section className="card">
-              <p className="section-title">진행 중인 작업</p>
-              {activeJobs.length ? activeJobs.map(job => (
-                <p key={job.job_id} style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
-                  <span>{job.project?.name || job.job_id}</span><StatusBadge status={job.status} />
-                </p>
-              )) : <p style={{ color: 'var(--text-2)' }}>현재 실행 중인 작업이 없습니다.</p>}
-            </section>
-            <section className="card">
-              <p className="section-title">다음 추천 행동</p>
-              <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.6 }}>{latestRun ? `${fmt(latestRun.target)} 결과를 보고서 또는 예측 API로 재사용할 수 있습니다.` : '새 분석을 시작해 첫 프로젝트를 만들어보세요.'}</p>
-            </section>
-          </div>
         </div>
       )}
     </div>
