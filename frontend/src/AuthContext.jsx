@@ -17,7 +17,7 @@ export function AuthProvider({ children }) {
     } else if (guest) {
       try {
         const parsed = JSON.parse(guest)
-        setUser({ id: parsed.guest_session_id, name: 'Guest demo', email: '', role: 'guest', is_guest: true })
+        setUser({ id: parsed.guest_session_id, name: '게스트 데모', email: '', role: 'guest', is_guest: true })
       } catch {
         localStorage.removeItem('mm_guest_session')
       }
@@ -42,7 +42,7 @@ export function AuthProvider({ children }) {
     }
     const { data } = await api.post('/session/guest', { session_id: sessionId })
     localStorage.setItem('mm_guest_session', JSON.stringify(data))
-    const guestUser = { id: data.guest_session_id, name: 'Guest demo', email: '', role: 'guest', is_guest: true }
+    const guestUser = { id: data.guest_session_id, name: '게스트 데모', email: '', role: 'guest', is_guest: true }
     setUser(guestUser)
     return guestUser
   }

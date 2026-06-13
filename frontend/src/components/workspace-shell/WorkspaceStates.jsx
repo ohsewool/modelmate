@@ -18,6 +18,10 @@ export function statusLabel(status) {
     warning: '주의',
     blocked: '차단됨',
     unavailable: '사용 불가',
+    expired: '만료됨',
+    usage_limited: '한도 도달',
+    contacted: '연락함',
+    closed: '닫힘',
     unknown: '확인 필요',
   }
   return labels[status || 'unknown'] || status || labels.unknown
@@ -44,6 +48,10 @@ export function StatusBadge({ status }) {
     warning: 'badge-amber',
     blocked: 'badge-red',
     unavailable: 'badge-amber',
+    expired: 'badge-amber',
+    usage_limited: 'badge-red',
+    contacted: 'badge-cyan',
+    closed: 'badge-blue',
   }
   return <span className={`badge ${styles[value] || 'badge-blue'}`}>{statusLabel(value)}</span>
 }

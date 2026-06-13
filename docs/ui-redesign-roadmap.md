@@ -160,6 +160,23 @@ Goal:
 
 - Prepare a coherent public demo and portfolio presentation.
 
+Implementation notes:
+
+- Polished the public landing page with Korean-first positioning around CSV
+  upload, explainable predictions, grounded reports, reusable prediction APIs,
+  starter packs, and paid pilot inquiry.
+- Updated app metadata so the browser title, description, and social preview
+  copy match the guided CSV predictive analysis positioning.
+- Normalized visible workspace copy for saved project history, guest demo
+  identity, prediction API token status, and common status labels.
+- Kept allowed technical terms such as CSV, API, AutoML, token, endpoint, cURL,
+  Python, Free, Pro, and Team where they are clearer than forced translation.
+- Preserved existing routes, backend APIs, auth/session flow, project history,
+  report export, prediction API token flow, starter packs, feedback, and pilot
+  inquiry behavior.
+- Verified the frontend build as the UI-05 launch polish check; deeper
+  click-through QA remains part of the release QA/manual demo checklist.
+
 ## PR-21: Beta Feedback Loop
 
 Scope:

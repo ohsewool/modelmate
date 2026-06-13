@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
-import { BarChart3, CheckCircle2, Moon, Play, ShieldCheck, Sun, Upload } from 'lucide-react'
+import { BarChart3, CheckCircle2, FileText, KeyRound, Moon, ShieldCheck, Sun, Upload } from 'lucide-react'
 import { useTheme } from '../ThemeContext'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
@@ -11,10 +11,17 @@ import PilotInquiryDialog from '../components/PilotInquiryDialog'
 const steps = [
   ['CSV 업로드', '파일 구조와 데이터 품질을 먼저 확인하고 분석 가능한 상태인지 판단합니다.'],
   ['데이터 구조 분석', '결측값, 고유값, 식별자성 컬럼, 학습을 방해할 수 있는 신호를 정리합니다.'],
-  ['타깃 변수 추천', '무엇을 예측하면 좋은지 후보와 이유를 함께 보여줍니다.'],
+  ['타깃 변수 추천', '무엇을 예측하면 좋은지 후보와 추천 이유를 함께 보여줍니다.'],
   ['모델 비교', '여러 모델을 같은 기준으로 비교하고 안정적인 후보를 선택합니다.'],
   ['근거 기반 보고서', '성능, 주요 변수, 위험 요인, 다음 행동을 보고서로 정리합니다.'],
   ['예측 API 재사용', '학습 결과를 새 데이터 예측과 재사용 가능한 API 흐름으로 이어갑니다.'],
+]
+
+const features = [
+  ['데이터 구조 분석', 'CSV의 행/열, 결측값, 식별자성 컬럼, 데이터 품질 경고를 먼저 확인합니다.'],
+  ['타깃 변수 추천', '예측할 값 후보와 제외해야 할 컬럼을 사람이 이해할 수 있게 설명합니다.'],
+  ['모델 비교', '분류/회귀 문제에 맞춰 여러 모델을 비교하고 성능 지표를 정리합니다.'],
+  ['보고서와 API', '근거 기반 보고서와 예측 API 재사용 흐름을 프로젝트에 남깁니다.'],
 ]
 
 const examples = ['고객 이탈', '수요 예측', '설비 고장', '마케팅 전환']
@@ -41,7 +48,7 @@ export default function Home() {
           <span style={{ fontSize: 18, fontWeight: 900, letterSpacing: 0 }}>ModelMate</span>
         </button>
 
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
           <Link to="/pricing" style={{ fontSize: 13, fontWeight: 750, color: 'var(--text-2)', textDecoration: 'none' }}>요금 안내</Link>
           <a href="https://github.com/ohsewool/-/blob/main/docs/privacy.md" style={{ fontSize: 13, fontWeight: 750, color: 'var(--text-2)', textDecoration: 'none' }}>개인정보 안내</a>
           <button onClick={toggle} title={dark ? '밝은 화면' : '어두운 화면'} className="theme-toggle">
@@ -62,9 +69,9 @@ export default function Home() {
                   CSV 데이터를 설명 가능한 예측 보고서와 재사용 가능한 API로 바꾸세요
                 </h1>
                 <p style={{ margin: '18px 0 0', fontSize: 20, lineHeight: 1.42, fontWeight: 800 }}>
-                  ModelMate는 CSV를 업로드하면 데이터 구조를 분석하고, 예측 타깃을 추천하며, 모델 비교·근거 기반 보고서·예측 API까지 하나의 흐름으로 제공합니다.
+                  ModelMate는 CSV를 업로드하면 데이터 구조를 분석하고, 예측 타깃 추천, 모델 비교, 근거 기반 보고서, 예측 API까지 하나의 흐름으로 제공합니다.
                 </p>
-                <p style={{ margin: '12px 0 26px', fontSize: 15, lineHeight: 1.7, color: 'var(--text-2)', maxWidth: 600 }}>
+                <p style={{ margin: '12px 0 26px', fontSize: 15, lineHeight: 1.7, color: 'var(--text-2)', maxWidth: 620 }}>
                   비전문가도 이해할 수 있도록 데이터 점검, 모델 성능, 예측 이유, 주의사항을 차분하게 정리합니다. 현재는 베타 SaaS MVP 단계입니다.
                 </p>
 
@@ -89,14 +96,8 @@ export default function Home() {
           </div>
         </section>
 
-        <section style={{ padding: '0 28px 42px' }}>
-          <div style={{ width: 'min(1100px, 100%)', margin: '0 auto 18px' }}>
-            <p className="section-title">작동 방식</p>
-          </div>
-          <div className="home-step-grid" style={{
-            width: 'min(1100px, 100%)', margin: '0 auto', display: 'grid',
-            gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 12,
-          }}>
+        <Section title="작동 방식">
+          <div className="home-step-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 12 }}>
             {steps.map(([title, desc], idx) => (
               <div key={title} className="card" style={{ padding: 18 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
@@ -112,15 +113,25 @@ export default function Home() {
               </div>
             ))}
           </div>
-        </section>
+        </Section>
 
-        <section style={{ padding: '0 28px 46px' }}>
-          <div style={{ width: 'min(1100px, 100%)', margin: '0 auto', display: 'grid', gap: 14 }}>
+        <Section title="주요 기능">
+          <div className="home-step-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 12 }}>
+            {features.map(([title, desc]) => (
+              <div key={title} className="card" style={{ padding: 18 }}>
+                <h2 style={{ margin: '0 0 8px', fontSize: 16, fontWeight: 850 }}>{title}</h2>
+                <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6 }}>{desc}</p>
+              </div>
+            ))}
+          </div>
+        </Section>
+
+        <Section title="샘플 사용 사례">
+          <div style={{ display: 'grid', gap: 14 }}>
             <div>
-              <p className="section-title">샘플 사용 사례</p>
-              <h2 style={{ margin: '4px 0 8px', fontSize: 26, fontWeight: 900 }}>처음이라면 샘플 CSV로 흐름을 확인하세요</h2>
+              <h2 style={{ margin: '4px 0 8px', fontSize: 26, fontWeight: 900 }}>처음이라면 샘플 CSV로 먼저 확인하세요</h2>
               <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.65 }}>
-                고객 이탈, 수요 예측, 설비 고장 위험처럼 자주 쓰이는 예측 문제를 합성 샘플 데이터로 바로 체험할 수 있습니다.
+                이 샘플 데이터는 기능 시연을 위한 합성 데이터입니다. 실제 의사결정에는 실제 데이터로 다시 분석해야 합니다.
               </p>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 12 }} className="home-step-grid">
@@ -132,18 +143,43 @@ export default function Home() {
                 </div>
               ))}
             </div>
+            <div><Button variant="secondary" onClick={() => nav('/login')}>샘플로 체험하기</Button></div>
+          </div>
+        </Section>
+
+        <Section title="신뢰할 수 있는 분석">
+          <div className="card admin-detail-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
             <div>
-              <Button variant="secondary" onClick={() => nav('/login')}>샘플로 체험하기</Button>
+              <h2 style={{ margin: '0 0 8px', fontSize: 22, fontWeight: 900 }}>결과보다 먼저 근거를 보여줍니다</h2>
+              <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.7 }}>
+                데이터 품질 경고, 누수 가능성, 모델 성능 기준, 설명 가능성 요약을 함께 보여주어 결과를 믿어도 되는지 판단할 수 있게 돕습니다.
+              </p>
+            </div>
+            <div style={{ display: 'grid', gap: 8 }}>
+              {['데이터 품질 경고', '누수 가능성 확인', '모델 성능 기준', '예측 이유 설명'].map(item => <ActionPill key={item} icon={<ShieldCheck size={15} />} text={item} />)}
             </div>
           </div>
-        </section>
+        </Section>
+
+        <Section title="보고서와 예측 API">
+          <div className="card admin-detail-grid" style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 16, alignItems: 'center' }}>
+            <div>
+              <h2 style={{ margin: '0 0 8px', fontSize: 22, fontWeight: 900 }}>분석 결과를 저장하고 다시 사용할 수 있습니다</h2>
+              <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.7 }}>
+                프로젝트, 실행 기록, 보고서, 예측 API token을 한 곳에서 관리합니다. token 전체 값은 생성 시 한 번만 표시됩니다.
+              </p>
+            </div>
+            <Button variant="secondary" onClick={() => nav('/login')}>프로젝트 보기</Button>
+          </div>
+        </Section>
+
         <section style={{ padding: '0 28px 48px' }}>
           <div className="card" style={{ width: 'min(1100px, 100%)', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16, alignItems: 'center' }}>
             <div>
-              <p className="section-title">베타 사용 안내</p>
+              <p className="section-title">파일럿 사용 안내</p>
               <h2 style={{ margin: '0 0 8px', fontSize: 24, fontWeight: 900 }}>파일럿 사용을 준비하고 있습니다</h2>
               <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.65 }}>
-                실제 결제는 아직 연결되어 있지 않습니다. CSV 예측 분석, 근거 기반 보고서, 예측 API 재사용이 필요한 팀은 파일럿 문의로 사용 목적과 필요한 한도를 남길 수 있습니다.
+                현재 실제 결제는 연결되어 있지 않습니다. 파일럿 기간에는 플랜 변경과 한도 조정을 수동으로 처리합니다. 결제 정보와 민감한 데이터는 입력하지 마세요.
               </p>
             </div>
             <Button onClick={() => setPilotOpen(true)}>파일럿 문의하기</Button>
@@ -156,8 +192,19 @@ export default function Home() {
   )
 }
 
+function Section({ title, children }) {
+  return (
+    <section style={{ padding: '0 28px 42px' }}>
+      <div style={{ width: 'min(1100px, 100%)', margin: '0 auto' }}>
+        <p className="section-title">{title}</p>
+        {children}
+      </div>
+    </section>
+  )
+}
+
 function ProductPreview() {
-  const features = [['성능 지표', '0.942', '#2563eb'], ['데이터 행', '1,240', '#059669'], ['추천 타깃', '이탈 여부', '#7c3aed']]
+  const metrics = [['성능 지표', '0.942', '#2563eb'], ['데이터 행', '1,240', '#059669'], ['추천 타깃', '이탈 여부', '#7c3aed']]
   return (
     <div style={{ border: '1px solid var(--border)', background: 'var(--surface)', borderRadius: 8, boxShadow: '0 10px 30px rgba(15,23,42,0.08)', overflow: 'hidden' }}>
       <div style={{ height: 42, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 14px', borderBottom: '1px solid var(--border-sub)', background: 'var(--surface-alt)' }}>
@@ -170,7 +217,7 @@ function ProductPreview() {
           <h2 style={{ margin: 0, fontSize: 22, fontWeight: 900 }}>예측 모델 준비 완료</h2>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 10 }}>
-          {features.map(([label, value, tone]) => <MiniMetric key={label} label={label} value={value} tone={tone} />)}
+          {metrics.map(([label, value, tone]) => <MiniMetric key={label} label={label} value={value} tone={tone} />)}
         </div>
         <div className="card-elevated" style={{ padding: 14 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
@@ -189,8 +236,8 @@ function ProductPreview() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           <ActionPill icon={<ShieldCheck size={15} />} text="데이터 점검" />
           <ActionPill icon={<CheckCircle2 size={15} />} text="타깃 추천" />
-          <ActionPill icon={<BarChart3 size={15} />} text="모델 비교" />
-          <ActionPill icon={<Play size={15} />} text="예측 API" />
+          <ActionPill icon={<FileText size={15} />} text="보고서" />
+          <ActionPill icon={<KeyRound size={15} />} text="예측 API" />
         </div>
       </div>
     </div>

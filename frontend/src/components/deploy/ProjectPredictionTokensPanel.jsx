@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AlertCircle, CheckCircle2, Clipboard, KeyRound, RefreshCw, ShieldOff } from 'lucide-react'
 import api from '../../api'
+import { statusLabel } from '../workspace-shell/WorkspaceStates'
 
 const fmt = value => value || '-'
 
@@ -53,7 +54,7 @@ export default function ProjectPredictionTokensPanel({ models = [] }) {
     if (!projectId) return
     setLoading(true)
     try {
-      const res = await api.post(`/projects/${projectId}/prediction-tokens`, { label: 'Default API token' })
+      const res = await api.post(`/projects/${projectId}/prediction-tokens`, { label: '기본 API token' })
       setPlainToken(res.data.plaintext_token)
       setMessage(res.data.show_once_warning)
       await loadTokens()
@@ -156,7 +157,7 @@ print(response.json())`
           <div key={token.token_id} className="card-compact" style={{ display: 'grid', gap: 10 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center' }}>
               <strong>{token.token_prefix}</strong>
-              <span className={token.status === 'active' ? 'badge badge-green' : 'badge badge-amber'}>{token.status}</span>
+              <span className={token.status === 'active' ? 'badge badge-green' : 'badge badge-amber'}>{statusLabel(token.status)}</span>
             </div>
             <p style={{ margin: 0, fontSize: 12, color: 'var(--text-2)' }}>
               생성 {fmt(token.created_at)} · 마지막 사용 {fmt(token.last_used_at)} · 호출 {token.usage_count || 0}회
