@@ -218,6 +218,22 @@ python scripts/run_workspace_integration_smoke.py --base-url http://localhost:80
 
 이번 hotfix에서는 workspace가 빈 화면처럼 보이던 원인을 추가로 점검했습니다.
 
+원인:
+
+- 첫 샘플/업로드 분석 전에 guest session API가 호출되지 않으면 frontend가
+  `X-ModelMate-Guest-Session` header를 보내지 않았습니다.
+- 이 경우 backend는 요청을 ownerless transient 분석으로 처리해 dataset/project/job/report
+  metadata가 workspace persistence에 남지 않았습니다.
+- 일반 `/api/run-cv` 완료 기록은 Jobs metadata로 저장되지만 daily usage counter에는
+  반영되지 않아 Settings의 "오늘 작업" 값이 0으로 보일 수 있었습니다.
+
+수정 확인 기준:
+
+- frontend API client가 로그인 token이 없는 첫 요청에서도 stable guest session header를
+  생성해 전송합니다.
+- `/api/run-cv`로 완료된 동기 분석도 `jobs_today` usage counter에 반영됩니다.
+- workspace smoke test가 프로젝트/데이터셋/오늘 작업 카운터까지 검증합니다.
+
 - 원인: guest session은 frontend 상태에 존재했지만 API 요청에는 guest session header가 실리지 않아 workspace API가 401을 반환했고, frontend가 이를 빈 목록으로 처리했습니다.
 - 수정: frontend API client가 로그인 token이 없을 때 `X-ModelMate-Guest-Session` header를 보내도록 했습니다.
 - 수정: backend current user helper가 guest header를 `guest:<session_id>` scope로 해석하도록 했습니다.

@@ -123,6 +123,20 @@ def run(base_url):
     dataset_rows = datasets["json"] if isinstance(datasets["json"], list) else []
     add(results, "Datasets 목록에 업로드 데이터셋 표시", datasets["status"] == 200 and any(row.get("id") == dataset_id for row in dataset_rows), "GET /api/datasets", datasets["status"])
 
+    usage = request("GET", join(base_url, "/api/me/usage"), token=token)
+    usage_json = usage["json"] or {}
+    usage_counts = usage_json.get("usage") or {}
+    add(
+        results,
+        "Settings 사용량에 프로젝트/데이터셋/오늘 작업 반영",
+        usage["status"] == 200
+        and usage_counts.get("projects", 0) >= 1
+        and usage_counts.get("datasets", 0) >= 1
+        and usage_counts.get("jobs_today", 0) >= 1,
+        "GET /api/me/usage",
+        usage["status"],
+    )
+
     prediction = request("GET", join(base_url, f"/api/projects/{project_id}/prediction-tokens"), token=token)
     prediction_json = prediction["json"] or {}
     availability = prediction_json.get("availability") if isinstance(prediction_json, dict) else None
@@ -158,6 +172,20 @@ def run(base_url):
     guest_projects = request("GET", join(base_url, "/api/projects"), guest_session=guest_id)
     guest_project_rows = guest_projects["json"] if isinstance(guest_projects["json"], list) else []
     add(results, "게스트 workspace가 같은 세션 프로젝트를 조회", guest_projects["status"] == 200 and any(row.get("id") == guest_project_id for row in guest_project_rows), "guest GET /api/projects", guest_projects["status"])
+
+    guest_usage = request("GET", join(base_url, "/api/me/usage"), guest_session=guest_id)
+    guest_usage_json = guest_usage["json"] or {}
+    guest_usage_counts = guest_usage_json.get("usage") or {}
+    add(
+        results,
+        "게스트 Settings 사용량에 세션 분석 결과 반영",
+        guest_usage["status"] == 200
+        and guest_usage_counts.get("projects", 0) >= 1
+        and guest_usage_counts.get("datasets", 0) >= 1
+        and guest_usage_counts.get("jobs_today", 0) >= 1,
+        "guest GET /api/me/usage",
+        guest_usage["status"],
+    )
 
     passed = sum(1 for row in results if row["status"] == "pass")
     return {"base_url": base_url, "summary": {"total": len(results), "passed": passed, "failed": len(results) - passed}, "results": results}
