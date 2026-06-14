@@ -304,6 +304,7 @@ export default function AgentRunDetail() {
         <div style={{ display: 'grid', gap: 14, alignSelf: 'start' }}>
           <Section title="목표 해석" icon={<Database size={16} />}>
             <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.6 }}>프레이밍: {interpreted.report_framing || '-'}</p>
+            {interpreted.planner && <p style={{ margin: 0, color: 'var(--text-2)' }}>계획 방식: {interpreted.planner.planner_type === 'llm_assisted' ? 'LLM 보조' : '기본 규칙 기반'}</p>}
             <p style={{ margin: 0, color: 'var(--text-2)' }}>추천 지표: {(interpreted.likely_metrics || []).join(', ') || '-'}</p>
             <p style={{ margin: 0, color: 'var(--text-2)' }}>타깃 후보: {(interpreted.target_candidates || []).join(', ') || '-'}</p>
             {(interpreted.review_flags || []).includes('causal_claim_warning') && (

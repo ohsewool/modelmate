@@ -124,7 +124,7 @@ Review gate:
 
 ## PR-31 Optional LLM Planner Integration
 
-Status: todo
+Status: done
 
 Task file: .codex/tasks/PR-31-optional-llm-planner.md
 

@@ -27,6 +27,12 @@ function ScopePanel({ interpreted }) {
         <span style={{ color: 'var(--text-2)' }}>{interpreted.report_framing}</span>
       </div>
       {interpreted.unsupported_reason && <p style={{ color: 'var(--text-2)', lineHeight: 1.6 }}>{interpreted.unsupported_reason}</p>}
+      {interpreted.planner && (
+        <p style={{ color: 'var(--text-label)', fontSize: 12, marginBottom: 0 }}>
+          계획 방식: {interpreted.planner.planner_type === 'llm_assisted' ? 'LLM 보조' : '기본 규칙 기반'}
+          {interpreted.planner.fallback_reason ? ` · fallback: ${interpreted.planner.fallback_reason}` : ''}
+        </p>
+      )}
       {interpreted.warnings?.length > 0 && (
         <ul style={{ margin: '12px 0 0', paddingLeft: 20, color: 'var(--text-2)' }}>
           {interpreted.warnings.map((warning, index) => <li key={index}>{warning}</li>)}

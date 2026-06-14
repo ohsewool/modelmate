@@ -120,3 +120,28 @@ Review는 `/agent-mode/:agentRunId` 화면에서 확인할 수 있습니다.
 - retry는 같은 step에 새 tool call attempt를 추가합니다.
 - stop은 run 상태만 중단으로 바꾸고 기존 기록은 보존합니다.
 - PR-30은 안전한 human-in-the-loop foundation이며, LLM planner는 PR-31 전까지 사용하지 않습니다.
+
+## PR-31 optional planner
+
+PR-31부터 planner interface가 추가되었습니다.
+
+기본값:
+
+- deterministic planner
+- LLM API key 불필요
+- 외부 유료 API 의존 없음
+
+선택 옵션:
+
+- `MODEL_MATE_LLM_PLANNER_ENABLED=true`
+- `MODEL_MATE_LLM_PLANNER_RESPONSE`에 schema-compatible JSON을 넣은 안전한 보조 planner path
+
+Fallback 정책:
+
+- 설정이 없으면 deterministic planner 사용
+- JSON이 없거나 invalid하면 deterministic planner로 대체
+- LLM output이 unsupported scope를 supported로 바꾸려고 해도 deterministic scope rule이 우선
+- LLM output은 tool execution, observation, metric, report를 만들 수 없음
+- raw secrets, API key, CSV 원본은 planner log나 UI에 노출하지 않음
+
+정리하면 PR-31의 LLM planner는 선택적 보조 계층이며, ModelMate의 기본 demo와 Agent Mode는 계속 규칙 기반 planner만으로 동작합니다.

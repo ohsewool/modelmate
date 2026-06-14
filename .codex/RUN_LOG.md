@@ -244,3 +244,29 @@ Use the task queue status values unless a temporary milestone needs more detail:
   - [x] final status: PR-30 marked `done` in `.codex/TASK_QUEUE.md`.
 - Known limitations: PR-30 provides persisted review/recovery foundations. More advanced review branching can be refined after optional planner work.
 - Next PR: PR-31 Optional LLM Planner Integration.
+
+## 2026-06-14 21:20 KST - PR-31 Optional LLM Planner Integration
+
+- Status: done
+- Branch: `main`
+- Task file: `.codex/tasks/PR-31-optional-llm-planner.md`
+- Start time: 2026-06-14 21:20 KST
+- Planned verification checklist:
+  - [ ] Frontend build: `cd frontend && npm run build`
+  - [ ] Backend compile passes.
+  - [ ] Deterministic planner remains default.
+  - [ ] Agent Mode works without LLM config.
+  - [ ] Optional planner output is schema-validated.
+  - [ ] Invalid planner output falls back safely.
+  - [ ] LLM cannot bypass supported scope rules.
+  - [ ] No secrets are exposed.
+- Milestones:
+  - [x] implementation started: PR-31 optional planner interface work began after PR-30 was marked `done`.
+  - [x] key files changed: `backend/agents/planner_interface.py`, `backend/main_parts/045_agent_runs.part`, `frontend/src/pages/AgentMode.jsx`, `frontend/src/pages/AgentRunDetail.jsx`, `docs/agent-mode-mvp.md`.
+  - [x] build started: backend compile and frontend production build.
+  - [x] build result: `python -m compileall backend` passed; equivalent bundled Vite build passed because `npm` is not available on PATH.
+  - [x] verification started: optional planner smoke for deterministic default, invalid fallback, valid configured output, and unsupported scope override prevention.
+  - [x] verification result: passed. Deterministic planner remains default and optional planner cannot bypass supported scope rules.
+  - [x] final status: PR-31 marked `done` in `.codex/TASK_QUEUE.md`.
+- Known limitations: PR-31 provides a safe optional planner interface and configured JSON hook, not a required external LLM dependency.
+- Next PR: PR-32 Final Agentic Portfolio Polish.

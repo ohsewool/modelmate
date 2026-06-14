@@ -2,7 +2,7 @@
 # Agentic AutoML mock planner endpoints (PR-03)
 from backend.agents import SupervisorPlanner
 from backend.agents.executor import execute_agent_run
-from backend.agents.goal_first import build_goal_first_plan, interpret_goal
+from backend.agents.planner_interface import create_agent_plan
 from backend.agents.persistence import (
     create_goal_first_agent_run,
     create_analysis_run,
@@ -51,8 +51,9 @@ async def create_goal_first_agent_run_api(
     goal_text = (body.goal_text or "").strip()
     if not goal_text:
         raise HTTPException(400, "분석 목표를 입력해 주세요.")
-    interpreted_goal = interpret_goal(goal_text, body.target_preference)
-    plan = build_goal_first_plan(interpreted_goal)
+    planner_result = create_agent_plan(goal_text, body.target_preference)
+    interpreted_goal = planner_result["interpreted_goal"]
+    plan = planner_result["plan"]
     conn = get_db()
     try:
         result = create_goal_first_agent_run(
@@ -69,6 +70,7 @@ async def create_goal_first_agent_run_api(
     return {
         **result,
         "agent_status": "planned_only",
+        "planner": planner_result["planner"],
         "message": "Agent Run과 실행 계획을 저장했습니다. 실제 tool 실행은 PR-28에서 연결됩니다.",
     }
 
