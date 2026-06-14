@@ -59,6 +59,9 @@ export default function WorkspaceShell({ children }) {
           <button className="btn-secondary" style={{ width: '100%', justifyContent: 'center' }} onClick={() => { setOpen(false); nav('/agent') }}>
             <Wand2 size={15} /> 빠른 자동 분석
           </button>
+          <button className="btn-secondary" style={{ width: '100%', justifyContent: 'center' }} onClick={() => { setOpen(false); nav('/agent-mode') }}>
+            <ListChecks size={15} /> 목표 기반 Agent Mode
+          </button>
         </div>
         <nav style={{ padding: '4px 10px', display: 'grid', gap: 4 }}>
           {NAV.map(({ to, label, icon: Icon }) => (
@@ -107,6 +110,7 @@ export default function WorkspaceShell({ children }) {
           ><Menu size={18} /></button>
           <div style={{ flex: 1, minWidth: 0, color: 'var(--text-2)', fontSize: 13 }}>저장된 프로젝트, 작업, 보고서, 예측 API를 한 곳에서 관리합니다.</div>
           <button className="btn-secondary" onClick={() => nav('/agent')}><Wand2 size={15} /> 빠른 자동 분석</button>
+          <button className="btn-secondary" onClick={() => nav('/agent-mode')}><ListChecks size={15} /> Agent Mode</button>
           <button className="btn-primary" onClick={() => nav('/new')}><Plus size={15} /> 새 분석</button>
           <button className="btn-secondary workspace-close-mobile" aria-label="사이드바 닫기" onClick={() => setOpen(false)}><X size={16} /></button>
         </header>
@@ -118,3 +122,4 @@ export default function WorkspaceShell({ children }) {
     </div>
   )
 }
+

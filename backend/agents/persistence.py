@@ -18,6 +18,7 @@ from backend.schemas.agent import AgentPlan
 
 AGENT_TRACE_TABLES = (
     "analysis_runs",
+    "agent_plans",
     "analysis_steps",
     "tool_calls",
     "observations",
@@ -48,6 +49,27 @@ def ensure_agent_trace_schema(conn: sqlite3.Connection) -> None:
             status TEXT NOT NULL DEFAULT 'pending',
             payload_json TEXT,
             created_at TEXT NOT NULL,
+            FOREIGN KEY (analysis_run_id) REFERENCES analysis_runs(id)
+        )
+    """)
+    for column_name, column_ddl in {
+        "interpreted_goal_json": "TEXT",
+        "task_type": "TEXT",
+        "task_family": "TEXT",
+        "supported_status": "TEXT",
+        "unsupported_reason": "TEXT",
+        "plan_id": "TEXT",
+    }.items():
+        _add_column_once(conn, "analysis_runs", column_name, column_ddl)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS agent_plans (
+            id TEXT PRIMARY KEY,
+            analysis_run_id TEXT NOT NULL,
+            project_id TEXT,
+            status TEXT NOT NULL DEFAULT 'planned',
+            steps_json TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT,
             FOREIGN KEY (analysis_run_id) REFERENCES analysis_runs(id)
         )
     """)
@@ -93,6 +115,15 @@ def ensure_agent_trace_schema(conn: sqlite3.Connection) -> None:
     conn.commit()
 
 
+def _table_columns(conn: sqlite3.Connection, table_name: str) -> set[str]:
+    return {row[1] for row in conn.execute(f"PRAGMA table_info({table_name})").fetchall()}
+
+
+def _add_column_once(conn: sqlite3.Connection, table_name: str, column_name: str, column_ddl: str) -> None:
+    if column_name not in _table_columns(conn, table_name):
+        conn.execute(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_ddl}")
+
+
 def _now_iso() -> str:
     return datetime.utcnow().isoformat(timespec="seconds") + "Z"
 
@@ -109,6 +140,12 @@ def create_analysis_run(
     project_id: str | None = None,
     dataset_id: str | None = None,
     status: str = "draft",
+    interpreted_goal: dict[str, Any] | None = None,
+    task_type: str | None = None,
+    task_family: str | None = None,
+    supported_status: str | None = None,
+    unsupported_reason: str | None = None,
+    plan_id: str | None = None,
 ) -> str:
     ensure_agent_trace_schema(conn)
     run_id = str(uuid.uuid4())
@@ -116,13 +153,122 @@ def create_analysis_run(
     conn.execute(
         """
         INSERT INTO analysis_runs
-            (id, user_id, project_id, dataset_id, user_goal, status, created_at, updated_at)
-        VALUES (?,?,?,?,?,?,?,?)
+            (id, user_id, project_id, dataset_id, user_goal, status, created_at, updated_at,
+             interpreted_goal_json, task_type, task_family, supported_status, unsupported_reason, plan_id)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
         """,
-        (run_id, user_id, project_id, dataset_id, user_goal, status, now, now),
+        (
+            run_id,
+            user_id,
+            project_id,
+            dataset_id,
+            user_goal,
+            status,
+            now,
+            now,
+            _json(interpreted_goal or {}),
+            task_type,
+            task_family,
+            supported_status,
+            unsupported_reason,
+            plan_id,
+        ),
     )
     conn.commit()
     return run_id
+
+
+def create_goal_first_agent_run(
+    conn: sqlite3.Connection,
+    goal_text: str,
+    interpreted_goal: dict[str, Any],
+    plan: dict[str, Any],
+    *,
+    user_id: str | None = None,
+    project_id: str | None = None,
+    dataset_id: str | None = None,
+) -> dict[str, Any]:
+    ensure_agent_trace_schema(conn)
+    status = "unsupported" if interpreted_goal.get("supported_status") == "unsupported" else "planned"
+    if interpreted_goal.get("review_flags"):
+        status = "waiting_for_review" if status != "unsupported" else status
+    plan_id = plan["plan_id"]
+    run_id = create_analysis_run(
+        conn,
+        goal_text,
+        user_id=user_id,
+        project_id=project_id,
+        dataset_id=dataset_id,
+        status=status,
+        interpreted_goal=interpreted_goal,
+        task_type=interpreted_goal.get("task_type"),
+        task_family=interpreted_goal.get("task_family"),
+        supported_status=interpreted_goal.get("supported_status"),
+        unsupported_reason=interpreted_goal.get("unsupported_reason"),
+        plan_id=plan_id,
+    )
+    now = _now_iso()
+    conn.execute(
+        """
+        INSERT INTO agent_plans
+            (id, analysis_run_id, project_id, status, steps_json, created_at, updated_at)
+        VALUES (?,?,?,?,?,?,?)
+        """,
+        (plan_id, run_id, project_id, plan["status"], _json({"steps": plan["steps"]}), now, now),
+    )
+    for step in plan["steps"]:
+        conn.execute(
+            """
+            INSERT INTO analysis_steps
+                (id, analysis_run_id, step_index, step_kind, title, status, payload_json, created_at)
+            VALUES (?,?,?,?,?,?,?,?)
+            """,
+            (
+                step["plan_step_id"],
+                run_id,
+                step["order"],
+                "goal_plan",
+                step["name"],
+                step["status"],
+                _json(step),
+                now,
+            ),
+        )
+    conn.commit()
+    stored = get_goal_first_agent_run(conn, run_id)
+    if not stored:
+        raise RuntimeError("Failed to create goal-first agent run")
+    return stored
+
+
+def list_goal_first_agent_runs(
+    conn: sqlite3.Connection,
+    *,
+    user_id: str | None,
+    limit: int = 20,
+) -> list[dict[str, Any]]:
+    ensure_agent_trace_schema(conn)
+    rows = conn.execute(
+        """
+        SELECT * FROM analysis_runs
+        WHERE user_id=? AND plan_id IS NOT NULL
+        ORDER BY created_at DESC
+        LIMIT ?
+        """,
+        (user_id, limit),
+    ).fetchall()
+    return [_decode_agent_run(conn, row) for row in rows]
+
+
+def get_goal_first_agent_run(conn: sqlite3.Connection, analysis_run_id: str) -> dict[str, Any] | None:
+    ensure_agent_trace_schema(conn)
+    row = conn.execute(
+        "SELECT * FROM analysis_runs WHERE id=?",
+        (analysis_run_id,),
+    ).fetchone()
+    if not row:
+        return None
+    return _decode_agent_run(conn, row)
 
 
 def create_analysis_steps_from_plan(
@@ -183,9 +329,27 @@ def get_analysis_run_trace(conn: sqlite3.Connection, analysis_run_id: str) -> di
         (analysis_run_id,),
     ).fetchall()
     return {
-        "run": dict(run),
+        "run": _decode_run(run),
         "steps": [_decode_step(row) for row in steps],
     }
+
+
+def _decode_run(row: sqlite3.Row) -> dict[str, Any]:
+    data = dict(row)
+    data["interpreted_goal"] = json.loads(data.pop("interpreted_goal_json", None) or "{}")
+    return data
+
+
+def _decode_agent_run(conn: sqlite3.Connection, row: sqlite3.Row) -> dict[str, Any]:
+    run = _decode_run(row)
+    plan = None
+    if run.get("plan_id"):
+        plan_row = conn.execute("SELECT * FROM agent_plans WHERE id=?", (run["plan_id"],)).fetchone()
+        if plan_row:
+            plan_data = dict(plan_row)
+            plan_data["steps"] = json.loads(plan_data.pop("steps_json") or "{}").get("steps", [])
+            plan = plan_data
+    return {"agent_run": run, "plan": plan}
 
 
 def _decode_step(row: sqlite3.Row) -> dict[str, Any]:

@@ -1,11 +1,15 @@
 
 # Agentic AutoML mock planner endpoints (PR-03)
 from backend.agents import SupervisorPlanner
+from backend.agents.goal_first import build_goal_first_plan, interpret_goal
 from backend.agents.persistence import (
+    create_goal_first_agent_run,
     create_analysis_run,
     create_analysis_steps_from_plan,
+    get_goal_first_agent_run,
     get_analysis_timeline,
     get_analysis_run_trace,
+    list_goal_first_agent_runs,
 )
 from backend.agents.mock_runner import run_mock_agent_timeline
 from backend.tools import build_pr04_mock_registry
@@ -18,6 +22,77 @@ class AgentMockPlanBody(BaseModel):
     csv_text: str | None = None
     records: list[dict] | None = None
     file_path: str | None = None
+
+
+class AgentGoalRunBody(BaseModel):
+    goal_text: str
+    project_id: str | None = None
+    dataset_id: str | None = None
+    target_preference: str | None = None
+
+
+@app.post("/api/agent-runs")
+async def create_goal_first_agent_run_api(
+    body: AgentGoalRunBody,
+    user=Depends(get_current_user),
+):
+    require_current_user(user)
+    assert_project_and_dataset_access(user, body.project_id, body.dataset_id)
+    goal_text = (body.goal_text or "").strip()
+    if not goal_text:
+        raise HTTPException(400, "분석 목표를 입력해 주세요.")
+    interpreted_goal = interpret_goal(goal_text, body.target_preference)
+    plan = build_goal_first_plan(interpreted_goal)
+    conn = get_db()
+    try:
+        result = create_goal_first_agent_run(
+            conn,
+            goal_text,
+            interpreted_goal,
+            plan,
+            user_id=user.get("sub"),
+            project_id=body.project_id,
+            dataset_id=body.dataset_id,
+        )
+    finally:
+        conn.close()
+    return {
+        **result,
+        "agent_status": "planned_only",
+        "message": "Agent Run과 실행 계획을 저장했습니다. 실제 tool 실행은 PR-28에서 연결됩니다.",
+    }
+
+
+@app.get("/api/agent-runs")
+async def list_goal_first_agent_runs_api(user=Depends(get_current_user)):
+    require_current_user(user)
+    conn = get_db()
+    try:
+        runs = list_goal_first_agent_runs(conn, user_id=user.get("sub"))
+    finally:
+        conn.close()
+    return {
+        "agent_runs": runs,
+        "agent_status": "planned_only",
+        "message": "저장된 목표 기반 Agent Run 목록입니다.",
+    }
+
+
+@app.get("/api/agent-runs/{analysis_run_id}")
+async def get_goal_first_agent_run_api(analysis_run_id: str, user=Depends(get_current_user)):
+    assert_analysis_run_owner(user, analysis_run_id)
+    conn = get_db()
+    try:
+        result = get_goal_first_agent_run(conn, analysis_run_id)
+    finally:
+        conn.close()
+    if not result:
+        raise HTTPException(404, "Agent Run을 찾을 수 없습니다.")
+    return {
+        **result,
+        "agent_status": "planned_only",
+        "message": "저장된 목표 기반 Agent Run입니다. 아직 실제 tool 실행 기록은 없습니다.",
+    }
 
 
 @app.get("/api/agent/tools")

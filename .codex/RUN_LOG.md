@@ -129,3 +129,34 @@ Use the task queue status values unless a temporary milestone needs more detail:
 - Resume instruction: read the five required files above, then continue PR-27 only.
 - Known limitations: PR-27 has not been started in this checkpoint.
 - Next PR after PR-27 is done: PR-28 Tool-calling Agent Pipeline.
+
+## 2026-06-14 19:45 KST - PR-27 Goal-first Agent Mode
+
+- Status: done
+- Branch: `main`
+- Task file: `.codex/tasks/PR-27-goal-first-agent-mode.md`
+- Start time: 2026-06-14 19:45 KST
+- Planned verification checklist:
+  - [ ] Frontend build: `cd frontend && npm run build`
+  - [ ] Agent Mode entry exists and is separate from quick automatic analysis.
+  - [ ] Korean natural-language goal input works.
+  - [ ] Agent Run is persisted.
+  - [ ] Plan is persisted.
+  - [ ] Unsupported goals are handled honestly.
+  - [ ] Tool steps are planned/pending, not fake completed.
+  - [ ] Refresh does not lose the run/plan.
+  - [ ] Existing upload/sample/starter flow and `/agent` quick analysis remain accessible.
+  - [ ] Korean-first UI copy preserved.
+- Milestones:
+  - [x] verification started: PR-27 was checked against task file and review gate.
+  - [x] verification result: failed before fixes; only older mock planner endpoints existed and no separate persisted goal-first Agent Mode UI was present.
+  - [x] fixes applied: marked PR-27 as `fix_needed` before implementation.
+  - [x] implementation started: added deterministic goal-first interpreter, plan persistence, API endpoints, and separate `/agent-mode` UI.
+  - [x] key files changed: `backend/agents/goal_first.py`, `backend/agents/persistence.py`, `backend/main_parts/045_agent_runs.part`, `frontend/src/pages/AgentMode.jsx`, `frontend/src/App.jsx`, `frontend/src/components/workspace-shell/WorkspaceShell.jsx`, `docs/agent-mode-mvp.md`.
+  - [x] build started: backend compile and frontend production build.
+  - [x] build result: `python -m compileall backend` passed; `npm run build` could not run because npm is not on PATH, equivalent bundled Vite build passed.
+  - [x] verification started: checked PR-27 task file and `.codex/REVIEW_GATE.md` criteria.
+  - [x] verification result: passed. Agent Mode is separate from `/agent`, Korean goal input exists, Agent Run and Plan persist, unsupported goals return honest status, and plan steps are `planned`/`blocked` only.
+  - [x] final status: PR-27 marked `done` in `.codex/TASK_QUEUE.md`.
+- Known limitations: PR-27 stores plans only. Real tool execution, observations, decisions, validation results, and artifacts begin in PR-28.
+- Next PR: PR-28 Tool-calling Agent Pipeline.

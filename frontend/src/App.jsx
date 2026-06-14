@@ -11,6 +11,7 @@ import XAI from './pages/XAI'
 import History from './pages/History'
 import Report from './pages/Report'
 import Agent from './pages/Agent'
+import AgentMode from './pages/AgentMode'
 import Predict from './pages/Predict'
 import Deploy from './pages/Deploy'
 import Login from './pages/Login'
@@ -65,6 +66,7 @@ export default function App() {
                       <Route path="/analysis/new" element={<Navigate to="/upload" replace />} />
                       <Route path="/upload"    element={<Upload />} />
                       <Route path="/agent"     element={<Agent />} />
+                      <Route path="/agent-mode" element={<AgentMode />} />
                       <Route path="/model-lab" element={<ModelLab />} />
                       <Route path="/predict"  element={<Predict />} />
                       <Route path="/deploy"   element={<Deploy />} />

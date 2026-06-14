@@ -28,7 +28,7 @@ Completion note: PR-26 is assumed complete. Agentic AutoML roadmap starts from P
 
 ## PR-27 Goal-first Agent Mode
 
-Status: todo
+Status: done
 
 Task file: .codex/tasks/PR-27-goal-first-agent-mode.md
 
