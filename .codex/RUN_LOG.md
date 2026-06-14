@@ -445,3 +445,51 @@ Milestones:
   - Playwright is not installed in this repository/runtime, so browser automation visual QA was not available. Verification used API smoke checks, direct SPA route checks, and production bundle string inspection.
 - Next PR:
   - none until this hotfix is pushed and Railway serves the rebuilt frontend bundle.
+
+## 2026-06-15 KST - Agent Mode Execution Wiring Follow-up
+
+- Status: done
+- Branch: `main`
+- Task file: user request `Critical Agent Mode execution wiring fix`
+- Planned verification checklist:
+  - [x] Agent Run ID is normalized with `agent_run_id`, `analysis_run_id`, `id`, and nested run fallbacks.
+  - [x] Trace links never use `undefined`.
+  - [x] Missing Agent Run ID disables the Trace button and exposes a Korean warning.
+  - [x] Selected dataset/project is attached when creating an Agent Run.
+  - [x] Execution response does not erase dataset/project/run identity in frontend state.
+  - [x] Backend execution/trace responses expose top-level run aliases.
+  - [x] Actual CSV upload flow creates dataset/project and can execute an Agent Run with preserved references.
+  - [x] Backend compile passes.
+  - [x] Frontend build passes with the available local runtime.
+- Root cause:
+  - Agent Run creation returned top-level `analysis_run_id`, `dataset_id`, and `project_id`, but execution returned a trace-shaped payload where identity lived under nested `run`/`analysis_run`.
+  - `AgentMode.jsx` replaced the valid selected run with the execution payload, so `selectedRun.analysis_run_id` and `selectedRun.dataset_id` became unavailable.
+  - Trace links used `selectedRun.analysis_run_id` directly, which produced `/agent-mode/undefined`.
+- Files changed:
+  - `frontend/src/pages/AgentMode.jsx`
+  - `backend/main_parts/045_agent_runs.part`
+  - rebuilt `frontend/dist`
+  - `.codex/RUN_LOG.md`
+- Fixes applied:
+  - Added frontend helpers to normalize Agent Run identity and nested trace payloads.
+  - `executeRun` now uses a resolved run ID and preserves previous dataset/project fields when merging execution responses.
+  - Trace links use the normalized run ID and render as disabled if no valid ID exists.
+  - Backend execution and trace endpoints now include top-level `analysis_run_id`, `agent_run_id`, `id`, `dataset_id`, `project_id`, `status`, and `user_goal` aliases.
+- Verification result:
+  - Local authenticated CSV smoke uploaded `sample_data/customer_churn_demo.csv`.
+  - Dataset ID: `6c9df301`
+  - Project ID: `281765d2`
+  - Agent Run ID: `09192ade-167c-49db-91a9-d6c353e3efe8`
+  - Create response preserved dataset/project references.
+  - Execute response preserved `analysis_run_id`, `id`, `dataset_id`, and `project_id`.
+  - Execution reached `waiting_for_review` with 10 plan steps, 3 tool calls, 3 observations, 3 decisions, and 1 human review.
+  - Trace API returned HTTP 200 with the same dataset/project references.
+  - Direct route `/agent-mode/09192ade-167c-49db-91a9-d6c353e3efe8` returned the SPA app shell with HTTP 200.
+  - Built frontend bundle does not contain `/agent-mode/undefined`.
+- Build result:
+  - `python -m compileall backend` passed.
+  - Bundled Vite build passed because `npm` is not available on PATH.
+- Known limitations:
+  - Browser automation is not installed in this runtime, so verification used API smoke checks, direct SPA route checks, and production bundle inspection.
+- Next PR:
+  - none until this fix is pushed and Railway serves the rebuilt frontend bundle.

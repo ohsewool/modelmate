@@ -18,8 +18,67 @@ function statusLabel(status) {
   return '확인 필요'
 }
 
+function getRunRecord(run) {
+  return run?.agent_run || run?.analysis_run || run?.run || run || {}
+}
+
+function getRunId(run) {
+  const record = getRunRecord(run)
+  return run?.agent_run_id || run?.analysis_run_id || record?.agent_run_id || record?.analysis_run_id || record?.id || run?.id || ''
+}
+
+function getRunStatus(run) {
+  const record = getRunRecord(run)
+  return run?.status || record?.status || ''
+}
+
+function getRunDatasetId(run) {
+  const record = getRunRecord(run)
+  return run?.dataset_id || record?.dataset_id || ''
+}
+
+function getRunProjectId(run) {
+  const record = getRunRecord(run)
+  return run?.project_id || record?.project_id || ''
+}
+
+function normalizeAgentRun(payload, previousRun = null, selectedDataset = null) {
+  const next = payload || {}
+  const nextRecord = getRunRecord(next)
+  const previousRecord = getRunRecord(previousRun)
+  const runId = getRunId(next) || getRunId(previousRun)
+  const datasetId = getRunDatasetId(next) || getRunDatasetId(previousRun) || selectedDataset?.dataset_id || selectedDataset?.id || ''
+  const projectId = getRunProjectId(next) || getRunProjectId(previousRun) || selectedDataset?.project_id || ''
+  return {
+    ...(previousRun || {}),
+    ...next,
+    agent_run_id: next.agent_run_id || runId,
+    analysis_run_id: next.analysis_run_id || runId,
+    id: next.id || runId,
+    status: next.status || nextRecord.status || previousRun?.status || previousRecord.status,
+    dataset_id: datasetId,
+    project_id: projectId,
+    user_goal: next.user_goal || nextRecord.user_goal || previousRun?.user_goal || previousRecord.user_goal,
+    interpreted_goal: next.interpreted_goal || nextRecord.interpreted_goal || previousRun?.interpreted_goal || previousRecord.interpreted_goal,
+    plan: next.plan || previousRun?.plan,
+  }
+}
+
 function runTitle(run) {
-  return run?.user_goal || run?.goal_text || '저장된 Agent Run'
+  const record = getRunRecord(run)
+  return run?.user_goal || record?.user_goal || run?.goal_text || '저장된 Agent Run'
+}
+
+function TraceLink({ run, children = 'Trace 보기' }) {
+  const runId = getRunId(run)
+  if (!runId) {
+    return (
+      <button className="btn btn-secondary" type="button" disabled title="Agent Run ID를 찾을 수 없습니다. 다시 생성해 주세요.">
+        {children}
+      </button>
+    )
+  }
+  return <Link className="btn btn-secondary" to={`/agent-mode/${runId}`}>{children}</Link>
 }
 
 function datasetTitle(dataset) {
@@ -197,7 +256,7 @@ export default function AgentMode() {
         dataset_id: selectedDatasetId,
         project_id: selectedDataset?.project_id || null,
       })
-      setSelectedRun(response.data)
+      setSelectedRun(normalizeAgentRun(response.data, null, selectedDataset))
       await loadRuns()
     } catch (err) {
       setError(err.response?.data?.detail || 'Agent Run 생성에 실패했습니다.')
@@ -207,16 +266,21 @@ export default function AgentMode() {
   }
 
   async function executeRun(run = selectedRun) {
-    if (!run?.analysis_run_id) return
-    if (!run.dataset_id) {
+    const runId = getRunId(run)
+    const datasetId = getRunDatasetId(run)
+    if (!runId) {
+      setError('Agent Run ID를 찾을 수 없습니다. 다시 생성해 주세요.')
+      return
+    }
+    if (!datasetId) {
       setError('이 Agent Run에는 CSV 데이터셋이 연결되어 있지 않습니다. 새 Run을 만들 때 데이터셋을 선택하세요.')
       return
     }
     setExecuting(true)
     setError('')
     try {
-      const response = await api.post(`/agent-runs/${run.analysis_run_id}/execute`)
-      setSelectedRun(response.data)
+      const response = await api.post(`/agent-runs/${runId}/execute`)
+      setSelectedRun(normalizeAgentRun(response.data, run, selectedDataset))
       await loadRuns()
     } catch (err) {
       setError(err.response?.data?.detail || 'Agent Run 실행에 실패했습니다.')
@@ -279,15 +343,19 @@ export default function AgentMode() {
           <ScopePanel interpreted={selectedRun.interpreted_goal} />
           <section className="card" style={{ display: 'grid', gap: 12 }}>
             <p className="section-title">Run 상태</p>
-            <strong>{statusLabel(selectedRun.status)}</strong>
+            <strong>{statusLabel(getRunStatus(selectedRun))}</strong>
             <p style={{ margin: 0, color: 'var(--text-2)' }}>
-              데이터 연결: {selectedRun.dataset_id ? selectedRun.dataset_id : '연결되지 않음'}
+              데이터 연결: {getRunDatasetId(selectedRun) || '연결되지 않음'}
+            </p>
+            <p style={{ margin: 0, color: 'var(--text-label)', fontSize: 12 }}>
+              Agent Run ID: {getRunId(selectedRun) || 'Agent Run ID를 찾을 수 없습니다. 다시 생성해 주세요.'}
+              {getRunProjectId(selectedRun) ? ` · Project ID: ${getRunProjectId(selectedRun)}` : ''}
             </p>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              <button className="btn btn-primary" type="button" onClick={() => executeRun(selectedRun)} disabled={executing || !selectedRun.dataset_id}>
+              <button className="btn btn-primary" type="button" onClick={() => executeRun(selectedRun)} disabled={executing || !getRunDatasetId(selectedRun) || !getRunId(selectedRun)}>
                 <CheckCircle2 size={16} /> {executing ? '실행 중' : '계획 실행'}
               </button>
-              <Link className="btn btn-secondary" to={`/agent-mode/${selectedRun.analysis_run_id}`}>Trace 보기</Link>
+              <TraceLink run={selectedRun} />
             </div>
           </section>
         </div>
@@ -305,17 +373,17 @@ export default function AgentMode() {
         ) : runs.length ? (
           <div style={{ display: 'grid', gap: 10 }}>
             {runs.map(run => (
-              <div key={run.analysis_run_id} className="card-compact" style={{ display: 'grid', gap: 7 }}>
+              <div key={getRunId(run) || run.created_at} className="card-compact" style={{ display: 'grid', gap: 7 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
                   <strong>{runTitle(run)}</strong>
-                  <span className="status-pill">{statusLabel(run.status)}</span>
+                  <span className="status-pill">{statusLabel(getRunStatus(run))}</span>
                 </div>
                 <p style={{ margin: 0, color: 'var(--text-2)', fontSize: 13 }}>
-                  데이터셋: {run.dataset_id || '연결되지 않음'} · 프로젝트: {run.project_id || '없음'}
+                  데이터셋: {getRunDatasetId(run) || '연결되지 않음'} · 프로젝트: {getRunProjectId(run) || '없음'}
                 </p>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   <button className="btn btn-secondary" type="button" onClick={() => setSelectedRun(run)}>계획 보기</button>
-                  <Link className="btn btn-secondary" to={`/agent-mode/${run.analysis_run_id}`}>Trace 보기</Link>
+                  <TraceLink run={run} />
                 </div>
               </div>
             ))}

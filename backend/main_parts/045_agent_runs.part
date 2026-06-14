@@ -41,6 +41,19 @@ class AgentReviewResolveBody(BaseModel):
     user_note: str | None = None
 
 
+def _agent_run_aliases(payload: dict) -> dict:
+    run = payload.get("agent_run") or payload.get("analysis_run") or payload.get("run") or {}
+    return {
+        "analysis_run_id": payload.get("analysis_run_id") or run.get("id"),
+        "agent_run_id": payload.get("agent_run_id") or payload.get("analysis_run_id") or run.get("id"),
+        "id": payload.get("id") or run.get("id"),
+        "status": payload.get("status") or run.get("status"),
+        "project_id": payload.get("project_id") or run.get("project_id"),
+        "dataset_id": payload.get("dataset_id") or run.get("dataset_id"),
+        "user_goal": payload.get("user_goal") or run.get("user_goal"),
+    }
+
+
 @app.post("/api/agent-runs")
 async def create_goal_first_agent_run_api(
     body: AgentGoalRunBody,
@@ -128,6 +141,7 @@ async def execute_goal_first_agent_run_api(analysis_run_id: str, user=Depends(ge
         raise HTTPException(404, "Agent Run trace를 찾을 수 없습니다.")
     return {
         **trace,
+        **_agent_run_aliases(trace),
         "agent_status": "executed_trace",
         "message": "등록된 tool handler 실행 결과를 trace로 저장했습니다.",
     }
@@ -145,6 +159,7 @@ async def get_goal_first_agent_trace_api(analysis_run_id: str, user=Depends(get_
         raise HTTPException(404, "Agent Run trace를 찾을 수 없습니다.")
     return {
         **trace,
+        **_agent_run_aliases(trace),
         "agent_status": "trace",
         "message": "저장된 Agent Run 실행 trace입니다.",
     }
