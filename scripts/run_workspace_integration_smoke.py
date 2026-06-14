@@ -115,9 +115,17 @@ def run(base_url):
     job_rows = jobs["json"] if isinstance(jobs["json"], list) else []
     add(results, "Jobs 페이지용 완료 작업 기록 조회", jobs["status"] == 200 and any(row.get("status") == "succeeded" for row in job_rows), "GET /api/projects/{id}/jobs", jobs["status"])
 
+    global_jobs = request("GET", join(base_url, "/api/jobs"), token=token)
+    global_job_rows = global_jobs["json"] if isinstance(global_jobs["json"], list) else []
+    add(results, "전역 Jobs 화면용 작업 기록 조회", global_jobs["status"] == 200 and any(row.get("project_id") == project_id for row in global_job_rows), "GET /api/jobs", global_jobs["status"])
+
     reports = request("GET", join(base_url, f"/api/projects/{project_id}/reports"), token=token)
     report_rows = reports["json"] if isinstance(reports["json"], list) else []
     add(results, "Reports 페이지용 리포트 메타데이터 조회", reports["status"] == 200 and bool(report_rows), "GET /api/projects/{id}/reports", reports["status"])
+
+    global_reports = request("GET", join(base_url, "/api/reports"), token=token)
+    global_report_rows = global_reports["json"] if isinstance(global_reports["json"], list) else []
+    add(results, "전역 Reports 화면용 리포트 메타데이터 조회", global_reports["status"] == 200 and bool(global_report_rows), "GET /api/reports", global_reports["status"])
 
     datasets = request("GET", join(base_url, "/api/datasets"), token=token)
     dataset_rows = datasets["json"] if isinstance(datasets["json"], list) else []
@@ -172,6 +180,14 @@ def run(base_url):
     guest_projects = request("GET", join(base_url, "/api/projects"), guest_session=guest_id)
     guest_project_rows = guest_projects["json"] if isinstance(guest_projects["json"], list) else []
     add(results, "게스트 workspace가 같은 세션 프로젝트를 조회", guest_projects["status"] == 200 and any(row.get("id") == guest_project_id for row in guest_project_rows), "guest GET /api/projects", guest_projects["status"])
+
+    guest_jobs = request("GET", join(base_url, "/api/jobs"), guest_session=guest_id)
+    guest_job_rows = guest_jobs["json"] if isinstance(guest_jobs["json"], list) else []
+    add(results, "게스트 전역 Jobs가 세션 작업을 조회", guest_jobs["status"] == 200 and any(row.get("project_id") == guest_project_id for row in guest_job_rows), "guest GET /api/jobs", guest_jobs["status"])
+
+    guest_reports = request("GET", join(base_url, "/api/reports"), guest_session=guest_id)
+    guest_report_rows = guest_reports["json"] if isinstance(guest_reports["json"], list) else []
+    add(results, "게스트 전역 Reports가 세션 보고서를 조회", guest_reports["status"] == 200 and bool(guest_report_rows), "guest GET /api/reports", guest_reports["status"])
 
     guest_usage = request("GET", join(base_url, "/api/me/usage"), guest_session=guest_id)
     guest_usage_json = guest_usage["json"] or {}

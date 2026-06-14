@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { CopyButton, EmptyState, LoadingState, StatusBadge, WorkspacePageHeader } from '../../components/workspace-shell/WorkspaceStates'
-import { fmt, loadJobsForProjects } from './workspaceData'
-import api from '../../api'
+import { fmt, loadWorkspaceJobs } from './workspaceData'
 
 function isFailed(job) {
   return job.status === 'failed' || job.error_type || job.error_message
@@ -27,7 +26,7 @@ export default function WorkspaceJobs() {
   const [filter, setFilter] = useState('all')
 
   useEffect(() => {
-    api.get('/projects').then(res => loadJobsForProjects(res.data || [])).then(setJobs).catch(() => setJobs([]))
+    loadWorkspaceJobs().then(setJobs).catch(() => setJobs([]))
   }, [])
 
   const filtered = useMemo(() => {

@@ -416,6 +416,31 @@ async def get_training_job(job_id: str, user=Depends(get_current_user)):
     return _get_training_job_owned(user, job_id)
 
 
+@app.get("/api/jobs")
+async def list_workspace_jobs(user=Depends(get_current_user)):
+    require_current_user(user)
+    ensure_training_jobs_table()
+    conn = get_db()
+    try:
+        rows = conn.execute(
+            "SELECT * FROM training_jobs WHERE user_id=? ORDER BY created_at DESC LIMIT 200",
+            (user["sub"],),
+        ).fetchall()
+        project_rows = conn.execute(
+            "SELECT id, name FROM projects WHERE user_id=?",
+            (user["sub"],),
+        ).fetchall()
+        project_map = {row["id"]: {"id": row["id"], "project_id": row["id"], "name": row["name"]} for row in project_rows}
+    finally:
+        conn.close()
+    jobs = []
+    for row in rows:
+        job = _job_row_to_dict(row)
+        job["project"] = project_map.get(job.get("project_id"))
+        jobs.append(job)
+    return jobs
+
+
 @app.post("/api/training/jobs/{job_id}/rerun")
 async def rerun_training_job(job_id: str, background_tasks: BackgroundTasks, user=Depends(get_current_user)):
     job = _get_training_job_owned(user, job_id)

@@ -485,6 +485,54 @@ async def get_project_reports(project_id: str, user=Depends(get_current_user)):
         conn.close()
 
 
+@app.get("/api/reports")
+async def list_workspace_reports(user=Depends(get_current_user)):
+    require_current_user(user)
+    conn = get_db()
+    try:
+        projects = conn.execute(
+            "SELECT * FROM projects WHERE user_id=? AND COALESCE(archive_status,'active')='active' AND deleted_at IS NULL ORDER BY updated_at DESC",
+            (user["sub"],),
+        ).fetchall()
+        reports = []
+        known_report_ids = set()
+        for row in projects:
+            project = dict(row)
+            project_ref = {
+                "id": project["id"],
+                "name": project["name"],
+                "project_id": project["id"],
+            }
+            for report in _project_reports(conn, project["id"], user["sub"]):
+                report["project"] = project_ref
+                known_report_ids.add(report.get("report_id"))
+                reports.append(report)
+
+        rows = conn.execute(
+            "SELECT id, data, created_at FROM experiments WHERE user_id=? ORDER BY id DESC LIMIT 200",
+            (user["sub"],),
+        ).fetchall()
+        for row in rows:
+            run = _run_history_item(row)
+            if not run.get("report_id") or run.get("report_id") in known_report_ids:
+                continue
+            reports.append({
+                "report_id": run["report_id"],
+                "analysis_run_id": run["analysis_run_id"],
+                "created_at": run["created_at"],
+                "title": f"{run.get('target') or 'CSV'} analysis report",
+                "status": "metadata_available",
+                "export_available": False,
+                "best_model": run.get("best_model"),
+                "metric_summary": {"best_metric": run.get("metric_value"), "metric_name": run.get("metric_name")},
+                "message": "Saved report metadata is available. HTML export uses the current analysis session until report persistence is added.",
+                "project": None,
+            })
+    finally:
+        conn.close()
+    return sorted(reports, key=lambda row: row.get("created_at") or "", reverse=True)
+
+
 @app.post("/api/projects")
 async def create_project(body: ProjectBody, user=Depends(get_current_user)):
     if not user:

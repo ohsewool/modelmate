@@ -31,6 +31,13 @@ export async function loadJobsForProjects(projects) {
   return nested.flat().sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')))
 }
 
+export async function loadWorkspaceJobs() {
+  const direct = await api.get('/jobs').catch(() => null)
+  if (Array.isArray(direct?.data)) return direct.data
+  const projectsRes = await api.get('/projects').catch(() => ({ data: [] }))
+  return loadJobsForProjects(projectsRes.data || [])
+}
+
 export async function loadReportsForProjects(projects) {
   const nested = await Promise.all(projects.map(project =>
     api.get(`/projects/${project.id}/reports`)
@@ -38,6 +45,13 @@ export async function loadReportsForProjects(projects) {
       .catch(() => [])
   ))
   return nested.flat().sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')))
+}
+
+export async function loadWorkspaceReports() {
+  const direct = await api.get('/reports').catch(() => null)
+  if (Array.isArray(direct?.data)) return direct.data
+  const projectsRes = await api.get('/projects').catch(() => ({ data: [] }))
+  return loadReportsForProjects(projectsRes.data || [])
 }
 
 export async function loadPredictionApiRows(projects) {

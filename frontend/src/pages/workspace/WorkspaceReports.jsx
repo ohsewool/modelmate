@@ -1,15 +1,14 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { EmptyState, LoadingState, WorkspacePageHeader } from '../../components/workspace-shell/WorkspaceStates'
-import { fmt, loadReportsForProjects } from './workspaceData'
-import api from '../../api'
+import { fmt, loadWorkspaceReports } from './workspaceData'
 
 export default function WorkspaceReports() {
   const nav = useNavigate()
   const [reports, setReports] = useState(null)
 
   useEffect(() => {
-    api.get('/projects').then(res => loadReportsForProjects(res.data || [])).then(setReports).catch(() => setReports([]))
+    loadWorkspaceReports().then(setReports).catch(() => setReports([]))
   }, [])
 
   if (!reports) return <div style={{ padding: 24 }}><LoadingState label="보고서를 불러오는 중입니다." /></div>
