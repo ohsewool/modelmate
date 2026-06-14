@@ -160,3 +160,33 @@ Use the task queue status values unless a temporary milestone needs more detail:
   - [x] final status: PR-27 marked `done` in `.codex/TASK_QUEUE.md`.
 - Known limitations: PR-27 stores plans only. Real tool execution, observations, decisions, validation results, and artifacts begin in PR-28.
 - Next PR: PR-28 Tool-calling Agent Pipeline.
+
+## 2026-06-14 20:05 KST - PR-28 Tool-calling Agent Pipeline
+
+- Status: done
+- Branch: `main`
+- Task file: `.codex/tasks/PR-28-tool-calling-agent-pipeline.md`
+- Start time: 2026-06-14 20:05 KST
+- Planned verification checklist:
+  - [ ] Frontend build: `cd frontend && npm run build`
+  - [ ] Backend compile passes.
+  - [ ] Agent Run can execute planned steps.
+  - [ ] Real registered tool handlers are called.
+  - [ ] tool_call records are persisted.
+  - [ ] observation records are persisted.
+  - [ ] decision records are persisted.
+  - [ ] validation records are persisted.
+  - [ ] artifact records are persisted when generated.
+  - [ ] Blocking validations stop execution safely.
+  - [ ] Existing quick analysis and workspace flow remain accessible.
+- Milestones:
+  - [x] implementation started: PR-28 execution pipeline work began after PR-27 was marked `done`.
+  - [x] key files changed: `backend/agents/executor.py`, `backend/agents/persistence.py`, `backend/main_parts/045_agent_runs.part`, `backend/tools/registry.py`, `frontend/src/pages/AgentMode.jsx`, `docs/agent-mode-mvp.md`.
+  - [x] build started: backend compile and frontend production build.
+  - [x] build result: `python -m compileall backend` passed; equivalent bundled Vite build passed because `npm` is not available on PATH.
+  - [x] verification started: direct SQLite executor smoke checks for no-dataset failure path and sample DataFrame tool pipeline.
+  - [x] verification result: passed. Tool calls, observations, decisions, validations, and artifacts persist; sample DataFrame path executed all 10 planned tools; no fake completed trace is generated.
+  - [x] fixes applied: deployment/API readiness `needs_review` is now treated as completed tool execution with validation/decision state instead of an execution failure.
+  - [x] final status: PR-28 marked `done` in `.codex/TASK_QUEUE.md`.
+- Known limitations: PR-28 adds only minimal Agent Mode execution UI. Full Run Detail trace/decision console is PR-29.
+- Next PR: PR-29 Agent Trace / Decision UI.

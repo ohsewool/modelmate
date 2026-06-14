@@ -1,6 +1,7 @@
 
 # Agentic AutoML mock planner endpoints (PR-03)
 from backend.agents import SupervisorPlanner
+from backend.agents.executor import execute_agent_run
 from backend.agents.goal_first import build_goal_first_plan, interpret_goal
 from backend.agents.persistence import (
     create_goal_first_agent_run,
@@ -92,6 +93,40 @@ async def get_goal_first_agent_run_api(analysis_run_id: str, user=Depends(get_cu
         **result,
         "agent_status": "planned_only",
         "message": "저장된 목표 기반 Agent Run입니다. 아직 실제 tool 실행 기록은 없습니다.",
+    }
+
+
+@app.post("/api/agent-runs/{analysis_run_id}/execute")
+async def execute_goal_first_agent_run_api(analysis_run_id: str, user=Depends(get_current_user)):
+    assert_analysis_run_owner(user, analysis_run_id)
+    conn = get_db()
+    try:
+        trace = execute_agent_run(conn, analysis_run_id)
+    finally:
+        conn.close()
+    if not trace:
+        raise HTTPException(404, "Agent Run trace를 찾을 수 없습니다.")
+    return {
+        **trace,
+        "agent_status": "executed_trace",
+        "message": "등록된 tool handler 실행 결과를 trace로 저장했습니다.",
+    }
+
+
+@app.get("/api/agent-runs/{analysis_run_id}/trace")
+async def get_goal_first_agent_trace_api(analysis_run_id: str, user=Depends(get_current_user)):
+    assert_analysis_run_owner(user, analysis_run_id)
+    conn = get_db()
+    try:
+        trace = get_analysis_timeline(conn, analysis_run_id)
+    finally:
+        conn.close()
+    if not trace:
+        raise HTTPException(404, "Agent Run trace를 찾을 수 없습니다.")
+    return {
+        **trace,
+        "agent_status": "trace",
+        "message": "저장된 Agent Run 실행 trace입니다.",
     }
 
 

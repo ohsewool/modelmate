@@ -53,7 +53,7 @@ Review gate:
 
 ## PR-28 Tool-calling Agent Pipeline
 
-Status: todo
+Status: done
 
 Task file: .codex/tasks/PR-28-tool-calling-agent-pipeline.md
 

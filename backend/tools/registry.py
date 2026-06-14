@@ -128,6 +128,12 @@ def build_pr01_mock_registry() -> ToolRegistry:
             {"summary": "Returns deploy, hold, review, or blocked advice without deploying.", "risk": "deterministic"},
             deployment_check_tool,
         ),
+        (
+            "api_readiness_tool",
+            "Deterministic prediction API readiness advice checker",
+            {"summary": "Checks whether the result is safe enough to expose as a reusable prediction API.", "risk": "deterministic"},
+            deployment_check_tool,
+        ),
     ]:
         registry.register(
             ToolDefinition(

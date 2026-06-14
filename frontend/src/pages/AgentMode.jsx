@@ -68,7 +68,9 @@ export default function AgentMode() {
   const [targetPreference, setTargetPreference] = useState('')
   const [runs, setRuns] = useState([])
   const [selected, setSelected] = useState(null)
+  const [trace, setTrace] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [executing, setExecuting] = useState(false)
   const [error, setError] = useState('')
 
   const selectedRun = selected?.agent_run
@@ -82,9 +84,23 @@ export default function AgentMode() {
     if (!selected && items[0]) setSelected(items[0])
   }
 
+  async function loadTrace(runId) {
+    if (!runId) return
+    try {
+      const res = await api.get(`/agent-runs/${runId}/trace`)
+      setTrace(res.data)
+    } catch {
+      setTrace(null)
+    }
+  }
+
   useEffect(() => {
     loadRuns().catch(() => setRuns([]))
   }, [])
+
+  useEffect(() => {
+    if (selectedRun?.id) loadTrace(selectedRun.id)
+  }, [selectedRun?.id])
 
   async function createRun(event) {
     event.preventDefault()
@@ -96,11 +112,29 @@ export default function AgentMode() {
         target_preference: targetPreference || null,
       })
       setSelected({ agent_run: res.data.agent_run, plan: res.data.plan })
+      setTrace(null)
       await loadRuns()
     } catch (err) {
       setError(err.response?.data?.detail || 'Agent Run을 만들지 못했습니다.')
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function executeRun() {
+    if (!selectedRun?.id) return
+    setError('')
+    setExecuting(true)
+    try {
+      const res = await api.post(`/agent-runs/${selectedRun.id}/execute`)
+      setTrace(res.data)
+      const refreshed = await api.get(`/agent-runs/${selectedRun.id}`)
+      setSelected({ agent_run: refreshed.data.agent_run, plan: refreshed.data.plan })
+      await loadRuns()
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Agent 실행에 실패했습니다.')
+    } finally {
+      setExecuting(false)
     }
   }
 
@@ -119,6 +153,9 @@ export default function AgentMode() {
             <p className="section-title">현재 Agent Run</p>
             <strong>{statusText}</strong>
             <p style={{ margin: '6px 0 0', color: 'var(--text-label)', fontSize: 12 }}>{selectedRun.id}</p>
+            <button className="btn-primary" type="button" onClick={executeRun} disabled={executing || selectedRun.status === 'completed'} style={{ marginTop: 12, width: '100%' }}>
+              {executing ? 'Agent 실행 중' : 'Agent 실행 시작'}
+            </button>
           </div>
         )}
       </div>
@@ -156,6 +193,21 @@ export default function AgentMode() {
 
           <ScopePanel interpreted={interpreted} />
           <PlanPreview plan={selected?.plan} />
+          {trace && (
+            <section className="card">
+              <p className="section-title">실행 trace 요약</p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: 10 }} className="admin-stat-grid">
+                <div><strong>{trace.tool_calls?.length || 0}</strong><br /><span style={{ color: 'var(--text-label)' }}>tool call</span></div>
+                <div><strong>{trace.observations?.length || 0}</strong><br /><span style={{ color: 'var(--text-label)' }}>observation</span></div>
+                <div><strong>{trace.decisions?.length || 0}</strong><br /><span style={{ color: 'var(--text-label)' }}>decision</span></div>
+                <div><strong>{trace.validations?.length || 0}</strong><br /><span style={{ color: 'var(--text-label)' }}>validation</span></div>
+                <div><strong>{trace.artifacts?.length || 0}</strong><br /><span style={{ color: 'var(--text-label)' }}>artifact</span></div>
+              </div>
+              <p style={{ color: 'var(--text-2)', lineHeight: 1.6 }}>
+                상세 timeline과 decision console은 PR-29에서 정리합니다. 현재 화면은 저장된 trace 레코드가 생성됐는지 확인하는 최소 요약입니다.
+              </p>
+            </section>
+          )}
         </div>
 
         <aside className="card" style={{ alignSelf: 'start' }}>
@@ -169,7 +221,7 @@ export default function AgentMode() {
                   key={item.agent_run.id}
                   className="btn-secondary"
                   type="button"
-                  onClick={() => setSelected(item)}
+                  onClick={() => { setSelected(item); loadTrace(item.agent_run.id) }}
                   style={{ justifyContent: 'flex-start', textAlign: 'left', whiteSpace: 'normal' }}
                 >
                   <CheckCircle2 size={15} />
