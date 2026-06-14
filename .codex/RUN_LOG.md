@@ -372,3 +372,37 @@ Milestones:
   - Bundled Vite build passed because `npm` is not available on PATH.
 - Known limitations: verification was API-based for the backend flow and build-based for the frontend route behavior; Railway needs redeploy after push.
 - Next PR: none until deployed `/agent-mode` is rechecked.
+
+## 2026-06-15 KST - Agent Run Detail Direct Route Follow-up
+
+- Status: done
+- Branch: `main`
+- Task file: user request `Agent Run Detail trace page follow-up fix`
+- Findings:
+  - Route is declared as `/agent-mode/:agentRunId`, but `AgentRunDetail.jsx` read `useParams().id`, so direct detail loads called `/api/agent-runs/undefined/trace`.
+  - The detail page also treated review fetch together with trace fetch, so a secondary review/workspace-related failure could block the trace page.
+  - Korean copy in `AgentRunDetail.jsx` had become mojibake and needed restoration.
+- Files changed:
+  - `frontend/src/pages/AgentRunDetail.jsx`
+  - rebuilt `frontend/dist`
+  - `.codex/RUN_LOG.md`
+- Fixes applied:
+  - Detail page now reads `agentRunId` with an `id` fallback.
+  - Trace fetch is primary and review fetch is non-fatal; review failure shows a warning while the persisted trace still renders.
+  - Missing run now shows Korean error: `Agent Run을 찾을 수 없습니다.`
+  - UI copy restored to Korean-first.
+  - Detail rendering tolerates both `analysis_run/plan_steps` and legacy `run/steps` trace keys.
+- Verification result:
+  - Local guest-session smoke with `sample_data/customer_churn_demo.csv` passed.
+  - Guest session: `agent-detail-e1ca61a5`
+  - Dataset ID: `4572f3ba`
+  - Project ID: `84659357`
+  - Agent Run ID: `f88635d8-faa5-4aab-8fd7-c96a1428ee09`
+  - `/agent-mode/f88635d8-faa5-4aab-8fd7-c96a1428ee09` returned the SPA app shell with HTTP 200.
+  - Trace API returned `waiting_for_review` with 10 plan steps, 3 tool calls, 3 observations, 3 decisions, 3 validations, 1 artifact, and 1 human review.
+  - Missing trace API returned 404, which the page maps to the Korean not-found message.
+- Build result:
+  - `python -m compileall backend` passed.
+  - Bundled Vite build passed because `npm` is not available on PATH.
+- Known limitations: direct browser visual QA was represented by SPA route and API smoke checks; Railway needs redeploy after push.
+- Next PR: none until deployed `/agent-mode/:agentRunId` is rechecked.

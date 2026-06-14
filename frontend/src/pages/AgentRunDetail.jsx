@@ -41,6 +41,12 @@ function MetricBox({ label, value }) {
   )
 }
 
+function normalizeError(err, fallback) {
+  const detail = err.response?.data?.detail
+  if (typeof detail === 'string') return detail
+  return detail?.message || err.response?.data?.error?.message || fallback
+}
+
 function PlanTimeline({ steps, selectedStepId, onSelect }) {
   if (!steps?.length) {
     return <EmptyState title="아직 계획 단계가 없습니다." description="Agent Run 계획이 생성되면 여기에 표시됩니다." />
@@ -135,17 +141,19 @@ function ReviewPanel({ reviews, run, onResolve, onRetry, onStop, onContinue }) {
 }
 
 export default function AgentRunDetail() {
-  const { id } = useParams()
+  const params = useParams()
+  const agentRunId = params.agentRunId || params.id
   const [trace, setTrace] = useState(null)
   const [reviews, setReviews] = useState([])
   const [selectedStepId, setSelectedStepId] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [warning, setWarning] = useState('')
   const [actionLoading, setActionLoading] = useState(false)
 
   useEffect(() => {
     loadTrace()
-  }, [id])
+  }, [agentRunId])
 
   useEffect(() => {
     if (trace?.plan_steps?.length && !selectedStepId) {
@@ -156,15 +164,25 @@ export default function AgentRunDetail() {
   async function loadTrace() {
     setLoading(true)
     setError('')
+    setWarning('')
+    if (!agentRunId) {
+      setError('Agent Run을 찾을 수 없습니다.')
+      setLoading(false)
+      return
+    }
     try {
-      const [traceResponse, reviewsResponse] = await Promise.all([
-        api.get(`/agent-runs/${id}/trace`),
-        api.get(`/agent-runs/${id}/reviews`).catch(() => ({ data: { reviews: [] } })),
-      ])
+      const traceResponse = await api.get(`/agent-runs/${agentRunId}/trace`)
       setTrace(traceResponse.data)
-      setReviews(reviewsResponse.data?.reviews || [])
+      try {
+        const reviewsResponse = await api.get(`/agent-runs/${agentRunId}/reviews`)
+        setReviews(reviewsResponse.data?.reviews || [])
+      } catch (reviewErr) {
+        setReviews([])
+        setWarning('검토 요청 정보 일부를 불러오지 못했습니다. 저장된 trace는 계속 표시합니다.')
+      }
     } catch (err) {
-      setError(err.response?.data?.detail || 'Agent Run trace를 불러오지 못했습니다.')
+      const message = normalizeError(err, 'Agent Run을 찾을 수 없습니다.')
+      setError(err.response?.status === 404 ? 'Agent Run을 찾을 수 없습니다.' : message)
     } finally {
       setLoading(false)
     }
@@ -174,10 +192,10 @@ export default function AgentRunDetail() {
     setActionLoading(true)
     setError('')
     try {
-      await api.post(`/agent-runs/${id}/execute`)
+      await api.post(`/agent-runs/${agentRunId}/execute`)
       await loadTrace()
     } catch (err) {
-      setError(err.response?.data?.detail || 'Agent Run을 계속 실행하지 못했습니다.')
+      setError(normalizeError(err, 'Agent Run을 계속 실행하지 못했습니다.'))
     } finally {
       setActionLoading(false)
     }
@@ -187,10 +205,10 @@ export default function AgentRunDetail() {
     setActionLoading(true)
     setError('')
     try {
-      await api.post(`/agent-runs/${id}/retry-step`)
+      await api.post(`/agent-runs/${agentRunId}/retry-step`)
       await loadTrace()
     } catch (err) {
-      setError(err.response?.data?.detail || '현재 단계 재시도에 실패했습니다.')
+      setError(normalizeError(err, '현재 단계 재시도에 실패했습니다.'))
     } finally {
       setActionLoading(false)
     }
@@ -200,10 +218,10 @@ export default function AgentRunDetail() {
     setActionLoading(true)
     setError('')
     try {
-      await api.post(`/agent-runs/${id}/stop`)
+      await api.post(`/agent-runs/${agentRunId}/stop`)
       await loadTrace()
     } catch (err) {
-      setError(err.response?.data?.detail || 'Agent Run 중단에 실패했습니다.')
+      setError(normalizeError(err, 'Agent Run 중단에 실패했습니다.'))
     } finally {
       setActionLoading(false)
     }
@@ -213,7 +231,7 @@ export default function AgentRunDetail() {
     setActionLoading(true)
     setError('')
     try {
-      await api.post(`/agent-runs/${id}/reviews/${review.id}/resolve`, {
+      await api.post(`/agent-runs/${agentRunId}/reviews/${review.id}/resolve`, {
         selected_option: option.id,
         user_note: option.label,
       })
@@ -227,16 +245,17 @@ export default function AgentRunDetail() {
         await loadTrace()
       }
     } catch (err) {
-      setError(err.response?.data?.detail || '사용자 검토 처리에 실패했습니다.')
+      setError(normalizeError(err, '사용자 검토 처리에 실패했습니다.'))
     } finally {
       setActionLoading(false)
     }
   }
 
-  const run = trace?.analysis_run
+  const run = trace?.analysis_run || trace?.run
+  const planSteps = trace?.plan_steps || trace?.steps || []
   const selectedStep = useMemo(
-    () => trace?.plan_steps?.find(step => step.plan_step_id === selectedStepId),
-    [trace, selectedStepId],
+    () => planSteps.find(step => step.plan_step_id === selectedStepId),
+    [planSteps, selectedStepId],
   )
   const stepToolCalls = useMemo(
     () => trace?.tool_calls?.filter(call => call.plan_step_id === selectedStepId) || [],
@@ -260,7 +279,7 @@ export default function AgentRunDetail() {
   )
 
   if (loading) return <LoadingState title="Agent Run trace를 불러오는 중입니다." />
-  if (error && !trace) return <ErrorState title="Trace를 불러오지 못했습니다." description={error} onRetry={loadTrace} />
+  if (error && !trace) return <ErrorState title="Agent Run을 찾을 수 없습니다." description={error} onRetry={loadTrace} />
 
   return (
     <main className="workspace-page" style={{ display: 'grid', gap: 20 }}>
@@ -278,11 +297,12 @@ export default function AgentRunDetail() {
         </div>
       </header>
 
+      {warning && <div className="alert alert-warning"><AlertTriangle size={16} /> {warning}</div>}
       {error && <div className="alert alert-warning"><AlertTriangle size={16} /> {error}</div>}
 
       <div className="workspace-grid four-columns">
         <MetricBox label="상태" value={statusLabel(run?.status)} />
-        <MetricBox label="Plan 단계" value={trace?.plan_steps?.length || 0} />
+        <MetricBox label="Plan 단계" value={planSteps.length || 0} />
         <MetricBox label="Tool Call" value={trace?.tool_calls?.length || 0} />
         <MetricBox label="Observation" value={trace?.observations?.length || 0} />
       </div>
@@ -312,7 +332,7 @@ export default function AgentRunDetail() {
 
       <div className="workspace-grid two-columns" style={{ alignItems: 'start' }}>
         <Section title="Plan Timeline" icon={<ListChecks size={18} />}>
-          <PlanTimeline steps={trace?.plan_steps || []} selectedStepId={selectedStepId} onSelect={setSelectedStepId} />
+          <PlanTimeline steps={planSteps} selectedStepId={selectedStepId} onSelect={setSelectedStepId} />
         </Section>
 
         <Section title="선택 단계 상세" icon={<Box size={18} />}>
