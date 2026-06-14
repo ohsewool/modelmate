@@ -34,6 +34,8 @@ class AgentGoalRunBody(BaseModel):
     project_id: str | None = None
     dataset_id: str | None = None
     target_preference: str | None = None
+    goal_dataset_warning: bool = False
+    mismatch_warning: str | None = None
 
 
 class AgentReviewResolveBody(BaseModel):
@@ -78,6 +80,22 @@ async def create_goal_first_agent_run_api(
             project_id=body.project_id,
             dataset_id=body.dataset_id,
         )
+        agent_run = result.get("agent_run") or {}
+        if body.goal_dataset_warning:
+            create_decision(
+                conn,
+                agent_run.get("id"),
+                "goal_dataset_mismatch_warning",
+                body.mismatch_warning or "The user chose to proceed even though the analysis goal may not match the selected dataset.",
+                decision_type="goal_dataset_mismatch_warning",
+                summary="Analysis goal may not match the selected dataset, and the user chose to proceed.",
+                selected_value={
+                    "goal_text": goal_text,
+                    "dataset_id": body.dataset_id,
+                    "project_id": body.project_id,
+                    "target_preference": body.target_preference,
+                },
+            )
     finally:
         conn.close()
     agent_run = result.get("agent_run") or {}

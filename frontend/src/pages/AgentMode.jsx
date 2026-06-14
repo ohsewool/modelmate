@@ -1,20 +1,20 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { CheckCircle2, Clock3, Database, ListChecks, ShieldAlert, Upload } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Clock3, Database, ListChecks, ShieldAlert, Upload } from 'lucide-react'
 import api from '../api'
 
-const EXAMPLE_GOAL = '이 CSV로 고객 이탈 가능성을 예측하고 중요한 요인을 보고서로 정리해줘.'
+const STALE_CHURN_GOAL = '이 CSV로 고객 이탈 가능성을 예측하고 중요한 요인을 보고서로 정리해줘.'
 
 function statusLabel(status) {
   if (status === 'supported') return '지원 가능'
   if (status === 'limited') return '제한적 지원'
   if (status === 'unsupported') return '지원 범위 밖'
-  if (status === 'completed') return '완료'
-  if (status === 'waiting_for_review') return '검토 필요'
+  if (['completed', 'succeeded', 'success'].includes(status)) return '분석 완료'
+  if (status === 'waiting_for_review') return '확인 필요'
   if (status === 'running') return '실행 중'
   if (status === 'failed') return '실패'
-  if (status === 'blocked') return '차단'
-  if (status === 'planned') return '계획됨'
+  if (status === 'blocked') return '사용자 확인 필요'
+  if (status === 'planned') return '실행 예정'
   return '확인 필요'
 }
 
@@ -88,6 +88,63 @@ function datasetTitle(dataset) {
   return `${dataset.filename || dataset.original_filename || dataset.dataset_id} · ${rows ?? '-'}행 / ${cols ?? '-'}컬럼`
 }
 
+function datasetTarget(dataset) {
+  return dataset?.target_col || dataset?.recommended_target || dataset?.target_column || ''
+}
+
+function datasetSignature(dataset) {
+  const target = datasetTarget(dataset)
+  const filename = dataset?.filename || dataset?.original_filename || ''
+  const domain = dataset?.dataset_domain || dataset?.domain || dataset?.category || ''
+  const columns = Array.isArray(dataset?.columns) ? dataset.columns.join(' ') : ''
+  return `${target} ${filename} ${domain} ${columns}`.toLowerCase()
+}
+
+function suggestedGoalForDataset(dataset) {
+  const target = datasetTarget(dataset)
+  const targetLower = String(target || '').toLowerCase()
+  const signature = datasetSignature(dataset)
+
+  if (targetLower === 'outcome' || signature.includes('diabetes') || signature.includes('glucose') || signature.includes('bmi')) {
+    return '이 CSV로 당뇨병 여부를 예측하고 중요한 요인을 보고서로 정리해줘.'
+  }
+  if (['churn', 'churned', 'is_churn'].some(token => targetLower.includes(token) || signature.includes(token))) {
+    return '이 CSV로 고객 이탈 가능성을 예측하고 중요한 요인을 보고서로 정리해줘.'
+  }
+  if (['failure', 'defect', 'fault', 'failure_risk'].some(token => targetLower.includes(token) || signature.includes(token))) {
+    return '이 CSV로 고장 또는 불량 위험을 예측하고 중요한 요인을 보고서로 정리해줘.'
+  }
+  if (['price', 'sales', 'revenue', 'demand'].some(token => targetLower.includes(token))) {
+    return `이 CSV로 ${target} 값을 예측하고 중요한 요인을 보고서로 정리해줘.`
+  }
+  if (target) {
+    return `이 CSV로 ${target}을 예측하고 중요한 요인을 보고서로 정리해줘.`
+  }
+  return '이 CSV로 예측할 타깃을 추천하고, 예측에 중요한 요인을 보고서로 정리해줘.'
+}
+
+function isChurnGoal(goal) {
+  const value = String(goal || '').toLowerCase()
+  return value.includes('고객 이탈') || value.includes('이탈') || value.includes('churn')
+}
+
+function isDiabetesDataset(dataset) {
+  const signature = datasetSignature(dataset)
+  return signature.includes('diabetes') || signature.includes('outcome') || signature.includes('glucose') || signature.includes('bmi')
+}
+
+function goalDatasetMismatch(goal, dataset) {
+  if (!goal?.trim() || !dataset) return null
+  if (isChurnGoal(goal) && isDiabetesDataset(dataset)) {
+    return {
+      code: 'goal_dataset_mismatch_warning',
+      title: '입력한 분석 목표와 CSV 데이터 내용이 맞지 않을 수 있습니다.',
+      description: '현재 CSV는 당뇨병 여부 예측 데이터로 보입니다. 고객 이탈 예측 대신 당뇨병 여부 예측으로 진행할까요?',
+    }
+  }
+  return null
+}
+
 function ScopePanel({ interpreted }) {
   if (!interpreted) return null
   const tone = interpreted.supported_status === 'unsupported' ? '#991b1b' : interpreted.supported_status === 'limited' ? '#92400e' : '#047857'
@@ -124,7 +181,7 @@ function PlanPreview({ plan }) {
           <div key={step.plan_step_id || step.order} className="card-compact" style={{ display: 'grid', gap: 6 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
               <strong>{step.order}. {step.name}</strong>
-              <span className="status-pill">{step.status || 'planned'}</span>
+              <span className="status-pill">{statusLabel(step.status || 'planned')}</span>
             </div>
             <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.55 }}>{step.purpose}</p>
             <span style={{ color: 'var(--text-label)', fontSize: 12 }}>사용 도구: {step.tool_name || '미정'}</span>
@@ -165,7 +222,7 @@ function DatasetSelector({ datasets, selectedDatasetId, onSelect, loading }) {
               <strong>{datasetTitle(dataset)}</strong>
               <span style={{ color: 'var(--text-label)', fontSize: 12 }}>
                 프로젝트: {dataset.project_name || dataset.project_id || '연결 정보 없음'}
-                {dataset.target_col ? ` · 추천 타깃: ${dataset.target_col}` : ''}
+                {datasetTarget(dataset) ? ` · 추천 타깃: ${datasetTarget(dataset)}` : ''}
               </span>
             </button>
           ))}
@@ -182,30 +239,76 @@ function DatasetSelector({ datasets, selectedDatasetId, onSelect, loading }) {
   )
 }
 
+function MismatchWarning({ warning, suggestedGoal, onUseSuggestion, onProceed, onEdit }) {
+  if (!warning) return null
+  return (
+    <div className="alert alert-warning" style={{ display: 'grid', gap: 12, alignItems: 'start' }}>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+        <AlertTriangle size={18} />
+        <div>
+          <strong>{warning.title}</strong>
+          <p style={{ margin: '6px 0 0', lineHeight: 1.6 }}>{warning.description}</p>
+          <p style={{ margin: '6px 0 0', color: 'var(--text-2)' }}>추천 목표: {suggestedGoal}</p>
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <button className="btn btn-primary" type="button" onClick={onUseSuggestion}>당뇨병 여부 예측으로 변경</button>
+        <button className="btn btn-secondary" type="button" onClick={onProceed}>기존 목표 그대로 진행</button>
+        <button className="btn btn-secondary" type="button" onClick={onEdit}>목표 직접 수정</button>
+      </div>
+    </div>
+  )
+}
+
 export default function AgentMode() {
   const queryParams = new URLSearchParams(window.location.search)
   const requestedDatasetId = queryParams.get('dataset_id') || ''
-  const [goalText, setGoalText] = useState(EXAMPLE_GOAL)
+  const [goalText, setGoalText] = useState('')
+  const [lastSuggestedGoal, setLastSuggestedGoal] = useState('')
   const [targetPreference, setTargetPreference] = useState('')
   const [runs, setRuns] = useState([])
   const [datasets, setDatasets] = useState([])
   const [selectedDatasetId, setSelectedDatasetId] = useState(requestedDatasetId)
   const [selectedRun, setSelectedRun] = useState(null)
+  const [mismatchChoice, setMismatchChoice] = useState('')
   const [loading, setLoading] = useState(true)
   const [datasetLoading, setDatasetLoading] = useState(true)
   const [creating, setCreating] = useState(false)
   const [executing, setExecuting] = useState(false)
   const [error, setError] = useState('')
+  const goalRef = useRef(null)
 
   const selectedDataset = useMemo(
     () => datasets.find(dataset => (dataset.id || dataset.dataset_id) === selectedDatasetId),
     [datasets, selectedDatasetId],
   )
+  const suggestedGoal = useMemo(() => suggestedGoalForDataset(selectedDataset), [selectedDataset])
+  const mismatchWarning = useMemo(() => goalDatasetMismatch(goalText, selectedDataset), [goalText, selectedDataset])
 
   useEffect(() => {
     loadRuns()
     loadDatasets()
   }, [])
+
+  useEffect(() => {
+    if (!selectedDataset) return
+    const shouldReplace =
+      !goalText.trim() ||
+      goalText === lastSuggestedGoal ||
+      goalText === STALE_CHURN_GOAL
+    if (shouldReplace) {
+      setGoalText(suggestedGoal)
+      setLastSuggestedGoal(suggestedGoal)
+    }
+    setTargetPreference(datasetTarget(selectedDataset) || '')
+    setMismatchChoice('')
+  }, [selectedDatasetId, selectedDataset, suggestedGoal])
+
+  function selectDataset(datasetId) {
+    setSelectedDatasetId(datasetId)
+    setSelectedRun(null)
+    setError('')
+  }
 
   async function loadRuns() {
     setLoading(true)
@@ -248,13 +351,19 @@ export default function AgentMode() {
       setError('Agent 실행 전에 CSV 데이터셋을 선택하거나 업로드하세요.')
       return
     }
+    if (mismatchWarning && mismatchChoice !== 'proceed') {
+      setError('분석 목표와 CSV 내용이 맞지 않을 수 있습니다. 추천 목표로 변경하거나 기존 목표 그대로 진행을 선택해 주세요.')
+      return
+    }
     setCreating(true)
     try {
       const response = await api.post('/agent-runs', {
         goal_text: goalText.trim(),
-        target_preference: targetPreference.trim() || selectedDataset?.target_col || null,
+        target_preference: targetPreference.trim() || datasetTarget(selectedDataset) || null,
         dataset_id: selectedDatasetId,
         project_id: selectedDataset?.project_id || null,
+        goal_dataset_warning: Boolean(mismatchWarning && mismatchChoice === 'proceed'),
+        mismatch_warning: mismatchWarning?.description || null,
       })
       setSelectedRun(normalizeAgentRun(response.data, null, selectedDataset))
       await loadRuns()
@@ -289,6 +398,25 @@ export default function AgentMode() {
     }
   }
 
+  function useSuggestedGoal() {
+    setGoalText(suggestedGoal)
+    setLastSuggestedGoal(suggestedGoal)
+    setMismatchChoice('corrected')
+    setError('')
+  }
+
+  function proceedWithMismatch() {
+    setMismatchChoice('proceed')
+    setError('')
+  }
+
+  function editGoal() {
+    setMismatchChoice('')
+    goalRef.current?.focus()
+  }
+
+  const placeholder = suggestedGoal || '예: 이 CSV로 당뇨병 여부를 예측하고 중요한 요인을 보고서로 정리해줘.'
+
   return (
     <main className="workspace-page" style={{ display: 'grid', gap: 20 }}>
       <header className="workspace-hero">
@@ -296,8 +424,8 @@ export default function AgentMode() {
           <p className="eyebrow">Agent Mode</p>
           <h1>분석 목표부터 시작하기</h1>
           <p>
-            사용자가 원하는 예측 목표를 먼저 입력하면 ModelMate가 분석 계획을 만들고,
-            CSV 데이터셋에 연결된 실행 trace를 순서대로 남깁니다.
+            사용자가 원하는 예측 목표를 먼저 입력하면 ModelMate가 선택된 CSV에 맞는 분석 계획을 만들고,
+            실행 trace를 순서대로 남깁니다.
           </p>
         </div>
         <Link className="btn btn-secondary" to="/agent">빠른 자동 분석으로 이동</Link>
@@ -310,13 +438,32 @@ export default function AgentMode() {
           <div>
             <p className="section-title">1. 분석 목표</p>
             <textarea
+              ref={goalRef}
               value={goalText}
-              onChange={event => setGoalText(event.target.value)}
+              onChange={event => {
+                setGoalText(event.target.value)
+                setMismatchChoice('')
+              }}
               rows={5}
               style={{ width: '100%', resize: 'vertical' }}
-              placeholder="예: 고객 이탈 가능성을 예측하고, 중요한 요인을 보고서로 정리해줘."
+              placeholder={placeholder}
             />
+            <p style={{ margin: '8px 0 0', color: 'var(--text-label)', fontSize: 12 }}>
+              선택한 CSV 기준 추천 목표: {suggestedGoal}
+            </p>
           </div>
+          <MismatchWarning
+            warning={mismatchWarning}
+            suggestedGoal={suggestedGoal}
+            onUseSuggestion={useSuggestedGoal}
+            onProceed={proceedWithMismatch}
+            onEdit={editGoal}
+          />
+          {mismatchWarning && mismatchChoice === 'proceed' && (
+            <div className="alert alert-warning" style={{ margin: 0 }}>
+              기존 목표 그대로 진행합니다. 이 선택은 Agent trace에 `goal_dataset_mismatch_warning`으로 기록됩니다.
+            </div>
+          )}
           <label style={{ display: 'grid', gap: 6 }}>
             <span className="section-title">선호 타깃 컬럼</span>
             <input
@@ -333,7 +480,7 @@ export default function AgentMode() {
         <DatasetSelector
           datasets={datasets}
           selectedDatasetId={selectedDatasetId}
-          onSelect={setSelectedDatasetId}
+          onSelect={selectDataset}
           loading={datasetLoading}
         />
       </div>

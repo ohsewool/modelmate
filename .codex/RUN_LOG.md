@@ -446,6 +446,55 @@ Milestones:
 - Next PR:
   - none until this hotfix is pushed and Railway serves the rebuilt frontend bundle.
 
+## 2026-06-15 KST - Agent Goal/Data Consistency Hotfix
+
+- Status: done
+- Branch: `main`
+- Task file: user request `Agent Goal/Data Consistency Hotfix`
+- Planned verification checklist:
+  - [x] Do not reuse stale customer-churn default goal when the selected dataset changes.
+  - [x] Generate dataset-aware suggested goals for diabetes, churn, failure/defect, and numeric business targets.
+  - [x] Show a Korean mismatch warning before creating an Agent Run when a churn goal is paired with a diabetes-like dataset.
+  - [x] Let the user switch to the recommended dataset-aware goal.
+  - [x] Let the user proceed with the old goal only after explicit confirmation.
+  - [x] Persist a `goal_dataset_mismatch_warning` trace decision when the user proceeds despite a mismatch.
+  - [x] Preserve dataset/project attachment during Agent Run creation.
+  - [x] Backend compile passes.
+  - [x] Frontend build passes with the available local runtime.
+- Root cause:
+  - `AgentMode.jsx` initialized the goal input with a hardcoded customer churn sentence.
+  - Dataset selection did not clear or regenerate that goal, so newly uploaded diabetes datasets inherited a stale churn-oriented goal.
+  - The create-run flow did not require explicit user confirmation before proceeding with a goal/dataset mismatch.
+- Files changed:
+  - `frontend/src/pages/AgentMode.jsx`
+  - `backend/main_parts/045_agent_runs.part`
+  - rebuilt `frontend/dist`
+  - `.codex/RUN_LOG.md`
+- Fixes applied:
+  - Replaced the fixed churn default with dataset-aware goal suggestions.
+  - Added target/file/domain based suggestion logic for diabetes/Outcome, churn, failure/defect/fault, and price/sales/revenue/demand targets.
+  - Reset/replace stale generated goals when the selected dataset changes, while preserving user-edited custom goals.
+  - Added mismatch detection for churn-like goals with diabetes-like datasets.
+  - Added a Korean warning card with actions: `당뇨병 여부 예측으로 변경`, `기존 목표 그대로 진행`, and `목표 직접 수정`.
+  - Added optional backend request fields `goal_dataset_warning` and `mismatch_warning`.
+  - When the user explicitly proceeds despite a mismatch, the backend records a `goal_dataset_mismatch_warning` decision in the Agent trace.
+- Verification result:
+  - Local API smoke used `tmp_datasets/pima.csv` uploaded as `pima-indians-diabetes.csv`.
+  - Saved dataset ID: `f2c0910d`
+  - Project ID: `01b237af`
+  - Corrected Agent Run ID: `33ecb9a3-6f49-4c75-83af-40c24d5243b3`
+  - Corrected run preserved dataset ID `f2c0910d`.
+  - Mismatch proceed Agent Run ID: `8f08f78c-fb15-4aa9-ba94-8df465f06aa9`
+  - Trace for mismatch proceed returned HTTP 200 and included decision type `goal_dataset_mismatch_warning`.
+- Build result:
+  - `python -m compileall backend` passed.
+  - Bundled Vite build passed because `npm` is not available on PATH.
+- Known limitations:
+  - Dataset-aware goal suggestion uses deterministic metadata heuristics from filename, target column, domain, and available columns; it is not an LLM semantic classifier.
+  - Browser automation is not installed in this runtime, so UI behavior was verified through source/build inspection plus API smoke checks.
+- Next PR:
+  - none until this hotfix is pushed and Railway serves the rebuilt frontend bundle.
+
 ## 2026-06-15 KST - Agent Mode Execution Wiring Follow-up
 
 - Status: done
