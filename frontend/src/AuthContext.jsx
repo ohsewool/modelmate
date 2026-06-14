@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react'
-import api from './api'
+import api, { clearStoredAuth, ensureGuestSession } from './api'
 import { clearUploadDraft } from './uploadDraftStorage'
 
 const AuthContext = createContext(null)
@@ -9,20 +9,44 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const token = localStorage.getItem('mm_token')
-    const saved = localStorage.getItem('mm_user')
-    const guest = localStorage.getItem('mm_guest_session')
-    if (token && saved) {
-      setUser(JSON.parse(saved))
-    } else if (guest) {
-      try {
-        const parsed = JSON.parse(guest)
-        setUser({ id: parsed.guest_session_id, name: '게스트 데모', email: '', role: 'guest', is_guest: true })
-      } catch {
-        localStorage.removeItem('mm_guest_session')
+    let cancelled = false
+
+    async function restoreSession() {
+      const token = localStorage.getItem('mm_token')
+      const saved = localStorage.getItem('mm_user')
+      const guest = localStorage.getItem('mm_guest_session')
+      if (token && saved) {
+        try {
+          const { data } = await api.get('/auth/me', { skipGuestSession: true })
+          if (cancelled) return
+          const parsed = JSON.parse(saved)
+          setUser({
+            ...parsed,
+            id: data.sub || parsed.id,
+            email: data.email || parsed.email,
+            name: data.name || parsed.name,
+            role: data.role || parsed.role || 'user',
+            is_guest: false,
+          })
+        } catch {
+          clearStoredAuth()
+          const session = ensureGuestSession()
+          if (!cancelled) setUser({ id: session.guest_session_id, name: '게스트 데모', email: '', role: 'guest', is_guest: true })
+        }
+      } else if (guest) {
+        try {
+          const parsed = JSON.parse(guest)
+          if (!cancelled) setUser({ id: parsed.guest_session_id, name: '게스트 데모', email: '', role: 'guest', is_guest: true })
+        } catch {
+          localStorage.removeItem('mm_guest_session')
+        }
       }
+
+      if (!cancelled) setLoading(false)
     }
-    setLoading(false)
+
+    restoreSession()
+    return () => { cancelled = true }
   }, [])
 
   function login(token, userInfo) {

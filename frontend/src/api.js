@@ -17,6 +17,8 @@ const api = axios.create({
 })
 
 const GUEST_SESSION_KEY = 'mm_guest_session'
+const AUTH_TOKEN_KEY = 'mm_token'
+const AUTH_USER_KEY = 'mm_user'
 
 function createGuestSessionId() {
   const randomPart = window.crypto?.randomUUID?.() || Math.random().toString(36).slice(2)
@@ -47,10 +49,28 @@ export function ensureGuestSession() {
   return guest
 }
 
+export function clearStoredAuth() {
+  localStorage.removeItem(AUTH_TOKEN_KEY)
+  localStorage.removeItem(AUTH_USER_KEY)
+}
+
+function tokenLooksExpired(token) {
+  try {
+    const payload = JSON.parse(window.atob(token.split('.')[1] || ''))
+    return payload?.exp ? payload.exp * 1000 <= Date.now() : false
+  } catch {
+    return false
+  }
+}
+
 api.interceptors.request.use(config => {
-  const token = localStorage.getItem('mm_token')
+  let token = localStorage.getItem(AUTH_TOKEN_KEY)
+  if (token && tokenLooksExpired(token)) {
+    clearStoredAuth()
+    token = null
+  }
   if (token) config.headers.Authorization = `Bearer ${token}`
-  if (!token) {
+  if (!token && !config.skipGuestSession) {
     const guest = ensureGuestSession()
     config.headers['X-ModelMate-Guest-Session'] = guest.guest_session_id
   }
