@@ -278,8 +278,15 @@ export default function AgentRunDetail() {
     [trace, selectedStepId],
   )
 
-  if (loading) return <LoadingState title="Agent Run trace를 불러오는 중입니다." />
-  if (error && !trace) return <ErrorState title="Agent Run을 찾을 수 없습니다." description={error} onRetry={loadTrace} />
+  if (loading) return <LoadingState label="Agent Run trace를 불러오는 중입니다." />
+  if (error && !trace) {
+    return (
+      <ErrorState
+        message={error || 'Agent Run을 찾을 수 없습니다.'}
+        action={<button className="btn-secondary" type="button" onClick={loadTrace}>다시 불러오기</button>}
+      />
+    )
+  }
 
   return (
     <main className="workspace-page" style={{ display: 'grid', gap: 20 }}>

@@ -406,3 +406,42 @@ Milestones:
   - Bundled Vite build passed because `npm` is not available on PATH.
 - Known limitations: direct browser visual QA was represented by SPA route and API smoke checks; Railway needs redeploy after push.
 - Next PR: none until deployed `/agent-mode/:agentRunId` is rechecked.
+
+## 2026-06-15 KST - Agent Run Detail Workspace Error Props Follow-up
+
+- Status: done
+- Branch: `main`
+- Task file: user request `Critical follow-up: Agent Run Detail is still broken`
+- Planned verification checklist:
+  - [x] `/agent-mode/:agentRunId` fetches the Agent Run trace directly by URL param.
+  - [x] Workspace metadata failure is not treated as the Agent Run detail failure.
+  - [x] Loading state no longer falls back to the default workspace loading message.
+  - [x] Trace-load failure no longer falls back to the default workspace error message.
+  - [x] Full-page error remains limited to missing/inaccessible Agent Run trace.
+  - [x] Backend compile passes.
+  - [x] Frontend build passes with the available local runtime.
+- Root cause:
+  - `AgentRunDetail.jsx` passed `title`, `description`, and `onRetry` props to shared `LoadingState`/`ErrorState`, but those components only read `label`, `message`, and `action`.
+  - Because the props were ignored, the shared components rendered their default workspace-specific text, including `워크스페이스 정보를 불러오지 못했습니다.`, even on the Agent Run detail route.
+- Files changed:
+  - `frontend/src/pages/AgentRunDetail.jsx`
+  - rebuilt `frontend/dist`
+  - `.codex/RUN_LOG.md`
+- Fixes applied:
+  - `LoadingState` now receives `label="Agent Run trace를 불러오는 중입니다."`.
+  - `ErrorState` now receives `message={error || 'Agent Run을 찾을 수 없습니다.'}`.
+  - Retry action is passed through the supported `action` prop.
+- Verification result:
+  - Local uvicorn smoke created Agent Run `bd3dab40-6b8b-4c11-9b93-e047871680e2`.
+  - `/api/agent-runs/bd3dab40-6b8b-4c11-9b93-e047871680e2/trace` returned HTTP 200 with 10 plan steps before execution.
+  - Execution completed safely for a dataset-less run with 1 decision and 1 validation.
+  - `/agent-mode/bd3dab40-6b8b-4c11-9b93-e047871680e2` returned the SPA app shell with HTTP 200.
+  - `/api/agent-runs/not-a-real-agent-run/trace` returned HTTP 404, which the page maps to the Agent Run not-found state.
+  - The production bundle contains the corrected `label`, `message`, and retry action strings.
+- Build result:
+  - `python -m compileall backend` passed.
+  - Bundled Vite build passed because `npm` is not available on PATH.
+- Known limitations:
+  - Playwright is not installed in this repository/runtime, so browser automation visual QA was not available. Verification used API smoke checks, direct SPA route checks, and production bundle string inspection.
+- Next PR:
+  - none until this hotfix is pushed and Railway serves the rebuilt frontend bundle.
