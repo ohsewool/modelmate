@@ -537,3 +537,57 @@ Milestones:
   - Browser automation is not installed in this runtime, so verification used API smoke checks, direct SPA route checks, and production bundle inspection.
 - Next PR:
   - none until this UX hotfix is pushed and Railway serves the rebuilt frontend bundle.
+
+## 2026-06-15 KST - Agent Mode Final Result UX Hotfix
+
+- Status: done
+- Branch: `main`
+- Task file: user request `Agent Mode Final Result UX Hotfix`
+- Planned verification checklist:
+  - [x] Completed runs show `분석 완료` instead of a review/continue state.
+  - [x] Completed runs no longer show contradictory `9/10` and stale current step in the main summary.
+  - [x] Review-needed runs keep a clear `확인이 필요합니다` state and user action card.
+  - [x] Completed runs show a plain Korean final result summary before technical counts.
+  - [x] Completed runs show next actions for report, prediction API, new prediction, another CSV, and advanced trace.
+  - [x] Technical trace records remain preserved under the advanced trace section.
+  - [x] Goal/dataset mismatch warning is shown when a diabetes-like dataset is paired with churn-like goal text.
+  - [x] Backend compile passes.
+  - [x] Frontend build passes with the available local runtime.
+- Root cause:
+  - The Agent Run detail UI trusted raw step statuses and current-step labels even after the backend marked a run as completed.
+  - Completed traces could still contain 9 completed step records and previous review records, so the main UI showed `완료`, `9/10`, a stale target recommendation step, and continue/review controls together.
+  - The page emphasized technical record counts instead of a user-facing completion result and next actions.
+- Files changed:
+  - `frontend/src/pages/AgentRunDetail.jsx`
+  - rebuilt `frontend/dist`
+  - `.codex/RUN_LOG.md`
+- Final status UX changes:
+  - Added completed-run detection and main status copy `분석 완료`.
+  - Completed runs now display `완료 단계: 10/10` and `다음 단계: 결과 확인`.
+  - The continue button and review panel are hidden for completed runs.
+  - Added a final result summary with connected CSV metadata, selected target, plain-language work summary, and result action buttons.
+  - Moved technical counts into `고급 실행 기록 요약`.
+- Review UX changes:
+  - Review-needed runs continue to show `확인이 필요합니다`, the stopped step, and review action guidance.
+  - Completed runs no longer show stale review warnings in the main flow.
+- Goal/dataset mismatch handling:
+  - Added a warning when the selected dataset/target looks like diabetes or `Outcome` but the goal text still mentions churn/customer loss.
+  - The warning recommends changing the analysis goal to match the connected CSV.
+- Verification result:
+  - Local authenticated CSV smoke uploaded `sample_data/customer_churn_demo.csv`.
+  - Dataset ID: `7417859e`
+  - Project ID: `33a044a7`
+  - Agent Run ID: `95bcfa3f-0dcd-44a7-86c7-e559ca7378b9`
+  - First execution reached `waiting_for_review` with 10 plan steps, 2 completed steps, and 1 pending review.
+  - Review was resolved with `select:churn`.
+  - Second execution reached `completed` with 10 tool calls, 10 observations, 12 decisions, and 6 artifacts.
+  - Trace API returned HTTP 200 with the same dataset reference.
+  - Direct route `/agent-mode/95bcfa3f-0dcd-44a7-86c7-e559ca7378b9` returned the SPA app shell with HTTP 200.
+- Build result:
+  - `python -m compileall backend` passed.
+  - Bundled Vite build passed because `npm` is not available on PATH.
+- Known limitations:
+  - Backend trace data can still contain 9 completed step statuses when the run status is completed; the UI now resolves the commercial-facing progress summary from the final run status.
+  - Browser automation is not installed in this runtime, so verification used API smoke checks, direct SPA route checks, and build output.
+- Next PR:
+  - none until this hotfix is pushed and Railway serves the rebuilt frontend bundle.

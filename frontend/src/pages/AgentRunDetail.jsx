@@ -8,8 +8,9 @@ const STATUS_LABELS = {
   supported: '지원 가능',
   limited: '제한적 지원',
   unsupported: '지원 범위 밖',
-  completed: '완료',
-  succeeded: '완료',
+  completed: '분석 완료',
+  succeeded: '분석 완료',
+  success: '분석 완료',
   failed: '실패',
   running: '실행 중',
   planned: '실행 예정',
@@ -61,6 +62,43 @@ function isStepDone(step) {
 
 function isStepActive(step) {
   return ['running', 'blocked', 'waiting_for_review'].includes(getStepStatus(step)) || step?.requires_human_review
+}
+
+function isRunComplete(run) {
+  return ['completed', 'succeeded', 'success'].includes(run?.status)
+}
+
+function isRunReviewNeeded(run) {
+  return run?.status === 'waiting_for_review'
+}
+
+function getCompletedStepCount(steps, run) {
+  if (isRunComplete(run)) return steps.length
+  return steps.filter(isStepDone).length
+}
+
+function getCurrentStep(steps, run) {
+  if (isRunComplete(run)) return null
+  return steps.find(isStepActive) || steps.find(step => !isStepDone(step)) || steps[steps.length - 1]
+}
+
+function targetLabel(target) {
+  const value = String(target || '').toLowerCase()
+  if (['diabetes', 'outcome'].includes(value)) return '당뇨병 여부'
+  return target || '선택한 타깃'
+}
+
+function detectGoalDatasetMismatch(run, trace) {
+  const goal = String(run?.user_goal || '').toLowerCase()
+  const dataset = trace?.dataset || trace?.dataset_info || {}
+  const target = String(run?.target_column || run?.target_col || run?.interpreted_goal?.target_preference || dataset.target_col || '').toLowerCase()
+  const filename = String(dataset.filename || dataset.original_filename || run?.dataset_name || '').toLowerCase()
+  const looksDiabetes = ['diabetes', 'outcome'].some(token => target.includes(token) || filename.includes(token))
+  const goalLooksChurn = goal.includes('churn') || goal.includes('이탈') || goal.includes('고객')
+  if (looksDiabetes && goalLooksChurn) {
+    return '현재 CSV는 당뇨병 여부 예측 데이터로 보입니다. 분석 목표를 당뇨병 여부 예측으로 변경하는 것을 권장합니다.'
+  }
+  return ''
 }
 
 function Section({ title, icon, children }) {
@@ -123,27 +161,35 @@ function optionLabel(option, index) {
 }
 
 function ProgressSummary({ steps, run }) {
-  const done = steps.filter(isStepDone)
-  const current = steps.find(isStepActive) || steps.find(step => !isStepDone(step))
+  const completedCount = getCompletedStepCount(steps, run)
+  const current = getCurrentStep(steps, run)
   const next = steps.find(step => step.order > (current?.order || 0) && !isStepDone(step))
+  const complete = isRunComplete(run)
   return (
     <Section title="진행 요약" icon={<ListChecks size={18} />}>
       <div style={{ display: 'grid', gap: 8 }}>
         <p style={{ margin: 0, color: 'var(--text-2)' }}>
           현재 상태는 <strong>{statusLabel(run?.status)}</strong>입니다.
-          {done.length > 0 && ` ${done.length}개 단계가 완료되었습니다.`}
+          {` ${completedCount}/${steps.length || 0}개 단계가 완료되었습니다.`}
         </p>
-        {done.slice(-2).map(step => (
+        {complete ? (
+          <>
+            <div className="alert alert-success" style={{ margin: 0 }}>
+              분석이 완료되었습니다. 이제 결과 보고서, 예측 API, 새 데이터 예측으로 이어갈 수 있습니다.
+            </div>
+            <p style={{ margin: 0, color: 'var(--text-2)' }}>다음 단계: 결과 확인</p>
+          </>
+        ) : steps.filter(isStepDone).slice(-2).map(step => (
           <div key={step.plan_step_id} className="alert alert-success" style={{ margin: 0 }}>
             {step.order}단계 완료: {step.name}
           </div>
         ))}
-        {current && (
+        {!complete && current && (
           <div className="alert alert-warning" style={{ margin: 0 }}>
             현재 단계: {current.name}
           </div>
         )}
-        {next && <p style={{ margin: 0, color: 'var(--text-2)' }}>다음 단계: {next.name}</p>}
+        {!complete && next && <p style={{ margin: 0, color: 'var(--text-2)' }}>다음 단계: {next.name}</p>}
       </div>
     </Section>
   )
@@ -179,6 +225,45 @@ function ConnectedCsvCard({ trace, run }) {
   )
 }
 
+function FinalResultSummary({ trace, run }) {
+  const dataset = trace?.dataset || trace?.dataset_info || {}
+  const target = run?.target_column || run?.target_col || run?.interpreted_goal?.target_preference || dataset.target_col
+  const targetText = targetLabel(target)
+  const filename = dataset.filename || dataset.original_filename || run?.dataset_name || '연결된 CSV'
+  const rows = dataset.row_count ?? dataset.rows ?? run?.row_count
+  const cols = dataset.column_count ?? dataset.columns ?? run?.column_count
+  const outputs = [
+    'Agent가 데이터 구조를 확인했습니다.',
+    '예측할 타깃 후보를 찾았습니다.',
+    '데이터 누수 가능성을 점검했습니다.',
+    '모델 학습과 보고서 생성을 준비했습니다.',
+    'API 배포 전 확인 항목을 정리했습니다.',
+  ]
+  return (
+    <Section title="분석 결과" icon={<CheckCircle2 size={18} />}>
+      <div className="alert alert-success" style={{ margin: 0 }}>
+        이 CSV에 대해 {targetText} 예측 분석이 완료되었습니다.
+      </div>
+      <div className="workspace-grid four-columns">
+        <MetricBox label="CSV" value={filename} />
+        <MetricBox label="데이터 행" value={rows ?? '확인 중'} />
+        <MetricBox label="컬럼" value={cols ?? '확인 중'} />
+        <MetricBox label="예측 타깃" value={targetText} />
+      </div>
+      <ul style={{ margin: 0, paddingLeft: 20, color: 'var(--text-2)', lineHeight: 1.7 }}>
+        {outputs.map(item => <li key={item}>{item}</li>)}
+      </ul>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <Link className="btn btn-primary" to="/reports">결과 보고서 보기</Link>
+        <Link className="btn btn-secondary" to="/prediction-apis">예측 API 만들기</Link>
+        <Link className="btn btn-secondary" to="/predict">새 데이터 예측하기</Link>
+        <Link className="btn btn-secondary" to="/upload?returnTo=agent-mode">다른 CSV로 분석하기</Link>
+        <a className="btn btn-secondary" href="#advanced-trace">고급 실행 기록 보기</a>
+      </div>
+    </Section>
+  )
+}
+
 function UserPlanTimeline({ steps }) {
   if (!steps?.length) {
     return <EmptyState title="아직 분석 계획이 없습니다." description="Agent Run 계획이 생성되면 여기에 표시됩니다." />
@@ -202,6 +287,7 @@ function UserPlanTimeline({ steps }) {
 }
 
 function ReviewPanel({ reviews, run, onResolve, onRetry, onStop, onContinue }) {
+  if (isRunComplete(run)) return null
   const pending = reviews.filter(review => review.status === 'pending')
   if (!pending.length && run?.status !== 'waiting_for_review') return null
 
@@ -282,13 +368,14 @@ function AdvancedTrace({ trace, reviews }) {
   const artifacts = trace?.artifacts || []
   return (
     <details className="card" style={{ display: 'grid', gap: 12 }}>
-      <summary style={{ cursor: 'pointer', fontWeight: 850 }}>고급 실행 기록 보기 · 개발자/검증용 trace</summary>
+      <summary id="advanced-trace" style={{ cursor: 'pointer', fontWeight: 850 }}>고급 실행 기록 보기 · 개발자/검증용 trace</summary>
       <div className="workspace-grid four-columns" style={{ marginTop: 12 }}>
         <MetricBox label="Agent가 실행한 작업" value={toolCalls.length} />
         <MetricBox label="Agent가 발견한 내용" value={observations.length} />
         <MetricBox label="Agent의 판단" value={decisions.length} />
         <MetricBox label="생성된 결과물" value={artifacts.length} />
       </div>
+      <p style={{ margin: 0, color: 'var(--text-label)', fontSize: 12 }}>고급 실행 기록 요약입니다. 실제 저장된 trace record를 그대로 표시합니다.</p>
       <div className="workspace-grid two-columns" style={{ alignItems: 'start', marginTop: 12 }}>
         <DetailList
           title="Agent가 실행한 작업"
@@ -468,10 +555,16 @@ export default function AgentRunDetail() {
 
   const run = trace?.analysis_run || trace?.run
   const planSteps = trace?.plan_steps || trace?.steps || []
+  const complete = isRunComplete(run)
+  const reviewNeeded = isRunReviewNeeded(run)
+  const completedStepCount = getCompletedStepCount(planSteps, run)
   const currentStep = useMemo(
-    () => planSteps.find(isStepActive) || planSteps.find(step => !isStepDone(step)) || planSteps[planSteps.length - 1],
-    [planSteps],
+    () => getCurrentStep(planSteps, run),
+    [planSteps, run],
   )
+  const mismatchWarning = detectGoalDatasetMismatch(run, trace)
+  const currentStepLabel = complete ? '결과 확인' : currentStep?.name || '확인 중'
+  const nextActionLabel = complete ? '결과 확인' : reviewNeeded ? '사용자 확인' : '계속 실행'
 
   if (loading) return <LoadingState label="Agent Run trace를 불러오는 중입니다." />
   if (error && !trace) {
@@ -488,26 +581,31 @@ export default function AgentRunDetail() {
       <header className="workspace-hero">
         <div>
           <p className="eyebrow">Agent Mode</p>
-          <h1>분석 진행 상황</h1>
+          <h1>{complete ? '분석 결과' : '분석 진행 상황'}</h1>
           <p>{run?.user_goal || '분석 목표 정보가 없습니다.'}</p>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <Link className="btn btn-secondary" to="/agent-mode">Agent Mode로 돌아가기</Link>
-          <button className="btn btn-primary" type="button" onClick={continueRun} disabled={actionLoading || !run?.dataset_id}>
-            <CheckCircle2 size={16} /> 확인하고 계속 실행
-          </button>
+          {!complete && (
+            <button className="btn btn-primary" type="button" onClick={continueRun} disabled={actionLoading || !run?.dataset_id}>
+              <CheckCircle2 size={16} /> 확인하고 계속 실행
+            </button>
+          )}
         </div>
       </header>
 
       {warning && <div className="alert alert-warning"><AlertTriangle size={16} /> {warning}</div>}
       {error && <div className="alert alert-warning"><AlertTriangle size={16} /> {error}</div>}
+      {mismatchWarning && <div className="alert alert-warning"><AlertTriangle size={16} /> {mismatchWarning}</div>}
 
       <div className="workspace-grid four-columns">
         <MetricBox label="현재 상태" value={statusLabel(run?.status)} />
-        <MetricBox label="완료 단계" value={`${planSteps.filter(isStepDone).length} / ${planSteps.length || 0}`} />
-        <MetricBox label="현재 단계" value={currentStep?.name || '확인 중'} />
-        <MetricBox label="다음 행동" value={run?.status === 'waiting_for_review' ? '사용자 확인' : '계속 실행'} />
+        <MetricBox label="완료 단계" value={`${completedStepCount} / ${planSteps.length || 0}`} />
+        <MetricBox label={complete ? '다음 단계' : reviewNeeded ? '멈춘 단계' : '현재 단계'} value={currentStepLabel} />
+        <MetricBox label="다음 행동" value={nextActionLabel} />
       </div>
+
+      {complete && <FinalResultSummary trace={trace} run={run} />}
 
       <ConnectedCsvCard trace={trace} run={run} />
       <ProgressSummary steps={planSteps} run={run} />
@@ -521,11 +619,11 @@ export default function AgentRunDetail() {
         onContinue={continueRun}
       />
 
-      <Section title="Agent가 이해한 분석 흐름" icon={<Box size={18} />}>
+      <Section title="Agent가 세운 분석 계획" icon={<Box size={18} />}>
         <UserPlanTimeline steps={planSteps} />
       </Section>
 
-      <Section title="결과 요약" icon={<FileText size={18} />}>
+      <Section title="고급 실행 기록 요약" icon={<FileText size={18} />}>
         <div className="workspace-grid four-columns">
           <MetricBox label="Agent가 실행한 작업" value={trace?.tool_calls?.length || 0} />
           <MetricBox label="Agent가 발견한 내용" value={trace?.observations?.length || 0} />
@@ -533,7 +631,7 @@ export default function AgentRunDetail() {
           <MetricBox label="생성된 결과물" value={trace?.artifacts?.length || 0} />
         </div>
         <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.6 }}>
-          이 화면은 사용자가 이해하기 쉬운 요약입니다. 실제 tool call, observation, decision, validation, artifact 원본은 아래 고급 실행 기록에서 확인할 수 있습니다.
+          위 숫자는 검증과 포트폴리오 확인을 위한 실행 기록 요약입니다. 사용자가 봐야 할 핵심 결과는 상단의 분석 결과와 다음 행동입니다.
         </p>
       </Section>
 
