@@ -446,6 +446,54 @@ Milestones:
 - Next PR:
   - none until this hotfix is pushed and Railway serves the rebuilt frontend bundle.
 
+## 2026-06-15 KST - Post-hotfix Ordering Cleanup
+
+- Status: done
+- Branch: `main`
+- Task file: user request `Post-hotfix ordering cleanup`
+- Purpose:
+  - Verify the final repository state after Agent Final Result UX and Goal/Data Consistency hotfixes were applied in reversed order.
+  - Fix only regressions caused by ordering, if any.
+- Verification checklist:
+  - [x] Diabetes-like datasets do not need to reuse the stale customer churn goal.
+  - [x] pima diabetes upload produces a diabetes-style dataset target and can create an Agent Run without churn goal text.
+  - [x] Mismatched churn goal on diabetes data can be recorded as `goal_dataset_mismatch_warning`.
+  - [x] Review-needed execution returns `waiting_for_review` and does not appear completed.
+  - [x] Completed execution returns `completed` with real trace records.
+  - [x] Final Result UX source still includes completed-run helpers, `분석 완료`, result action buttons, and advanced trace.
+  - [x] Direct trace route returns the SPA shell.
+  - [x] Backend compile passes.
+  - [x] Frontend build passes with the available local runtime.
+- Regression assessment:
+  - No ordering regression was found in source or smoke testing.
+  - Goal/Data Consistency changes did not remove the Final Result UX helpers or advanced trace section.
+  - Final Result UX changes did not remove the dataset-aware goal suggestion or mismatch-warning flow.
+- Files changed:
+  - `.codex/RUN_LOG.md`
+- Fixes applied:
+  - No product code fixes were required.
+- Smoke test result:
+  - Uploaded `tmp_datasets/pima.csv` as `pima-indians-diabetes.csv`.
+  - Saved dataset ID: `ff2ff997`
+  - Project ID: `210fb025`
+  - Corrected Agent Run ID: `6cabb463-cd6b-488d-9c08-56649c270468`
+  - Corrected run preserved dataset ID `ff2ff997`.
+  - Corrected run goal did not contain churn text.
+  - First execution reached `waiting_for_review` with 10 plan steps, 3 tool calls, 3 observations, 3 decisions, and 1 artifact.
+  - Review was resolved with `select:diabetes`.
+  - Second execution reached `completed` with 10 tool calls, 10 observations, 11 decisions, and 6 artifacts.
+  - Trace API returned HTTP 200 with status `completed`, dataset ID `ff2ff997`, and persisted `tool_calls`, `observations`, `decisions`, `validations`, and `artifacts` keys.
+  - Mismatch proceed run persisted a `goal_dataset_mismatch_warning` decision.
+  - Direct route `/agent-mode/6cabb463-cd6b-488d-9c08-56649c270468` returned HTTP 200.
+- Build result:
+  - `python -m compileall backend` passed.
+  - Bundled Vite build passed because `npm` is not available on PATH.
+- Known limitations:
+  - Backend completed trace still reports 9 individually completed steps in raw step records; Final Result UX resolves the user-facing completed progress from run status.
+  - Browser automation is not installed in this runtime, so verification used API smoke checks, direct SPA route checks, and source/build inspection.
+- Next PR:
+  - none until Railway serves the latest pushed frontend bundle.
+
 ## 2026-06-15 KST - Agent Goal/Data Consistency Hotfix
 
 - Status: done
