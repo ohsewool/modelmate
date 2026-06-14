@@ -32,6 +32,8 @@ export default function Upload() {
   const fileRef = useRef()
   const nav = useNavigate()
   const location = useLocation()
+  const uploadParams = new URLSearchParams(location.search)
+  const shouldReturnToAgentMode = uploadParams.get('returnTo') === 'agent-mode'
   const reanalysisDataset = location.state?.reanalysisDataset || null
   const reanalysisExperiment = location.state?.reanalysisExperiment || null
   const reanalysisItem = reanalysisDataset || reanalysisExperiment
@@ -100,6 +102,15 @@ export default function Upload() {
       setTarget(targetToUse)
       setDropCols(reuseDrops.length ? [...new Set(reuseDrops)] : data.suggested_drop || [])
       setEdaInfo(null)
+
+      if (shouldReturnToAgentMode && data.saved_dataset?.id) {
+        const params = new URLSearchParams({
+          dataset_id: data.saved_dataset.id,
+        })
+        if (data.saved_dataset.project_id) params.set('project_id', data.saved_dataset.project_id)
+        nav(`/agent-mode?${params.toString()}`)
+        return
+      }
 
       setLoading('ai')
       try {

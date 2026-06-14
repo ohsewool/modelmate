@@ -84,7 +84,7 @@ function DatasetSelector({ datasets, selectedDatasetId, onSelect, loading }) {
           <p className="section-title" style={{ marginBottom: 4 }}>분석할 CSV 데이터셋</p>
           <p style={{ margin: 0, color: 'var(--text-2)' }}>Agent Mode는 저장된 CSV 데이터셋을 기준으로 계획과 실행 trace를 남깁니다.</p>
         </div>
-        <Link className="btn btn-secondary" to="/upload"><Upload size={16} /> CSV 업로드하고 시작하기</Link>
+        <Link className="btn btn-secondary" to="/upload?returnTo=agent-mode"><Upload size={16} /> CSV 업로드하고 시작하기</Link>
       </div>
       {loading ? (
         <p style={{ color: 'var(--text-label)' }}>저장된 데이터셋을 불러오는 중입니다.</p>
@@ -116,7 +116,7 @@ function DatasetSelector({ datasets, selectedDatasetId, onSelect, loading }) {
           <Database size={24} />
           <strong>아직 Agent Mode에 연결할 저장 데이터셋이 없습니다.</strong>
           <p>CSV를 먼저 업로드하거나 기존 빠른 자동 분석을 완료한 뒤 다시 실행하세요.</p>
-          <Link className="btn btn-primary" to="/upload">CSV 업로드</Link>
+          <Link className="btn btn-primary" to="/upload?returnTo=agent-mode">CSV 업로드</Link>
         </div>
       )}
     </section>
@@ -124,11 +124,13 @@ function DatasetSelector({ datasets, selectedDatasetId, onSelect, loading }) {
 }
 
 export default function AgentMode() {
+  const queryParams = new URLSearchParams(window.location.search)
+  const requestedDatasetId = queryParams.get('dataset_id') || ''
   const [goalText, setGoalText] = useState(EXAMPLE_GOAL)
   const [targetPreference, setTargetPreference] = useState('')
   const [runs, setRuns] = useState([])
   const [datasets, setDatasets] = useState([])
-  const [selectedDatasetId, setSelectedDatasetId] = useState('')
+  const [selectedDatasetId, setSelectedDatasetId] = useState(requestedDatasetId)
   const [selectedRun, setSelectedRun] = useState(null)
   const [loading, setLoading] = useState(true)
   const [datasetLoading, setDatasetLoading] = useState(true)
@@ -162,10 +164,13 @@ export default function AgentMode() {
     setDatasetLoading(true)
     try {
       const response = await api.get('/datasets')
-      const items = response.data?.datasets || []
+      const items = Array.isArray(response.data) ? response.data : (response.data?.datasets || [])
       setDatasets(items)
-      if (!selectedDatasetId && items.length) {
-        setSelectedDatasetId(items[0].id || items[0].dataset_id)
+      const ids = items.map(dataset => dataset.id || dataset.dataset_id)
+      if (requestedDatasetId && ids.includes(requestedDatasetId)) {
+        setSelectedDatasetId(requestedDatasetId)
+      } else if (!selectedDatasetId && items.length) {
+        setSelectedDatasetId(ids[0])
       }
     } catch (err) {
       setDatasets([])

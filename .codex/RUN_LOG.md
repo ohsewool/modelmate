@@ -335,3 +335,40 @@ Milestones:
   - [x] final status: hotfix verified and ready to commit.
 - Known limitations: `npm` is not available on PATH in this environment, so the equivalent bundled Node/Vite build was used. The smoke test used API calls against local uvicorn, not manual browser clicking.
 - Next PR: resume roadmap only after this hotfix is deployed/verified on Railway.
+
+## 2026-06-14 KST - Agent Mode Dataset Connection Follow-up
+
+- Status: done
+- Branch: `main`
+- Task file: user request `Agent Mode Dataset Connection Hotfix follow-up`
+- Planned verification checklist:
+  - [x] Existing upload flow remains the source of truth.
+  - [x] `/agent-mode` upload CTA sends users to the existing upload flow with a return marker.
+  - [x] Upload success can return to `/agent-mode?dataset_id=...&project_id=...`.
+  - [x] Agent Mode reads the actual `/api/datasets` response shape.
+  - [x] Uploaded dataset appears as selectable after upload.
+  - [x] Agent Run stores selected `dataset_id` and `project_id`.
+  - [x] Agent execution uses the attached dataset reference and creates real trace records or review path.
+  - [x] Backend compile passes.
+  - [x] Frontend build passes with the available local runtime.
+- Findings:
+  - Existing upload stores dataset/project metadata in the backend `datasets` and `projects` tables via `save_dataset_record`.
+  - `/api/datasets` returns a bare list, while Agent Mode only read `response.data.datasets`, so saved datasets were invisible in the UI.
+  - The upload CTA navigated to `/upload` without a return marker, so users were not brought back to Agent Mode with a usable dataset reference.
+- Files changed:
+  - `frontend/src/pages/AgentMode.jsx`
+  - `frontend/src/pages/Upload.jsx`
+  - rebuilt `frontend/dist`.
+- Verification result:
+  - Local guest-session smoke with `sample_data/customer_churn_demo.csv` passed.
+  - Guest session: `agent-followup-7da5572e`
+  - Dataset ID: `c3db0e00`
+  - Project ID: `6008247a`
+  - Agent Run ID: `4d31a033-f08a-4d9c-b780-24c5f2363cbb`
+  - `/api/datasets` returned 1 item and included `c3db0e00`.
+  - Execution reached `waiting_for_review` with 10 plan steps, 3 tool calls, 3 observations, 3 decisions, 3 validations, 1 artifact, and 1 human review.
+- Build result:
+  - `python -m compileall backend` passed.
+  - Bundled Vite build passed because `npm` is not available on PATH.
+- Known limitations: verification was API-based for the backend flow and build-based for the frontend route behavior; Railway needs redeploy after push.
+- Next PR: none until deployed `/agent-mode` is rechecked.
