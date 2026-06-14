@@ -493,3 +493,47 @@ Milestones:
   - Browser automation is not installed in this runtime, so verification used API smoke checks, direct SPA route checks, and production bundle inspection.
 - Next PR:
   - none until this fix is pushed and Railway serves the rebuilt frontend bundle.
+
+## 2026-06-15 KST - Agent Mode UX Simplification Hotfix
+
+- Status: done
+- Branch: `main`
+- Task file: user request `Agent Mode UX Simplification Hotfix`
+- Planned verification checklist:
+  - [x] Keep real agent trace persistence intact.
+  - [x] Do not fake tool calls, observations, decisions, validations, or artifacts.
+  - [x] Default Agent Run Detail view uses plain Korean user-facing copy.
+  - [x] Technical trace remains available in a collapsible advanced section.
+  - [x] Human review explains why user confirmation is needed.
+  - [x] Target candidate buttons are clearer than raw `Q1 선택` style labels.
+  - [x] Connected CSV card avoids emphasizing raw dataset/project IDs in the main UI.
+  - [x] CSV dataset connection and Agent Run execution still work.
+  - [x] Backend compile passes.
+  - [x] Frontend build passes with the available local runtime.
+- Files changed:
+  - `frontend/src/pages/AgentRunDetail.jsx`
+  - rebuilt `frontend/dist`
+  - `.codex/RUN_LOG.md`
+- UX changes:
+  - Replaced default developer-oriented detail page with user-friendly sections: connected CSV, progress summary, review guidance, plan flow, and result summary.
+  - Mapped technical status values such as `waiting_for_review`, `planned`, `completed`, and `blocked` to Korean labels.
+  - Moved technical records into `고급 실행 기록 보기 · 개발자/검증용 trace`.
+  - Renamed main labels from raw trace terms to `Agent가 실행한 작업`, `Agent가 발견한 내용`, `Agent의 판단`, `검증 결과`, and `생성된 결과물`.
+- Human review simplification:
+  - Added review reason copy for target ambiguity, leakage review, metric review, and API readiness review.
+  - Target selection now appears as a clear decision card with Korean guidance and action labels like `{column}로 계속 실행`.
+- Verification result:
+  - Local authenticated CSV smoke uploaded `sample_data/customer_churn_demo.csv`.
+  - Dataset ID: `e4c9571c`
+  - Project ID: `fa002189`
+  - Agent Run ID: `058fc4cb-3d27-4556-b02d-442dbdb961da`
+  - Execution reached `waiting_for_review` with 3 tool calls and 1 human review while preserving dataset/project references.
+  - Direct route `/agent-mode/058fc4cb-3d27-4556-b02d-442dbdb961da` returned the SPA app shell with HTTP 200.
+  - Built frontend bundle contains the user-friendly labels and no longer contains raw default labels `Tool Calls` or `Observations`.
+- Build result:
+  - `python -m compileall backend` passed.
+  - Bundled Vite build passed because `npm` is not available on PATH.
+- Known limitations:
+  - Browser automation is not installed in this runtime, so verification used API smoke checks, direct SPA route checks, and production bundle inspection.
+- Next PR:
+  - none until this UX hotfix is pushed and Railway serves the rebuilt frontend bundle.
