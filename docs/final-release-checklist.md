@@ -1,0 +1,86 @@
+# Final Release Checklist
+
+ModelMate 포트폴리오, 졸업 발표, beta demo 전 최종 확인 목록입니다.
+
+## Build / Test
+
+- [ ] `python -m compileall backend`
+- [ ] `cd frontend && npm run build`
+- [ ] `python scripts/run_product_smoke.py --base-url http://localhost:8000`
+- [ ] `python scripts/run_release_qa.py --base-url http://localhost:8000`
+- [ ] Railway 배포 후 deployed smoke test
+
+## Deployment
+
+- [ ] GitHub `main` 최신 commit 확인
+- [ ] Railway build 성공 확인
+- [ ] `/` 랜딩 페이지 로드 확인
+- [ ] 최신 frontend bundle 반영 확인
+- [ ] 환경변수에 secret이 노출되지 않는지 확인
+- [ ] rollback 가능한 마지막 commit 확인
+
+## Demo Flow
+
+- [ ] guest demo mode 접근 가능
+- [ ] starter pack flow 정상
+- [ ] CSV upload 정상
+- [ ] target recommendation 표시
+- [ ] model comparison 실행
+- [ ] report/export 확인
+- [ ] prediction API tab 확인
+- [ ] project save/rerun 확인
+- [ ] jobs status 확인
+- [ ] usage limit state 확인
+- [ ] feedback form 확인
+- [ ] pilot inquiry form 확인
+
+## Safety / Trust
+
+- [ ] token 전체 값이 목록에 노출되지 않음
+- [ ] token 생성 warning 표시
+- [ ] raw CSV/log/secret이 화면에 노출되지 않음
+- [ ] deleted dataset 상태가 친절하게 표시됨
+- [ ] deleted dataset 기반 rerun이 차단되거나 안내됨
+- [ ] request ID/error ID가 있는 오류는 무섭지 않게 표시됨
+- [ ] 실제 결제 수집이 없다는 문구 확인
+- [ ] 샘플 데이터가 합성 데이터임을 표시
+
+## Korean UI Copy
+
+- [ ] 랜딩 페이지 한국어 우선
+- [ ] Dashboard/Projects/Jobs/Reports/Settings 한국어 우선
+- [ ] Prediction API와 token은 자연스럽게 영어 technical term 유지
+- [ ] 버튼/empty/loading/error state가 한국어 우선
+- [ ] 과장 표현 없음
+
+## Responsive
+
+- [ ] desktop 화면 확인
+- [ ] tablet 폭 확인
+- [ ] mobile 폭에서 nav/card/table overflow 확인
+- [ ] project detail tab overflow 확인
+- [ ] 버튼 클릭 영역 확인
+
+## Docs
+
+- [ ] README 최신화
+- [ ] docs/README.md 링크 확인
+- [ ] demo guide 확인
+- [ ] screenshot checklist 확인
+- [ ] portfolio case study 확인
+- [ ] known limitations 확인
+- [ ] deployment notes 확인
+- [ ] product roadmap에서 future item을 구현 완료처럼 표현하지 않음
+
+## Release Blockers
+
+아래 중 하나라도 발생하면 public demo 전에 수정합니다.
+
+- [ ] 랜딩 또는 dashboard가 로드되지 않음
+- [ ] CSV 업로드가 500으로 실패
+- [ ] 정상 샘플 분석이 완료되지 않음
+- [ ] report/export가 열리지 않음
+- [ ] token 전체 값이 목록/로그에 노출됨
+- [ ] 남의 project/report/dataset 접근 가능
+- [ ] 실제 billing이 연결된 것처럼 보임
+- [ ] README/docs가 enterprise-grade 또는 guaranteed claim을 포함

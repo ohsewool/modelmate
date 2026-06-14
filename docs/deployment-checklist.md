@@ -3,6 +3,13 @@
 This checklist describes the current Railway deployment setup for the guided CSV
 predictive analysis MVP. Do not commit secrets to GitHub.
 
+For the final portfolio/beta package, use this checklist together with:
+
+- [Deployment notes](deployment-notes.md)
+- [Final release checklist](final-release-checklist.md)
+- [Demo guide](demo-guide.md)
+- [Screenshot checklist](screenshot-checklist.md)
+
 ## Required Runtime
 
 - Python 3.11

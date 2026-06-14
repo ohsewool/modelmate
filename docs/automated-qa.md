@@ -3,6 +3,12 @@
 This document explains the automated checks available before a demo, Railway
 deployment review, or beta test.
 
+For the final release package, pair these commands with:
+
+- [Final release checklist](final-release-checklist.md)
+- [Deployment notes](deployment-notes.md)
+- [Demo guide](demo-guide.md)
+
 ## Local QA Commands
 
 ```bash

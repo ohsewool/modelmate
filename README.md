@@ -1,408 +1,192 @@
-﻿# ModelMate
+# ModelMate
 
+ModelMate는 CSV 데이터를 업로드하면 데이터 구조 분석, 예측 타깃 추천,
+모델 비교, 근거 기반 보고서, 예측 API 생성까지 하나의 흐름으로 제공하는
+guided AutoML SaaS MVP입니다.
+
+English portfolio summary:
 ModelMate turns CSV data into explainable predictions, grounded reports, and
-reusable prediction APIs through a guided AI analyst workflow.
+reusable APIs through a guided AI analyst workflow.
 
-ModelMate는 CSV 데이터를 설명 가능한 예측, 근거 기반 보고서, 재사용 가능한
-예측 API로 바꿔주는 가이드형 AI 분석 서비스입니다.
-
-It helps a user upload a CSV, inspect whether the data is usable, choose a
-prediction target, compare models, understand the result, and reuse the outcome
-through reports, prediction screens, workspace history, and API-style sharing.
-
-## Product Position
-
-ModelMate is not intended to replace enterprise AutoML platforms such as
-DataRobot, Vertex AI, Azure ML, or Dataiku.
-
-The realistic product position is:
-
-> Guided CSV predictive analysis SaaS MVP.
-
-Users do not primarily buy "an AI agent" itself. They use ModelMate to get:
-
-- a reliable prediction result from a CSV,
-- evidence-backed model and data explanations,
-- a reusable report,
-- and a prediction API/share flow that can be demonstrated or extended later.
-
-The Agentic AutoML work in this repository is an architecture direction, not a
-claim that ModelMate is already a complete autonomous AI data scientist.
-
-## Deployment
+## Live Demo
 
 - Railway: https://web-production-5d6fa.up.railway.app/
 - GitHub: https://github.com/ohsewool/-
 - Branch: `main`
 
-## Current AutoML Features
+## What It Does
 
-- CSV/TXT/TSV upload and validation
-- Dataset domain and prediction-purpose inference
-- Target recommendation and excluded-column review
-- Cross-validated model comparison
-- Optional Optuna tuning
-- Result summary and XAI/reason view
-- Analysis trace, trust summary, and evidence summary on the report screen
-- HTML report preview/download for grounded analysis reports
-- New-data prediction
-- Workspace/history reuse
-- Share/API-style flow
-- Reusable prediction API documentation for shared models
-- Auth-lite session foundation with guest demo mode
-- Email/password register, login, `/auth/me`, and logout smoke checks
-- User-owned project foundation with MVP ownership checks for saved projects,
-  datasets, agent analysis runs, and private deployed model metadata
-- User-owned dataset management with MVP delete impact warnings and soft-delete
-  retention foundation
+ModelMate는 비전문가도 CSV 기반 예측 분석 흐름을 이해하고 다시 사용할 수
+있도록 설계한 웹 서비스입니다. 단순히 모델을 학습하는 데서 끝나지 않고,
+데이터 점검, 타깃 추천, 모델 비교, 설명 가능한 결과, 보고서, 예측 API,
+프로젝트 저장, 실행 기록, 사용량 상태, 피드백 수집까지 SaaS MVP 관점으로
+연결합니다.
 
-## Agentic AutoML Upgrade Status
+## Key Features
 
-ModelMate is being extended toward a real tool-calling Agentic AutoML platform.
-The current implementation keeps the existing AutoML flow and adds tool,
-evidence, decision, review, and resume skeletons around it.
+- CSV/TXT/TSV 업로드와 데이터 품질 검증
+- 데이터 프로파일링, 스키마 검증, 타깃 변수 추천, leakage 점검
+- 분류/회귀 모델 비교와 선택
+- 근거 기반 보고서와 HTML/Markdown/JSON export 흐름
+- SHAP 또는 fallback 기반 설명 가능성 요약
+- 프로젝트, 실행 기록, 보고서, 데이터셋 재사용
+- 프로젝트 단위 예측 API token과 endpoint 예시
+- Auth-lite, guest demo mode, user-owned project foundation
+- 사용량 한도, 작업 상태, 실패 복구 안내
+- 데이터셋 삭제/보관정책 foundation
+- 모니터링, request ID/error ID, 피드백, 파일럿 문의 흐름
+- 합성 샘플 데이터 기반 starter pack
 
-Implemented skeleton flow:
+## Product Workflow
 
-1. Mock goal-to-plan structure
-2. Tool registry
-3. Data profile and schema validation tools
-4. Target recommendation and leakage check tools
-5. AutoML training adapter around the existing pipeline
-6. Evaluation decision tool
-7. XAI/evidence bundle adapter
-8. Evidence validation tool
-9. Grounded report writer
-10. Deployment readiness advice
-11. Human review and resume skeleton
-
-Still not implemented:
-
-- real LLM planner runtime
-- fully dynamic tool selection runtime
-- automatic retraining loops
-- production deployment automation
-- persistent human review queue
-- enterprise model registry
-- feature store
-- full MLOps lifecycle
-- payment system
-
-## Commercialization Readiness Focus
-
-Until the November graduation-project target, the priority is not large
-enterprise expansion. The priority is SaaS readiness:
-
-- stable demo flow
-- clear README and docs
-- report export path
-- prediction API documentation
-- project save/reopen/re-run flow
-- auth-lite session foundation with guest demo mode
-- basic usage limits
-- try-with-sample-data onboarding
-- clear explanation of what ModelMate does and does not do
-
-Grounded reports and reusable prediction APIs are important because they turn a
-one-time model comparison screen into a SaaS-style output that can be saved,
-shared, reviewed, and reused. See `docs/prediction-api.md` for the current
-shared prediction API contract and limitations.
-
-Operational readiness is handled at MVP level: status tracking, friendly
-failure recovery messages, and demo guardrails for file size, row count, column
-count, and training budget. See `docs/operational-readiness.md`.
-
-Auth-lite is handled at MVP foundation level. Guest demo mode remains available,
-and `/api/session` exposes whether the current context is guest or authenticated
-so the next PR can attach user-owned project rules. Email/password auth uses
-PBKDF2 password hashing and bearer-token session revocation on logout. This is
-not full RBAC, payment, enterprise SSO, or account-based quota. See
-`docs/auth-lite-session.md`.
-
-User-owned projects are handled at MVP foundation level. Signed-in users see
-their own saved projects and private analysis metadata, while guest demo mode
-stays available for sample-data evaluation. This is MVP access control, not
-enterprise-grade tenant isolation. See `docs/security-notes.md` and
-`docs/privacy.md`.
-
-Persistent project history is available at MVP level. Signed-in users can open
-My Projects, see linked dataset metadata, recent run summaries, report metadata,
-prediction API metadata, and a rerun entrypoint. Guest demo results remain
-separate from private project history. See `docs/project-rerun.md`.
-
-Lightweight background training jobs are available at MVP foundation level.
-Signed-in users can start a training job, poll persistent job status, reopen the
-latest job state from My Projects, and see friendly failure guidance. This is an
-in-process FastAPI background wrapper around the existing AutoML flow, not a
-distributed queue or enterprise job orchestration system. See
-`docs/operational-readiness.md`.
-
-MVP failure recovery is available for training jobs. Failed jobs expose a
-classified `error_type`, safe `error_message`, `recommended_next_action`, and
-owner-protected rerun endpoint. Duplicate reruns for an active project return
-the current active job instead of creating runaway parallel jobs.
-
-MVP dataset management is available for signed-in users. Users can list their
-own uploaded datasets, open dataset metadata, preview delete impact, and
-soft-delete datasets they own. Deleted datasets are hidden from active dataset
-lists and blocked from future training/rerun flows that require the original
-CSV. Historical report summaries may remain, and prediction API metadata linked
-to deleted datasets or projects can be marked disabled. This is a
-delete/retention foundation, not complete data lifecycle management.
-
-Project-scoped prediction API tokens are available at MVP foundation level.
-Signed-in project owners can create, list, revoke, and regenerate API tokens for
-projects with an active dataset and deployed model. Tokens are stored as hashes,
-the plaintext token is shown only once, and token usage metadata is tracked.
-Deleted datasets or archived projects disable linked project API tokens. This is
-not an enterprise API gateway or billing-grade quota system. See
-`docs/prediction-api.md`.
-
-Usage limits and plan flags are available at MVP foundation level. New users
-start on the `free` plan, while `pro_mock`, `team_mock`, and `admin` are internal
-beta/pilot flags. ModelMate can show current usage, soft-block actions that
-exceed plan limits, and return friendly structured limit errors. This is not a
-payment or billing integration. See `docs/usage-limits.md`.
-
-Monitoring and error reporting are available at MVP foundation level. Backend
-responses include `X-Request-ID`, friendly error objects include `request_id`
-and `error_id`, important events are stored in a bounded `monitoring_events`
-table, and the frontend has a Korean-first error boundary with a sanitized error
-report endpoint. This is lightweight beta diagnostics, not enterprise
-observability. See `docs/monitoring-and-error-reporting.md`.
-
-Available without signing in:
-
-- landing page and product docs;
-- sample dataset selector and guest demo session;
-- CSV upload/demo analysis flow;
-- report preview/export demo flow when the current session has analysis state;
-- prediction API documentation and public prediction invocation for shared
-  model URLs.
-
-Requires signing in:
-
-- account-scoped project list and dataset metadata;
-- project detail access;
-- account-scoped analysis history;
-- project run history and report metadata;
-- background training job status for owned projects;
-- private agent analysis run trace access;
-- private deployed model metadata and deletion;
-- project-scoped prediction API token management;
-- account usage summary and plan-limit guarded actions;
-- private dataset list/detail/delete and project archive/delete impact flows.
-
-First-time users can try ModelMate without preparing their own CSV. The upload
-screen includes Korean-first use-case starter packs with small synthetic CSV
-files:
-
-- 고객 이탈 예측: `frontend/public/samples/customer_churn_demo.csv`
-- 매출/수요 예측: `frontend/public/samples/sales_demand_demo.csv`
-- 설비 고장 위험 예측: `frontend/public/samples/equipment_failure_demo.csv`
-- 마케팅 전환 예측: `frontend/public/samples/marketing_conversion_demo.csv`
-- 학생 성과 예측: `frontend/public/samples/student_performance_demo.csv`
-
-See `docs/use-case-starter-packs.md`, `frontend/public/samples/starter_packs.json`,
-`docs/onboarding.md`, and `docs/demo-agentic-automl.md` for recommended targets,
-task types, demo goals, and guided demo flow. Starter pack data is synthetic demo
-data and should not be treated as real customer or business records.
-
-Beta testing is prepared for a small 5-15 user feedback round. This is a
-feedback-driven commercialization step for a guided CSV predictive analysis MVP,
-not a claim of production readiness. Use these documents before inviting beta
-users:
-
-- Beta-ready checklist: `docs/beta-readiness.md`
-- Feedback questions: `docs/feedback-guide.md`
-- Demo QA checklist: `docs/demo-qa-checklist.md`
-- GitHub issue templates: `.github/ISSUE_TEMPLATE/`
-
-To report bugs or beta feedback, open a GitHub issue using the bug report,
-feature request, or beta feedback template. Known limitations remain: no
-payment, no account-based quota, no full async job queue, no enterprise
-compliance program, and no complete autonomous AI analyst runtime.
-
-Final demo and beta QA documents:
-
-- Beta MVP release notes: `docs/release-notes-beta.md`
-- Beta tester guide: `docs/beta-tester-guide.md`
-- Beta feedback message draft: `docs/beta-feedback-message.md`
-- Automated QA guide: `docs/automated-qa.md`
-- Usage limits and plan flags: `docs/usage-limits.md`
-- Monitoring and error reporting: `docs/monitoring-and-error-reporting.md`
-- Auth-lite session foundation: `docs/auth-lite-session.md`
-- Project rerun and PR-14 notes: `docs/project-rerun.md`
-- Commercialization roadmap: `docs/commercialization-roadmap.md`
-- Commercialization backlog: `docs/commercialization-backlog.md`
-- Deployment checklist: `docs/deployment-checklist.md`
-- Final QA checklist: `docs/final-qa.md`
-- Demo QA checklist: `docs/demo-qa-checklist.md`
-- Beta feedback loop: `docs/beta-feedback-loop.md`
-- Use-case starter packs: `docs/use-case-starter-packs.md`
-- Frontend design guide: `docs/frontend-design-guide.md`
-- UI redesign roadmap: `docs/ui-redesign-roadmap.md`
-
-Beta launch package:
-
-- Status: small beta package for 5-15 testers
-- Try the demo: open the app, download a sample CSV from the upload screen,
-  upload it, run model comparison, review report/export/API/history
-- What to test: clarity of CSV choice, target recommendation, warnings, report
-  usefulness, prediction API reuse, and project rerun
-- Feedback: use GitHub issue templates or the placeholder form in
-  `docs/beta-feedback-message.md`
-- Direction: feedback-driven commercialization of a guided CSV predictive
-  analysis MVP
-
-Screenshots to add before a wider public demo:
-
-- Landing page
-- CSV upload and sample dataset selector
-- Target recommendation
-- Agent timeline
-- Trust panel
-- Model comparison
-- Report export
-- Prediction API documentation
-- Project history/rerun
-- Privacy/terms/pricing links
-
-Release QA can be run with:
-
-```bash
-python scripts/run_release_qa.py --base-url https://web-production-5d6fa.up.railway.app --skip-training
-python scripts/run_starter_pack_smoke.py
-python scripts/run_auth_smoke.py --base-url https://web-production-5d6fa.up.railway.app
-python scripts/run_ownership_smoke.py --base-url https://web-production-5d6fa.up.railway.app
-python scripts/run_project_history_smoke.py --base-url https://web-production-5d6fa.up.railway.app
-python scripts/run_background_jobs_smoke.py --base-url https://web-production-5d6fa.up.railway.app
-python scripts/run_failure_recovery_smoke.py --base-url https://web-production-5d6fa.up.railway.app
-python scripts/run_dataset_delete_smoke.py --base-url https://web-production-5d6fa.up.railway.app
-python scripts/run_monitoring_smoke.py --base-url https://web-production-5d6fa.up.railway.app
-python scripts/run_feedback_smoke.py --base-url https://web-production-5d6fa.up.railway.app
-python scripts/run_product_smoke.py --base-url https://web-production-5d6fa.up.railway.app
+```text
+CSV 업로드
+→ 데이터 구조 분석
+→ 예측 타깃 추천
+→ 제외 컬럼/leakage 점검
+→ 모델 비교
+→ 실행 기록과 trust/evidence 요약
+→ 근거 기반 보고서
+→ 예측 API 재사용
+→ 프로젝트 저장/재실행
 ```
 
-Automated QA checks endpoints, sample upload, target selection, report export,
-auth-lite session context, register/login/logout smoke, MVP ownership smoke,
-project history smoke, background job smoke, failure recovery smoke, guest demo
-session start, dataset delete smoke, monitoring smoke, and deployment smoke
-paths. PR-21 also adds feedback smoke checks for authenticated/guest feedback,
-invalid category/severity handling, token redaction, and protected admin review.
-PR-22 adds starter pack smoke checks for sample metadata, CSV existence, and
-recommended target columns.
-Human review is still needed for usability, copy clarity, visual layout, and
-whether beta users find the report persuasive.
+## Screenshots To Add
 
-Commercial SaaS MVP trust documents are drafted, not finalized legal policies:
+포트폴리오 공개 전 다음 화면을 캡처하세요. 자세한 기준은
+[docs/screenshot-checklist.md](docs/screenshot-checklist.md)를 참고합니다.
 
-- Privacy and data handling draft: `docs/privacy.md`
-- Terms and acceptable use draft: `docs/terms.md`
-- MVP security notes: `docs/security-notes.md`
-- Planned pricing mock: `docs/pricing.md`
+- 랜딩 페이지
+- starter pack gallery
+- CSV 업로드/타깃 추천
+- dashboard/projects
+- project detail/run timeline
+- report/export
+- prediction API token 관리
+- jobs/settings/usage
+- feedback/pilot inquiry
 
-These documents clarify current limitations. ModelMate is not an enterprise
-AutoML replacement, does not claim enterprise compliance, and does not
-currently implement payment, billing, account-based quota, or full production
-security governance.
+## Architecture
 
-Large enterprise features are intentionally out of scope for now:
+- Frontend: React/Vite JavaScript
+- Backend: Python/FastAPI
+- ML: pandas, scikit-learn 계열 AutoML 파이프라인
+- UI: SaaS workspace shell, project/run/report 중심 화면
+- Deployment: Railway, Nixpacks/Procfile 기반
+- QA: Python smoke scripts, upload validation QA, frontend build
 
-- enterprise model registry
-- feature store
-- full MLOps automation
-- automatic retraining loop
-- large connector system
-- billing/payment system
+자세한 구조는 [docs/architecture-overview.md](docs/architecture-overview.md)를
+참고하세요.
 
-## Tool Registry
+## Local Setup
 
-- `data_profile_tool`
-- `schema_validation_tool`
-- `target_recommendation_tool`
-- `leakage_check_tool`
-- `automl_training_tool`
-- `evaluation_tool`
-- `shap_explainer_tool`
-- `validation_tool`
-- `report_writer_tool`
-- `deployment_check_tool`
-
-## Local Run
+### Backend
 
 ```bash
 pip install -r requirements.txt
 uvicorn backend.main:app --reload
 ```
 
-Frontend build:
+### Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+### Build
 
 ```bash
 cd frontend
 npm run build
 ```
 
-## QA
+### QA Commands
 
 ```bash
 python -m compileall backend
-python scripts/run_starter_pack_smoke.py
-python scripts/run_upload_validation_qa.py
-python scripts/run_training_benchmark.py
-python scripts/run_full_qa.py --skip-slow
-python scripts/run_ownership_smoke.py --base-url http://localhost:8000
-python scripts/run_project_history_smoke.py --base-url http://localhost:8000
-python scripts/run_background_jobs_smoke.py --base-url http://localhost:8000
-python scripts/run_failure_recovery_smoke.py --base-url http://localhost:8000
-python scripts/run_dataset_delete_smoke.py --base-url http://localhost:8000
-python scripts/run_prediction_token_smoke.py --base-url http://localhost:8000
-python scripts/run_usage_limits_smoke.py --base-url http://localhost:8000
-python scripts/run_monitoring_smoke.py --base-url http://localhost:8000
-python scripts/run_feedback_smoke.py --base-url http://localhost:8000
+python scripts/run_product_smoke.py --base-url http://localhost:8000
+python scripts/run_release_qa.py --base-url http://localhost:8000
 ```
 
-## Demo Scenario
+일부 smoke test는 서버가 실행 중일 때만 동작합니다. 더 자세한 명령은
+[docs/automated-qa.md](docs/automated-qa.md)를 참고하세요.
 
-Recommended demo files live in `sample_data/`.
+## Environment Variables
 
-1. Login
-2. Upload a CSV
-3. Check dataset judgment and target recommendation
-4. Run model comparison
-5. Review selected model and performance
-6. Open report/XAI/reason view
-7. Check workspace history or share/API flow
-8. Explain the Agentic AutoML architecture direction honestly:
-   tool registry, evidence bundle, grounded report, deployment advice, and
-   human review/resume skeleton
+실제 secret은 GitHub에 커밋하지 않습니다.
 
-Detailed 3-minute and 5-minute demo flows are documented in
-`docs/demo-agentic-automl.md`.
+- `PORT`: Railway가 제공하는 서버 포트
+- `GOOGLE_CLIENT_ID`: OAuth 설정을 사용하는 경우에만 필요
+- LLM/provider key: 현재 기본 demo flow에는 필수 아님
 
-## Admin Account
+배포 기준은 [docs/deployment-notes.md](docs/deployment-notes.md)와
+[docs/deployment-checklist.md](docs/deployment-checklist.md)를 참고합니다.
 
-The admin account can be configured through environment variables:
+## Demo Scenarios
 
-- `ADMIN_EMAIL`
-- `ADMIN_PASSWORD`
+1. 랜딩 페이지에서 제품 포지셔닝 설명
+2. starter pack에서 `고객 이탈 예측` 또는 `설비 고장 위험 예측` 선택
+3. CSV/sample 분석 준비와 타깃 추천 확인
+4. 모델 비교 실행
+5. project detail, run timeline, report 확인
+6. 예측 API tab에서 token 안전 안내와 endpoint 예시 확인
+7. jobs/settings에서 사용량, request ID/error ID, 피드백/파일럿 문의 확인
 
-Default values are `admin@modelmate.local` / `admin1234`.
+발표용 흐름은 [docs/demo-guide.md](docs/demo-guide.md)에 정리되어 있습니다.
 
-## Paid Pilot Readiness
+## Documentation
 
-ModelMate includes a lightweight paid-pilot inquiry flow for manual pilot
-operations.
+문서 인덱스는 [docs/README.md](docs/README.md)를 참고하세요.
 
-- Free / Pro Pilot / Team Pilot pricing copy is pilot planning copy, not active
-  billing.
-- Real payment, invoices, subscriptions, and automatic upgrades are not
-  connected.
-- Users can request pilot access or higher usage limits from the landing page,
-  pricing page, usage card, or workspace settings.
-- Admin users can review pilot inquiries through the protected admin endpoint
-  and small settings review panel.
-- Pilot inquiries must not include payment information, raw CSV contents, API
-  tokens, passwords, or secrets.
+중요 문서:
 
-See `docs/paid-pilot-readiness.md` for the current manual pilot policy.
+- [포트폴리오 케이스 스터디](docs/portfolio-case-study.md)
+- [데모 가이드](docs/demo-guide.md)
+- [최종 릴리즈 체크리스트](docs/final-release-checklist.md)
+- [제품 로드맵](docs/product-roadmap.md)
+- [알려진 한계](docs/known-limitations.md)
+- [Prediction API](docs/prediction-api.md)
+- [Privacy](docs/privacy.md)
+- [Security notes](docs/security-notes.md)
+
+## Portfolio Notes
+
+이 프로젝트의 핵심은 단순히 머신러닝 모델을 학습하는 것이 아니라, CSV
+데이터가 실제 제품 흐름 안에서 분석·보고서·API로 재사용되는 과정을 설계하고
+구현한 것입니다. 이를 위해 데이터 업로드, 타깃 추천, 모델 비교, 설명 가능한
+결과, 프로젝트 저장, 실행 기록, 예측 API, 사용량 제한, 오류 추적, 피드백
+수집까지 SaaS MVP 관점의 기능을 단계적으로 확장했습니다.
+
+## Limitations
+
+ModelMate는 현재 guided CSV predictive analysis MVP입니다.
+
+- enterprise AutoML 또는 full MLOps 플랫폼이 아닙니다.
+- 실제 결제/billing은 구현되어 있지 않습니다.
+- team workspace, SSO, full RBAC는 아직 구현되지 않았습니다.
+- 자동 재학습, feature store, production deployment orchestration은 범위 밖입니다.
+- 샘플 데이터는 합성 데이터입니다.
+- 모델 품질은 업로드된 데이터 품질과 검증 결과에 따라 달라집니다.
+- Prediction API와 모니터링은 MVP 수준 foundation입니다.
+
+자세한 내용은 [docs/known-limitations.md](docs/known-limitations.md)를 참고하세요.
+
+## Roadmap
+
+현재 MVP는 CSV 예측 분석, 프로젝트 재사용, 보고서, 예측 API, 운영/피드백
+foundation에 집중합니다. 이후 개선 후보는 richer report export, 더 나은
+run trace persistence, starter pack 확장, mobile UX 개선, team workspace,
+billing, connector, scheduled retraining 등입니다.
+
+자세한 계획은 [docs/product-roadmap.md](docs/product-roadmap.md)에 정리되어
+있습니다.
+
+## Status
+
+Portfolio / graduation presentation / beta demo ready package.
+
+ModelMate는 현재 상용 SaaS MVP 방향의 포트폴리오 프로젝트이며, production-grade
+enterprise security, billing, full MLOps, guaranteed prediction accuracy를
+보장하지 않습니다.
