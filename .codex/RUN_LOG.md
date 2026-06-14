@@ -218,3 +218,29 @@ Use the task queue status values unless a temporary milestone needs more detail:
   - [x] final status: PR-29 marked `done` in `.codex/TASK_QUEUE.md`.
 - Known limitations: PR-29 visualizes persisted trace records only. Full human review/recovery actions are PR-30.
 - Next PR: PR-30 Human Review / Recovery.
+
+## 2026-06-14 21:00 KST - PR-30 Human Review / Recovery
+
+- Status: done
+- Branch: `main`
+- Task file: `.codex/tasks/PR-30-human-review-recovery.md`
+- Start time: 2026-06-14 21:00 KST
+- Planned verification checklist:
+  - [ ] Frontend build: `cd frontend && npm run build`
+  - [ ] Backend compile passes.
+  - [ ] Human review request model exists.
+  - [ ] Target ambiguity/leakage/API readiness/failure can create review requests.
+  - [ ] Review approval creates persisted decision.
+  - [ ] Retry preserves previous trace and creates new attempt.
+  - [ ] Stop preserves run history.
+  - [ ] Review events appear in Agent Run Detail.
+- Milestones:
+  - [x] implementation started: PR-30 review/recovery work began after PR-29 was marked `done`.
+  - [x] key files changed: `backend/agents/persistence.py`, `backend/agents/executor.py`, `backend/main_parts/045_agent_runs.part`, `frontend/src/pages/AgentRunDetail.jsx`, `docs/agent-mode-mvp.md`.
+  - [x] build started: backend compile and frontend production build.
+  - [x] build result: `python -m compileall backend` passed; equivalent bundled Vite build passed because `npm` is not available on PATH.
+  - [x] verification started: direct SQLite human review smoke for target ambiguity.
+  - [x] verification result: passed. A target ambiguity review is persisted, resolving it updates status and records the review resolution path.
+  - [x] final status: PR-30 marked `done` in `.codex/TASK_QUEUE.md`.
+- Known limitations: PR-30 provides persisted review/recovery foundations. More advanced review branching can be refined after optional planner work.
+- Next PR: PR-31 Optional LLM Planner Integration.

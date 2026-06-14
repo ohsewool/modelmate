@@ -101,7 +101,7 @@ Review gate:
 
 ## PR-30 Human Review / Recovery
 
-Status: todo
+Status: done
 
 Task file: .codex/tasks/PR-30-human-review-recovery.md
 

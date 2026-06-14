@@ -7,10 +7,14 @@ from backend.agents.persistence import (
     create_goal_first_agent_run,
     create_analysis_run,
     create_analysis_steps_from_plan,
+    create_decision,
     get_goal_first_agent_run,
     get_analysis_timeline,
     get_analysis_run_trace,
+    list_human_review_requests,
     list_goal_first_agent_runs,
+    resolve_human_review_request,
+    update_analysis_run_status,
 )
 from backend.agents.mock_runner import run_mock_agent_timeline
 from backend.tools import build_pr04_mock_registry
@@ -30,6 +34,11 @@ class AgentGoalRunBody(BaseModel):
     project_id: str | None = None
     dataset_id: str | None = None
     target_preference: str | None = None
+
+
+class AgentReviewResolveBody(BaseModel):
+    selected_option: str
+    user_note: str | None = None
 
 
 @app.post("/api/agent-runs")
@@ -128,6 +137,86 @@ async def get_goal_first_agent_trace_api(analysis_run_id: str, user=Depends(get_
         "agent_status": "trace",
         "message": "저장된 Agent Run 실행 trace입니다.",
     }
+
+
+@app.get("/api/agent-runs/{analysis_run_id}/reviews")
+async def list_agent_reviews_api(analysis_run_id: str, user=Depends(get_current_user)):
+    assert_analysis_run_owner(user, analysis_run_id)
+    conn = get_db()
+    try:
+        reviews = list_human_review_requests(conn, analysis_run_id)
+    finally:
+        conn.close()
+    return {"reviews": reviews}
+
+
+@app.post("/api/agent-runs/{analysis_run_id}/reviews/{review_id}/resolve")
+async def resolve_agent_review_api(
+    analysis_run_id: str,
+    review_id: str,
+    body: AgentReviewResolveBody,
+    user=Depends(get_current_user),
+):
+    assert_analysis_run_owner(user, analysis_run_id)
+    conn = get_db()
+    try:
+        review = resolve_human_review_request(
+            conn,
+            analysis_run_id,
+            review_id,
+            selected_option=body.selected_option,
+            user_note=body.user_note,
+        )
+        if not review:
+            raise HTTPException(404, "Review request를 찾을 수 없습니다.")
+        create_decision(
+            conn,
+            analysis_run_id,
+            f"human_review:{body.selected_option}",
+            body.user_note or "사용자가 human review 요청을 처리했습니다.",
+            decision_type="human_review_resolution",
+            summary=f"Human review resolved as {body.selected_option}.",
+            selected_value={"review_id": review_id, "selected_option": body.selected_option},
+        )
+        if body.selected_option in ("stop", "reject"):
+            update_analysis_run_status(conn, analysis_run_id, "stopped")
+        elif body.selected_option in ("approve", "continue", "exclude"):
+            update_analysis_run_status(conn, analysis_run_id, "planned")
+    finally:
+        conn.close()
+    return {"review": review, "message": "Human review 처리가 저장되었습니다."}
+
+
+@app.post("/api/agent-runs/{analysis_run_id}/retry-step")
+async def retry_agent_step_api(analysis_run_id: str, user=Depends(get_current_user)):
+    assert_analysis_run_owner(user, analysis_run_id)
+    conn = get_db()
+    try:
+        update_analysis_run_status(conn, analysis_run_id, "planned")
+        trace = execute_agent_run(conn, analysis_run_id)
+    finally:
+        conn.close()
+    return {**trace, "message": "기존 trace를 보존한 채 재시도를 실행했습니다."}
+
+
+@app.post("/api/agent-runs/{analysis_run_id}/stop")
+async def stop_agent_run_api(analysis_run_id: str, user=Depends(get_current_user)):
+    assert_analysis_run_owner(user, analysis_run_id)
+    conn = get_db()
+    try:
+        update_analysis_run_status(conn, analysis_run_id, "stopped")
+        create_decision(
+            conn,
+            analysis_run_id,
+            "stop_run",
+            "사용자가 Agent Run을 중단했습니다. 기존 trace는 보존됩니다.",
+            decision_type="human_stop",
+            summary="Agent Run stopped by user.",
+        )
+        trace = get_analysis_timeline(conn, analysis_run_id)
+    finally:
+        conn.close()
+    return {**trace, "message": "Agent Run을 중단했습니다."}
 
 
 @app.get("/api/agent/tools")

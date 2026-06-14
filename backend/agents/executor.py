@@ -7,6 +7,7 @@ from typing import Any
 from backend.agents.persistence import (
     create_artifact,
     create_decision,
+    create_human_review_request,
     create_observation,
     create_tool_call,
     create_validation_result,
@@ -104,12 +105,13 @@ def execute_agent_run(conn, analysis_run_id: str) -> dict[str, Any]:
             _persist_validation(conn, run["id"], plan_step_id, tool_name, output)
             _persist_decision_if_needed(conn, run["id"], step, tool_name, output, observation["id"])
             _persist_artifact_if_needed(conn, run, tool_name, output)
+            review_created = _create_review_if_needed(conn, run, step, tool_name, output, tool_call["id"])
             if status == "failed":
                 _persist_block_decision(conn, run["id"], tool_name, output, observation["id"])
                 update_plan_step_status(conn, run["id"], plan_step_id, "failed")
                 final_status = "failed"
                 break
-            if _requires_stop(tool_name, output):
+            if review_created or _requires_stop(tool_name, output):
                 _persist_block_decision(conn, run["id"], tool_name, output, observation["id"])
                 update_plan_step_status(conn, run["id"], plan_step_id, "blocked")
                 final_status = "waiting_for_review"
@@ -287,6 +289,117 @@ def _persist_block_decision(conn, analysis_run_id: str, tool_name: str, output: 
         summary=str(output.get("recommended_next_action") or "문제를 해결한 뒤 다시 실행하세요."),
         selected_value={"tool_name": tool_name, "status": output.get("status")},
     )
+
+
+def _create_review_if_needed(conn, run: dict[str, Any], step: dict[str, Any], tool_name: str, output: dict[str, Any], tool_call_id: str) -> bool:
+    flags = set((run.get("interpreted_goal") or {}).get("review_flags") or [])
+    plan_step_id = step["plan_step_id"]
+    if tool_name == "target_recommendation_tool" and (step.get("requires_human_review") or "target_ambiguous" in flags):
+        candidates = output.get("candidate_targets") or []
+        options = [
+            {"id": "continue", "label": "추천 타깃으로 계속 진행", "value": (output.get("recommended_target") or {}).get("column_name")},
+            {"id": "stop", "label": "분석 중단"},
+        ]
+        if candidates:
+            options = [
+                {"id": f"select:{item.get('column_name')}", "label": f"{item.get('column_name')} 선택", "value": item.get("column_name")}
+                for item in candidates[:5]
+            ] + options
+        create_human_review_request(
+            conn,
+            run["id"],
+            plan_step_id=plan_step_id,
+            tool_call_id=tool_call_id,
+            review_type="target_ambiguity",
+            severity="warning",
+            title="예측 타깃 확인 필요",
+            message="예측 타깃 후보가 자동 추천되었습니다. 실제 분석 목적에 맞는 타깃 컬럼인지 확인해 주세요.",
+            options=options,
+        )
+        return True
+    if tool_name == "leakage_check_tool" and output.get("leakage_risk") in ("high", "medium"):
+        create_human_review_request(
+            conn,
+            run["id"],
+            plan_step_id=plan_step_id,
+            tool_call_id=tool_call_id,
+            review_type="leakage_risk",
+            severity="blocking" if output.get("leakage_risk") == "high" else "warning",
+            title="누수 가능성 검토 필요",
+            message="타깃 누수 가능성이 있는 컬럼이 발견되었습니다. 제외하거나 경고를 확인한 뒤 진행하세요.",
+            options=[
+                {"id": "exclude", "label": "의심 컬럼 제외 후 진행"},
+                {"id": "continue", "label": "경고 확인 후 계속"},
+                {"id": "stop", "label": "분석 중단"},
+            ],
+        )
+        return output.get("leakage_risk") == "high"
+    if tool_name == "evaluation_tool" and output.get("threshold_status") in ("warning", "fail"):
+        create_human_review_request(
+            conn,
+            run["id"],
+            plan_step_id=plan_step_id,
+            tool_call_id=tool_call_id,
+            review_type="low_model_performance",
+            severity="blocking" if output.get("threshold_status") == "fail" else "warning",
+            title="모델 성능 검토 필요",
+            message="모델 성능이 낮거나 기준에 가깝습니다. API 제공 전 보고서 한계를 확인하세요.",
+            options=[
+                {"id": "continue", "label": "한계를 포함해 계속"},
+                {"id": "retry", "label": "이 단계 다시 시도"},
+                {"id": "stop", "label": "분석 중단"},
+            ],
+        )
+        return output.get("threshold_status") == "fail"
+    if tool_name == "api_readiness_tool" and output.get("deployment_status") in ("needs_review", "hold", "blocked"):
+        create_human_review_request(
+            conn,
+            run["id"],
+            plan_step_id=plan_step_id,
+            tool_call_id=tool_call_id,
+            review_type="api_readiness_risk",
+            severity="blocking" if output.get("deployment_status") in ("hold", "blocked") else "warning",
+            title="예측 API 제공 전 확인 필요",
+            message="현재 결과는 API로 바로 제공하기 전에 추가 확인이 필요합니다.",
+            options=[
+                {"id": "continue", "label": "검토 후 계속"},
+                {"id": "stop", "label": "API 준비 중단"},
+            ],
+        )
+        return output.get("deployment_status") in ("hold", "blocked")
+    if not _tool_success(output):
+        create_human_review_request(
+            conn,
+            run["id"],
+            plan_step_id=plan_step_id,
+            tool_call_id=tool_call_id,
+            review_type="failed_tool_recovery",
+            severity="blocking",
+            title="도구 실행 복구 필요",
+            message="도구 실행 중 문제가 발생했습니다. 이전 trace는 보존되며, 안전한 경우 재시도할 수 있습니다.",
+            options=[
+                {"id": "retry", "label": "이 단계 다시 시도"},
+                {"id": "stop", "label": "실행 중단"},
+            ],
+        )
+        return True
+    if "limited_time_series" in flags and tool_name == "schema_validation_tool":
+        create_human_review_request(
+            conn,
+            run["id"],
+            plan_step_id=plan_step_id,
+            tool_call_id=tool_call_id,
+            review_type="time_series_uncertainty",
+            severity="warning",
+            title="시계열 설정 확인 필요",
+            message="시계열 예측은 날짜 컬럼과 예측 기간 확인이 필요합니다.",
+            options=[
+                {"id": "continue", "label": "일반 예측으로 계속"},
+                {"id": "stop", "label": "분석 중단"},
+            ],
+        )
+        return True
+    return False
 
 
 def _persist_artifact_if_needed(conn, run: dict[str, Any], tool_name: str, output: dict[str, Any]) -> None:

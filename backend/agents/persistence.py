@@ -25,6 +25,7 @@ AGENT_TRACE_TABLES = (
     "decisions",
     "validations",
     "artifacts",
+    "human_review_requests",
 )
 
 
@@ -161,6 +162,26 @@ def ensure_agent_trace_schema(conn: sqlite3.Connection) -> None:
             route TEXT,
             status TEXT NOT NULL,
             created_at TEXT NOT NULL,
+            FOREIGN KEY (analysis_run_id) REFERENCES analysis_runs(id)
+        )
+    """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS human_review_requests (
+            id TEXT PRIMARY KEY,
+            analysis_run_id TEXT NOT NULL,
+            plan_step_id TEXT,
+            tool_call_id TEXT,
+            validation_id TEXT,
+            review_type TEXT NOT NULL,
+            severity TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'pending',
+            title TEXT NOT NULL,
+            message TEXT NOT NULL,
+            options_json TEXT NOT NULL,
+            selected_option TEXT,
+            user_note TEXT,
+            created_at TEXT NOT NULL,
+            resolved_at TEXT,
             FOREIGN KEY (analysis_run_id) REFERENCES analysis_runs(id)
         )
     """)
@@ -716,6 +737,120 @@ def create_artifact(
     return row
 
 
+def create_human_review_request(
+    conn: sqlite3.Connection,
+    analysis_run_id: str,
+    *,
+    review_type: str,
+    severity: str,
+    title: str,
+    message: str,
+    options: list[dict[str, Any]],
+    plan_step_id: str | None = None,
+    tool_call_id: str | None = None,
+    validation_id: str | None = None,
+) -> dict[str, Any]:
+    ensure_agent_trace_schema(conn)
+    existing = conn.execute(
+        """
+        SELECT * FROM human_review_requests
+        WHERE analysis_run_id=? AND review_type=? AND COALESCE(plan_step_id,'')=COALESCE(?, '') AND status='pending'
+        ORDER BY created_at DESC LIMIT 1
+        """,
+        (analysis_run_id, review_type, plan_step_id),
+    ).fetchone()
+    if existing:
+        return _decode_review(existing)
+    row = {
+        "id": str(uuid.uuid4()),
+        "analysis_run_id": analysis_run_id,
+        "plan_step_id": plan_step_id,
+        "tool_call_id": tool_call_id,
+        "validation_id": validation_id,
+        "review_type": review_type,
+        "severity": severity,
+        "status": "pending",
+        "title": title,
+        "message": message,
+        "options": options,
+        "selected_option": None,
+        "user_note": None,
+        "created_at": _now_iso(),
+        "resolved_at": None,
+    }
+    conn.execute(
+        """
+        INSERT INTO human_review_requests
+            (id, analysis_run_id, plan_step_id, tool_call_id, validation_id, review_type, severity,
+             status, title, message, options_json, selected_option, user_note, created_at, resolved_at)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        """,
+        (
+            row["id"],
+            row["analysis_run_id"],
+            row["plan_step_id"],
+            row["tool_call_id"],
+            row["validation_id"],
+            row["review_type"],
+            row["severity"],
+            row["status"],
+            row["title"],
+            row["message"],
+            _json({"options": row["options"]}),
+            row["selected_option"],
+            row["user_note"],
+            row["created_at"],
+            row["resolved_at"],
+        ),
+    )
+    conn.commit()
+    return row
+
+
+def list_human_review_requests(conn: sqlite3.Connection, analysis_run_id: str) -> list[dict[str, Any]]:
+    ensure_agent_trace_schema(conn)
+    rows = conn.execute(
+        "SELECT * FROM human_review_requests WHERE analysis_run_id=? ORDER BY created_at ASC",
+        (analysis_run_id,),
+    ).fetchall()
+    return [_decode_review(row) for row in rows]
+
+
+def resolve_human_review_request(
+    conn: sqlite3.Connection,
+    analysis_run_id: str,
+    review_id: str,
+    *,
+    selected_option: str,
+    user_note: str | None = None,
+) -> dict[str, Any] | None:
+    ensure_agent_trace_schema(conn)
+    row = conn.execute(
+        "SELECT * FROM human_review_requests WHERE id=? AND analysis_run_id=?",
+        (review_id, analysis_run_id),
+    ).fetchone()
+    if not row:
+        return None
+    status = {
+        "approve": "approved",
+        "continue": "approved",
+        "exclude": "approved",
+        "retry": "retried",
+        "stop": "stopped",
+        "reject": "rejected",
+    }.get(selected_option, "resolved")
+    conn.execute(
+        """
+        UPDATE human_review_requests
+        SET status=?, selected_option=?, user_note=?, resolved_at=?
+        WHERE id=? AND analysis_run_id=?
+        """,
+        (status, selected_option, user_note, _now_iso(), review_id, analysis_run_id),
+    )
+    conn.commit()
+    return _decode_review(conn.execute("SELECT * FROM human_review_requests WHERE id=?", (review_id,)).fetchone())
+
+
 def get_analysis_timeline(conn: sqlite3.Connection, analysis_run_id: str) -> dict[str, Any] | None:
     trace = get_analysis_run_trace(conn, analysis_run_id)
     if not trace:
@@ -740,6 +875,10 @@ def get_analysis_timeline(conn: sqlite3.Connection, analysis_run_id: str) -> dic
         "SELECT * FROM artifacts WHERE analysis_run_id=? ORDER BY created_at ASC",
         (analysis_run_id,),
     ).fetchall()
+    reviews = conn.execute(
+        "SELECT * FROM human_review_requests WHERE analysis_run_id=? ORDER BY created_at ASC",
+        (analysis_run_id,),
+    ).fetchall()
     return {
         **trace,
         "tool_calls": [_decode_json_row(row, "arguments_json", "arguments") for row in tool_calls],
@@ -747,7 +886,8 @@ def get_analysis_timeline(conn: sqlite3.Connection, analysis_run_id: str) -> dic
         "decisions": [_decode_decision(row) for row in decisions],
         "validations": [_decode_validation(row) for row in validations],
         "artifacts": [dict(row) for row in artifacts],
-        "timeline": _merge_timeline(trace["steps"], tool_calls, observations, decisions, validations, artifacts),
+        "human_reviews": [_decode_review(row) for row in reviews],
+        "timeline": _merge_timeline(trace["steps"], tool_calls, observations, decisions, validations, artifacts, reviews),
     }
 
 
@@ -772,6 +912,12 @@ def _decode_validation(row: sqlite3.Row) -> dict[str, Any]:
     return data
 
 
+def _decode_review(row: sqlite3.Row) -> dict[str, Any]:
+    data = dict(row)
+    data["options"] = json.loads(data.pop("options_json") or "{}").get("options", [])
+    return data
+
+
 def _merge_timeline(
     steps: list[dict[str, Any]],
     tool_calls: list[sqlite3.Row],
@@ -779,6 +925,7 @@ def _merge_timeline(
     decisions: list[sqlite3.Row],
     validations: list[sqlite3.Row],
     artifacts: list[sqlite3.Row],
+    reviews: list[sqlite3.Row],
 ) -> list[dict[str, Any]]:
     items: list[dict[str, Any]] = []
     for step in steps:
@@ -793,4 +940,6 @@ def _merge_timeline(
         items.append({"type": "validation", "created_at": row["created_at"], "data": _decode_validation(row)})
     for row in artifacts:
         items.append({"type": "artifact", "created_at": row["created_at"], "data": dict(row)})
+    for row in reviews:
+        items.append({"type": "human_review", "created_at": row["created_at"], "data": _decode_review(row)})
     return sorted(items, key=lambda item: item["created_at"])

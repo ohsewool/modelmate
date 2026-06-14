@@ -150,10 +150,61 @@ function StepDetail({ step, toolCalls, observations, decisions, validations, art
   )
 }
 
+function ReviewPanel({ reviews, onResolve, onRetry, onStop }) {
+  if (!reviews?.length) return null
+  const pending = reviews.filter(item => item.status === 'pending')
+  return (
+    <section className="card" style={{ display: 'grid', gap: 12, borderColor: pending.length ? '#f59e0b' : 'var(--border)', marginBottom: 18 }}>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <AlertTriangle size={17} color={pending.length ? '#d97706' : '#64748b'} />
+        <p className="section-title" style={{ margin: 0 }}>사용자 확인 필요</p>
+      </div>
+      {reviews.map(review => (
+        <div key={review.id} className="card-compact" style={{ display: 'grid', gap: 8 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center' }}>
+            <strong>{review.title}</strong>
+            <StatusBadge status={review.status} />
+          </div>
+          <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.55 }}>{review.message}</p>
+          <p style={{ margin: 0, color: 'var(--text-label)', fontSize: 12 }}>{review.review_type} · {review.severity}</p>
+          {review.status === 'pending' && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {(review.options || []).map(option => (
+                <button
+                  key={option.id}
+                  type="button"
+                  className={option.id === 'stop' ? 'btn-secondary' : 'btn-primary'}
+                  onClick={async () => {
+                    await onResolve(review, option)
+                    if (option.id === 'retry') await onRetry()
+                    if (option.id === 'stop') await onStop()
+                  }}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          )}
+          {review.status !== 'pending' && <p style={{ margin: 0, color: 'var(--text-label)', fontSize: 12 }}>처리 결과: {review.selected_option || review.status}</p>}
+        </div>
+      ))}
+    </section>
+  )
+}
+
 export default function AgentRunDetail() {
   const { agentRunId } = useParams()
   const [state, setState] = useState({ loading: true, error: '', data: null })
   const [selectedStepId, setSelectedStepId] = useState('')
+  const [message, setMessage] = useState('')
+
+  async function loadTrace() {
+    setState({ loading: true, error: '', data: null })
+    const res = await api.get(`/agent-runs/${agentRunId}/trace`)
+    setState({ loading: false, error: '', data: res.data })
+    const first = res.data.steps?.[0]?.id || res.data.plan?.steps?.[0]?.plan_step_id || ''
+    setSelectedStepId(first)
+  }
 
   useEffect(() => {
     let mounted = true
@@ -171,6 +222,42 @@ export default function AgentRunDetail() {
       })
     return () => { mounted = false }
   }, [agentRunId])
+
+  async function resolveReview(review, option) {
+    setMessage('')
+    try {
+      await api.post(`/agent-runs/${agentRunId}/reviews/${review.id}/resolve`, {
+        selected_option: option.id,
+        user_note: option.label,
+      })
+      setMessage('사용자 확인 결과를 저장했습니다.')
+      await loadTrace()
+    } catch (err) {
+      setMessage(err.response?.data?.detail || '확인 결과를 저장하지 못했습니다.')
+    }
+  }
+
+  async function retryRun() {
+    setMessage('')
+    try {
+      const res = await api.post(`/agent-runs/${agentRunId}/retry-step`)
+      setState({ loading: false, error: '', data: res.data })
+      setMessage('이전 trace를 보존한 채 재시도를 실행했습니다.')
+    } catch (err) {
+      setMessage(err.response?.data?.detail || '재시도하지 못했습니다.')
+    }
+  }
+
+  async function stopRun() {
+    setMessage('')
+    try {
+      const res = await api.post(`/agent-runs/${agentRunId}/stop`)
+      setState({ loading: false, error: '', data: res.data })
+      setMessage('Agent Run을 중단했습니다. 기존 trace는 보존됩니다.')
+    } catch (err) {
+      setMessage(err.response?.data?.detail || '중단하지 못했습니다.')
+    }
+  }
 
   const trace = state.data
   const run = trace?.run
@@ -210,6 +297,8 @@ export default function AgentRunDetail() {
         <MetricBox label="decision" value={trace.decisions?.length || 0} />
         <MetricBox label="artifact" value={trace.artifacts?.length || 0} />
       </div>
+      {message && <div className="banner-warning" style={{ marginBottom: 14 }}><p style={{ margin: 0 }}>{message}</p></div>}
+      <ReviewPanel reviews={trace.human_reviews || []} onResolve={resolveReview} onRetry={retryRun} onStop={stopRun} />
 
       <div style={{ display: 'grid', gridTemplateColumns: '360px minmax(0, 1fr)', gap: 18 }} className="admin-detail-grid">
         <div style={{ display: 'grid', gap: 14, alignSelf: 'start' }}>
