@@ -121,3 +121,5 @@ Workspace 화면은 별도의 더미 데이터를 만들지 않고 backend metad
 - Prediction APIs: `/api/projects/{project_id}/prediction-tokens`에서 token 목록과 model readiness 상태를 표시합니다.
 
 로그인 사용자의 업로드/분석 결과는 user-owned project와 연결됩니다. guest demo mode는 private workspace 저장과 분리되며, 저장된 project history를 보려면 로그인해야 합니다.
+
+PR-26 follow-up: guest demo mode도 같은 브라우저 세션 안에서는 workspace data flow를 공유합니다. Frontend는 `X-ModelMate-Guest-Session` header를 보내고, backend는 이를 `guest:<session_id>` scope로 해석해 guest project/dataset/run/job/report metadata를 private user-owned project와 분리해서 저장합니다.

@@ -19,6 +19,14 @@ const api = axios.create({
 api.interceptors.request.use(config => {
   const token = localStorage.getItem('mm_token')
   if (token) config.headers.Authorization = `Bearer ${token}`
+  if (!token) {
+    try {
+      const guest = JSON.parse(localStorage.getItem('mm_guest_session') || 'null')
+      if (guest?.guest_session_id) config.headers['X-ModelMate-Guest-Session'] = guest.guest_session_id
+    } catch {
+      localStorage.removeItem('mm_guest_session')
+    }
+  }
   if (presenterMode && localStorage.getItem('mm_demo_mode') === '1') {
     config.params = { ...(config.params || {}), demo: true }
   }

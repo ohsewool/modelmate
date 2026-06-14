@@ -4,6 +4,27 @@ class GuestSessionBody(BaseModel):
 
 
 def build_session_context(user=None, guest_session_id=None):
+    if user and user.get("is_guest"):
+        guest_id = user.get("guest_session_id") or user.get("sub", "").replace("guest:", "", 1)
+        return {
+            "mode": "guest_demo",
+            "is_guest": True,
+            "guest_session_id": guest_id,
+            "user": {"id": user.get("sub"), "name": "게스트 데모", "role": "guest"},
+            "workspace_scope": "browser-session",
+            "capabilities": {
+                "csv_upload": True,
+                "automl_training": True,
+                "report_export": True,
+                "prediction_api": True,
+                "project_persistence": True,
+            },
+            "limitations": [
+                "Guest demo projects are tied to this browser session and are not account-owned.",
+                "Login is recommended for durable account-scoped project history.",
+            ],
+            "access_control": "Guest demo resources stay separate from private user-owned projects.",
+        }
     if user:
         return {
             "mode": "authenticated",
@@ -36,11 +57,11 @@ def build_session_context(user=None, guest_session_id=None):
             "automl_training": True,
             "report_export": True,
             "prediction_api": True,
-            "project_persistence": False,
+            "project_persistence": True,
         },
         "limitations": [
-            "Guest demo results are not isolated as user-owned project records.",
-            "Login is required for account-scoped project history and datasets.",
+            "Guest demo projects are tied to this browser session and are not account-owned.",
+            "Login is recommended for durable account-scoped project history.",
         ],
         "access_control": "Guest demo resources stay separate from private user-owned projects.",
     }

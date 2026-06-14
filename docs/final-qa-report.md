@@ -213,3 +213,19 @@ python scripts/run_workspace_integration_smoke.py --base-url http://localhost:80
 ```
 
 이 smoke는 로그인, CSV 업로드, target 설정, AutoML 분석, projects/jobs/reports/datasets/prediction API metadata 조회를 한 번에 확인합니다.
+
+## PR-26 Hotfix Follow-up
+
+이번 hotfix에서는 workspace가 빈 화면처럼 보이던 원인을 추가로 점검했습니다.
+
+- 원인: guest session은 frontend 상태에 존재했지만 API 요청에는 guest session header가 실리지 않아 workspace API가 401을 반환했고, frontend가 이를 빈 목록으로 처리했습니다.
+- 수정: frontend API client가 로그인 token이 없을 때 `X-ModelMate-Guest-Session` header를 보내도록 했습니다.
+- 수정: backend current user helper가 guest header를 `guest:<session_id>` scope로 해석하도록 했습니다.
+- 수정: desktop에서는 동작이 보이지 않던 hamburger button을 숨기고, mobile에서는 drawer toggle과 닫기 동작이 명확히 작동하도록 정리했습니다.
+- 확인: `run_workspace_integration_smoke.py`가 authenticated flow와 guest flow를 모두 검증합니다.
+
+검증 결과:
+
+- `python -m compileall backend`: pass
+- `cd frontend && npm run build`: pass
+- `python scripts/run_workspace_integration_smoke.py --base-url http://127.0.0.1:8000`: pass, 18/18

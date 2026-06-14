@@ -21,8 +21,19 @@
     conn.commit()
     conn.close()
 
-def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security), x_modelmate_guest_session: str = Header(None)):
     if not credentials:
+        if x_modelmate_guest_session:
+            guest_id = "".join(ch for ch in str(x_modelmate_guest_session) if ch.isalnum() or ch in ("-", "_"))[:80]
+            if guest_id:
+                return {
+                    "sub": f"guest:{guest_id}",
+                    "email": "",
+                    "name": "게스트 데모",
+                    "role": "guest",
+                    "is_guest": True,
+                    "guest_session_id": guest_id,
+                }
         return None
     try:
         payload = jose_jwt.decode(credentials.credentials, JWT_SECRET, algorithms=[JWT_ALGORITHM])

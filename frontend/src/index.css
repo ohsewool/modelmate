@@ -506,6 +506,7 @@ html.dark {
   .workspace-nav-active { background: #eff6ff; color: #1d4ed8; }
   .workspace-overlay { display: none; }
   .workspace-close-mobile { display: none; }
+  .hamburger-btn { display: none; }
 }
 
 /* ── Dark mode overrides ─────────────────────────────── */

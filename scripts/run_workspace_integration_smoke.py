@@ -22,7 +22,7 @@ def parse_json(text):
         return None
 
 
-def request(method, url, *, payload=None, body=None, headers=None, token=None, timeout=DEFAULT_TIMEOUT):
+def request(method, url, *, payload=None, body=None, headers=None, token=None, guest_session=None, timeout=DEFAULT_TIMEOUT):
     data = body
     merged_headers = dict(headers or {})
     if payload is not None:
@@ -30,6 +30,8 @@ def request(method, url, *, payload=None, body=None, headers=None, token=None, t
         merged_headers["Content-Type"] = "application/json"
     if token:
         merged_headers["Authorization"] = f"Bearer {token}"
+    elif guest_session:
+        merged_headers["X-ModelMate-Guest-Session"] = guest_session
     req = urllib.request.Request(url, data=data, headers=merged_headers, method=method)
     try:
         with urllib.request.urlopen(req, timeout=timeout) as res:
@@ -131,6 +133,31 @@ def run(base_url):
 
     guest = request("GET", join(base_url, "/api/session"))
     add(results, "guest demo session은 계속 접근 가능", guest["status"] == 200 and "guest_demo" in guest["text"], "GET /api/session", guest["status"])
+
+    guest_start = request("POST", join(base_url, "/api/session/guest"), payload={"source": "workspace_smoke"})
+    guest_id = (guest_start["json"] or {}).get("guest_session_id")
+    add(results, "게스트 세션 생성", guest_start["status"] == 200 and bool(guest_id), "POST /api/session/guest", guest_start["status"])
+
+    guest_body, guest_headers = multipart_file("file", "customer_churn_demo.csv", sample)
+    guest_upload = request("POST", join(base_url, "/api/upload"), body=guest_body, headers=guest_headers, guest_session=guest_id)
+    guest_dataset = (guest_upload["json"] or {}).get("saved_dataset") or {}
+    guest_project_id = guest_dataset.get("project_id")
+    add(results, "게스트 업로드가 세션 프로젝트를 생성", guest_upload["status"] == 200 and bool(guest_project_id), "guest POST /api/upload", guest_upload["status"])
+
+    guest_target = request(
+        "POST",
+        join(base_url, "/api/set-target"),
+        payload={"target_col": "churn", "drop_cols": ["customer_id"]},
+        guest_session=guest_id,
+    )
+    add(results, "게스트 타깃 설정 완료", guest_target["status"] == 200, "guest POST /api/set-target", guest_target["status"])
+
+    guest_cv = request("POST", join(base_url, "/api/run-cv"), payload={}, guest_session=guest_id, timeout=180)
+    add(results, "게스트 AutoML 분석 완료", guest_cv["status"] == 200 and bool((guest_cv["json"] or {}).get("best_model")), "guest POST /api/run-cv", guest_cv["status"])
+
+    guest_projects = request("GET", join(base_url, "/api/projects"), guest_session=guest_id)
+    guest_project_rows = guest_projects["json"] if isinstance(guest_projects["json"], list) else []
+    add(results, "게스트 workspace가 같은 세션 프로젝트를 조회", guest_projects["status"] == 200 and any(row.get("id") == guest_project_id for row in guest_project_rows), "guest GET /api/projects", guest_projects["status"])
 
     passed = sum(1 for row in results if row["status"] == "pass")
     return {"base_url": base_url, "summary": {"total": len(results), "passed": passed, "failed": len(results) - passed}, "results": results}
