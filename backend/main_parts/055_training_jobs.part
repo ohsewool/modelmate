@@ -217,6 +217,8 @@ def record_sync_training_job(user, *, project_id=None, dataset_id=None, analysis
     )
     conn.commit()
     conn.close()
+    if "increment_daily_usage" in globals():
+        increment_daily_usage(user["sub"], "jobs_today")
     return _get_training_job_owned(user, job_id)
 
 
