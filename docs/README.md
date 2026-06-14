@@ -8,6 +8,7 @@ ModelMate 문서 인덱스입니다.
 - [Product roadmap](product-roadmap.md)
 - [Known limitations](known-limitations.md)
 - [Final release checklist](final-release-checklist.md)
+- [Final QA report](final-qa-report.md)
 - [Screenshot checklist](screenshot-checklist.md)
 - [Demo guide](demo-guide.md)
 - [Beta readiness](beta-readiness.md)
