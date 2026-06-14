@@ -190,3 +190,31 @@ Use the task queue status values unless a temporary milestone needs more detail:
   - [x] final status: PR-28 marked `done` in `.codex/TASK_QUEUE.md`.
 - Known limitations: PR-28 adds only minimal Agent Mode execution UI. Full Run Detail trace/decision console is PR-29.
 - Next PR: PR-29 Agent Trace / Decision UI.
+
+## 2026-06-14 20:35 KST - PR-29 Agent Trace / Decision UI
+
+- Status: done
+- Branch: `main`
+- Task file: `.codex/tasks/PR-29-agent-trace-decision-ui.md`
+- Start time: 2026-06-14 20:35 KST
+- Planned verification checklist:
+  - [ ] Frontend build: `cd frontend && npm run build`
+  - [ ] Agent Run Detail shows persisted trace data.
+  - [ ] Timeline is based on real records.
+  - [ ] Tool call details are visible.
+  - [ ] Observation summaries are visible.
+  - [ ] Decision summaries are visible.
+  - [ ] Validation warnings are visible.
+  - [ ] Artifact links are visible where available.
+  - [ ] Pending/unavailable states are honest.
+  - [ ] Workspace navigation remains connected.
+- Milestones:
+  - [x] implementation started: PR-29 trace UI work began after PR-28 was marked `done`.
+  - [x] key files changed: `frontend/src/pages/AgentRunDetail.jsx`, `frontend/src/pages/AgentMode.jsx`, `frontend/src/App.jsx`, `docs/agent-mode-mvp.md`.
+  - [x] build started: backend compile and frontend production build.
+  - [x] build result: `python -m compileall backend` passed; equivalent bundled Vite build passed because `npm` is not available on PATH.
+  - [x] verification started: checked route wiring and persisted trace UI sections.
+  - [x] verification result: passed. `/agent-mode/:agentRunId` displays real run, interpreted goal, plan steps, tool calls, observations, decisions, validations, and artifacts from backend trace data.
+  - [x] final status: PR-29 marked `done` in `.codex/TASK_QUEUE.md`.
+- Known limitations: PR-29 visualizes persisted trace records only. Full human review/recovery actions are PR-30.
+- Next PR: PR-30 Human Review / Recovery.

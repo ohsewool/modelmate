@@ -12,6 +12,7 @@ import History from './pages/History'
 import Report from './pages/Report'
 import Agent from './pages/Agent'
 import AgentMode from './pages/AgentMode'
+import AgentRunDetail from './pages/AgentRunDetail'
 import Predict from './pages/Predict'
 import Deploy from './pages/Deploy'
 import Login from './pages/Login'
@@ -67,6 +68,7 @@ export default function App() {
                       <Route path="/upload"    element={<Upload />} />
                       <Route path="/agent"     element={<Agent />} />
                       <Route path="/agent-mode" element={<AgentMode />} />
+                      <Route path="/agent-mode/:agentRunId" element={<AgentRunDetail />} />
                       <Route path="/model-lab" element={<ModelLab />} />
                       <Route path="/predict"  element={<Predict />} />
                       <Route path="/deploy"   element={<Deploy />} />

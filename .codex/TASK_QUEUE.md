@@ -78,7 +78,7 @@ Review gate:
 
 ## PR-29 Agent Trace / Decision UI
 
-Status: todo
+Status: done
 
 Task file: .codex/tasks/PR-29-agent-trace-decision-ui.md
 

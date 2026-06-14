@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { CheckCircle2, Clock3, ListChecks, ShieldAlert } from 'lucide-react'
 import api from '../api'
 
@@ -156,6 +157,9 @@ export default function AgentMode() {
             <button className="btn-primary" type="button" onClick={executeRun} disabled={executing || selectedRun.status === 'completed'} style={{ marginTop: 12, width: '100%' }}>
               {executing ? 'Agent 실행 중' : 'Agent 실행 시작'}
             </button>
+            <Link className="btn-secondary" to={`/agent-mode/${selectedRun.id}`} style={{ marginTop: 8, width: '100%', justifyContent: 'center' }}>
+              trace 상세 보기
+            </Link>
           </div>
         )}
       </div>
