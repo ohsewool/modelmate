@@ -67,8 +67,16 @@ async def create_goal_first_agent_run_api(
         )
     finally:
         conn.close()
+    agent_run = result.get("agent_run") or {}
     return {
         **result,
+        "analysis_run_id": agent_run.get("id"),
+        "status": agent_run.get("status"),
+        "project_id": agent_run.get("project_id"),
+        "dataset_id": agent_run.get("dataset_id"),
+        "user_goal": agent_run.get("user_goal"),
+        "interpreted_goal": agent_run.get("interpreted_goal"),
+        "plan": result.get("plan"),
         "agent_status": "planned_only",
         "planner": planner_result["planner"],
         "message": "Agent Run과 실행 계획을 저장했습니다. 실제 tool 실행은 PR-28에서 연결됩니다.",
@@ -85,6 +93,7 @@ async def list_goal_first_agent_runs_api(user=Depends(get_current_user)):
         conn.close()
     return {
         "agent_runs": runs,
+        "runs": runs,
         "agent_status": "planned_only",
         "message": "저장된 목표 기반 Agent Run 목록입니다.",
     }
@@ -182,7 +191,7 @@ async def resolve_agent_review_api(
         )
         if body.selected_option in ("stop", "reject"):
             update_analysis_run_status(conn, analysis_run_id, "stopped")
-        elif body.selected_option in ("approve", "continue", "exclude"):
+        elif body.selected_option in ("approve", "continue", "exclude") or body.selected_option.startswith("select:"):
             update_analysis_run_status(conn, analysis_run_id, "planned")
     finally:
         conn.close()

@@ -53,6 +53,28 @@ def execute_agent_run(conn, analysis_run_id: str) -> dict[str, Any]:
         update_analysis_run_status(conn, run["id"], "blocked")
         return get_analysis_timeline(conn, run["id"])
 
+    if not run.get("dataset_id"):
+        create_validation_result(
+            conn,
+            run["id"],
+            plan_step_id=None,
+            severity="blocking",
+            validation_type="dataset_required",
+            message="Agent 실행 전에 CSV 데이터셋을 선택하거나 업로드해야 합니다.",
+            passed=False,
+        )
+        create_decision(
+            conn,
+            run["id"],
+            "select_dataset_before_execution",
+            "실제 tool 실행은 업로드된 CSV 데이터셋을 기준으로 수행되어야 하므로 데이터셋이 없는 Run은 실행하지 않습니다.",
+            decision_type="dataset_gate",
+            summary="CSV 데이터셋 연결 후 Agent Run을 다시 생성하거나 실행하세요.",
+            selected_value={"dataset_id": None},
+        )
+        update_analysis_run_status(conn, run["id"], "blocked")
+        return get_analysis_timeline(conn, run["id"])
+
     update_analysis_run_status(conn, run["id"], "running")
     final_status = "completed"
     for step in plan.get("steps") or []:

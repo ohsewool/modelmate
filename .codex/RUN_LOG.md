@@ -310,3 +310,28 @@ Milestones:
   - [x] final status: PR-31 marked `done` in `.codex/TASK_QUEUE.md`.
 - Known limitations: PR-31 provides a safe optional planner interface and configured JSON hook, not a required external LLM dependency.
 - Next PR: PR-32 Final Agentic Portfolio Polish.
+
+## 2026-06-14 KST - Post-PR-32 Agent Mode Dataset and Trace Hotfix
+
+- Status: done
+- Branch: `main`
+- Task file: attachment `Post-PR-32 QA and Hotfix: Find and fix missing end-to-end gaps in ModelMate Agentic AutoML`
+- Planned verification checklist:
+  - [ ] Agent Mode creates runs with `dataset_id` and `project_id`.
+  - [ ] Agent execution refuses dataset-less runs with persisted validation/decision instead of an empty trace.
+  - [ ] Real CSV upload -> dataset -> Agent Run -> execute path produces persisted tool calls, observations, decisions, validations, and artifacts where possible.
+  - [ ] Human review waiting state is visible and has continue/retry/stop controls.
+  - [ ] Existing quick automatic analysis remains accessible separately from Agent Mode.
+  - [ ] Backend compile passes.
+  - [ ] Frontend build passes with the available local runtime.
+- Milestones:
+  - [x] implementation started: audited PR-27~PR-32 status and found dataset attachment/trace visibility gaps in the actual UI flow.
+  - [x] key files changed so far: `frontend/src/pages/AgentMode.jsx`, `frontend/src/pages/AgentRunDetail.jsx`, `backend/agents/executor.py`, `backend/main_parts/045_agent_runs.part`.
+  - [x] build started: backend compile and frontend production build.
+  - [x] build result: `python -m compileall backend` passed; bundled Vite build passed because `npm` is not available on PATH.
+  - [x] verification started: local uvicorn smoke with `sample_data/customer_churn_demo.csv`.
+  - [x] verification result: passed. Upload produced dataset `0ef0ad53`, project `ee3c221e`, Agent Run `ca9ca3fd-71c3-42f1-b63d-f5b21dcf3718`. Initial execution persisted 10 plan steps, 3 tool calls, 3 observations, 3 decisions, 3 validations, 1 artifact, and 1 human review. Resolving review with `continue` completed the run with 10 tool calls, 10 observations, 11 decisions, 10 validations, and 6 artifacts.
+  - [x] fixes applied: Agent Mode now requires a selected dataset, Agent Run create/list/trace responses expose compatibility aliases, trace steps decode plan payload fields for UI, dataset-less execution creates a blocking validation/decision, review `select:*` options resume as planned, and Agent Run detail shows fallback review controls.
+  - [x] final status: hotfix verified and ready to commit.
+- Known limitations: `npm` is not available on PATH in this environment, so the equivalent bundled Node/Vite build was used. The smoke test used API calls against local uvicorn, not manual browser clicking.
+- Next PR: resume roadmap only after this hotfix is deployed/verified on Railway.

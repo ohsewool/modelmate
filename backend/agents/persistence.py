@@ -458,11 +458,34 @@ def _decode_agent_run(conn: sqlite3.Connection, row: sqlite3.Row) -> dict[str, A
             plan_data = dict(plan_row)
             plan_data["steps"] = json.loads(plan_data.pop("steps_json") or "{}").get("steps", [])
             plan = plan_data
-    return {"agent_run": run, "plan": plan}
+    return {
+        "agent_run": run,
+        "plan": plan,
+        "analysis_run_id": run.get("id"),
+        "status": run.get("status"),
+        "project_id": run.get("project_id"),
+        "dataset_id": run.get("dataset_id"),
+        "user_goal": run.get("user_goal"),
+        "interpreted_goal": run.get("interpreted_goal"),
+    }
 
 
 def _decode_step(row: sqlite3.Row) -> dict[str, Any]:
-    return {**dict(row), "payload": json.loads(row["payload_json"] or "{}")}
+    data = dict(row)
+    payload = json.loads(data.pop("payload_json") or "{}")
+    return {
+        **payload,
+        **data,
+        "payload": payload,
+        "plan_step_id": payload.get("plan_step_id") or data.get("id"),
+        "name": payload.get("name") or data.get("title"),
+        "order": payload.get("order") or data.get("step_index"),
+        "status": data.get("status") or payload.get("status"),
+        "tool_name": payload.get("tool_name"),
+        "purpose": payload.get("purpose"),
+        "requires_human_review": payload.get("requires_human_review", False),
+        "review_reason": payload.get("review_reason"),
+    }
 
 
 def create_tool_call(
@@ -879,15 +902,19 @@ def get_analysis_timeline(conn: sqlite3.Connection, analysis_run_id: str) -> dic
         "SELECT * FROM human_review_requests WHERE analysis_run_id=? ORDER BY created_at ASC",
         (analysis_run_id,),
     ).fetchall()
+    run = trace["run"]
+    steps = trace["steps"]
     return {
         **trace,
+        "analysis_run": run,
+        "plan_steps": steps,
         "tool_calls": [_decode_json_row(row, "arguments_json", "arguments") for row in tool_calls],
         "observations": [_decode_json_row(row, "evidence_json", "evidence") for row in observations],
         "decisions": [_decode_decision(row) for row in decisions],
         "validations": [_decode_validation(row) for row in validations],
         "artifacts": [dict(row) for row in artifacts],
         "human_reviews": [_decode_review(row) for row in reviews],
-        "timeline": _merge_timeline(trace["steps"], tool_calls, observations, decisions, validations, artifacts, reviews),
+        "timeline": _merge_timeline(steps, tool_calls, observations, decisions, validations, artifacts, reviews),
     }
 
 
