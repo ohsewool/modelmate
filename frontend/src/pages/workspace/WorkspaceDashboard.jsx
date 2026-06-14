@@ -38,14 +38,21 @@ export default function WorkspaceDashboard() {
         eyebrow="워크스페이스"
         title="대시보드"
         description="저장된 프로젝트, 진행 중인 작업, 사용량, 최근 오류와 예측 API 상태를 한눈에 확인합니다."
-        action={<button className="btn-primary" onClick={() => nav('/new')}>새 분석 시작</button>}
+        action={<div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          <button className="btn-secondary" onClick={() => nav('/agent')}>빠른 자동 분석</button>
+          <button className="btn-primary" onClick={() => nav('/new')}>새 분석 시작</button>
+        </div>}
       />
       {data.projects.length === 0 ? (
         <div style={{ display: 'grid', gap: 14 }}>
           <EmptyState
             title="아직 저장된 프로젝트가 없습니다."
             description="CSV를 업로드하거나 사용 사례 샘플로 첫 분석을 시작하세요."
-            action={<div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}><button className="btn-primary" onClick={() => nav('/new')}>CSV 업로드</button><button className="btn-secondary" onClick={() => nav('/new')}>샘플로 체험하기</button></div>}
+            action={<div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+              <button className="btn-primary" onClick={() => nav('/new')}>CSV 업로드</button>
+              <button className="btn-secondary" onClick={() => nav('/agent')}>빠른 자동 분석</button>
+              <button className="btn-secondary" onClick={() => nav('/new')}>샘플로 체험하기</button>
+            </div>}
           />
           <DemoDatasetGuide compact onStart={() => nav('/new')} />
         </div>
