@@ -1,5 +1,34 @@
 # ModelMate Architecture Overview
 
+## PR-32 Clean Architecture Summary
+
+ModelMate는 React/Vite frontend와 FastAPI backend로 구성된 guided AutoML SaaS MVP입니다. 핵심 제품 흐름은 CSV 업로드, 데이터 점검, 타깃 추천, 모델 비교, 근거 기반 보고서, prediction API readiness로 이어집니다.
+
+Agentic AutoML 확장은 기존 AutoML pipeline을 삭제하거나 대체하지 않고, tool adapter와 persisted trace layer를 추가하는 방식으로 설계했습니다.
+
+### 주요 구성
+
+- Frontend: public landing, workspace shell, new analysis, project/run detail, report, prediction API, settings, Agent Mode
+- Backend: FastAPI routes, auth-lite/session, ownership/access control, project/run/report metadata, tool registry, agent executor
+- Agent state: agent run, plan step, tool call, observation, decision, validation, artifact, human review request
+- Analysis tools: data profiling, schema validation, target recommendation, leakage check, AutoML training adapter, evaluation, XAI/fallback explanation, report writer, API readiness
+- Trust layer: warnings, limitations, metric threshold, human review, recovery action
+- Ops foundation: usage limits, background job status, monitoring/error ID, feedback/pilot inquiry
+
+### 의도적으로 구현하지 않은 것
+
+- enterprise model registry
+- feature store
+- full MLOps orchestration
+- automatic retraining platform
+- billing/payment
+- enterprise SSO/RBAC
+- DataRobot/Vertex AI 대체 수준의 범용 AutoML
+
+### 배포 관점
+
+Railway 배포 호환성을 유지하며, 현재 구조는 beta demo와 portfolio presentation에 맞춘 MVP입니다. 운영 배포 수준의 보안, 감사 로그, SLA, 대규모 job queue는 향후 상용화 단계의 과제로 남깁니다.
+
 이 문서는 ModelMate의 현재 SaaS MVP 구조를 실용적으로 요약합니다.
 
 ## Frontend

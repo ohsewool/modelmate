@@ -147,7 +147,7 @@ Review gate:
 
 ## PR-32 Final Agentic Portfolio Polish
 
-Status: todo
+Status: done
 
 Task file: .codex/tasks/PR-32-final-agentic-portfolio-polish.md
 

@@ -4,6 +4,7 @@ ModelMate 문서 인덱스입니다.
 
 ## Product / Portfolio
 
+- [Portfolio summary](portfolio-summary.md)
 - [Portfolio case study](portfolio-case-study.md)
 - [Product roadmap](product-roadmap.md)
 - [Known limitations](known-limitations.md)

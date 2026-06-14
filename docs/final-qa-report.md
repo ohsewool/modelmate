@@ -1,5 +1,22 @@
 # Final QA Report
 
+## PR-32 Agentic Portfolio QA Addendum
+
+PR-32는 새 제품 기능을 추가하지 않고, Agentic AutoML roadmap 이후의 문서, 포트폴리오 설명, 데모 경로, QA 체크리스트를 정리하는 작업입니다.
+
+### 확인 기준
+
+- ModelMate는 Korean-first Agentic AutoML SaaS MVP로 설명됩니다.
+- 기존 빠른 자동 분석 경로와 Agent Mode는 분리되어 설명됩니다.
+- Agent Mode는 goal -> plan -> tool call -> observation -> decision -> validation -> artifact 흐름을 저장하는 기능으로 설명됩니다.
+- unsupported 또는 risky goal은 honest limitation, warning, needs_review 상태로 처리해야 합니다.
+- SHAP/feature importance는 causality가 아니라 feature contribution으로 설명됩니다.
+- DataRobot replacement, fully autonomous AI data scientist, enterprise MLOps platform 같은 표현은 사용하지 않습니다.
+
+### PR-32 검증 결과 기록 위치
+
+최종 검증 결과는 `.codex/RUN_LOG.md`의 PR-32 checkpoint에 기록합니다. frontend build와 backend compile이 모두 통과해야 PR-32를 `done`으로 전환할 수 있습니다.
+
 Date: 2026-06-14
 
 ## 요약

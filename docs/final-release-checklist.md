@@ -1,5 +1,40 @@
 # Final Release Checklist
 
+## PR-32 Agentic AutoML Final Checks
+
+- [ ] Landing page가 Korean-first copy로 로드된다.
+- [ ] CSV 업로드 또는 starter/sample analysis가 동작한다.
+- [ ] 기존 빠른 자동 분석 경로가 Agent Mode와 별도로 접근 가능하다.
+- [ ] Workspace navigation이 dashboard, projects, jobs, reports, prediction API, settings를 연결한다.
+- [ ] Agent Mode에서 한국어 목표 입력이 가능하다.
+- [ ] Agent Run이 저장된다.
+- [ ] Agent Plan이 저장된다.
+- [ ] tool call records가 실제 실행 결과에 기반해 저장된다.
+- [ ] observations가 저장된다.
+- [ ] decisions가 저장된다.
+- [ ] validations와 warnings가 표시된다.
+- [ ] artifacts/report/API readiness가 연결된다.
+- [ ] Run Detail에서 persisted trace가 새로고침 후에도 유지된다.
+- [ ] human review/recovery가 필요한 상황을 경고하거나 조치로 표시한다.
+- [ ] report가 열리고 limitation 문구를 포함한다.
+- [ ] prediction API readiness가 production deployment 완료처럼 과장되지 않는다.
+- [ ] SHAP/feature importance를 causality로 표현하지 않는다.
+- [ ] README와 docs가 fully autonomous enterprise AutoML처럼 과장하지 않는다.
+- [ ] `python -m compileall backend` 통과.
+- [ ] `cd frontend && npm run build` 통과.
+
+## PR-32 Demo Script Check
+
+1. Landing page에서 “CSV 예측 분석 SaaS MVP” 포지셔닝을 설명한다.
+2. 샘플 또는 starter pack으로 분석을 시작한다.
+3. Agent Mode에서 한국어 목표를 입력한다.
+4. 생성된 Plan을 확인한다.
+5. pipeline 실행 후 Run Detail을 연다.
+6. tool call, observation, decision, validation, artifact를 보여준다.
+7. report와 prediction API readiness를 보여준다.
+8. human review/recovery는 안전장치로 설명한다.
+9. 마지막에 현재 한계와 향후 roadmap을 정직하게 말한다.
+
 ModelMate 포트폴리오, 졸업 발표, beta demo 전 최종 확인 목록입니다.
 
 ## Build / Test

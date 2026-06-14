@@ -1,5 +1,30 @@
 # Agent Mode MVP
 
+## PR-32 최종 포지셔닝
+
+ModelMate Agent Mode는 CSV 기반 예측 분석을 위한 Korean-first Agentic AutoML SaaS MVP 기능입니다. 사용자의 한국어 분석 목표를 받아 Agent Run과 Plan을 만들고, 실행 가능한 도구를 순서대로 호출하며, tool call, observation, decision, validation, artifact, human review 기록을 남기는 것을 목표로 합니다.
+
+이 기능은 기존 빠른 자동 분석 흐름을 대체하지 않습니다. 빠른 자동 분석은 사용자가 바로 CSV 분석을 진행하는 경로이고, Agent Mode는 분석 목표와 실행 근거를 더 명시적으로 남기는 별도 경로입니다.
+
+### 시연 경로
+
+1. Landing page 또는 Workspace에서 Agent Mode를 엽니다.
+2. 한국어 목표를 입력합니다.
+3. Agent Run과 Plan이 생성되는지 확인합니다.
+4. pipeline을 실행합니다.
+5. Run Detail에서 tool calls, observations, decisions, validations, artifacts를 확인합니다.
+6. 보고서와 prediction API readiness를 확인합니다.
+7. human review가 필요한 경우 approve, retry, stop 흐름을 보여줍니다.
+
+### 정직한 한계
+
+- 현재 핵심 범위는 tabular CSV 기반 classification/regression입니다.
+- time-series는 명확한 timestamp/horizon 정보가 있을 때 제한적으로만 다룹니다.
+- RAG, 문서 분석, causal inference, full enterprise MLOps는 범위 밖입니다.
+- SHAP/feature importance는 feature contribution 설명이며 causality가 아닙니다.
+- LLM planner는 optional이며, 구성되지 않아도 deterministic planner로 동작합니다.
+- 위험하거나 불명확한 목표는 completed처럼 꾸미지 않고 unsupported, needs_review, unavailable 상태로 표시합니다.
+
 PR-27은 ModelMate의 목표 기반 Agent Mode 첫 단계를 추가합니다.
 
 이 단계의 목적은 사용자가 자연어로 분석 목표를 입력하면, ModelMate가 지원 범위를 판단하고 실행 전 계획을 저장하는 것입니다. 아직 실제 tool 실행, observation, decision, artifact 생성은 수행하지 않습니다.

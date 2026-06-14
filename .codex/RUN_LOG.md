@@ -78,6 +78,46 @@ Use the task queue status values unless a temporary milestone needs more detail:
 
 ## Checkpoint Entry Template
 
+## PR-32 Checkpoint
+
+- Current PR: PR-32 Final Agentic Portfolio Polish
+- Status: in_progress
+- Branch: main
+- Start time: 2026-06-14 Asia/Seoul
+- Task file: `.codex/tasks/PR-32-final-agentic-portfolio-polish.md`
+- Planned verification checklist:
+  - README restored and portfolio-ready
+  - Agent Mode docs updated with honest final positioning
+  - architecture/final release/final QA docs updated
+  - demo path and limitations are explicit
+  - Korean-first wording preserved
+  - no full-autonomy, enterprise MLOps, DataRobot replacement, or SHAP causality claims
+  - backend compile passes
+  - frontend Vite build passes
+
+Milestones:
+
+- implementation started: README was missing after interrupted edit, so PR-32 begins by restoring it.
+- key files changed: `README.md`, `docs/agent-mode-mvp.md`, `docs/architecture-overview.md`, `docs/final-release-checklist.md`, `docs/final-qa-report.md`, `docs/portfolio-summary.md`, `docs/README.md`, `.codex/TASK_QUEUE.md`.
+- implementation note: PR-32 stayed docs/portfolio focused and did not change backend API, frontend routes, AutoML pipeline, Agent execution, auth, prediction API, or deployment config.
+- build started: backend compile and frontend Vite build.
+- build result: pass.
+  - `python -m compileall backend`: pass.
+  - bundled Vite build for frontend: pass. `npm` is not available on PATH in this environment, so the existing bundled Node/Vite runtime was used.
+- verification started: checked PR-32 task file and `.codex/REVIEW_GATE.md`.
+- verification result: pass.
+  - README restored and portfolio-ready.
+  - Agent Mode docs describe goal, plan, tool call, observation, decision, validation, artifact, and human review flow.
+  - Demo path is documented.
+  - Limitations are explicit.
+  - Korean-first positioning is preserved.
+  - No new product feature, backend API, route, auth, prediction API, AutoML pipeline, or deployment behavior was changed.
+  - Overclaim search on PR-32 changed files found only prohibition/checklist wording, not product claims.
+- fixes applied: restored missing `README.md` after interrupted edit and added clean PR-32 portfolio docs.
+- known limitations: existing non-PR-32 dirty QA result files remain untouched; Vite still reports the pre-existing large bundle warning.
+- final status: done.
+- next PR to start: none. PR-32 is the final PR in the current Agentic AutoML roadmap.
+
 ```text
 ## YYYY-MM-DD HH:mm KST - PR-XX <title>
 
