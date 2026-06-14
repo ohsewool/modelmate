@@ -84,6 +84,8 @@ def main():
         results.append(run_step("feedback_smoke", feedback_cmd, 180))
         pilot_inquiry_cmd = [sys.executable, str(ROOT / "scripts" / "run_pilot_inquiry_smoke.py"), "--base-url", args.base_url]
         results.append(run_step("pilot_inquiry_smoke", pilot_inquiry_cmd, 180))
+        workspace_integration_cmd = [sys.executable, str(ROOT / "scripts" / "run_workspace_integration_smoke.py"), "--base-url", args.base_url]
+        results.append(run_step("workspace_integration_smoke", workspace_integration_cmd, 240))
         smoke_cmd = [sys.executable, str(ROOT / "scripts" / "run_product_smoke.py"), "--base-url", args.base_url]
         if args.skip_training:
             smoke_cmd.append("--skip-training")
@@ -100,6 +102,7 @@ def main():
         results.append({"name": "monitoring_smoke", "status": "skipped", "reason": "--base-url not provided"})
         results.append({"name": "feedback_smoke", "status": "skipped", "reason": "--base-url not provided"})
         results.append({"name": "pilot_inquiry_smoke", "status": "skipped", "reason": "--base-url not provided"})
+        results.append({"name": "workspace_integration_smoke", "status": "skipped", "reason": "--base-url not provided"})
         results.append({"name": "product_smoke", "status": "skipped", "reason": "--base-url not provided"})
 
     allowed = {"pass", "skipped"}

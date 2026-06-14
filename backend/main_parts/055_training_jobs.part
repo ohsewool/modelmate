@@ -181,6 +181,45 @@ def _training_result_summary(data):
     }
 
 
+def record_sync_training_job(user, *, project_id=None, dataset_id=None, analysis_run_id=None, result_summary=None):
+    if not user or not project_id:
+        return None
+    ensure_training_jobs_table()
+    import uuid
+    now = _job_now()
+    job_id = str(uuid.uuid4())
+    summary = result_summary or {}
+    conn = get_db()
+    conn.execute(
+        """
+        INSERT INTO training_jobs
+        (job_id,user_id,project_id,analysis_run_id,dataset_id,status,current_step,progress_message,progress_percent,created_at,queued_at,started_at,finished_at,recommended_next_action,result_summary,artifact_refs)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        """,
+        (
+            job_id,
+            user["sub"],
+            project_id,
+            analysis_run_id,
+            dataset_id,
+            "succeeded",
+            "analysis_completed",
+            "분석이 완료되어 워크스페이스 기록에 저장되었습니다.",
+            100,
+            now,
+            now,
+            now,
+            now,
+            "프로젝트 상세에서 실행 기록, 보고서, 예측 API 상태를 확인하세요.",
+            json.dumps(summary, ensure_ascii=False),
+            json.dumps({"source": "run_cv", "state_result": True}, ensure_ascii=False),
+        ),
+    )
+    conn.commit()
+    conn.close()
+    return _get_training_job_owned(user, job_id)
+
+
 def _execute_training_job(job_id, user_payload):
     _update_training_job(
         job_id,

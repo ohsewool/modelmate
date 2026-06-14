@@ -26,6 +26,7 @@ python scripts/run_prediction_token_smoke.py --base-url http://localhost:8000
 python scripts/run_usage_limits_smoke.py --base-url http://localhost:8000
 python scripts/run_monitoring_smoke.py --base-url http://localhost:8000
 python scripts/run_feedback_smoke.py --base-url http://localhost:8000
+python scripts/run_workspace_integration_smoke.py --base-url http://localhost:8000
 ```
 
 ## Product Smoke Test
@@ -147,6 +148,10 @@ python scripts/run_release_qa.py --base-url https://web-production-5d6fa.up.rail
   authenticated inquiries, rejects invalid email addresses, avoids storing
   blocked token/payment/raw CSV context, and keeps admin inquiry review
   protected.
+- workspace integration smoke confirms a signed-in CSV upload creates
+  dataset/project metadata, `/api/run-cv` completion appears in Projects,
+  Project Detail, Jobs, Reports, Datasets, and Prediction API readiness
+  metadata, while guest demo mode remains separate from private workspace data.
 
 ## What Still Requires Human Review
 
@@ -181,6 +186,9 @@ python scripts/run_release_qa.py --base-url https://web-production-5d6fa.up.rail
 - pilot inquiry smoke fails: verify `/api/pilot-inquiries` is deployed, email
   validation is active, blocked context keys are filtered, and
   `/api/admin/pilot-inquiries` remains admin-only.
+- workspace integration smoke fails: verify authenticated upload creates
+  `current_dataset.project_id`, `/api/run-cv` persists an experiment with
+  `dataset_ref`, and completed analyses are mirrored to project job metadata.
 
 ## Release Blockers
 
@@ -204,3 +212,5 @@ python scripts/run_release_qa.py --base-url https://web-production-5d6fa.up.rail
   or exposes admin feedback lists to guests/non-admin users.
 - pilot inquiry smoke stores payment details, API tokens, raw CSV content, or
   exposes admin inquiry lists to guests/non-admin users.
+- workspace integration smoke fails because a completed signed-in analysis does
+  not appear in Projects, Jobs, Reports, or Prediction API readiness metadata.

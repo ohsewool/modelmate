@@ -1,3 +1,45 @@
+def _record_workspace_analysis_result(user, history_id, history_payload, best_name, results, task_type):
+    if not user:
+        return
+    dataset_ref = history_payload.get("dataset_ref") or {}
+    project_id = dataset_ref.get("project_id")
+    if not project_id:
+        return
+    best_result = next((row for row in results or [] if row.get("model") == best_name), (results or [{}])[0])
+    metric = primary_result_metric(best_result, task_type)
+    summary = {
+        "best_model": best_name,
+        "task_type": task_type,
+        "target": history_payload.get("target"),
+        "metric_name": metric.get("label"),
+        "metric_value": metric.get("value"),
+        "model_count": len(results or []),
+        "analysis_status": {"status": "succeeded", "current_step": "analysis_completed"},
+    }
+    analysis_run_id = f"experiment-{history_id}" if history_id else None
+    try:
+        if "record_sync_training_job" in globals():
+            record_sync_training_job(
+                user,
+                project_id=project_id,
+                dataset_id=dataset_ref.get("id") or dataset_ref.get("dataset_id"),
+                analysis_run_id=analysis_run_id,
+                result_summary=summary,
+            )
+    except Exception as exc:
+        print(f"[workspace] sync job record skipped: {exc}")
+    try:
+        conn = get_db()
+        conn.execute(
+            "UPDATE projects SET updated_at=? WHERE id=? AND user_id=?",
+            (datetime.now().isoformat(), project_id, user["sub"]),
+        )
+        conn.commit()
+        conn.close()
+    except Exception as exc:
+        print(f"[workspace] project touch skipped: {exc}")
+
+
 @app.post("/api/run-cv")
 async def run_cv(user=Depends(get_current_user)):
     X, y = STATE.get("X"), STATE.get("y")
@@ -45,18 +87,20 @@ async def run_cv(user=Depends(get_current_user)):
                          for c, v in zip(X.columns, bm.feature_importances_)],
                         key=lambda x: x["importance"], reverse=True)
         target_info = infer_target_category(STATE.get("df"), STATE["target_col"])
-        save_history({"timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                      "status": "succeeded",
-                      "current_step": "automl_training",
-                      "data_shape": list(X.shape), "target": STATE["target_col"],
-                      "best_model": best_name, "results": results, "optuna_applied": False,
-                      "dataset_ref": STATE.get("current_dataset"),
-                      "reuse_config": experiment_reuse_config(best_name, results, target_info),
-                      "drop_cols": STATE.get("drop_cols", []),
-                      "auto_drop_cols": STATE.get("auto_drop_cols", []),
-                      "dataset_domain": target_info.get("dataset_domain"),
-                      "target_category": target_info.get("target_category"),
-                      "task_type": "regression"}, user_id=user["sub"] if user else None)
+        history_payload = {"timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                           "status": "succeeded",
+                           "current_step": "automl_training",
+                           "data_shape": list(X.shape), "target": STATE["target_col"],
+                           "best_model": best_name, "results": results, "optuna_applied": False,
+                           "dataset_ref": STATE.get("current_dataset"),
+                           "reuse_config": experiment_reuse_config(best_name, results, target_info),
+                           "drop_cols": STATE.get("drop_cols", []),
+                           "auto_drop_cols": STATE.get("auto_drop_cols", []),
+                           "dataset_domain": target_info.get("dataset_domain"),
+                           "target_category": target_info.get("target_category"),
+                           "task_type": "regression"}
+        history_id = save_history(history_payload, user_id=user["sub"] if user else None)
+        _record_workspace_analysis_result(user, history_id, history_payload, best_name, results, "regression")
         set_analysis_status(
             "succeeded",
             "automl_training",
@@ -124,18 +168,20 @@ async def run_cv(user=Depends(get_current_user)):
                      for c, v in zip(X.columns, bm.feature_importances_)],
                     key=lambda x: x["importance"], reverse=True)
     target_info = infer_target_category(STATE.get("df"), STATE["target_col"])
-    save_history({"timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                  "status": "succeeded",
-                  "current_step": "automl_training",
-                  "data_shape": list(X.shape), "target": STATE["target_col"],
-                  "best_model": best_name, "results": results, "optuna_applied": False,
-                  "dataset_ref": STATE.get("current_dataset"),
-                  "reuse_config": experiment_reuse_config(best_name, results, target_info),
-                  "drop_cols": STATE.get("drop_cols", []),
-                  "auto_drop_cols": STATE.get("auto_drop_cols", []),
-                  "dataset_domain": target_info.get("dataset_domain"),
-                  "target_category": target_info.get("target_category"),
-                  "task_type": "classification"}, user_id=user["sub"] if user else None)
+    history_payload = {"timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                       "status": "succeeded",
+                       "current_step": "automl_training",
+                       "data_shape": list(X.shape), "target": STATE["target_col"],
+                       "best_model": best_name, "results": results, "optuna_applied": False,
+                       "dataset_ref": STATE.get("current_dataset"),
+                       "reuse_config": experiment_reuse_config(best_name, results, target_info),
+                       "drop_cols": STATE.get("drop_cols", []),
+                       "auto_drop_cols": STATE.get("auto_drop_cols", []),
+                       "dataset_domain": target_info.get("dataset_domain"),
+                       "target_category": target_info.get("target_category"),
+                       "task_type": "classification"}
+    history_id = save_history(history_payload, user_id=user["sub"] if user else None)
+    _record_workspace_analysis_result(user, history_id, history_payload, best_name, results, "classification")
     set_analysis_status(
         "succeeded",
         "automl_training",

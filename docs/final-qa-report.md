@@ -193,3 +193,23 @@ npm run dev
 ```
 
 4. 발표 중 full prediction API token과 실제 개인정보를 노출하지 않기
+## PR-26 Workspace Data Integration Check
+
+PR-26에서는 분석 완료 후 workspace 화면이 실제 저장 데이터와 연결되는지 확인했습니다.
+
+확인 기준:
+
+- 로그인 사용자가 CSV를 업로드하면 dataset/project metadata가 생성됩니다.
+- `/api/run-cv`로 완료된 일반 분석도 workspace Jobs에서 볼 수 있는 완료 기록으로 남습니다.
+- Projects/Dashboard는 최근 실행, best model, target, dataset 요약을 같은 project 기준으로 표시합니다.
+- Reports는 저장된 analysis run metadata를 기반으로 report metadata를 표시합니다.
+- Prediction APIs 화면은 project의 모델 준비 상태 또는 준비 전 안내를 표시합니다.
+- guest demo mode는 private workspace 저장과 분리되어 유지됩니다.
+
+추가 smoke:
+
+```bash
+python scripts/run_workspace_integration_smoke.py --base-url http://localhost:8000
+```
+
+이 smoke는 로그인, CSV 업로드, target 설정, AutoML 분석, projects/jobs/reports/datasets/prediction API metadata 조회를 한 번에 확인합니다.
