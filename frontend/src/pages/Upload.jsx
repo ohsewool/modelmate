@@ -60,9 +60,17 @@ export default function Upload() {
     setLoading('sample')
     try {
       const response = await fetch(pack.samplePath)
-      if (!response.ok) throw new Error('샘플 CSV를 불러오지 못했습니다.')
-      const blob = await response.blob()
-      const file = new File([blob], pack.sampleFile, { type: 'text/csv' })
+      if (!response.ok) throw new Error('샘플 CSV를 불러오지 못했습니다. 배포된 샘플 파일 경로를 확인해 주세요.')
+      const text = await response.text()
+      const trimmed = text.trimStart().toLowerCase()
+      if (trimmed.startsWith('<!doctype html') || trimmed.startsWith('<html') || trimmed.includes('<head>')) {
+        throw new Error('샘플 CSV를 불러오지 못했습니다. 배포된 샘플 파일 경로를 확인해 주세요.')
+      }
+      const header = text.split(/\r?\n/)[0] || ''
+      if (!header.includes(',') || !header.split(',').map(col => col.trim()).includes(pack.recommendedTarget)) {
+        throw new Error('샘플 CSV의 형식이 올바르지 않습니다. 추천 타깃 컬럼을 찾을 수 없습니다.')
+      }
+      const file = new File([text], pack.sampleFile, { type: 'text/csv' })
       await handleFile(file, pack)
     } catch (error) {
       setLoading('')

@@ -1132,3 +1132,49 @@ Milestones:
   - Settings has several operational/admin panels; they now use the same card primitives, but deep admin content can be visually simplified further in a later pass if needed.
 - Next step:
   - Push and redeploy Railway, then manually compare `/upload`, `/dashboard`, `/agent-mode`, `/projects`, `/jobs`, `/reports`, `/prediction-apis`, and `/settings`.
+
+## 2026-06-16 KST - Critical Sample CSV Download Hotfix
+
+- Status: done
+- Branch: `main`
+- Scope:
+  - Fixed sample CSV download/start flow returning SPA HTML instead of real CSV content.
+  - Kept manual upload, quick automatic analysis, goal-based analysis, reports, prediction API, dashboard, and Railway compatibility intact.
+- Root cause:
+  - The backend only mounted `/assets` from the frontend build.
+  - `/samples/*.csv` was not served as a static file, so the SPA fallback route returned `index.html`.
+  - Downloading that HTML as `.csv` caused pandas tokenizing errors during re-upload.
+- Files changed:
+  - `backend/main_parts/098_sample_files.part`
+  - `frontend/src/data/starterPacks.js`
+  - `frontend/src/pages/Upload.jsx`
+  - rebuilt `frontend/dist`
+  - `.codex/RUN_LOG.md`
+- Serving fix:
+  - Added explicit CSV routes:
+    - `/api/samples/{file_name}/download`
+    - `/samples/{file_name}` compatibility route
+  - Both routes whitelist the five demo CSV files and return `FileResponse` with `text/csv`.
+  - Backend route validates that the file does not start with HTML and that the required target column exists before returning it.
+- Frontend fix:
+  - Starter pack `samplePath` values now point to `/api/samples/{sample}.csv/download`.
+  - `샘플로 시작` now fetches text, blocks HTML fallback content, verifies comma-delimited header, verifies the expected target column, then uploads the real CSV through the existing upload pipeline.
+  - If HTML or malformed content is detected, the UI shows: `샘플 CSV를 불러오지 못했습니다. 배포된 샘플 파일 경로를 확인해 주세요.`
+- Sample CSVs verified:
+  - `customer_churn_demo.csv`: target `churn`
+  - `sales_demand_demo.csv`: target `demand`
+  - `equipment_failure_demo.csv`: target `failure_risk`
+  - `marketing_conversion_demo.csv`: target `converted`
+  - `student_performance_demo.csv`: target `passed`
+- Verification result:
+  - `python -m compileall backend`: passed.
+  - `cd frontend && npm run build`: passed through bundled Vite/Node runtime because `npm` is not available on PATH.
+  - Local file verification: all five CSVs in `frontend/public/samples` and `frontend/dist/samples` parse with pandas, do not start with HTML, and include the expected target column.
+  - Built frontend bundle contains `/api/samples/customer_churn_demo.csv/download` and the Korean malformed sample error message.
+  - Current deployed Railway `/samples/customer_churn_demo.csv` still returns `text/html` and `<!DOCTYPE html>` before redeploy, confirming the production symptom and need for redeploy.
+- Verification limitation:
+  - Local FastAPI TestClient/uvicorn route test could not run because this environment's available Python runtime does not have `fastapi` installed. No dependency was added.
+- Known limitations:
+  - Full browser click/download verification must be done after Railway redeploy.
+- Next step:
+  - Push and redeploy Railway, then test `CSV 받기`, re-upload of downloaded CSV, and `샘플로 시작` for all five sample cards.

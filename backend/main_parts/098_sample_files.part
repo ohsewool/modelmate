@@ -1,0 +1,56 @@
+SAMPLE_CSV_FILES = {
+    "customer_churn_demo.csv": "churn",
+    "sales_demand_demo.csv": "demand",
+    "equipment_failure_demo.csv": "failure_risk",
+    "marketing_conversion_demo.csv": "converted",
+    "student_performance_demo.csv": "passed",
+}
+
+def sample_file_path(file_name: str):
+    safe_name = os.path.basename(file_name or "")
+    if safe_name not in SAMPLE_CSV_FILES:
+        raise HTTPException(404, "Sample CSV not found")
+
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    candidates = [
+        os.path.join(repo_root, "frontend", "public", "samples", safe_name),
+        os.path.join(repo_root, "frontend", "dist", "samples", safe_name),
+    ]
+    for candidate in candidates:
+        if os.path.exists(candidate):
+            return candidate
+    raise HTTPException(404, "Sample CSV file is not available")
+
+def validate_sample_csv_file(path: str, target_col: str):
+    try:
+        with open(path, "r", encoding="utf-8-sig") as f:
+            head = f.read(4096)
+    except UnicodeDecodeError:
+        with open(path, "r", encoding="cp949", errors="replace") as f:
+            head = f.read(4096)
+    lowered = head.lstrip().lower()
+    if lowered.startswith("<!doctype html") or lowered.startswith("<html") or "<head" in lowered[:500]:
+        raise HTTPException(500, "Sample CSV route returned HTML instead of CSV")
+    first_line = head.splitlines()[0] if head.splitlines() else ""
+    if "," not in first_line or target_col not in [col.strip() for col in first_line.split(",")]:
+        raise HTTPException(500, f"Sample CSV is missing required target column: {target_col}")
+
+def sample_csv_response(file_name: str):
+    safe_name = os.path.basename(file_name or "")
+    target_col = SAMPLE_CSV_FILES.get(safe_name)
+    path = sample_file_path(safe_name)
+    validate_sample_csv_file(path, target_col)
+    return FileResponse(
+        path,
+        media_type="text/csv; charset=utf-8",
+        filename=safe_name,
+        headers={"Cache-Control": "public, max-age=300"},
+    )
+
+@app.get("/api/samples/{file_name}/download")
+async def download_sample_csv(file_name: str):
+    return sample_csv_response(file_name)
+
+@app.get("/samples/{file_name}")
+async def serve_sample_csv_compat(file_name: str):
+    return sample_csv_response(file_name)
