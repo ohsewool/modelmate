@@ -288,7 +288,7 @@ function SuggestedGoalCard({ suggestedGoal, onUseSuggestion }) {
       <div>
         <p className="section-title" style={{ marginBottom: 6 }}>추천 분석 목표</p>
         <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.6 }}>
-          선택한 CSV 기준으로 바로 시작할 수 있는 목표입니다. 그대로 쓰거나 아래 입력창에서 수정할 수 있습니다.
+          추천 목표를 그대로 쓰거나 수정하세요.
         </p>
       </div>
       <div className="alert alert-success" style={{ margin: 0 }}>
@@ -316,20 +316,20 @@ function TargetRecommendationPanel({ dataset, onFocusGoal }) {
       <div>
         <p className="section-title" style={{ marginBottom: 6 }}>예측할 값 추천</p>
         <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.6 }}>
-          무엇을 예측할지 명확해야 모델 비교와 보고서가 의미 있어집니다.
+          예측할 값을 먼저 정합니다.
         </p>
       </div>
       {!dataset ? (
         <div className="empty-state" style={{ padding: 16 }}>
           <strong>CSV를 먼저 선택해 주세요.</strong>
-          <p>CSV를 고르면 추천 예측값과 주의사항을 보여드립니다.</p>
+          <p>CSV를 고르면 추천값을 보여드립니다.</p>
         </div>
       ) : noMeaningfulTarget ? (
         <div className="alert alert-warning" style={{ display: 'grid', gap: 10, margin: 0 }}>
           <strong>바로 예측할 만한 명확한 타깃을 찾기 어렵습니다.</strong>
-          <span>이 CSV는 예측보다 데이터 요약/탐색 보고서에 더 적합할 수 있습니다.</span>
+          <span>예측보다 요약 보고서가 먼저일 수 있습니다.</span>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <Link className="btn btn-secondary" to="/reports">데이터 요약 보고서 먼저 보기</Link>
+            <Link className="btn btn-secondary" to="/reports">요약 보고서 보기</Link>
             <button className="btn btn-secondary" type="button" onClick={onFocusGoal}>타깃 직접 선택</button>
             <button className="btn btn-secondary" type="button" onClick={onFocusGoal}>목표 다시 입력</button>
           </div>
@@ -359,9 +359,9 @@ function DatasetSelector({ datasets, selectedDatasetId, onSelect, loading }) {
       <div style={{ display: 'flex', gap: 10, alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
         <div>
           <p className="section-title" style={{ marginBottom: 4 }}>분석할 CSV 데이터셋</p>
-          <p style={{ margin: 0, color: 'var(--text-2)' }}>목표 기반 분석은 저장된 CSV 데이터셋을 기준으로 분석 계획과 상세 실행 기록을 남깁니다.</p>
+          <p style={{ margin: 0, color: 'var(--text-2)' }}>저장된 CSV를 선택하세요.</p>
         </div>
-        <Link className="btn btn-secondary" to="/upload?returnTo=agent-mode"><Upload size={16} /> CSV 업로드하고 시작하기</Link>
+        <Link className="btn btn-secondary" to="/upload?returnTo=agent-mode"><Upload size={16} /> CSV 올리기</Link>
       </div>
       {loading ? (
         <p style={{ color: 'var(--text-label)' }}>저장된 데이터셋을 불러오는 중입니다.</p>
@@ -403,7 +403,7 @@ function DatasetSelector({ datasets, selectedDatasetId, onSelect, loading }) {
         <div className="empty-state" style={{ padding: 18 }}>
           <Database size={24} />
           <strong>아직 목표 기반 분석에 연결할 저장 데이터셋이 없습니다.</strong>
-          <p>CSV를 먼저 업로드하거나 기존 빠른 자동 분석을 완료한 뒤 다시 실행하세요.</p>
+          <p>CSV를 먼저 올려 주세요.</p>
           <Link className="btn btn-primary" to="/upload?returnTo=agent-mode">CSV 업로드</Link>
         </div>
       )}
@@ -598,7 +598,7 @@ export default function AgentMode() {
           <p className="eyebrow">목표 기반 분석</p>
           <h1>CSV로 예측 목표를 정하고 분석을 시작하세요</h1>
           <p>
-            선택한 CSV를 바탕으로 예측할 값을 추천하고, 분석 계획과 실행 기록을 남깁니다.
+            CSV 선택 → 목표 확인 → 분석 실행
           </p>
         </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
@@ -607,6 +607,13 @@ export default function AgentMode() {
           <button className="btn btn-primary" type="button" onClick={editGoal}>목표 기반 분석 시작</button>
         </div>
       </header>
+
+      <details className="card" style={{ padding: 14 }}>
+        <summary style={{ cursor: 'pointer', fontWeight: 850 }}>목표 기반 분석은 어떻게 작동하나요?</summary>
+        <p style={{ margin: '10px 0 0', color: 'var(--text-2)', lineHeight: 1.6 }}>
+          데이터 확인 → 목표 정리 → 모델 비교 → 결과 검토 → 보고서 준비 순서로 진행합니다.
+        </p>
+      </details>
 
       {error && <div className="alert alert-warning"><ShieldAlert size={16} /> {error}</div>}
 
@@ -630,7 +637,7 @@ export default function AgentMode() {
           <div>
             <p className="section-title">분석 목표 입력</p>
             <p style={{ margin: '0 0 10px', color: 'var(--text-2)', lineHeight: 1.6 }}>
-              추천 목표를 그대로 쓰거나, 직접 원하는 예측 질문으로 바꿀 수 있습니다.
+              추천 목표를 확인하고 필요하면 수정하세요.
             </p>
             <textarea
               ref={goalRef}
@@ -678,7 +685,7 @@ export default function AgentMode() {
             </div>
           )}
           <button className="btn btn-primary" type="button" onClick={createRun} disabled={creating || !canCreateRun}>
-            <ListChecks size={16} /> {creating ? '계획 생성 중' : '분석 실행 만들기'}
+            <ListChecks size={16} /> {creating ? '계획 생성 중' : '분석 시작'}
           </button>
         </section>
 
@@ -687,14 +694,14 @@ export default function AgentMode() {
           <div className="card-compact" style={{ display: 'grid', gap: 8 }}>
             <strong>빠른 자동 분석</strong>
             <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.55 }}>
-              결과를 빠르게 확인하고 싶을 때 사용합니다. CSV 업로드부터 모델 비교까지 기존 흐름으로 진행합니다.
+              CSV 업로드부터 모델 비교까지 빠르게 진행합니다.
             </p>
             <Link className="btn btn-secondary" to="/agent">빠른 자동 분석 시작</Link>
           </div>
           <div className="card-compact" style={{ display: 'grid', gap: 8 }}>
             <strong>목표 기반 분석</strong>
             <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.55 }}>
-              예측 목표와 타깃 후보를 확인하면서 Agent 실행 기록을 남기고 싶을 때 사용합니다.
+              목표와 타깃을 확인하며 실행 기록을 남깁니다.
             </p>
             <button className="btn btn-primary" type="button" onClick={createRun} disabled={creating || !canCreateRun}>
               목표 기반 분석 시작

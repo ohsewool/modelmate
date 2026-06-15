@@ -57,17 +57,17 @@ export default function Home() {
               <div>
                 <Badge variant="secondary" style={{ marginBottom: 16 }}>가이드형 CSV 예측 분석</Badge>
                 <h1 style={{ margin: 0, fontSize: 'clamp(38px, 6vw, 58px)', lineHeight: 1.06, fontWeight: 950, letterSpacing: 0 }}>
-                  CSV 데이터를 예측 보고서와 API로 바꾸세요
+                  ModelMate
                 </h1>
                 <p style={{ margin: '18px 0 0', fontSize: 19, lineHeight: 1.48, fontWeight: 750, maxWidth: 660 }}>
-                  ModelMate는 CSV를 업로드하면 데이터 구조 분석, 타깃 추천, 모델 비교, 근거 기반 보고서, 예측 API 생성까지 하나의 흐름으로 제공합니다.
+                  CSV 기반 예측 분석<br />목표 기반 AI 실행<br />보고서 · 예측 API 생성
                 </p>
                 <p style={{ margin: '12px 0 24px', fontSize: 15, lineHeight: 1.65, color: 'var(--text-2)', maxWidth: 600 }}>
-                  비전문가도 결과를 이해할 수 있도록 데이터 경고, 성능 기준, 예측 이유를 함께 보여줍니다.
+                  CSV를 올리고, 예측할 값을 정한 뒤, 보고서와 API로 재사용하세요.
                 </p>
 
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 20 }}>
-                  <Button size="lg" onClick={() => nav('/login')}><Upload size={17} /> CSV 분석 시작</Button>
+                  <Button size="lg" onClick={() => nav('/login')}><Upload size={17} /> CSV 올리기</Button>
                   <Button size="lg" variant="secondary" onClick={() => nav('/login')}>샘플로 체험하기</Button>
                 </div>
 

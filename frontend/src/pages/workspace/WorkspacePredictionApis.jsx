@@ -46,7 +46,7 @@ function ReadinessOverview({ rows, onOpenSettings }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
         <div>
           <p className="section-title" style={{ marginBottom: 6 }}>API 연결 상태 요약</p>
-          <h2 style={{ margin: 0, fontSize: 22 }}>예측 API로 연결해도 되는지 먼저 확인하세요</h2>
+          <h2 style={{ margin: 0, fontSize: 22 }}>API 연결 상태</h2>
         </div>
         <button className="btn-secondary" onClick={onOpenSettings}>API 설정 열기</button>
       </div>
@@ -70,7 +70,7 @@ function ReadinessOverview({ rows, onOpenSettings }) {
       </div>
       <div className="banner-warning" style={{ alignItems: 'flex-start' }}>
         <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.6 }}>
-          성능이 약하거나 타깃이 불명확한 모델은 바로 운영 API로 연결하지 말고 보고서와 데이터 품질을 먼저 확인하세요.
+          운영 연결 전 보고서와 데이터 품질을 확인하세요.
         </p>
       </div>
     </section>
@@ -85,13 +85,13 @@ function ApiExamplePanel({ row }) {
     <section className="card" style={{ display: 'grid', gap: 12 }}>
       <p className="section-title">요청 예시</p>
       <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.6 }}>
-        실제 endpoint와 token은 프로젝트 상세의 API 탭에서 확인하세요. 전체 token은 목록 화면에 노출하지 않습니다.
+        endpoint와 token은 프로젝트 상세에서 확인하세요.
       </p>
       <div className="workspace-grid two-columns">
         <div className="card-compact" style={{ display: 'grid', gap: 8 }}>
           <strong>필수 입력 항목</strong>
           <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.55 }}>
-            모델 학습에 사용한 컬럼과 같은 이름의 JSON 값을 보내야 합니다. 입력 스키마가 보이지 않으면 프로젝트 상세에서 다시 확인하세요.
+            학습 컬럼과 같은 이름의 JSON 값을 보내세요.
           </p>
         </div>
         <div className="card-compact" style={{ display: 'grid', gap: 8 }}>
@@ -119,19 +119,19 @@ export default function WorkspacePredictionApis() {
     <div className="animate-fade-in" style={{ padding: 24, maxWidth: 1180 }}>
       <WorkspacePageHeader
         title="예측 API"
-        description="프로젝트별 API 연결 가능 여부, token 상태, 호출 횟수, 데이터셋/모델 준비 상태를 확인합니다."
+        description="API 준비도와 token 상태를 확인합니다."
         action={<button className="btn-primary" onClick={() => nav('/deploy')}>API 설정 열기</button>}
       />
       <ReadinessOverview rows={visible} onOpenSettings={() => nav('/deploy')} />
       {!visible.length ? (
         <section className="card empty-state">
-          <strong className="empty-title">아직 API 호출 기록이나 연결 가능한 예측 API가 없어요.</strong>
+          <strong className="empty-title">아직 예측 API가 없어요.</strong>
           <p className="empty-desc">
-            분석이 완료된 프로젝트에서 API token을 만들면 여기에 표시됩니다. 준비가 끝나면 cURL 예시로 바로 테스트할 수 있습니다.
+            분석 완료 후 API token을 만들면 여기에 표시됩니다.
           </p>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
             <button className="btn-primary" onClick={() => nav('/deploy')}>API 설정 열기</button>
-            <button className="btn-secondary" onClick={() => nav('/agent-mode')}>목표 기반 분석 시작</button>
+            <button className="btn-secondary" onClick={() => nav('/agent-mode')}>분석 시작</button>
           </div>
         </section>
       ) : (

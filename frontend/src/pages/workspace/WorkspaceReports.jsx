@@ -15,16 +15,16 @@ export default function WorkspaceReports() {
 
   return (
     <div className="animate-fade-in" style={{ padding: 24, maxWidth: 1180 }}>
-      <WorkspacePageHeader title="보고서" description="저장된 프로젝트 근거를 바탕으로 생성된 분석 보고서와 다음 행동을 다시 확인합니다." action={<button className="btn-primary" onClick={() => nav('/report')}>현재 보고서 열기</button>} />
+      <WorkspacePageHeader title="보고서" description="분석 보고서와 다음 행동을 확인합니다." action={<button className="btn-primary" onClick={() => nav('/report')}>현재 보고서 열기</button>} />
       {!reports.length ? (
         <section className="card empty-state">
           <strong className="empty-title">아직 보고서가 준비되지 않았어요.</strong>
           <p className="empty-desc">
-            분석이 끝나면 예측 목표, 성능, 중요 요인, 주의사항, 다음 행동을 한 화면에 정리해 드립니다.
+            분석이 끝나면 보고서가 여기에 표시됩니다.
           </p>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
-            <button className="btn-primary" onClick={() => nav('/agent-mode')}>목표 기반 분석 시작</button>
-            <button className="btn-secondary" onClick={() => nav('/dashboard')}>분석 상태 보기</button>
+            <button className="btn-primary" onClick={() => nav('/agent-mode')}>분석 시작</button>
+            <button className="btn-secondary" onClick={() => nav('/dashboard')}>상태 보기</button>
           </div>
         </section>
       ) : (
@@ -38,7 +38,7 @@ export default function WorkspaceReports() {
                 <td>{fmt(report.created_at || report.generated_at)}</td>
                 <td>{fmt(report.best_model || report.model_summary?.best_model)}</td>
                 <td>{fmt(report.metric_summary?.best_metric || report.best_metric)}</td>
-                <td>{report.project?.id ? <Link to={`/projects/${report.project.id}?tab=report`}>보고서와 주의사항 보기</Link> : <button className="btn-secondary" onClick={() => nav('/report')}>보고서 보기</button>}</td>
+                <td>{report.project?.id ? <Link to={`/projects/${report.project.id}?tab=report`}>보고서 보기</Link> : <button className="btn-secondary" onClick={() => nav('/report')}>보고서 보기</button>}</td>
               </tr>
             ))}</tbody>
           </table>

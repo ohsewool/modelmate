@@ -1021,3 +1021,39 @@ Milestones:
 - Known limitations:
   - Browser automation is not installed in this runtime, so final visual QA should still be performed manually on Railway after redeploy.
   - The repository does not include a committed Pima diabetes CSV; diabetes behavior was smoke-tested with an in-memory diabetes-shaped dataframe and source-level goal suggestion checks.
+
+## 2026-06-15 KST - UI/UX PR-06 Microcopy Compression and Progressive Disclosure Polish
+
+- Status: done
+- Branch: `main`
+- Scope:
+  - Compressed default user-facing microcopy across landing, dashboard, Agent Mode, Agent Run Detail, reports, and prediction API screens.
+  - Kept warnings, report explanations, and real advanced trace records intact.
+  - Did not change backend APIs, routes, agent execution, quick automatic analysis, report data, prediction API behavior, or trace persistence.
+- Files changed:
+  - `frontend/src/pages/Home.jsx`
+  - `frontend/src/pages/workspace/WorkspaceDashboard.jsx`
+  - `frontend/src/pages/AgentMode.jsx`
+  - `frontend/src/pages/AgentRunDetail.jsx`
+  - `frontend/src/pages/workspace/WorkspaceReports.jsx`
+  - `frontend/src/pages/workspace/WorkspacePredictionApis.jsx`
+  - rebuilt `frontend/dist`
+  - `.codex/RUN_LOG.md`
+- Copy shortened:
+  - Landing hero now uses keyword-style positioning: `ModelMate`, `CSV 기반 예측 분석`, `목표 기반 AI 실행`, `보고서 · 예측 API 생성`.
+  - Dashboard header and empty states are shorter and action-first.
+  - Agent Mode default copy now focuses on `CSV 선택 → 목표 확인 → 분석 실행`.
+  - Agent Run Detail helper copy is shorter while keeping review/result guidance.
+  - Reports and Prediction API list pages use shorter headers and empty states.
+- Progressive disclosure:
+  - Added a compact collapsible helper on Agent Mode: `목표 기반 분석은 어떻게 작동하나요?`
+  - Preserved existing advanced trace collapsible section in Agent Run Detail.
+- Warnings preserved:
+  - Human review, target ambiguity, API readiness, and medical/data caution copy remains visible where needed.
+- Verification result:
+  - `python -m compileall backend`: passed.
+  - `cd frontend && npm run build`: passed through bundled Vite/Node runtime because `npm` is not available on PATH.
+  - Source check confirmed no `/agent-mode/undefined` literal and no raw default trace labels in checked Agent Mode files.
+- Known limitations:
+  - Browser automation is not installed in this runtime, so final visual QA should happen manually after Railway redeploy.
+  - Vite still reports the existing large bundle warning; no new dependency or code-splitting change was introduced in this PR.

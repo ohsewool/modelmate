@@ -107,7 +107,7 @@ export default function WorkspaceDashboard() {
       <WorkspacePageHeader
         eyebrow="워크스페이스"
         title="워크스페이스"
-        description="CSV 분석, 목표 기반 분석, 보고서, 예측 API를 한 곳에서 관리합니다."
+        description="분석, 보고서, 예측 API를 한 곳에서 관리합니다."
         action={<div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
           <button className="btn-secondary" onClick={() => nav('/agent')}>빠른 자동 분석</button>
           <button className="btn-primary" onClick={() => nav('/new')}>새 분석 시작</button>
@@ -117,7 +117,7 @@ export default function WorkspaceDashboard() {
         <div style={{ display: 'grid', gap: 14 }}>
           <EmptyState
             title="아직 분석할 데이터가 없어요."
-            description="CSV를 올리면 데이터 구조를 확인하고 예측할 값을 추천해 드립니다."
+            description="CSV를 올려 첫 분석을 시작하세요."
             action={<div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
               <button className="btn-primary" onClick={() => nav('/new')}>CSV 업로드</button>
               <button className="btn-secondary" onClick={() => nav('/agent')}>빠른 자동 분석</button>
@@ -183,7 +183,7 @@ export default function WorkspaceDashboard() {
             ) : (
               <EmptyState
                 title="최근 프로젝트가 없어요."
-                description="첫 CSV를 올려 워크스페이스를 만들어 보세요."
+                description="CSV를 올려 시작하세요."
                 action={<button className="btn-primary" onClick={() => nav('/new')}>새 프로젝트 시작</button>}
               />
             )}

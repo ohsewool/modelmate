@@ -630,7 +630,7 @@ function PostPredictionGuidance({ trace, run, reviews, onContinue, onRetry, onSt
               ? `현재 상세 기록에서 확인된 주요 요인은 ${topFeatures.join(', ')} 순으로 보입니다.`
               : '중요 요인은 보고서 또는 고급 실행 기록에서 확인할 수 있습니다.'}
           </p>
-          <p style={{ margin: 0, color: 'var(--text-label)', fontSize: 12 }}>성능 지표만 보지 말고, 어떤 컬럼이 예측에 영향을 줬는지 함께 확인하세요.</p>
+          <p style={{ margin: 0, color: 'var(--text-label)', fontSize: 12 }}>성능과 주요 요인을 함께 확인하세요.</p>
         </div>
       </div>
 
@@ -728,7 +728,7 @@ function ReviewPanel({ reviews, run, onResolve, onRetry, onStop, onContinue }) {
                     <div>
                       <strong>{column || optionLabel(option, index)}</strong>
                       <p style={{ margin: '4px 0 0', color: 'var(--text-label)', fontSize: 12 }}>
-                        {option.reason || option.description || (index === 0 && option.id?.startsWith('select:') ? '추천 후보입니다. 이 값을 예측 대상으로 선택하면 분석을 계속합니다.' : '이 선택으로 다음 단계를 진행합니다.')}
+                        {option.reason || option.description || (index === 0 && option.id?.startsWith('select:') ? '추천 후보입니다. 이 값으로 계속합니다.' : '다음 단계로 진행합니다.')}
                       </p>
                     </div>
                     <button
@@ -776,7 +776,7 @@ function AdvancedTrace({ trace, reviews }) {
         <MetricBox label="판단" value={decisions.length} />
         <MetricBox label="생성된 결과" value={artifacts.length} />
       </div>
-      <p style={{ margin: 0, color: 'var(--text-label)', fontSize: 12 }}>고급 실행 기록 요약입니다. 실제 저장된 실행 기록을 그대로 표시합니다.</p>
+      <p style={{ margin: 0, color: 'var(--text-label)', fontSize: 12 }}>검증용 요약입니다. 자세한 기록은 아래에서 확인하세요.</p>
       <div className="workspace-grid two-columns" style={{ alignItems: 'start', marginTop: 12 }}>
         <DetailList
           title="작업 실행"
