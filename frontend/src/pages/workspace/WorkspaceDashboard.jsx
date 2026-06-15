@@ -15,6 +15,70 @@ function usageSummary(usage) {
   return `오늘 작업 ${jobs}, API 호출 ${api}`
 }
 
+function ProductHomeHero({ onUpload, onQuick, onGoal, onSample }) {
+  return (
+    <section className="workspace-hero" style={{ marginBottom: 18 }}>
+      <div>
+        <p className="eyebrow">CSV 예측 분석 워크스페이스</p>
+        <h1>CSV를 올리면 예측할 값을 함께 정하고 결과와 다음 행동까지 정리해 드립니다.</h1>
+        <p>
+          복잡한 ML 용어 없이 데이터 기반 예측 작업을 시작하고, 보고서와 예측 API로 재사용할 수 있습니다.
+        </p>
+      </div>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+        <button className="btn-primary" type="button" onClick={onUpload}>CSV 올리기</button>
+        <button className="btn-secondary" type="button" onClick={onQuick}>빠른 자동 분석 시작</button>
+        <button className="btn-secondary" type="button" onClick={onGoal}>목표 기반 분석 시작</button>
+        <button className="btn-secondary" type="button" onClick={onSample}>샘플 파일로 시작</button>
+      </div>
+    </section>
+  )
+}
+
+function RecommendedNextAction({ data, latestRun, nav }) {
+  const hasDataset = data.datasets.length > 0
+  const hasRun = data.history.length > 0 || data.jobs.length > 0
+  const hasReport = data.reports?.length > 0
+  const hasApi = data.deployed.length > 0
+  let title = '다음에 할 일'
+  let description = '첫 CSV를 올리고 예측할 값을 정해 보세요.'
+  let cta = 'CSV 올리기'
+  let path = '/new'
+
+  if (!hasDataset) {
+    description = '아직 분석할 데이터가 없어요. CSV를 올리면 예측 목표를 추천해 드립니다.'
+    cta = 'CSV 올리기'
+    path = '/new'
+  } else if (!hasRun) {
+    description = '업로드한 CSV로 목표 기반 분석을 시작해 보세요. 타깃 추천과 실행 기록을 함께 남길 수 있습니다.'
+    cta = '목표 기반 분석 시작'
+    path = '/agent-mode'
+  } else if (!hasReport) {
+    description = '분석 결과를 보고서로 정리해 보세요. 성능, 중요 요인, 주의사항을 한 화면에서 확인할 수 있습니다.'
+    cta = '보고서 보기'
+    path = '/reports'
+  } else if (!hasApi) {
+    description = '보고서 확인 후 예측 결과를 API로 연결할 준비가 되었는지 확인해 보세요.'
+    cta = '예측 API 보기'
+    path = '/prediction-apis'
+  } else if (latestRun) {
+    description = `${fmt(latestRun.target)} 분석 결과를 새 데이터 예측이나 예측 API로 재사용할 수 있습니다.`
+    cta = '프로젝트 보기'
+    path = '/projects'
+  }
+
+  return (
+    <section className="card" style={{ display: 'grid', gap: 12 }}>
+      <p className="section-title">{title}</p>
+      <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.6 }}>{description}</p>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <button className="btn-primary" type="button" onClick={() => nav(path)}>{cta}</button>
+        <button className="btn-secondary" type="button" onClick={() => nav('/agent-mode')}>목표 기반 분석</button>
+      </div>
+    </section>
+  )
+}
+
 export default function WorkspaceDashboard() {
   const nav = useNavigate()
   const [data, setData] = useState(null)
@@ -34,10 +98,16 @@ export default function WorkspaceDashboard() {
 
   return (
     <div className="animate-fade-in" style={{ padding: 24, maxWidth: 1180 }}>
+      <ProductHomeHero
+        onUpload={() => nav('/new')}
+        onQuick={() => nav('/agent')}
+        onGoal={() => nav('/agent-mode')}
+        onSample={() => nav('/new')}
+      />
       <WorkspacePageHeader
         eyebrow="워크스페이스"
-        title="대시보드"
-        description="저장된 프로젝트, 진행 중인 작업, 사용량, 최근 오류와 예측 API 상태를 한눈에 확인합니다."
+        title="워크스페이스"
+        description="CSV 분석, 목표 기반 분석, 보고서, 예측 API를 한 곳에서 관리합니다."
         action={<div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
           <button className="btn-secondary" onClick={() => nav('/agent')}>빠른 자동 분석</button>
           <button className="btn-primary" onClick={() => nav('/new')}>새 분석 시작</button>
@@ -46,12 +116,12 @@ export default function WorkspaceDashboard() {
       {data.projects.length === 0 ? (
         <div style={{ display: 'grid', gap: 14 }}>
           <EmptyState
-            title="아직 저장된 프로젝트가 없습니다."
-            description="CSV를 업로드하거나 사용 사례 샘플로 첫 분석을 시작하세요."
+            title="아직 분석할 데이터가 없어요."
+            description="CSV를 올리면 데이터 구조를 확인하고 예측할 값을 추천해 드립니다."
             action={<div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
               <button className="btn-primary" onClick={() => nav('/new')}>CSV 업로드</button>
               <button className="btn-secondary" onClick={() => nav('/agent')}>빠른 자동 분석</button>
-              <button className="btn-secondary" onClick={() => nav('/new')}>샘플로 체험하기</button>
+              <button className="btn-secondary" onClick={() => nav('/agent-mode')}>목표 기반 분석</button>
             </div>}
           />
           <DemoDatasetGuide compact onStart={() => nav('/new')} />
@@ -93,27 +163,30 @@ export default function WorkspaceDashboard() {
               <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.6 }}>{usageSummary(data.usage)}</p>
               <Link to="/settings">사용량 보기</Link>
             </section>
-            <section className="card">
-              <p className="section-title">다음 추천 행동</p>
-              <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.6 }}>
-                {latestRun ? `${fmt(latestRun.target)} 결과를 보고서 또는 예측 API로 재사용할 수 있습니다.` : '새 분석을 시작해 첫 프로젝트를 만들어보세요.'}
-              </p>
-            </section>
+            <RecommendedNextAction data={data} latestRun={latestRun} nav={nav} />
           </div>
 
           <section className="card">
             <p className="section-title">최근 프로젝트</p>
-            <table className="data-table">
-              <tbody>{recentProjects.map(project => (
-                <tr key={project.id}>
-                  <td><strong>{project.name}</strong><br /><span style={{ color: 'var(--text-label)' }}>{projectDatasetName(project)}</span></td>
-                  <td>{fmt(projectTarget(project))}</td>
-                  <td>{fmt(project.last_best_model)}</td>
-                  <td>{primaryMetric(project)}</td>
-                  <td><Link to={`/projects/${project.id}`}>열기</Link></td>
-                </tr>
-              ))}</tbody>
-            </table>
+            {recentProjects.length ? (
+              <table className="data-table">
+                <tbody>{recentProjects.map(project => (
+                  <tr key={project.id}>
+                    <td><strong>{project.name}</strong><br /><span style={{ color: 'var(--text-label)' }}>{projectDatasetName(project)}</span></td>
+                    <td>{fmt(projectTarget(project))}</td>
+                    <td>{fmt(project.last_best_model)}</td>
+                    <td>{primaryMetric(project)}</td>
+                    <td><Link to={`/projects/${project.id}`}>열기</Link></td>
+                  </tr>
+                ))}</tbody>
+              </table>
+            ) : (
+              <EmptyState
+                title="최근 프로젝트가 없어요."
+                description="첫 CSV를 올려 워크스페이스를 만들어 보세요."
+                action={<button className="btn-primary" onClick={() => nav('/new')}>새 프로젝트 시작</button>}
+              />
+            )}
           </section>
         </div>
       )}

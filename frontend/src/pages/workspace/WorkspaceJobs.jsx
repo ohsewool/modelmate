@@ -61,8 +61,13 @@ export default function WorkspaceJobs() {
       {!filtered.length ? (
         <EmptyState
           title={filter === 'failed' ? '아직 실패한 작업이 없습니다.' : '아직 실행한 작업이 없습니다.'}
-          description="프로젝트 분석을 시작하면 작업 기록과 복구 안내가 여기에 표시됩니다."
-          action={<button className="btn-primary" onClick={() => nav('/new')}>새 분석 시작</button>}
+          description={filter === 'failed'
+            ? '실패한 작업이 생기면 원인, 오류 ID, 복구 안내가 여기에 표시됩니다.'
+            : '목표를 정해 분석을 시작하면 진행 상태와 복구 안내가 여기에 표시됩니다.'}
+          action={<div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+            <button className="btn-primary" onClick={() => nav('/agent-mode')}>목표 기반 분석 시작</button>
+            <button className="btn-secondary" onClick={() => nav('/new')}>CSV 올리기</button>
+          </div>}
         />
       ) : (
         <section className="card" style={{ overflowX: 'auto' }}>

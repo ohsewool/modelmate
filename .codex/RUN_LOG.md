@@ -943,3 +943,47 @@ Milestones:
   - API readiness is based on currently available metadata and does not invent performance/schema data.
 - Next PR:
   - Deploy/redeploy Railway and visually check `/report`, `/reports`, `/prediction-apis`, and `/deploy`.
+## 2026-06-15 KST - UI/UX PR-05 Dashboard, Empty State, and Final Demo Polish
+
+- Status: done
+- Branch: `main`
+- Task file: user attachment `UI/UX PR-05: Dashboard, Empty State, and Final Demo Polish`
+- Planned verification checklist:
+  - [x] Dashboard has a product-home hero with clear value sentence and primary/secondary CTAs.
+  - [x] Dashboard includes a recommended next action card based on available datasets/runs/reports/APIs.
+  - [x] Dashboard, Projects, and Jobs empty states explain what is empty, why it matters, and what to do next.
+  - [x] Page headers and CTA labels stay Korean-first and route to existing screens.
+  - [x] Final demo guide documents the presentation flow, sample data choices, screenshots, and fallback plan.
+  - [x] No backend pipeline, trace records, quick analysis, Agent Mode, report, or prediction API behavior was changed.
+  - [x] Backend compile passes.
+  - [x] Frontend build passes.
+- Files changed:
+  - `frontend/src/pages/workspace/WorkspaceDashboard.jsx`
+  - `frontend/src/pages/workspace/WorkspaceProjects.jsx`
+  - `frontend/src/pages/workspace/WorkspaceJobs.jsx`
+  - `docs/final-demo-guide.md`
+  - `docs/README.md`
+  - rebuilt `frontend/dist`
+  - `.codex/RUN_LOG.md`
+- Dashboard changes:
+  - Added a top hero for the workspace home with `CSV 올리기`, `빠른 자동 분석 시작`, `목표 기반 분석 시작`, and `샘플 파일로 시작`.
+  - Renamed the dashboard header to `워크스페이스` and aligned the description with report/API/project management.
+  - Added `RecommendedNextAction` logic for no dataset, dataset without run, run without report, report without API, and reusable-result states.
+  - Improved recent-project empty state.
+- Empty state changes:
+  - Dashboard now explains that CSV upload starts target recommendation.
+  - Projects page now points users to CSV upload, goal-based analysis, or sample experience.
+  - Jobs page now explains progress/recovery records and failure recovery behavior.
+- Final demo guide:
+  - Added `docs/final-demo-guide.md`.
+  - Documented dashboard -> CSV upload -> Agent Mode -> Agent Run Detail -> Report -> Prediction API -> Ops readiness flow.
+  - Documented sample data recommendations and screenshot checklist.
+  - Documented live deployment fallback and no-secret screenshot rules.
+- Verification result:
+  - `python -m compileall backend` passed.
+  - Bundled Vite build passed because `npm` is not available on PATH.
+- Known limitations:
+  - Browser automation is not installed in this runtime, so final visual verification should happen after Railway redeploy.
+  - Existing console output can show Korean mojibake in PowerShell, but source files are UTF-8 and build successfully.
+- Next PR:
+  - Redeploy Railway and walk through the final demo flow using the recommended sample data.

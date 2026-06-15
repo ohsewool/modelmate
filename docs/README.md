@@ -12,6 +12,7 @@ ModelMate 문서 인덱스입니다.
 - [Final QA report](final-qa-report.md)
 - [Screenshot checklist](screenshot-checklist.md)
 - [Demo guide](demo-guide.md)
+- [Final demo guide](final-demo-guide.md)
 - [Beta readiness](beta-readiness.md)
 - [Beta tester guide](beta-tester-guide.md)
 - [Release notes beta](release-notes-beta.md)
