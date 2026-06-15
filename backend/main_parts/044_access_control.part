@@ -7,7 +7,9 @@ def require_current_user(user):
 
 
 def is_admin_user(user):
-    return bool(user and user.get("role") == "admin")
+    if "getUserRole" in globals():
+        return getUserRole(user) == "admin"
+    return bool(user and (user.get("role") == "admin" or is_admin_email(user.get("email"))))
 
 
 def _resource_not_found():

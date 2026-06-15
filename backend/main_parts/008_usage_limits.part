@@ -36,16 +36,16 @@ PLAN_LIMITS = {
         "max_report_exports_per_day": 500,
     },
     "admin": {
-        "max_projects": 100000,
-        "max_datasets": 100000,
-        "max_file_size_mb": 500,
-        "max_rows_per_dataset": 1000000,
-        "max_columns_per_dataset": 2000,
-        "max_jobs_per_day": 100000,
-        "max_concurrent_jobs": 1000,
-        "max_prediction_tokens_per_project": 1000,
-        "max_prediction_api_calls_per_day": 1000000,
-        "max_report_exports_per_day": 100000,
+        "max_projects": None,
+        "max_datasets": None,
+        "max_file_size_mb": None,
+        "max_rows_per_dataset": None,
+        "max_columns_per_dataset": None,
+        "max_jobs_per_day": None,
+        "max_concurrent_jobs": None,
+        "max_prediction_tokens_per_project": None,
+        "max_prediction_api_calls_per_day": None,
+        "max_report_exports_per_day": None,
     },
 }
 
@@ -87,6 +87,39 @@ def _usage_now():
     return datetime.now().isoformat(timespec="seconds")
 
 
+def get_user_email(user):
+    return (user or {}).get("email", "").strip().lower()
+
+
+def getUserRole(user):
+    if not user:
+        return "guest_demo"
+    if user.get("is_guest") or str(user.get("sub", "")).startswith("guest:"):
+        return "guest_demo"
+    if user.get("role") == "admin" or is_admin_email(get_user_email(user)):
+        return "admin"
+    return "free"
+
+
+def get_user_role(user):
+    return getUserRole(user)
+
+
+def isAdminUser(user):
+    return getUserRole(user) == "admin"
+
+
+def is_admin_user_id(user_id):
+    if not user_id:
+        return False
+    conn = get_db()
+    try:
+        row = conn.execute("SELECT email, role FROM users WHERE id=?", (user_id,)).fetchone()
+    finally:
+        conn.close()
+    return bool(row and (row["role"] == "admin" or is_admin_email(row["email"])))
+
+
 def normalize_plan(plan, role=None):
     if role == "admin":
         return "admin"
@@ -100,7 +133,7 @@ def _user_id_from_payload(user):
 def get_user_plan(user):
     if not user:
         return "free"
-    if user.get("role") == "admin":
+    if isAdminUser(user):
         return "admin"
     conn = get_db()
     try:
@@ -113,6 +146,8 @@ def get_user_plan(user):
 def get_plan_limits(user_or_plan):
     plan = user_or_plan if isinstance(user_or_plan, str) else get_user_plan(user_or_plan)
     limits = dict(PLAN_LIMITS.get(plan, PLAN_LIMITS["free"]))
+    if plan == "admin":
+        return limits
     env_map = {
         "max_file_size_mb": "MODELMATE_MAX_FILE_SIZE_MB",
         "max_rows_per_dataset": "MODELMATE_MAX_ROWS_PER_DATASET",
@@ -125,6 +160,37 @@ def get_plan_limits(user_or_plan):
             except ValueError:
                 pass
     return limits
+
+
+def checkQuota(user, action):
+    if isAdminUser(user):
+        return {"allowed": True, "role": "admin", "plan": "admin", "limit": None, "current": None}
+    action_to_limit = {
+        "project": ("max_projects", "projects"),
+        "dataset": ("max_datasets", "datasets"),
+        "job": ("max_jobs_per_day", "jobs_today"),
+        "training": ("max_jobs_per_day", "jobs_today"),
+        "quick_analysis": ("max_jobs_per_day", "jobs_today"),
+        "goal_analysis": ("max_jobs_per_day", "jobs_today"),
+        "prediction_api": ("max_prediction_api_calls_per_day", "prediction_api_calls_today"),
+        "report_export": ("max_report_exports_per_day", "report_exports_today"),
+    }
+    limit_key, usage_key = action_to_limit.get(action, (None, None))
+    if not limit_key:
+        return {"allowed": True, "role": getUserRole(user), "plan": get_user_plan(user), "limit": None, "current": None}
+    limits = get_plan_limits(user or "free")
+    usage = get_account_usage(user) if user else {}
+    limit = limits.get(limit_key)
+    current = usage.get(usage_key, 0)
+    return {
+        "allowed": limit is None or current < limit,
+        "role": getUserRole(user),
+        "plan": get_user_plan(user) if user else "free",
+        "limit_key": limit_key,
+        "usage_key": usage_key,
+        "limit": limit,
+        "current": current,
+    }
 
 
 def ensure_usage_day(conn, user_id):
@@ -155,6 +221,8 @@ def get_daily_usage(user_id):
 
 def increment_daily_usage(user_id, key, amount=1):
     if not user_id:
+        return
+    if is_admin_user_id(user_id):
         return
     column = {
         "jobs_today": "jobs_count",
@@ -229,6 +297,12 @@ def usage_limit_error(limit_key, current, limit, plan, message=None):
 
 def enforce_limit(user, limit_key, current, message=None):
     plan = get_user_plan(user)
+    if plan == "admin":
+        return
+    if limit_key == "max_jobs_per_day":
+        message = "오늘 실행 가능한 분석 횟수를 모두 사용했습니다."
+    elif limit_key == "max_concurrent_jobs":
+        message = "동시에 실행 가능한 분석 작업 수를 모두 사용했습니다."
     limit = get_plan_limits(plan).get(limit_key)
     if limit is not None and current >= limit:
         raise usage_limit_error(limit_key, current, limit, plan, message)
@@ -237,6 +311,8 @@ def enforce_limit(user, limit_key, current, message=None):
 def enforce_project_creation_limit(user):
     if not user:
         return
+    if isAdminUser(user):
+        return
     usage = get_account_usage(user)
     enforce_limit(user, "max_projects", usage["projects"], "현재 플랜에서 만들 수 있는 프로젝트 수를 모두 사용했습니다.")
 
@@ -244,6 +320,8 @@ def enforce_project_creation_limit(user):
 def enforce_dataset_upload_limits(user, file_size_bytes, rows, columns):
     limits = get_plan_limits(user or "free")
     plan = get_user_plan(user) if user else "free"
+    if plan == "admin":
+        return
     file_mb = file_size_bytes / (1024 * 1024)
     checks = [
         ("max_file_size_mb", file_mb, limits["max_file_size_mb"], "업로드 가능한 CSV 파일 크기 제한을 넘었습니다."),
@@ -251,7 +329,7 @@ def enforce_dataset_upload_limits(user, file_size_bytes, rows, columns):
         ("max_columns_per_dataset", columns, limits["max_columns_per_dataset"], "현재 플랜에서 처리할 수 있는 컬럼 수를 넘었습니다."),
     ]
     for key, current, limit, message in checks:
-        if current > limit:
+        if limit is not None and current > limit:
             raise usage_limit_error(key, int(current), limit, plan, message)
     if user:
         usage = get_account_usage(user)
@@ -259,6 +337,8 @@ def enforce_dataset_upload_limits(user, file_size_bytes, rows, columns):
 
 
 def enforce_training_job_limits(user):
+    if isAdminUser(user):
+        return
     usage = get_account_usage(user)
     enforce_limit(user, "max_jobs_per_day", usage["jobs_today"], "오늘 실행 가능한 분석 작업 수를 모두 사용했습니다.")
     enforce_limit(user, "max_concurrent_jobs", usage["active_jobs"], "동시에 실행 가능한 분석 작업 수를 모두 사용했습니다.")
@@ -266,6 +346,8 @@ def enforce_training_job_limits(user):
 
 def enforce_prediction_token_limit(user, project_id):
     plan = get_user_plan(user)
+    if plan == "admin":
+        return
     limit = get_plan_limits(plan)["max_prediction_tokens_per_project"]
     conn = get_db()
     try:
@@ -280,6 +362,8 @@ def enforce_prediction_token_limit(user, project_id):
 
 
 def enforce_prediction_call_limit(owner_user_id):
+    if is_admin_user_id(owner_user_id):
+        return
     user = {"sub": owner_user_id}
     conn = get_db()
     try:
@@ -297,15 +381,45 @@ def build_usage_summary(user):
     if not user:
         return {
             "mode": "guest_demo",
+            "role": "guest_demo",
             "plan": "free",
+            "plan_label": "게스트 데모",
+            "limit_label": "데모 제한 적용",
+            "is_admin": False,
             "limits": get_plan_limits("free"),
             "usage": {},
             "warnings": [],
             "upgrade": {"available": False, "message": "로그인하면 프로젝트별 사용량을 확인할 수 있습니다."},
         }
+    role = getUserRole(user)
     plan = get_user_plan(user)
     limits = get_plan_limits(plan)
     usage = get_account_usage(user)
+    if role == "admin":
+        return {
+            "mode": "authenticated",
+            "role": "admin",
+            "plan": "admin",
+            "plan_label": "관리자",
+            "limit_label": "제한 없음",
+            "is_admin": True,
+            "admin_emails": sorted(get_admin_emails()),
+            "limits": limits,
+            "usage": usage,
+            "percent_used": {},
+            "warnings": [],
+            "capabilities": {
+                "can_create_project": True,
+                "can_upload_dataset": True,
+                "can_start_job": True,
+                "can_call_prediction_api": True,
+                "quota_bypass": True,
+            },
+            "upgrade": {
+                "available": False,
+                "message": "관리자 계정은 데모와 검증을 위해 사용량 제한이 적용되지 않습니다.",
+            },
+        }
     mapping = {
         "projects": "max_projects",
         "datasets": "max_datasets",
@@ -330,7 +444,11 @@ def build_usage_summary(user):
             })
     return {
         "mode": "authenticated",
+        "role": role,
         "plan": plan,
+        "plan_label": "Free",
+        "limit_label": "제한 적용",
+        "is_admin": False,
         "plan_status": "internal" if plan == "admin" else "active",
         "limits": limits,
         "usage": usage,

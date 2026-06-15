@@ -37,6 +37,7 @@ uvicorn backend.main:app --host 0.0.0.0 --port $PORT
 
 - [ ] `PORT` is provided by Railway
 - [ ] OAuth/client IDs are configured only if used
+- [ ] `ADMIN_EMAILS=admin@modelmate.local` is set for owner/admin quota bypass
 - [ ] API keys or provider secrets are stored in Railway variables, not GitHub
 - [ ] No plaintext tokens/passwords are committed
 - [ ] Demo account credentials, if used, are not hardcoded in docs

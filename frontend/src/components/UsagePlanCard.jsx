@@ -28,6 +28,21 @@ export default function UsagePlanCard() {
     )
   }
 
+  if (summary.is_admin || summary.role === 'admin' || summary.plan === 'admin') {
+    return (
+      <div style={{ margin: '0 10px 8px', borderRadius: 12, border: '1px solid var(--border)', padding: 12, background: 'var(--surface-alt)', display: 'grid', gap: 8 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+          <p style={{ margin: 0, fontSize: 10, fontWeight: 800, color: 'var(--text-label)', textTransform: 'uppercase' }}>현재 플랜</p>
+          <span style={{ fontSize: 10, fontWeight: 800, color: '#2563eb' }}>관리자</span>
+        </div>
+        <strong style={{ fontSize: 13 }}>관리자 모드 · 제한 없음</strong>
+        <p style={{ margin: 0, fontSize: 11, color: 'var(--text-2)', lineHeight: 1.45 }}>
+          데모와 검증을 위해 프로젝트, 데이터셋, 작업, 예측 API 한도가 적용되지 않습니다.
+        </p>
+      </div>
+    )
+  }
+
   const usage = summary.usage || {}
   const limits = summary.limits || {}
   const warning = (summary.warnings || [])[0]

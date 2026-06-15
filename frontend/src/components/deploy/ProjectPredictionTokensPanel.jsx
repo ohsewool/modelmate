@@ -94,7 +94,7 @@ response = requests.post(
 print(response.json())`
   const activeTokens = tokens.filter(token => token.status === 'active').length
   const tokenLimit = usage?.limits?.max_prediction_tokens_per_project
-  const tokenLimitReached = tokenLimit !== undefined && activeTokens >= tokenLimit
+  const tokenLimitReached = tokenLimit !== undefined && tokenLimit !== null && activeTokens >= tokenLimit
 
   if (!projectId) {
     return (

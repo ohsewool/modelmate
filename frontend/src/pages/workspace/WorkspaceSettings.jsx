@@ -204,6 +204,7 @@ export default function WorkspaceSettings() {
     ['예측 API 호출', usage?.usage?.prediction_api_calls_today, usage?.limits?.max_prediction_api_calls_per_day],
     ['API token', usage?.usage?.prediction_tokens, usage?.limits?.max_prediction_tokens],
   ], [usage])
+  const isAdmin = usage?.is_admin || usage?.role === 'admin' || usage?.plan === 'admin'
 
   if (!usage) return <div style={{ padding: 24 }}><LoadingState label="설정 정보를 불러오는 중입니다." /></div>
 
@@ -222,7 +223,7 @@ export default function WorkspaceSettings() {
         </section>
         <section className="card">
           <p className="section-title">현재 플랜</p>
-          <h2 style={{ margin: 0, fontSize: 24 }}>{usage.plan}</h2>
+          <h2 style={{ margin: 0, fontSize: 24 }}>{isAdmin ? '관리자' : usage.plan}</h2>
           <p style={{ color: 'var(--text-2)', fontSize: 13, lineHeight: 1.6 }}>
             {usage.upgrade?.message || '베타 기간에는 플랜 변경을 수동으로 처리합니다.'}
           </p>
@@ -234,7 +235,12 @@ export default function WorkspaceSettings() {
       </div>
       <section className="card" style={{ marginTop: 18, display: 'grid', gap: 16 }}>
         <p className="section-title">사용량</p>
-        {rows.map(([label, current, limit]) => <UsageRow key={label} label={label} current={current} limit={limit} />)}
+        {isAdmin ? (
+          <div className="banner-success" style={{ display: 'grid', gap: 6 }}>
+            <strong>제한 없음</strong>
+            <p style={{ margin: 0 }}>관리자 모드에서는 프로젝트, 데이터셋, 작업, 예측 API 사용량 한도가 적용되지 않습니다.</p>
+          </div>
+        ) : rows.map(([label, current, limit]) => <UsageRow key={label} label={label} current={current} limit={limit} />)}
       </section>
       <div style={{ display: 'grid', gridTemplateColumns: '1.2fr .8fr', gap: 18, marginTop: 18 }} className="admin-detail-grid">
         <MonitoringPanel />

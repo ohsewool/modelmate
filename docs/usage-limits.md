@@ -30,7 +30,17 @@ New email/password users default to `free`. Admin seed users are normalized to
 | Prediction API calls per day | 100 | 5,000 | 25,000 |
 | Report exports per day | 10 | 100 | 500 |
 
-Admin has very high internal limits for development and demos.
+Admin accounts are treated as unlimited for development and demos. The owner
+account `admin@modelmate.local` is always recognized as `admin`; additional
+admin emails can be configured with:
+
+```text
+ADMIN_EMAILS=admin@modelmate.local,osw1217@gmail.com
+```
+
+For admin users, `/api/me/usage` returns `role: admin`, `plan_label: 관리자`,
+and `limit_label: 제한 없음`. Admin users bypass project, dataset, daily job,
+prediction API, sample/demo, quick analysis, and goal-based analysis limits.
 
 ## Usage Summary Endpoint
 
@@ -82,6 +92,9 @@ PR-19 applies soft checks to:
 - concurrent training job limit
 - project prediction token creation
 - project prediction API daily calls
+
+Sample CSV download and preview are intentionally quota-free. For free/guest
+users, only actual analysis execution consumes the daily job quota.
 
 `max_report_exports_per_day` is included in the plan configuration and usage
 summary for future Report Center work, but PR-19 does not force a report export

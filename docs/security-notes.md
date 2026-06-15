@@ -32,6 +32,7 @@ Current safeguards include:
 - user-facing failure recovery messages
 - documentation warning users not to upload secrets or sensitive data
 - environment-variable based deployment configuration
+- `ADMIN_EMAILS` based admin detection for owner/admin accounts
 
 ## Not Yet Implemented
 
@@ -88,6 +89,21 @@ item.
 This is an MVP access-control foundation, not enterprise-grade access control,
 SOC2 readiness, complete tenant isolation, or full RBAC.
 
+## Admin Role And Quota Bypass
+
+The owner account `admin@modelmate.local` is always treated as `admin`.
+Additional admin accounts can be configured with the Railway/environment
+variable:
+
+```text
+ADMIN_EMAILS=admin@modelmate.local,osw1217@gmail.com
+```
+
+Admin users bypass MVP demo quotas for projects, datasets, CSV upload, daily
+jobs, quick analysis, goal-based Agent Mode analysis, report demos, and
+prediction API demo usage. This is an owner/developer demo policy, not a full
+enterprise RBAC system.
+
 ## Dataset Delete And Retention Security Notes
 
 Commercialization PR-17 adds an MVP dataset management and delete foundation.
@@ -136,7 +152,7 @@ When deploying on Railway or a similar platform:
 
 - keep secrets in environment variables
 - do not commit API keys, tokens, passwords, or database credentials to GitHub
-- set `JWT_SECRET`, `ADMIN_EMAIL`, and `ADMIN_PASSWORD` through Railway
+- set `JWT_SECRET`, `ADMIN_EMAILS`, and `ADMIN_PASSWORD` through Railway
   environment variables instead of hard-coding production values
 - rotate exposed keys immediately if a secret is accidentally committed
 - verify the deployed bundle after each production push

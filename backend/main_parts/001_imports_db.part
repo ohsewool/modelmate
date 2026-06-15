@@ -22,6 +22,15 @@ from google.auth.transport import requests as grequests
 from jose import jwt as jose_jwt
 import hashlib, secrets
 
+def get_admin_emails():
+    configured = os.getenv("ADMIN_EMAILS") or os.getenv("ADMIN_EMAIL") or "admin@modelmate.local"
+    emails = {email.strip().lower() for email in configured.split(",") if email.strip()}
+    emails.add("admin@modelmate.local")
+    return emails
+
+def is_admin_email(email):
+    return bool(email and str(email).strip().lower() in get_admin_emails())
+
 def hash_password(password: str) -> str:
     salt = secrets.token_hex(16)
     hashed = hashlib.pbkdf2_hmac("sha256", password.encode(), salt.encode(), 260000)
@@ -87,6 +96,22 @@ def init_db():
         if not exists["password_hash"]:
             conn.execute("UPDATE users SET password_hash=? WHERE email=?", (hash_password(admin_pw), admin_email))
         conn.execute("UPDATE users SET role='admin', name=COALESCE(NULLIF(name, ''), '관리자') WHERE email=?", (admin_email,))
+    import uuid
+    for configured_admin_email in sorted(get_admin_emails()):
+        existing_admin = conn.execute("SELECT id, password_hash FROM users WHERE email=?", (configured_admin_email,)).fetchone()
+        if not existing_admin:
+            conn.execute(
+                "INSERT INTO users (id, email, name, picture, password_hash, role, created_at) VALUES (?,?,?,?,?,?,?)",
+                (str(uuid.uuid4()), configured_admin_email, "관리자", "", hash_password(admin_pw), "admin", datetime.now().isoformat())
+            )
+        else:
+            if not existing_admin["password_hash"]:
+                conn.execute("UPDATE users SET password_hash=? WHERE email=?", (hash_password(admin_pw), configured_admin_email))
+            conn.execute(
+                "UPDATE users SET role='admin', plan='admin', name=COALESCE(NULLIF(name, ''), '관리자') WHERE email=?",
+                (configured_admin_email,),
+            )
+
     conn.execute("""
         CREATE TABLE IF NOT EXISTS deployed_models (
             id TEXT PRIMARY KEY,

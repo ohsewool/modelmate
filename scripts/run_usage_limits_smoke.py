@@ -1,5 +1,6 @@
 import argparse
 import json
+import os
 import time
 import urllib.error
 import urllib.parse
@@ -85,6 +86,51 @@ def run(base_url):
     after = request("GET", join(base_url, "/api/me/usage"), token=token)
     after_json = after["json"] or {}
     add(results, "usage summary updates project count", (after_json.get("usage") or {}).get("projects", 0) >= max_projects, "GET /api/me/usage after projects", after["status"])
+
+    admin_email = os.getenv("MODELMATE_ADMIN_EMAIL", "admin@modelmate.local")
+    admin_password = os.getenv("MODELMATE_ADMIN_PASSWORD", os.getenv("ADMIN_PASSWORD", "admin1234"))
+    admin_login = request("POST", join(base_url, "/api/auth/login"), payload={"email": admin_email, "password": admin_password})
+    admin_token = (admin_login["json"] or {}).get("token")
+    add(results, "admin can login", admin_login["status"] == 200 and bool(admin_token), admin_email, admin_login["status"])
+    if admin_token:
+        admin_usage = request("GET", join(base_url, "/api/me/usage"), token=admin_token)
+        admin_json = admin_usage["json"] or {}
+        admin_limits = admin_json.get("limits") or {}
+        admin_unlimited = all(admin_limits.get(key) is None for key in (
+            "max_projects",
+            "max_datasets",
+            "max_jobs_per_day",
+            "max_prediction_api_calls_per_day",
+        ))
+        add(
+            results,
+            "admin usage summary shows unlimited admin role",
+            admin_usage["status"] == 200
+            and admin_json.get("role") == "admin"
+            and admin_json.get("plan") == "admin"
+            and admin_json.get("plan_label") == "관리자"
+            and admin_json.get("limit_label") == "제한 없음"
+            and admin_unlimited,
+            json.dumps({
+                "email": admin_email,
+                "role": admin_json.get("role"),
+                "plan": admin_json.get("plan"),
+                "plan_label": admin_json.get("plan_label"),
+                "limit_label": admin_json.get("limit_label"),
+                "limits": admin_limits,
+            }, ensure_ascii=False),
+            admin_usage["status"],
+        )
+
+    sample = request("GET", join(base_url, "/api/samples/customer_churn_demo.csv/download"))
+    first_line = (sample["text"] or "").splitlines()[0] if sample["text"] else ""
+    add(
+        results,
+        "sample CSV download remains public and quota-free",
+        sample["status"] == 200 and not first_line.lower().startswith("<!doctype html") and "churn" in first_line,
+        first_line,
+        sample["status"],
+    )
     return results
 
 

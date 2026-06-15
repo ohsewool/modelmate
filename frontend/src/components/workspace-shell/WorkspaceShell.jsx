@@ -21,6 +21,9 @@ function isAnalysisRoute(pathname) {
 
 function UsageMini({ usage }) {
   if (!usage || usage.mode === 'guest_demo') return <span style={{ color: 'var(--text-label)' }}>게스트 데모</span>
+  if (usage.is_admin || usage.role === 'admin' || usage.plan === 'admin') {
+    return <span style={{ color: '#2563eb', fontWeight: 850 }}>관리자 모드 · 제한 없음</span>
+  }
   const jobs = usage.usage?.jobs_today ?? 0
   const jobLimit = usage.limits?.max_jobs_per_day ?? '-'
   return <span>{usage.plan} 플랜 - 오늘 작업 {jobs}/{jobLimit}</span>

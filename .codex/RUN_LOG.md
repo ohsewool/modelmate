@@ -1229,3 +1229,44 @@ Milestones:
   - This gate adds lightweight checks and process rules. It does not replace full manual browser QA for visual layout, UX clarity, or domain-specific result quality.
 - Next step:
   - Use `.codex/QA_GATE.md` for every future task before marking work `done`.
+
+## 2026-06-16 KST - Admin Role And Quota Bypass Fix
+
+- Status: in_progress
+- Branch: `main`
+- Scope:
+  - Treat `admin@modelmate.local` and `ADMIN_EMAILS` entries as admin users.
+  - Show admin plan/usage as `관리자` and `제한 없음`.
+  - Bypass MVP quota enforcement and daily usage increments for admin users.
+  - Keep free/guest limits intact and keep sample CSV download quota-free.
+- Files changed:
+  - `backend/main_parts/001_imports_db.part`
+  - `backend/main_parts/002_auth_integrations.part`
+  - `backend/main_parts/008_usage_limits.part`
+  - `backend/main_parts/010_upload.part`
+  - `backend/main_parts/044_access_control.part`
+  - `backend/main_parts/051_auth_history_debug.part`
+  - `frontend/src/components/workspace-shell/WorkspaceShell.jsx`
+  - `frontend/src/components/UsagePlanCard.jsx`
+  - `frontend/src/components/deploy/ProjectPredictionTokensPanel.jsx`
+  - `frontend/src/pages/workspace/WorkspaceDashboard.jsx`
+  - `frontend/src/pages/workspace/WorkspaceSettings.jsx`
+  - `scripts/run_usage_limits_smoke.py`
+  - `docs/usage-limits.md`
+  - `docs/deployment-notes.md`
+  - `docs/security-notes.md`
+- Planned verification:
+  - `python -m compileall backend`
+  - `cd frontend && npm run build`
+  - Usage smoke test where possible.
+  - Check admin usage response fields: email, role, plan label, limit label.
+  - Check sample CSV download remains public and does not consume quota.
+- Verification result:
+  - `python -m compileall backend`: passed with bundled Python runtime.
+  - `cd frontend && npm run build`: passed with bundled Node/Vite runtime because `npm` is not available on PATH.
+  - `python scripts/run_sample_csv_gate.py`: passed 10 local sample CSV checks; remote route not verified because no base URL was supplied.
+  - Local FastAPI smoke test: not verified locally because available Python runtimes do not have `fastapi` installed.
+  - `scripts/run_usage_limits_smoke.py` was updated to verify admin login, admin unlimited usage summary, free project limit behavior, and public sample CSV download once a local/deployed base URL is available.
+- Known limitations:
+  - Admin quota behavior still needs endpoint smoke verification after Railway redeploy or in an environment with FastAPI installed.
+  - Pre-existing dirty QA result files were intentionally left untouched.

@@ -9,6 +9,9 @@ function MetricCard({ label, value, sub }) {
 }
 
 function usageSummary(usage) {
+  if (usage?.is_admin || usage?.role === 'admin' || usage?.plan === 'admin') {
+    return '관리자 모드입니다. 데모와 검증을 위해 작업, 프로젝트, 데이터셋, 예측 API 한도가 적용되지 않습니다.'
+  }
   if (!usage?.limits) return '사용량 정보를 확인할 수 없습니다.'
   const jobs = `${usage.usage?.jobs_today || 0} / ${usage.limits?.max_jobs_per_day ?? '제한 없음'}`
   const api = `${usage.usage?.prediction_api_calls_today || 0} / ${usage.limits?.max_prediction_api_calls_per_day ?? '제한 없음'}`

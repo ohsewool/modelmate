@@ -4,8 +4,8 @@ async def upload(file: UploadFile = File(...), user=Depends(get_current_user)):
     raw_bytes = await file.read()
     upload_limits = get_plan_limits(user or "free") if "get_plan_limits" in globals() else MVP_USAGE_LIMITS
     max_file_mb = upload_limits.get("max_file_size_mb", MVP_USAGE_LIMITS["max_csv_file_size_mb"])
-    max_bytes = max_file_mb * 1024 * 1024
-    if len(raw_bytes) > max_bytes:
+    max_bytes = max_file_mb * 1024 * 1024 if max_file_mb is not None else None
+    if max_bytes is not None and len(raw_bytes) > max_bytes:
         detail = failure_detail(
             "csv_validation",
             f"파일이 MVP 데모 기준 최대 크기({MVP_USAGE_LIMITS['max_csv_file_size_mb']}MB)를 넘었습니다.",

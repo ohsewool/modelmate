@@ -47,6 +47,12 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
             conn.close()
             if not row or row["revoked_at"]:
                 return None
+        if "getUserRole" in globals():
+            payload["role"] = getUserRole(payload)
+        elif is_admin_email(payload.get("email")):
+            payload["role"] = "admin"
+        if payload.get("role") == "admin":
+            payload["plan"] = "admin"
         return payload
     except Exception:
         return None
