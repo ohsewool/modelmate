@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { CopyButton, EmptyState, LoadingState, StatusBadge, WorkspacePageHeader } from '../../components/workspace-shell/WorkspaceStates'
+import { CopyButton, LoadingState, StatusBadge, WorkspacePageHeader } from '../../components/workspace-shell/WorkspaceStates'
 import { fmt, loadWorkspaceJobs } from './workspaceData'
 
 function isFailed(job) {
@@ -59,31 +59,32 @@ export default function WorkspaceJobs() {
         <section className="card-compact"><p className="section-title">실패</p><strong>{failedCount}</strong></section>
       </div>
 
-      <div className="tab-bar" style={{ width: 'fit-content', marginBottom: 18 }}>
-        {[
-          ['all', '전체 작업'],
-          ['active', '진행 중'],
-          ['failed', '실패 작업'],
-        ].map(([id, label]) => (
-          <button key={id} type="button" className={`tab-item ${filter === id ? 'tab-item-active' : 'tab-item-inactive'}`} onClick={() => setFilter(id)}>
-            {label}
-          </button>
-        ))}
-      </div>
-
-      {!filtered.length ? (
-        <EmptyState
-          title={filter === 'failed' ? '아직 실패한 작업이 없습니다.' : '아직 실행한 작업이 없습니다.'}
-          description={filter === 'failed'
-            ? '실패 원인과 복구 안내가 여기에 표시됩니다.'
-            : '분석을 시작하면 진행 상태가 여기에 표시됩니다.'}
-          action={<div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
-            <button className="btn-primary" onClick={() => nav('/agent-mode')}>목표 기반 분석</button>
-            <button className="btn-secondary" onClick={() => nav('/new')}>CSV 올리기</button>
-          </div>}
-        />
-      ) : (
-        <section className="card" style={{ overflowX: 'auto' }}>
+      <section className="card" style={{ display: 'grid', gap: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+          <p className="section-title" style={{ margin: 0 }}>작업 목록</p>
+          <div className="tab-bar" style={{ width: 'fit-content' }}>
+            {[
+              ['all', '전체 작업'],
+              ['active', '진행 중'],
+              ['failed', '실패 작업'],
+            ].map(([id, label]) => (
+              <button key={id} type="button" className={`tab-item ${filter === id ? 'tab-item-active' : 'tab-item-inactive'}`} onClick={() => setFilter(id)}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+        {!filtered.length ? (
+          <div className="empty-state" style={{ padding: '44px 16px' }}>
+            <strong className="empty-title">{filter === 'failed' ? '아직 실패한 작업이 없습니다.' : '아직 실행한 작업이 없습니다.'}</strong>
+            <p className="empty-desc">{filter === 'failed' ? '실패 원인과 복구 안내가 여기에 표시됩니다.' : '분석을 시작하면 진행 상태가 여기에 표시됩니다.'}</p>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+              <button className="btn-primary" onClick={() => nav('/agent-mode')}>목표 기반 분석</button>
+              <button className="btn-secondary" onClick={() => nav('/new')}>CSV 올리기</button>
+            </div>
+          </div>
+        ) : (
+        <div style={{ overflowX: 'auto' }}>
           <table className="data-table">
             <thead>
               <tr>
@@ -129,8 +130,9 @@ export default function WorkspaceJobs() {
               </tr>
             ))}</tbody>
           </table>
-        </section>
-      )}
+        </div>
+        )}
+      </section>
     </div>
   )
 }

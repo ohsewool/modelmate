@@ -58,14 +58,14 @@ export function StatusBadge({ status }) {
 
 export function WorkspacePageHeader({ eyebrow, title, description, action }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 18, marginBottom: 18 }}>
+    <section className="workspace-hero" style={{ marginBottom: 18 }}>
       <div>
-        {eyebrow && <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 850, color: '#2563eb' }}>{eyebrow}</p>}
-        <h1 style={{ margin: 0, fontSize: 26, fontWeight: 900, color: 'var(--text)', letterSpacing: 0 }}>{title}</h1>
-        {description && <p style={{ margin: '8px 0 0', fontSize: 14, color: 'var(--text-2)', lineHeight: 1.6 }}>{description}</p>}
+        {eyebrow && <p className="eyebrow">{eyebrow}</p>}
+        <h1>{title}</h1>
+        {description && <p>{description}</p>}
       </div>
-      {action}
-    </div>
+      {action && <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>{action}</div>}
+    </section>
   )
 }
 

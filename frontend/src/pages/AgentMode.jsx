@@ -593,18 +593,28 @@ export default function AgentMode() {
 
   return (
     <main className="workspace-page" style={{ display: 'grid', gap: 20 }}>
-      <header className="workspace-hero">
-        <div>
-          <p className="eyebrow">목표 기반 분석</p>
-          <h1>CSV로 예측 목표를 정하고 분석을 시작하세요</h1>
-          <p>
-            CSV 선택 → 목표 확인 → 분석 실행
-          </p>
+      <header className="workspace-hero" style={{ flexDirection: 'column' }}>
+        <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', gap: 18, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+          <div>
+            <p className="eyebrow">목표 기반 분석</p>
+            <h1>CSV로 예측 목표를 정하고 분석을 시작하세요</h1>
+            <p>
+              CSV 선택 → 목표 확인 → 분석 실행
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            <Link className="btn btn-secondary" to="/upload?returnTo=agent-mode"><Upload size={16} /> CSV 올리기</Link>
+            <Link className="btn btn-secondary" to="/agent">빠른 자동 분석 시작</Link>
+            <button className="btn btn-primary" type="button" onClick={editGoal}>목표 기반 분석 시작</button>
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-          <Link className="btn btn-secondary" to="/upload?returnTo=agent-mode"><Upload size={16} /> CSV 올리기</Link>
-          <Link className="btn btn-secondary" to="/agent">빠른 자동 분석 시작</Link>
-          <button className="btn btn-primary" type="button" onClick={editGoal}>목표 기반 분석 시작</button>
+        <div className="workspace-grid four-columns" style={{ width: '100%' }}>
+          {['CSV 선택', '예측값 추천', '분석 실행', '결과 확인'].map((step, index) => (
+            <div key={step} className="card-compact" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ width: 24, height: 24, borderRadius: 8, display: 'grid', placeItems: 'center', background: '#eff6ff', color: '#2563eb', fontSize: 12, fontWeight: 900 }}>{index + 1}</span>
+              <strong>{step}</strong>
+            </div>
+          ))}
         </div>
       </header>
 
@@ -614,17 +624,6 @@ export default function AgentMode() {
           데이터 확인 → 목표 정리 → 모델 비교 → 결과 검토 → 보고서 준비 순서로 진행합니다.
         </p>
       </details>
-
-      <section className="card" style={{ padding: 14 }}>
-        <div className="workspace-grid four-columns">
-          {['CSV 선택', '예측값 추천', '분석 실행', '결과 확인'].map((step, index) => (
-            <div key={step} className="card-compact" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ width: 24, height: 24, borderRadius: 8, display: 'grid', placeItems: 'center', background: '#eff6ff', color: '#2563eb', fontSize: 12, fontWeight: 900 }}>{index + 1}</span>
-              <strong>{step}</strong>
-            </div>
-          ))}
-        </div>
-      </section>
 
       {error && <div className="alert alert-warning"><ShieldAlert size={16} /> {error}</div>}
 

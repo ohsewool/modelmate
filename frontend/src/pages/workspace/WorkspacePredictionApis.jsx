@@ -136,7 +136,9 @@ export default function WorkspacePredictionApis() {
         </section>
       ) : (
         <>
-          <section className="card" style={{ overflowX: 'auto' }}>
+          <section className="card" style={{ display: 'grid', gap: 12 }}>
+            <p className="section-title" style={{ margin: 0 }}>예측 API 목록</p>
+            <div style={{ overflowX: 'auto' }}>
             <table className="data-table">
               <thead>
                 <tr>
@@ -183,6 +185,7 @@ export default function WorkspacePredictionApis() {
                 )
               })}</tbody>
             </table>
+            </div>
           </section>
           <ApiExamplePanel row={visible[0]} />
         </>

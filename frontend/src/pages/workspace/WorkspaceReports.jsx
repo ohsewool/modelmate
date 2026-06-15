@@ -37,7 +37,9 @@ export default function WorkspaceReports() {
           </div>
         </section>
       ) : (
-        <section className="card" style={{ overflowX: 'auto' }}>
+        <section className="card" style={{ display: 'grid', gap: 12 }}>
+          <p className="section-title" style={{ margin: 0 }}>보고서 목록</p>
+          <div style={{ overflowX: 'auto' }}>
           <table className="data-table">
             <thead><tr><th>보고서</th><th>프로젝트</th><th>생성일</th><th>추천 모델</th><th>주요 지표</th><th>다음 행동</th></tr></thead>
             <tbody>{reports.map((report, index) => (
@@ -51,6 +53,7 @@ export default function WorkspaceReports() {
               </tr>
             ))}</tbody>
           </table>
+          </div>
         </section>
       )}
     </div>

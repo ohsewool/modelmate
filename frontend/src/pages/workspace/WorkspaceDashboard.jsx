@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import DemoDatasetGuide from '../../components/upload/DemoDatasetGuide'
-import { EmptyState, LoadingState, StatusBadge, WorkspacePageHeader } from '../../components/workspace-shell/WorkspaceStates'
+import { EmptyState, LoadingState, StatusBadge } from '../../components/workspace-shell/WorkspaceStates'
 import { fmt, loadWorkspaceOverview, primaryMetric, projectDatasetName, projectTarget } from './workspaceData'
 
 function MetricCard({ label, value, sub }) {
@@ -103,15 +103,6 @@ export default function WorkspaceDashboard() {
         onQuick={() => nav('/agent')}
         onGoal={() => nav('/agent-mode')}
         onSample={() => nav('/new')}
-      />
-      <WorkspacePageHeader
-        eyebrow="워크스페이스"
-        title="워크스페이스"
-        description="분석, 보고서, 예측 API를 한 곳에서 관리합니다."
-        action={<div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-          <button className="btn-secondary" onClick={() => nav('/agent')}>빠른 자동 분석</button>
-          <button className="btn-primary" onClick={() => nav('/new')}>새 분석 시작</button>
-        </div>}
       />
       {data.projects.length === 0 ? (
         <div style={{ display: 'grid', gap: 14 }}>

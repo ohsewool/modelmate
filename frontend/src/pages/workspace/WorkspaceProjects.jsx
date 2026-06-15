@@ -41,7 +41,9 @@ export default function WorkspaceProjects() {
           <DemoDatasetGuide compact onStart={() => nav('/new')} />
         </div>
       ) : (
-        <section className="card" style={{ overflowX: 'auto' }}>
+        <section className="card" style={{ display: 'grid', gap: 12 }}>
+          <p className="section-title" style={{ margin: 0 }}>프로젝트 목록</p>
+          <div style={{ overflowX: 'auto' }}>
           <table className="data-table">
             <thead>
               <tr>
@@ -72,6 +74,7 @@ export default function WorkspaceProjects() {
               </tr>
             ))}</tbody>
           </table>
+          </div>
         </section>
       )}
     </div>

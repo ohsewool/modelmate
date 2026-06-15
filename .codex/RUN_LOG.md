@@ -1091,3 +1091,44 @@ Milestones:
   - Some deeper admin/settings sub-sections may still benefit from future visual polish, but the main workspace pages now follow the upload-screen card and CTA rhythm more closely.
 - Next step:
   - Push and redeploy Railway, then manually check `/upload`, `/dashboard`, `/agent-mode`, `/projects`, `/jobs`, `/reports`, `/prediction-apis`, and `/settings`.
+
+## 2026-06-16 KST - UI/UX PR-07 Follow-up Card Container Alignment
+
+- Status: done
+- Branch: `main`
+- Scope:
+  - Fixed the remaining visual mismatch where workspace pages still had page titles, tabs, tables, and helper sections floating on the raw background.
+  - Used `/upload` as the visual reference and kept this as a frontend layout consistency pass only.
+- Files changed:
+  - `frontend/src/index.css`
+  - `frontend/src/components/workspace-shell/WorkspaceStates.jsx`
+  - `frontend/src/pages/AgentMode.jsx`
+  - `frontend/src/pages/workspace/WorkspaceDashboard.jsx`
+  - `frontend/src/pages/workspace/WorkspaceJobs.jsx`
+  - `frontend/src/pages/workspace/WorkspaceProjects.jsx`
+  - `frontend/src/pages/workspace/WorkspaceReports.jsx`
+  - `frontend/src/pages/workspace/WorkspacePredictionApis.jsx`
+  - rebuilt `frontend/dist`
+  - `.codex/RUN_LOG.md`
+- Card containers added:
+  - Added actual shared CSS for `workspace-hero`, `workspace-grid`, `card-compact`, and `workspace-page`.
+  - Converted `WorkspacePageHeader` into a hero-style card so page title, subtitle, and CTAs no longer float on the background.
+  - Moved the Agent Mode step flow into the main hero card.
+  - Wrapped Jobs tabs and job list/empty state in one content card.
+  - Added table section titles and inner scroll wrappers for Projects, Reports, and Prediction API tables.
+- Floating sections removed:
+  - Removed the duplicate loose dashboard header below the dashboard hero.
+  - Removed the separate Agent Mode step card so the first screen reads as one coherent hero.
+  - Removed floating Jobs tabs by placing them inside the job-list card.
+- Behavior preserved:
+  - No backend API, route, AutoML, Agent execution, quick analysis, report, prediction API, or trace persistence behavior changed.
+  - No fake data or fake trace records were added.
+- Verification result:
+  - `python -m compileall backend`: passed.
+  - `cd frontend && npm run build`: passed through bundled Vite/Node runtime because `npm` is not available on PATH.
+  - Source check confirmed no `/agent-mode/undefined`, `Agent Mode`, or `Tool Calls` literal in the checked workspace/Agent UI files.
+- Known limitations:
+  - Browser automation is not installed in this runtime, so visual comparison with `/upload` should still be performed manually after Railway redeploy.
+  - Settings has several operational/admin panels; they now use the same card primitives, but deep admin content can be visually simplified further in a later pass if needed.
+- Next step:
+  - Push and redeploy Railway, then manually compare `/upload`, `/dashboard`, `/agent-mode`, `/projects`, `/jobs`, `/reports`, `/prediction-apis`, and `/settings`.
