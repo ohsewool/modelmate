@@ -741,3 +741,46 @@ Milestones:
   - Admin CSV upload still keeps a fallback `default_target` for legacy compatibility, but marks it as poor and returns the no-meaningful-target warning.
 - Next PR:
   - No next roadmap PR until this hotfix is reviewed/deployed.
+
+## 2026-06-15 KST - Post-Prediction Action Guidance Hotfix
+
+- Status: done
+- Branch: `main`
+- Task file: user request `Add Post-Prediction Action Guidance to Agent Mode`
+- Planned verification checklist:
+  - [x] Agent Run Detail shows a user-friendly `다음에 할 일` section.
+  - [x] Completed, weak-performance, review-needed, API-risk, and no-meaningful-target states have different next-action buttons.
+  - [x] Plain Korean interpretation appears before technical trace counts.
+  - [x] Domain-specific guidance exists for diabetes/Outcome, churn, failure/defect, sales/revenue/demand, and unclear-target CSVs.
+  - [x] Target recommendation quality summary appears after execution.
+  - [x] Technical trace remains under `고급 실행 기록 보기 · 개발자/검증용 trace`.
+  - [x] Backend compile passes.
+  - [x] Frontend build passes.
+- Root cause:
+  - Agent Run Detail showed progress and trace counts, but it did not clearly explain how to interpret the prediction result or what the user should do next.
+  - Domain-specific caution, report/API/new-prediction actions, and weak-result recovery options were not grouped into one commercial-style guidance section.
+- Files changed:
+  - `frontend/src/pages/AgentRunDetail.jsx`
+  - rebuilt `frontend/dist`
+  - `.codex/RUN_LOG.md`
+- UX changes:
+  - Added `다음에 할 일` section with plain Korean interpretation.
+  - Added result-state buttons:
+    - successful analysis: `결과 보고서 보기`, `중요 요인 확인하기`, `새 데이터 예측하기`, `예측 API 만들기`, `다른 CSV로 다시 분석하기`
+    - weak performance: `데이터 품질 확인하기`, `타깃 다시 선택하기`, `다른 모델로 재시도`, `보고서만 보기`
+    - human review: `확인하고 계속 실행`, `타깃 컬럼 선택`, `분석 중단`, `목표 다시 입력`
+    - API risk: `API 배포 전 확인하기`, `보고서만 생성하기`, `모델 재학습하기`
+  - Added domain-specific use/caution copy for diabetes, churn, failure/defect, sales/revenue/demand, and unclear target data.
+  - Added `추천 타깃 요약` with reason, caution count, use guidance, and next recommended action.
+  - Preserved real trace records in the advanced trace section.
+- Verification result:
+  - Source inspection confirmed diabetes medical caution copy, churn retention copy, unclear target summary copy, next-action buttons, and target quality summary are present.
+  - No backend logic changed beyond prior target-quality hotfix.
+- Build result:
+  - `python -m compileall backend` passed.
+  - Bundled Vite build passed because `npm` is not available on PATH.
+- Known limitations:
+  - Important factors are inferred from stored trace fields when available; if a run does not include feature importance yet, the UI sends users to report/advanced trace instead of fabricating factors.
+  - Browser automation is not installed in this runtime, so verification used build and source/bundle inspection.
+- Next PR:
+  - none until this UX hotfix is deployed and visually checked on Railway.
