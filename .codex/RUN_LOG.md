@@ -867,3 +867,38 @@ Milestones:
   - The target recommendation panel depends on persisted dataset metadata; sparse legacy dataset records may show the fallback guidance state.
 - Next PR:
   - Deploy/redeploy Railway and visually confirm `/agent-mode` with no CSV, diabetes CSV, and unclear-target CSV.
+## 2026-06-15 KST - UI/UX PR-03 Agent Run Detail Summary-First Polish
+
+- Status: done
+- Branch: `main`
+- Task file: user attachment `UI/UX PR-03: Agent Run Detail Summary-First Polish`
+- Planned verification checklist:
+  - [x] Agent Run Detail starts with a summary-first hero instead of a developer-oriented log.
+  - [x] Status, connected CSV, selected target, problem type, and progress appear near the top.
+  - [x] Core result cards show prediction target, performance readiness, important factors, and cautions.
+  - [x] Review-needed state shows a dedicated Korean user review card.
+  - [x] Completed state shows report/API/new-prediction actions.
+  - [x] Progress timeline uses Korean user-facing step labels.
+  - [x] Raw trace records remain available in a collapsed advanced section.
+  - [x] Backend compile passes.
+  - [x] Frontend build passes.
+- Files changed:
+  - `frontend/src/pages/AgentRunDetail.jsx`
+  - rebuilt `frontend/dist`
+  - `.codex/RUN_LOG.md`
+- UX changes:
+  - Added `SummaryHero` for `분석 완료`, `확인이 필요합니다`, `검토 필요`, `분석 중`, and `실패` states.
+  - Added `CoreResultCards` for `예측할 값`, `예측 성능`, `중요 요인`, and `주의사항`.
+  - Moved the main page away from raw count-first presentation.
+  - Updated human review option buttons so target choices read like `{column} 값을 예측하기`.
+  - Renamed the visible plan section to `진행 타임라인` and mapped internal plan/tool steps to Korean labels such as `데이터 확인`, `예측 목표 정리`, `데이터 누수 점검`, `모델 준비`, `성능 확인`, `요인 설명`, `보고서 준비`, and `API 준비`.
+  - Preserved the real `tool_calls`, `observations`, `decisions`, `validations`, and `artifacts` records in the collapsed `고급 실행 기록 보기` section.
+- Verification result:
+  - Source inspection confirmed summary-first copy, next-action buttons, review card copy, Korean timeline labels, and advanced trace preservation.
+  - `python -m compileall backend` passed.
+  - Bundled Vite build passed because `npm` is not available on PATH.
+- Known limitations:
+  - Browser automation is not installed in this runtime, so final visual confirmation should happen after Railway redeploy.
+  - Important factors still depend on trace/report data being available; otherwise the UI gives a non-fabricated fallback.
+- Next PR:
+  - Deploy/redeploy Railway and verify `/agent-mode/:agentRunId` for completed, review-needed, and no-meaningful-target runs.

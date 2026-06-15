@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { AlertTriangle, Box, CheckCircle2, Database, FileText, ListChecks } from 'lucide-react'
 import api from '../api'
@@ -86,6 +86,19 @@ function targetLabel(target) {
   const value = String(target || '').toLowerCase()
   if (['diabetes', 'outcome'].includes(value)) return '당뇨병 여부'
   return target || '선택한 타깃'
+}
+
+function datasetInfo(trace, run) {
+  const dataset = trace?.dataset || trace?.dataset_info || {}
+  const columns = dataset.column_count ?? dataset.columns ?? run?.column_count
+  return {
+    filename: dataset.filename || dataset.original_filename || run?.dataset_name || '연결된 CSV',
+    rows: dataset.row_count ?? dataset.rows ?? run?.row_count,
+    columns: Array.isArray(columns) ? columns.length : columns,
+    target: run?.target_column || run?.target_col || run?.interpreted_goal?.target_preference || dataset.target_col,
+    datasetId: run?.dataset_id,
+    projectId: run?.project_id,
+  }
 }
 
 function traceText(trace) {
@@ -177,6 +190,14 @@ function isWeakPerformance(trace) {
 function isApiRisky(trace) {
   const text = traceText(trace)
   return /(api_readiness_review_required|deployment.*(hold|blocked|needs_review)|api 배포 전 확인|배포 전 확인)/.test(text)
+}
+
+function problemTypeLabel(run, trace) {
+  const domain = detectTargetDomain(run, trace)
+  const target = datasetInfo(trace, run).target
+  if (!target) return '예측 타깃 검토'
+  if (domain === 'business') return '회귀 또는 수요 예측'
+  return '분류 예측'
 }
 
 function collectTopFeatures(trace) {
@@ -272,8 +293,158 @@ function optionLabel(option, index) {
   if (option.id === 'retry') return '현재 단계 다시 시도'
   if (option.id === 'approve' || option.id === 'continue') return '확인하고 계속 실행'
   if (option.id === 'exclude') return '의심 컬럼 제외하고 계속'
-  if (option.id?.startsWith('select:')) return `${column}로 계속 실행`
+  if (option.id?.startsWith('select:')) return `${column} 값을 예측하기`
   return option.label || `선택지 ${index + 1}`
+}
+
+function summaryState(run, trace, reviews) {
+  const quality = targetQualityInfo(run, trace)
+  const reviewNeeded = isRunReviewNeeded(run) || reviews.some(review => review.status === 'pending')
+  const complete = isRunComplete(run)
+  const failed = run?.status === 'failed'
+  if (failed) {
+    return {
+      tone: 'warning',
+      badge: '실패',
+      title: '분석을 완료하지 못했습니다.',
+      summary: '실패 원인과 재시도 방법을 확인한 뒤 다시 실행할 수 있습니다.',
+    }
+  }
+  if (reviewNeeded) {
+    return {
+      tone: 'warning',
+      badge: '확인이 필요합니다',
+      title: '사용자 확인이 필요합니다.',
+      summary: '예측할 값이나 주의 항목이 명확하지 않아 사용자의 선택을 기다리고 있습니다.',
+    }
+  }
+  if (quality.noMeaningfulTarget) {
+    return {
+      tone: 'warning',
+      badge: '검토 필요',
+      title: '명확한 예측 타깃을 찾기 어렵습니다.',
+      summary: '이 CSV는 바로 모델 학습으로 가기보다 데이터 요약과 타깃 검토가 먼저 필요합니다.',
+    }
+  }
+  if (complete) {
+    const target = targetLabel(quality.target || datasetInfo(trace, run).target)
+    return {
+      tone: 'success',
+      badge: '분석 완료',
+      title: `${target} 예측 분석이 완료되었습니다.`,
+      summary: '보고서에서 성능과 주의사항을 확인한 뒤 새 데이터 예측 또는 예측 API 생성으로 이어갈 수 있습니다.',
+    }
+  }
+  return {
+    tone: 'neutral',
+    badge: '분석 중',
+    title: '분석을 진행하고 있습니다.',
+    summary: 'CSV 구조와 예측 목표를 확인하면서 다음 분석 단계를 준비하고 있습니다.',
+  }
+}
+
+function SummaryHero({ run, trace, reviews, steps, onContinue, actionLoading }) {
+  const info = datasetInfo(trace, run)
+  const state = summaryState(run, trace, reviews)
+  const completedCount = getCompletedStepCount(steps, run)
+  const current = getCurrentStep(steps, run)
+  const complete = isRunComplete(run) && state.badge === '분석 완료'
+  return (
+    <section className="workspace-hero" style={{ alignItems: 'stretch' }}>
+      <div style={{ display: 'grid', gap: 12 }}>
+        <span className="status-pill" style={{ width: 'fit-content' }}>{state.badge}</span>
+        <div>
+          <p className="eyebrow">목표 기반 분석 결과</p>
+          <h1>{state.title}</h1>
+          <p>{state.summary}</p>
+        </div>
+        <div className="workspace-grid four-columns">
+          <MetricBox label="연결 CSV" value={info.filename} />
+          <MetricBox label="예측할 값" value={info.target ? targetLabel(info.target) : '확인 필요'} />
+          <MetricBox label="문제 유형" value={problemTypeLabel(run, trace)} />
+          <MetricBox label="진행" value={complete ? `${steps.length || completedCount}/${steps.length || completedCount}` : `${completedCount}/${steps.length || 0}`} />
+        </div>
+        {!complete && current && (
+          <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.6 }}>
+            현재 단계: <strong>{friendlyStepName(current)}</strong>
+          </p>
+        )}
+      </div>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignContent: 'flex-start', justifyContent: 'flex-end' }}>
+        <Link className="btn btn-secondary" to="/agent-mode">목표 기반 분석으로 돌아가기</Link>
+        {!complete && (
+          <button className="btn btn-primary" type="button" onClick={onContinue} disabled={actionLoading || !run?.dataset_id}>
+            <CheckCircle2 size={16} /> {actionLoading ? '진행 중' : '확인하고 계속 실행'}
+          </button>
+        )}
+      </div>
+    </section>
+  )
+}
+
+function CoreResultCards({ trace, run }) {
+  const quality = targetQualityInfo(run, trace)
+  const target = quality.target || datasetInfo(trace, run).target
+  const topFeatures = collectTopFeatures(trace)
+  const weak = isWeakPerformance(trace)
+  const apiRisk = isApiRisky(trace)
+  const performanceText = quality.noMeaningfulTarget
+    ? '아직 계산되지 않았습니다.'
+    : weak
+      ? '주의해서 확인해야 합니다.'
+      : isRunComplete(run)
+        ? '보고서에서 확인할 수 있습니다.'
+        : '분석을 계속하면 확인할 수 있습니다.'
+  const factorText = topFeatures.length
+    ? topFeatures.join(', ')
+    : isRunComplete(run)
+      ? '보고서 또는 고급 실행 기록에서 확인'
+      : '아직 계산되지 않았습니다.'
+  const cautionText = quality.noMeaningfulTarget
+    ? '이 데이터에서는 명확한 예측 타깃을 찾기 어렵습니다.'
+    : apiRisk
+      ? '예측 API 생성 전 확인이 필요합니다.'
+      : quality.warnings.length
+        ? `${quality.warnings.length}개 주의사항`
+        : '현재 큰 주의사항 없음'
+  return (
+    <div className="workspace-grid four-columns">
+      <MetricBox label="예측할 값" value={target ? targetLabel(target) : '타깃 확인 필요'} />
+      <MetricBox label="예측 성능" value={performanceText} />
+      <MetricBox label="중요 요인" value={factorText} />
+      <MetricBox label="주의사항" value={cautionText} />
+    </div>
+  )
+}
+
+function friendlyStepName(step) {
+  const text = `${step?.name || ''} ${step?.tool_name || ''}`.toLowerCase()
+  if (/profile|data_profile|데이터/.test(text)) return '데이터 확인'
+  if (/schema|validation|검증/.test(text)) return 'CSV 형식 검증'
+  if (/target|타깃|목표/.test(text)) return '예측 목표 정리'
+  if (/leakage|누수/.test(text)) return '데이터 누수 점검'
+  if (/train|automl|model|모델/.test(text)) return '모델 준비'
+  if (/evaluat|metric|성능/.test(text)) return '성능 확인'
+  if (/explain|xai|shap|요인/.test(text)) return '요인 설명'
+  if (/report|보고/.test(text)) return '보고서 준비'
+  if (/deploy|api/.test(text)) return 'API 준비'
+  return step?.name || '분석 단계'
+}
+
+function friendlyStepPurpose(step) {
+  const label = friendlyStepName(step)
+  const copy = {
+    '데이터 확인': 'CSV의 행, 컬럼, 결측치, 기본 구조를 확인합니다.',
+    'CSV 형식 검증': '학습에 사용할 수 있는 컬럼과 위험 요소를 점검합니다.',
+    '예측 목표 정리': '무엇을 예측할지 후보를 찾고 사용자의 확인이 필요한지 판단합니다.',
+    '데이터 누수 점검': '예측 시점에 알 수 없는 정보가 포함됐는지 확인합니다.',
+    '모델 준비': '선택한 타깃을 기준으로 모델 학습 또는 비교를 준비합니다.',
+    '성능 확인': '모델 결과를 사용할 수 있는 수준인지 확인합니다.',
+    '요인 설명': '예측에 영향을 준 주요 컬럼을 정리합니다.',
+    '보고서 준비': '근거 기반 보고서에 넣을 내용을 구성합니다.',
+    'API 준비': '예측 API로 재사용할 수 있는 상태인지 확인합니다.',
+  }
+  return copy[label] || step?.purpose || '분석 흐름에 필요한 작업을 수행합니다.'
 }
 
 function ProgressSummary({ steps, run }) {
@@ -302,10 +473,10 @@ function ProgressSummary({ steps, run }) {
         ))}
         {!complete && current && (
           <div className="alert alert-warning" style={{ margin: 0 }}>
-            현재 단계: {current.name}
+            현재 단계: {friendlyStepName(current)}
           </div>
         )}
-        {!complete && next && <p style={{ margin: 0, color: 'var(--text-2)' }}>다음 단계: {next.name}</p>}
+        {!complete && next && <p style={{ margin: 0, color: 'var(--text-2)' }}>다음 단계: {friendlyStepName(next)}</p>}
       </div>
     </Section>
   )
@@ -494,10 +665,10 @@ function UserPlanTimeline({ steps }) {
       {steps.map(step => (
         <div key={step.plan_step_id} className="card-compact" style={{ display: 'grid', gap: 7 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
-            <strong>{step.order}. {step.name}</strong>
+            <strong>{step.order}. {friendlyStepName(step)}</strong>
             <span className="status-pill">{statusLabel(step.status)}</span>
           </div>
-          <p style={{ margin: 0, color: 'var(--text-2)', fontSize: 13, lineHeight: 1.55 }}>{step.purpose}</p>
+          <p style={{ margin: 0, color: 'var(--text-2)', fontSize: 13, lineHeight: 1.55 }}>{friendlyStepPurpose(step)}</p>
           {step.requires_human_review && (
             <span style={{ color: '#92400e', fontSize: 12 }}>사용자 확인 필요: {reviewCopy(step).reason}</span>
           )}
@@ -517,10 +688,10 @@ function ReviewPanel({ reviews, run, onResolve, onRetry, onStop, onContinue }) {
       <section id="review-panel" className="card" style={{ borderColor: '#f59e0b', display: 'grid', gap: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <AlertTriangle size={18} color="#92400e" />
-          <p className="section-title" style={{ margin: 0 }}>확인이 필요합니다</p>
+          <p className="section-title" style={{ margin: 0 }}>사용자 확인이 필요합니다</p>
         </div>
         <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.6 }}>
-          Agent가 자동으로 넘기기 어려운 지점을 발견했습니다. 저장된 검토 항목이 없으면 계속 실행, 현재 단계 다시 시도, 분석 중단 중 하나를 선택할 수 있습니다.
+          Agent가 자동으로 넘기기 어려운 지점을 발견했습니다. 확인하고 계속 실행하면 다음 분석 단계로 이어지고, 필요하면 현재 단계를 다시 시도하거나 분석을 중단할 수 있습니다.
         </p>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button className="btn btn-primary" type="button" onClick={onContinue}>확인하고 계속 실행</button>
@@ -533,6 +704,12 @@ function ReviewPanel({ reviews, run, onResolve, onRetry, onStop, onContinue }) {
 
   return (
     <section id="review-panel" className="card" style={{ borderColor: '#f59e0b', display: 'grid', gap: 12 }}>
+      <div>
+        <p className="section-title" style={{ marginBottom: 6 }}>사용자 확인이 필요합니다</p>
+        <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.6 }}>
+          아래 선택을 완료하면 Agent가 사용자의 의도를 반영해 다음 분석 단계를 계속 진행합니다.
+        </p>
+      </div>
       {pending.map(review => {
         const copy = reviewCopy(review)
         return (
@@ -551,7 +728,7 @@ function ReviewPanel({ reviews, run, onResolve, onRetry, onStop, onContinue }) {
                     <div>
                       <strong>{column || optionLabel(option, index)}</strong>
                       <p style={{ margin: '4px 0 0', color: 'var(--text-label)', fontSize: 12 }}>
-                        {option.reason || option.description || (index === 0 && option.id?.startsWith('select:') ? '추천 후보입니다.' : '이 선택으로 다음 단계를 진행합니다.')}
+                        {option.reason || option.description || (index === 0 && option.id?.startsWith('select:') ? '추천 후보입니다. 이 값을 예측 대상으로 선택하면 분석을 계속합니다.' : '이 선택으로 다음 단계를 진행합니다.')}
                       </p>
                     </div>
                     <button
@@ -590,6 +767,9 @@ function AdvancedTrace({ trace, reviews }) {
   return (
     <details className="card" style={{ display: 'grid', gap: 12 }}>
       <summary id="advanced-trace" style={{ cursor: 'pointer', fontWeight: 850 }}>고급 실행 기록 보기 · 개발자/검증용 상세 기록</summary>
+      <p style={{ margin: '12px 0 0', color: 'var(--text-2)', lineHeight: 1.6 }}>
+        개발자와 검증자가 실제 작업 실행, 확인 내용, 판단, 검증 결과, 생성 결과물을 확인하는 영역입니다. 아래 기록은 저장된 trace를 그대로 표시합니다.
+      </p>
       <div className="workspace-grid four-columns" style={{ marginTop: 12 }}>
         <MetricBox label="작업 실행" value={toolCalls.length} />
         <MetricBox label="확인 내용" value={observations.length} />
@@ -762,7 +942,7 @@ export default function AgentRunDetail() {
         await retryStep()
       } else if (option.id === 'stop' || option.id === 'reject') {
         await stopRun()
-      } else if (option.id === 'approve' || option.id === 'continue' || option.id === 'exclude' || option.id.startsWith('select:')) {
+      } else if (option.id === 'approve' || option.id === 'continue' || option.id === 'exclude' || option.id?.startsWith('select:')) {
         await continueRun()
       } else {
         await loadTrace()
@@ -777,15 +957,7 @@ export default function AgentRunDetail() {
   const run = trace?.analysis_run || trace?.run
   const planSteps = trace?.plan_steps || trace?.steps || []
   const complete = isRunComplete(run)
-  const reviewNeeded = isRunReviewNeeded(run)
-  const completedStepCount = getCompletedStepCount(planSteps, run)
-  const currentStep = useMemo(
-    () => getCurrentStep(planSteps, run),
-    [planSteps, run],
-  )
   const mismatchWarning = detectGoalDatasetMismatch(run, trace)
-  const currentStepLabel = complete ? '결과 확인' : currentStep?.name || '확인 중'
-  const nextActionLabel = complete ? '결과 확인' : reviewNeeded ? '사용자 확인' : '계속 실행'
 
   if (loading) return <LoadingState label="상세 실행 기록을 불러오는 중입니다." />
   if (error && !trace) {
@@ -799,34 +971,24 @@ export default function AgentRunDetail() {
 
   return (
     <main className="workspace-page" style={{ display: 'grid', gap: 20 }}>
-      <header className="workspace-hero">
-        <div>
-          <p className="eyebrow">목표 기반 분석</p>
-          <h1>{complete ? '분석 결과' : '분석 진행 상황'}</h1>
-          <p>{run?.user_goal || '분석 목표 정보가 없습니다.'}</p>
-        </div>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <Link className="btn btn-secondary" to="/agent-mode">목표 기반 분석으로 돌아가기</Link>
-          {!complete && (
-            <button className="btn btn-primary" type="button" onClick={continueRun} disabled={actionLoading || !run?.dataset_id}>
-              <CheckCircle2 size={16} /> 확인하고 계속 실행
-            </button>
-          )}
-        </div>
-      </header>
+      <SummaryHero run={run} trace={trace} reviews={reviews} steps={planSteps} onContinue={continueRun} actionLoading={actionLoading} />
 
       {warning && <div className="alert alert-warning"><AlertTriangle size={16} /> {warning}</div>}
       {error && <div className="alert alert-warning"><AlertTriangle size={16} /> {error}</div>}
       {mismatchWarning && <div className="alert alert-warning"><AlertTriangle size={16} /> {mismatchWarning}</div>}
 
-      <div className="workspace-grid four-columns">
-        <MetricBox label="현재 상태" value={statusLabel(run?.status)} />
-        <MetricBox label="완료 단계" value={`${completedStepCount} / ${planSteps.length || 0}`} />
-        <MetricBox label={complete ? '다음 단계' : reviewNeeded ? '멈춘 단계' : '현재 단계'} value={currentStepLabel} />
-        <MetricBox label="다음 행동" value={nextActionLabel} />
-      </div>
+      <CoreResultCards trace={trace} run={run} />
 
       {complete && <FinalResultSummary trace={trace} run={run} />}
+
+      <ReviewPanel
+        reviews={reviews}
+        run={run}
+        onResolve={resolveReview}
+        onRetry={retryStep}
+        onStop={stopRun}
+        onContinue={continueRun}
+      />
 
       <PostPredictionGuidance
         trace={trace}
@@ -840,16 +1002,7 @@ export default function AgentRunDetail() {
       <ConnectedCsvCard trace={trace} run={run} />
       <ProgressSummary steps={planSteps} run={run} />
 
-      <ReviewPanel
-        reviews={reviews}
-        run={run}
-        onResolve={resolveReview}
-        onRetry={retryStep}
-        onStop={stopRun}
-        onContinue={continueRun}
-      />
-
-      <Section title="분석 계획" icon={<Box size={18} />}>
+      <Section title="진행 타임라인" icon={<Box size={18} />}>
         <UserPlanTimeline steps={planSteps} />
       </Section>
 
