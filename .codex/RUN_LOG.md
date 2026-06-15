@@ -831,3 +831,39 @@ Milestones:
   - Other older admin/deploy components may still contain internal-oriented labels, but the main user-facing Agent/report flow is Korean-first.
 - Next PR:
   - Visual check on Railway after redeploy.
+## 2026-06-15 KST - UI/UX PR-02 Agent Mode First Screen Polish
+
+- Status: done
+- Branch: `main`
+- Task file: user request `UI/UX PR-02: Agent Mode First Screen Polish`
+- Planned verification checklist:
+  - [x] `/agent-mode` hero explains the goal-first workflow in Korean-first copy.
+  - [x] Selected CSV card shows file name, row count, column count, recommended target, data hint, and only short reference IDs.
+  - [x] Empty CSV state clearly asks the user to upload/select a CSV.
+  - [x] Dataset-aware suggested goal is visible with `이 목표로 시작`.
+  - [x] Target recommendation panel explains candidates with usefulness labels and Korean reasons.
+  - [x] Unclear-target datasets show a friendly no-clear-target state and next actions.
+  - [x] Quick automatic analysis remains separate from goal-based analysis.
+  - [x] Agent Run creation remains connected to selected dataset/project references.
+  - [x] Backend compile passes.
+  - [x] Frontend build passes.
+- Files changed:
+  - `frontend/src/pages/AgentMode.jsx`
+  - rebuilt `frontend/dist`
+  - `.codex/RUN_LOG.md`
+- UX changes:
+  - Replaced the first-screen headline with `CSV로 예측 목표를 정하고 분석을 시작하세요`.
+  - Added top-level actions for `CSV 올리기`, `빠른 자동 분석 시작`, and `목표 기반 분석 시작`.
+  - Added a selected CSV summary card and empty state.
+  - Added a suggested goal card that uses the existing dataset-aware goal logic.
+  - Added a target recommendation panel with `추천`, `가능`, `검토 필요`, and `비추천` labels.
+  - Added a clearer analysis method card that separates quick automatic analysis from goal-based Agent analysis.
+- Verification result:
+  - Source inspection confirmed the new Korean-first hero, selected CSV card, suggested goal area, target recommendation panel, and separate quick-analysis CTA are present.
+  - `python -m compileall backend` passed.
+  - Bundled Vite build passed because `npm` is not available on PATH.
+- Known limitations:
+  - Browser automation is not installed in this runtime, so visual verification should be completed on Railway after redeploy.
+  - The target recommendation panel depends on persisted dataset metadata; sparse legacy dataset records may show the fallback guidance state.
+- Next PR:
+  - Deploy/redeploy Railway and visually confirm `/agent-mode` with no CSV, diabetes CSV, and unclear-target CSV.

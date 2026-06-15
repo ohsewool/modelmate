@@ -98,6 +98,27 @@ function datasetTargetQuality(dataset) {
   return dataset?.target_quality || dataset?.quality_summary?.target_quality || null
 }
 
+function datasetRows(dataset) {
+  return dataset?.row_count ?? dataset?.rows ?? '-'
+}
+
+function datasetColumns(dataset) {
+  const columns = dataset?.column_count ?? dataset?.columns
+  return Array.isArray(columns) ? columns.length : columns ?? '-'
+}
+
+function selectedDatasetName(dataset) {
+  return dataset?.filename || dataset?.original_filename || dataset?.name || '선택한 CSV'
+}
+
+function targetUsefulnessLabel(candidate) {
+  if (!candidate) return '검토 필요'
+  if (candidate.suitability === 'good') return '추천'
+  if (candidate.suitability === 'warning') return '가능'
+  if (candidate.suitability === 'poor') return '비추천'
+  return candidate.usefulness_label || '검토 필요'
+}
+
 function datasetSignature(dataset) {
   const target = datasetTarget(dataset)
   const filename = dataset?.filename || dataset?.original_filename || ''
@@ -194,6 +215,140 @@ function PlanPreview({ plan }) {
           </div>
         ))}
       </div>
+    </section>
+  )
+}
+
+function SelectedCsvSummary({ dataset }) {
+  if (!dataset) {
+    return (
+      <section className="card" style={{ display: 'grid', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Database size={18} />
+          <p className="section-title" style={{ margin: 0 }}>선택한 CSV</p>
+        </div>
+        <div className="empty-state" style={{ padding: 18 }}>
+          <Database size={24} />
+          <strong>아직 선택한 CSV가 없어요.</strong>
+          <p>분석할 CSV를 먼저 골라 주세요.</p>
+          <Link className="btn btn-primary" to="/upload?returnTo=agent-mode">CSV 올리기</Link>
+        </div>
+      </section>
+    )
+  }
+
+  const target = datasetTarget(dataset)
+  const quality = datasetTargetQuality(dataset)
+  const weakTarget = quality?.has_meaningful_target === false
+  const hint = weakTarget
+    ? '바로 예측할 만한 명확한 타깃은 검토가 필요합니다.'
+    : target
+      ? '예측 분석을 시작할 수 있는 CSV입니다.'
+      : '타깃 후보를 확인한 뒤 분석을 시작하세요.'
+
+  return (
+    <section className="card" style={{ display: 'grid', gap: 14 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+        <div>
+          <p className="section-title" style={{ marginBottom: 6 }}>선택한 CSV</p>
+          <h2 style={{ margin: 0, fontSize: 22 }}>{selectedDatasetName(dataset)}</h2>
+        </div>
+        <span className="status-pill">{weakTarget ? '타깃 검토 필요' : '분석 준비됨'}</span>
+      </div>
+      <div className="workspace-grid four-columns">
+        <div className="card-compact">
+          <p style={{ margin: '0 0 6px', color: 'var(--text-label)', fontSize: 11, fontWeight: 800 }}>데이터 행</p>
+          <strong>{datasetRows(dataset)}</strong>
+        </div>
+        <div className="card-compact">
+          <p style={{ margin: '0 0 6px', color: 'var(--text-label)', fontSize: 11, fontWeight: 800 }}>컬럼</p>
+          <strong>{datasetColumns(dataset)}</strong>
+        </div>
+        <div className="card-compact">
+          <p style={{ margin: '0 0 6px', color: 'var(--text-label)', fontSize: 11, fontWeight: 800 }}>추천 예측값</p>
+          <strong>{target || '검토 필요'}</strong>
+        </div>
+        <div className="card-compact">
+          <p style={{ margin: '0 0 6px', color: 'var(--text-label)', fontSize: 11, fontWeight: 800 }}>데이터 상태</p>
+          <strong>{weakTarget ? '주의 필요' : '사용 가능'}</strong>
+        </div>
+      </div>
+      <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.6 }}>{hint}</p>
+      <p style={{ margin: 0, color: 'var(--text-label)', fontSize: 12 }}>
+        참조 ID: {String(dataset.id || dataset.dataset_id || '').slice(0, 8) || '-'}
+        {dataset.project_id ? ` · 프로젝트 ${String(dataset.project_id).slice(0, 8)}` : ''}
+      </p>
+    </section>
+  )
+}
+
+function SuggestedGoalCard({ suggestedGoal, onUseSuggestion }) {
+  return (
+    <section className="card" style={{ display: 'grid', gap: 12 }}>
+      <div>
+        <p className="section-title" style={{ marginBottom: 6 }}>추천 분석 목표</p>
+        <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.6 }}>
+          선택한 CSV 기준으로 바로 시작할 수 있는 목표입니다. 그대로 쓰거나 아래 입력창에서 수정할 수 있습니다.
+        </p>
+      </div>
+      <div className="alert alert-success" style={{ margin: 0 }}>
+        {suggestedGoal || 'CSV를 선택하면 추천 목표가 표시됩니다.'}
+      </div>
+      <button className="btn btn-secondary" type="button" onClick={onUseSuggestion} disabled={!suggestedGoal}>
+        이 목표로 시작
+      </button>
+    </section>
+  )
+}
+
+function TargetRecommendationPanel({ dataset, onFocusGoal }) {
+  const quality = datasetTargetQuality(dataset)
+  const target = datasetTarget(dataset)
+  const recommended = quality?.recommended || (target ? { column_name: target, suitability: 'good', usefulness_explanation: 'CSV 구조를 기준으로 추천된 예측값입니다.' } : null)
+  const candidates = [
+    ...(recommended?.column_name ? [recommended] : []),
+    ...(quality?.candidates || quality?.candidate_targets || []),
+  ].filter((item, index, arr) => item?.column_name && arr.findIndex(other => other?.column_name === item.column_name) === index)
+  const noMeaningfulTarget = quality?.has_meaningful_target === false || (!target && dataset)
+
+  return (
+    <section className="card" style={{ display: 'grid', gap: 12 }}>
+      <div>
+        <p className="section-title" style={{ marginBottom: 6 }}>예측할 값 추천</p>
+        <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.6 }}>
+          무엇을 예측할지 명확해야 모델 비교와 보고서가 의미 있어집니다.
+        </p>
+      </div>
+      {!dataset ? (
+        <div className="empty-state" style={{ padding: 16 }}>
+          <strong>CSV를 먼저 선택해 주세요.</strong>
+          <p>CSV를 고르면 추천 예측값과 주의사항을 보여드립니다.</p>
+        </div>
+      ) : noMeaningfulTarget ? (
+        <div className="alert alert-warning" style={{ display: 'grid', gap: 10, margin: 0 }}>
+          <strong>바로 예측할 만한 명확한 타깃을 찾기 어렵습니다.</strong>
+          <span>이 CSV는 예측보다 데이터 요약/탐색 보고서에 더 적합할 수 있습니다.</span>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <Link className="btn btn-secondary" to="/reports">데이터 요약 보고서 먼저 보기</Link>
+            <button className="btn btn-secondary" type="button" onClick={onFocusGoal}>타깃 직접 선택</button>
+            <button className="btn btn-secondary" type="button" onClick={onFocusGoal}>목표 다시 입력</button>
+          </div>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gap: 8 }}>
+          {candidates.slice(0, 4).map(candidate => (
+            <div key={candidate.column_name} className="card-compact" style={{ display: 'grid', gap: 6 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
+                <strong>{candidate.column_name}</strong>
+                <span className="status-pill">{targetUsefulnessLabel(candidate)}</span>
+              </div>
+              <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.55 }}>
+                {candidate.usefulness_explanation || candidate.reason || '예측 목적과 데이터 구조를 기준으로 검토한 후보입니다.'}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
     </section>
   )
 }
@@ -432,6 +587,8 @@ export default function AgentMode() {
     goalRef.current?.focus()
   }
 
+  const selectedTargetUnclear = Boolean(selectedDataset && datasetTargetQuality(selectedDataset)?.has_meaningful_target === false)
+  const canCreateRun = Boolean(selectedDatasetId && goalText.trim())
   const placeholder = suggestedGoal || '예: 이 CSV로 당뇨병 여부를 예측하고 중요한 요인을 보고서로 정리해줘.'
 
   return (
@@ -439,21 +596,42 @@ export default function AgentMode() {
       <header className="workspace-hero">
         <div>
           <p className="eyebrow">목표 기반 분석</p>
-          <h1>분석 목표부터 시작하기</h1>
+          <h1>CSV로 예측 목표를 정하고 분석을 시작하세요</h1>
           <p>
-            사용자가 원하는 예측 목표를 먼저 입력하면 ModelMate가 선택된 CSV에 맞는 분석 계획을 만들고,
-            상세 실행 기록을 순서대로 남깁니다.
+            선택한 CSV를 바탕으로 예측할 값을 추천하고, 분석 계획과 실행 기록을 남깁니다.
           </p>
         </div>
-        <Link className="btn btn-secondary" to="/agent">빠른 자동 분석으로 이동</Link>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          <Link className="btn btn-secondary" to="/upload?returnTo=agent-mode"><Upload size={16} /> CSV 올리기</Link>
+          <Link className="btn btn-secondary" to="/agent">빠른 자동 분석 시작</Link>
+          <button className="btn btn-primary" type="button" onClick={editGoal}>목표 기반 분석 시작</button>
+        </div>
       </header>
 
       {error && <div className="alert alert-warning"><ShieldAlert size={16} /> {error}</div>}
 
       <div className="workspace-grid two-columns">
+        <SelectedCsvSummary dataset={selectedDataset} />
+        <SuggestedGoalCard suggestedGoal={suggestedGoal} onUseSuggestion={useSuggestedGoal} />
+      </div>
+
+      <div className="workspace-grid two-columns">
+        <TargetRecommendationPanel dataset={selectedDataset} onFocusGoal={editGoal} />
+        <DatasetSelector
+          datasets={datasets}
+          selectedDatasetId={selectedDatasetId}
+          onSelect={selectDataset}
+          loading={datasetLoading}
+        />
+      </div>
+
+      <div className="workspace-grid two-columns">
         <section className="card" style={{ display: 'grid', gap: 16 }}>
           <div>
-            <p className="section-title">1. 분석 목표</p>
+            <p className="section-title">분석 목표 입력</p>
+            <p style={{ margin: '0 0 10px', color: 'var(--text-2)', lineHeight: 1.6 }}>
+              추천 목표를 그대로 쓰거나, 직접 원하는 예측 질문으로 바꿀 수 있습니다.
+            </p>
             <textarea
               ref={goalRef}
               value={goalText}
@@ -466,7 +644,7 @@ export default function AgentMode() {
               placeholder={placeholder}
             />
             <p style={{ margin: '8px 0 0', color: 'var(--text-label)', fontSize: 12 }}>
-              선택한 CSV 기준 추천 목표: {suggestedGoal}
+              추천 목표: {suggestedGoal}
             </p>
           </div>
           <MismatchWarning
@@ -489,17 +667,40 @@ export default function AgentMode() {
               placeholder="선택 사항입니다. 비워두면 데이터셋 추천 타깃을 사용합니다."
             />
           </label>
-          <button className="btn btn-primary" type="button" onClick={createRun} disabled={creating || !selectedDatasetId}>
+          {selectedTargetUnclear && (
+            <div className="alert alert-warning" style={{ margin: 0 }}>
+              추천 타깃이 명확하지 않아 분석 중 사용자 확인이 필요할 수 있습니다.
+            </div>
+          )}
+          {!selectedDatasetId && (
+            <div className="alert alert-warning" style={{ margin: 0 }}>
+              목표 기반 분석을 만들려면 먼저 CSV를 선택하거나 업로드해 주세요.
+            </div>
+          )}
+          <button className="btn btn-primary" type="button" onClick={createRun} disabled={creating || !canCreateRun}>
             <ListChecks size={16} /> {creating ? '계획 생성 중' : '분석 실행 만들기'}
           </button>
         </section>
 
-        <DatasetSelector
-          datasets={datasets}
-          selectedDatasetId={selectedDatasetId}
-          onSelect={selectDataset}
-          loading={datasetLoading}
-        />
+        <section className="card" style={{ display: 'grid', gap: 14 }}>
+          <p className="section-title">분석 방식 선택</p>
+          <div className="card-compact" style={{ display: 'grid', gap: 8 }}>
+            <strong>빠른 자동 분석</strong>
+            <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.55 }}>
+              결과를 빠르게 확인하고 싶을 때 사용합니다. CSV 업로드부터 모델 비교까지 기존 흐름으로 진행합니다.
+            </p>
+            <Link className="btn btn-secondary" to="/agent">빠른 자동 분석 시작</Link>
+          </div>
+          <div className="card-compact" style={{ display: 'grid', gap: 8 }}>
+            <strong>목표 기반 분석</strong>
+            <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.55 }}>
+              예측 목표와 타깃 후보를 확인하면서 Agent 실행 기록을 남기고 싶을 때 사용합니다.
+            </p>
+            <button className="btn btn-primary" type="button" onClick={createRun} disabled={creating || !canCreateRun}>
+              목표 기반 분석 시작
+            </button>
+          </div>
+        </section>
       </div>
 
       {selectedRun && (
