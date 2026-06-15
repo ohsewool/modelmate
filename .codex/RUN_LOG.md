@@ -784,3 +784,50 @@ Milestones:
   - Browser automation is not installed in this runtime, so verification used build and source/bundle inspection.
 - Next PR:
   - none until this UX hotfix is deployed and visually checked on Railway.
+
+## 2026-06-15 KST - UI/UX PR-01 Korean Copy and Status Label Polish
+
+- Status: done
+- Branch: `main`
+- Task file: user attachment `UI/UX PR-01: Korean Copy, Terminology, and Status Label Polish`
+- Planned verification checklist:
+  - [x] Replace default user-facing `Agent Mode`, `Agent Run`, and `trace` wording with Korean-first product language.
+  - [x] Keep internal variable names, endpoints, and stored trace records unchanged.
+  - [x] Keep advanced/developer execution records available.
+  - [x] Polish status labels such as running/planned/waiting/completed into Korean labels.
+  - [x] Update Agent Mode, Agent Run Detail, and report analysis trace copy.
+  - [x] Backend compile passes.
+  - [x] Frontend build passes.
+- Files changed:
+  - `frontend/src/pages/AgentMode.jsx`
+  - `frontend/src/pages/AgentRunDetail.jsx`
+  - `frontend/src/components/report/AnalysisTracePanel.jsx`
+  - rebuilt `frontend/dist`
+  - `.codex/RUN_LOG.md`
+- Terminology map applied:
+  - `Agent Mode` -> `목표 기반 분석`
+  - `Agent Run` -> `분석 실행`
+  - `Trace 보기` -> `상세 실행 기록 보기`
+  - `trace record` -> `실행 기록`
+  - `Observation/Decision/Next` style labels -> `확인 내용`, `판단`, `다음 단계`
+  - `Project ID` visible copy -> `프로젝트 ID`
+- Status label changes:
+  - `running` now shows `분석 중` in Agent Mode and detail screens.
+  - `completed/success` remains `분석 완료`.
+  - `waiting_for_review` remains `확인 필요`.
+  - report trace warning badge now shows `주의 필요` and `주의 수준`.
+- Screens updated:
+  - Agent Mode goal-first screen
+  - Agent Run Detail / detailed execution record screen
+  - Report analysis trace panel
+- Technical trace preservation:
+  - `tool_calls`, `observations`, `decisions`, `validations`, and `artifacts` arrays are still rendered in the collapsible advanced section.
+  - Backend Agent execution behavior was not changed.
+- Build result:
+  - `python -m compileall backend` passed.
+  - Bundled Vite build passed because `npm` is not available on PATH.
+- Known limitations:
+  - Some internal identifiers and endpoint names remain English in code as intended.
+  - Other older admin/deploy components may still contain internal-oriented labels, but the main user-facing Agent/report flow is Korean-first.
+- Next PR:
+  - Visual check on Railway after redeploy.

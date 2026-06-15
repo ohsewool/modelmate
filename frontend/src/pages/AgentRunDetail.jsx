@@ -12,7 +12,7 @@ const STATUS_LABELS = {
   succeeded: '분석 완료',
   success: '분석 완료',
   failed: '실패',
-  running: '실행 중',
+  running: '분석 중',
   planned: '실행 예정',
   pending: '대기 중',
   blocked: '사용자 확인 필요',
@@ -328,7 +328,7 @@ function ConnectedCsvCard({ trace, run }) {
       {!run?.dataset_id && (
         <div className="alert alert-warning">
           <AlertTriangle size={16} />
-          이 Run에는 CSV 데이터셋이 연결되어 있지 않아 실제 실행을 계속할 수 없습니다. Agent Mode에서 데이터셋을 선택해 새 Run을 만들어 주세요.
+          이 분석 실행에는 CSV 데이터셋이 연결되어 있지 않아 실제 실행을 계속할 수 없습니다. 목표 기반 분석에서 데이터셋을 선택해 새 분석 실행을 만들어 주세요.
         </div>
       )}
       {run?.dataset_id && (
@@ -456,7 +456,7 @@ function PostPredictionGuidance({ trace, run, reviews, onContinue, onRetry, onSt
           <strong>중요 요인 확인</strong>
           <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.65 }}>
             {topFeatures.length
-              ? `현재 trace에서 확인된 주요 요인은 ${topFeatures.join(', ')} 순으로 보입니다.`
+              ? `현재 상세 기록에서 확인된 주요 요인은 ${topFeatures.join(', ')} 순으로 보입니다.`
               : '중요 요인은 보고서 또는 고급 실행 기록에서 확인할 수 있습니다.'}
           </p>
           <p style={{ margin: 0, color: 'var(--text-label)', fontSize: 12 }}>성능 지표만 보지 말고, 어떤 컬럼이 예측에 영향을 줬는지 함께 확인하세요.</p>
@@ -487,7 +487,7 @@ function PostPredictionGuidance({ trace, run, reviews, onContinue, onRetry, onSt
 
 function UserPlanTimeline({ steps }) {
   if (!steps?.length) {
-    return <EmptyState title="아직 분석 계획이 없습니다." description="Agent Run 계획이 생성되면 여기에 표시됩니다." />
+    return <EmptyState title="아직 분석 계획이 없습니다." description="분석 실행 계획이 생성되면 여기에 표시됩니다." />
   }
   return (
     <div style={{ display: 'grid', gap: 10 }}>
@@ -589,17 +589,17 @@ function AdvancedTrace({ trace, reviews }) {
   const artifacts = trace?.artifacts || []
   return (
     <details className="card" style={{ display: 'grid', gap: 12 }}>
-      <summary id="advanced-trace" style={{ cursor: 'pointer', fontWeight: 850 }}>고급 실행 기록 보기 · 개발자/검증용 trace</summary>
+      <summary id="advanced-trace" style={{ cursor: 'pointer', fontWeight: 850 }}>고급 실행 기록 보기 · 개발자/검증용 상세 기록</summary>
       <div className="workspace-grid four-columns" style={{ marginTop: 12 }}>
-        <MetricBox label="Agent가 실행한 작업" value={toolCalls.length} />
-        <MetricBox label="Agent가 발견한 내용" value={observations.length} />
-        <MetricBox label="Agent의 판단" value={decisions.length} />
-        <MetricBox label="생성된 결과물" value={artifacts.length} />
+        <MetricBox label="작업 실행" value={toolCalls.length} />
+        <MetricBox label="확인 내용" value={observations.length} />
+        <MetricBox label="판단" value={decisions.length} />
+        <MetricBox label="생성된 결과" value={artifacts.length} />
       </div>
-      <p style={{ margin: 0, color: 'var(--text-label)', fontSize: 12 }}>고급 실행 기록 요약입니다. 실제 저장된 trace record를 그대로 표시합니다.</p>
+      <p style={{ margin: 0, color: 'var(--text-label)', fontSize: 12 }}>고급 실행 기록 요약입니다. 실제 저장된 실행 기록을 그대로 표시합니다.</p>
       <div className="workspace-grid two-columns" style={{ alignItems: 'start', marginTop: 12 }}>
         <DetailList
-          title="Agent가 실행한 작업"
+          title="작업 실행"
           items={toolCalls}
           empty="아직 실행된 작업이 없습니다."
           render={call => (
@@ -610,7 +610,7 @@ function AdvancedTrace({ trace, reviews }) {
           )}
         />
         <DetailList
-          title="Agent가 발견한 내용"
+          title="확인 내용"
           items={observations}
           empty="아직 발견 내용이 없습니다."
           render={observation => (
@@ -621,7 +621,7 @@ function AdvancedTrace({ trace, reviews }) {
           )}
         />
         <DetailList
-          title="Agent의 판단"
+          title="판단"
           items={decisions}
           empty="아직 판단 기록이 없습니다."
           render={decision => (
@@ -689,7 +689,7 @@ export default function AgentRunDetail() {
     setError('')
     setWarning('')
     if (!agentRunId) {
-      setError('Agent Run을 찾을 수 없습니다.')
+      setError('분석 실행을 찾을 수 없습니다.')
       setLoading(false)
       return
     }
@@ -701,11 +701,11 @@ export default function AgentRunDetail() {
         setReviews(reviewsResponse.data?.reviews || [])
       } catch {
         setReviews([])
-        setWarning('검토 요청 정보 일부를 불러오지 못했습니다. 저장된 trace는 계속 표시합니다.')
+        setWarning('검토 요청 정보 일부를 불러오지 못했습니다. 저장된 상세 실행 기록은 계속 표시합니다.')
       }
     } catch (err) {
-      const message = normalizeError(err, 'Agent Run을 찾을 수 없습니다.')
-      setError(err.response?.status === 404 ? 'Agent Run을 찾을 수 없습니다.' : message)
+      const message = normalizeError(err, '분석 실행을 찾을 수 없습니다.')
+      setError(err.response?.status === 404 ? '분석 실행을 찾을 수 없습니다.' : message)
     } finally {
       setLoading(false)
     }
@@ -718,7 +718,7 @@ export default function AgentRunDetail() {
       await api.post(`/agent-runs/${agentRunId}/execute`)
       await loadTrace()
     } catch (err) {
-      setError(normalizeError(err, 'Agent Run을 계속 실행하지 못했습니다.'))
+      setError(normalizeError(err, '분석 실행을 계속 진행하지 못했습니다.'))
     } finally {
       setActionLoading(false)
     }
@@ -744,7 +744,7 @@ export default function AgentRunDetail() {
       await api.post(`/agent-runs/${agentRunId}/stop`)
       await loadTrace()
     } catch (err) {
-      setError(normalizeError(err, 'Agent Run 중단에 실패했습니다.'))
+      setError(normalizeError(err, '분석 실행 중단에 실패했습니다.'))
     } finally {
       setActionLoading(false)
     }
@@ -787,11 +787,11 @@ export default function AgentRunDetail() {
   const currentStepLabel = complete ? '결과 확인' : currentStep?.name || '확인 중'
   const nextActionLabel = complete ? '결과 확인' : reviewNeeded ? '사용자 확인' : '계속 실행'
 
-  if (loading) return <LoadingState label="Agent Run trace를 불러오는 중입니다." />
+  if (loading) return <LoadingState label="상세 실행 기록을 불러오는 중입니다." />
   if (error && !trace) {
     return (
       <ErrorState
-        message={error || 'Agent Run을 찾을 수 없습니다.'}
+        message={error || '분석 실행을 찾을 수 없습니다.'}
         action={<button className="btn-secondary" type="button" onClick={loadTrace}>다시 불러오기</button>}
       />
     )
@@ -801,12 +801,12 @@ export default function AgentRunDetail() {
     <main className="workspace-page" style={{ display: 'grid', gap: 20 }}>
       <header className="workspace-hero">
         <div>
-          <p className="eyebrow">Agent Mode</p>
+          <p className="eyebrow">목표 기반 분석</p>
           <h1>{complete ? '분석 결과' : '분석 진행 상황'}</h1>
           <p>{run?.user_goal || '분석 목표 정보가 없습니다.'}</p>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <Link className="btn btn-secondary" to="/agent-mode">Agent Mode로 돌아가기</Link>
+          <Link className="btn btn-secondary" to="/agent-mode">목표 기반 분석으로 돌아가기</Link>
           {!complete && (
             <button className="btn btn-primary" type="button" onClick={continueRun} disabled={actionLoading || !run?.dataset_id}>
               <CheckCircle2 size={16} /> 확인하고 계속 실행
@@ -849,16 +849,16 @@ export default function AgentRunDetail() {
         onContinue={continueRun}
       />
 
-      <Section title="Agent가 세운 분석 계획" icon={<Box size={18} />}>
+      <Section title="분석 계획" icon={<Box size={18} />}>
         <UserPlanTimeline steps={planSteps} />
       </Section>
 
       <Section title="고급 실행 기록 요약" icon={<FileText size={18} />}>
         <div className="workspace-grid four-columns">
-          <MetricBox label="Agent가 실행한 작업" value={trace?.tool_calls?.length || 0} />
-          <MetricBox label="Agent가 발견한 내용" value={trace?.observations?.length || 0} />
-          <MetricBox label="Agent의 판단" value={trace?.decisions?.length || 0} />
-          <MetricBox label="생성된 결과물" value={trace?.artifacts?.length || 0} />
+          <MetricBox label="작업 실행" value={trace?.tool_calls?.length || 0} />
+          <MetricBox label="확인 내용" value={trace?.observations?.length || 0} />
+          <MetricBox label="판단" value={trace?.decisions?.length || 0} />
+          <MetricBox label="생성된 결과" value={trace?.artifacts?.length || 0} />
         </div>
         <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.6 }}>
           위 숫자는 검증과 포트폴리오 확인을 위한 실행 기록 요약입니다. 사용자가 봐야 할 핵심 결과는 상단의 분석 결과와 다음 행동입니다.

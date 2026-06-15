@@ -11,7 +11,7 @@ function statusLabel(status) {
   if (status === 'unsupported') return '지원 범위 밖'
   if (['completed', 'succeeded', 'success'].includes(status)) return '분석 완료'
   if (status === 'waiting_for_review') return '확인 필요'
-  if (status === 'running') return '실행 중'
+  if (status === 'running') return '분석 중'
   if (status === 'failed') return '실패'
   if (status === 'blocked') return '사용자 확인 필요'
   if (status === 'planned') return '실행 예정'
@@ -66,14 +66,14 @@ function normalizeAgentRun(payload, previousRun = null, selectedDataset = null) 
 
 function runTitle(run) {
   const record = getRunRecord(run)
-  return run?.user_goal || record?.user_goal || run?.goal_text || '저장된 Agent Run'
+  return run?.user_goal || record?.user_goal || run?.goal_text || '저장된 분석 실행'
 }
 
-function TraceLink({ run, children = 'Trace 보기' }) {
+function TraceLink({ run, children = '상세 실행 기록 보기' }) {
   const runId = getRunId(run)
   if (!runId) {
     return (
-      <button className="btn btn-secondary" type="button" disabled title="Agent Run ID를 찾을 수 없습니다. 다시 생성해 주세요.">
+      <button className="btn btn-secondary" type="button" disabled title="분석 실행 ID를 찾을 수 없습니다. 다시 생성해 주세요.">
         {children}
       </button>
     )
@@ -204,7 +204,7 @@ function DatasetSelector({ datasets, selectedDatasetId, onSelect, loading }) {
       <div style={{ display: 'flex', gap: 10, alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
         <div>
           <p className="section-title" style={{ marginBottom: 4 }}>분석할 CSV 데이터셋</p>
-          <p style={{ margin: 0, color: 'var(--text-2)' }}>Agent Mode는 저장된 CSV 데이터셋을 기준으로 계획과 실행 trace를 남깁니다.</p>
+          <p style={{ margin: 0, color: 'var(--text-2)' }}>목표 기반 분석은 저장된 CSV 데이터셋을 기준으로 분석 계획과 상세 실행 기록을 남깁니다.</p>
         </div>
         <Link className="btn btn-secondary" to="/upload?returnTo=agent-mode"><Upload size={16} /> CSV 업로드하고 시작하기</Link>
       </div>
@@ -247,7 +247,7 @@ function DatasetSelector({ datasets, selectedDatasetId, onSelect, loading }) {
       ) : (
         <div className="empty-state" style={{ padding: 18 }}>
           <Database size={24} />
-          <strong>아직 Agent Mode에 연결할 저장 데이터셋이 없습니다.</strong>
+          <strong>아직 목표 기반 분석에 연결할 저장 데이터셋이 없습니다.</strong>
           <p>CSV를 먼저 업로드하거나 기존 빠른 자동 분석을 완료한 뒤 다시 실행하세요.</p>
           <Link className="btn btn-primary" to="/upload?returnTo=agent-mode">CSV 업로드</Link>
         </div>
@@ -333,7 +333,7 @@ export default function AgentMode() {
       const response = await api.get('/agent-runs')
       setRuns(response.data?.runs || [])
     } catch (err) {
-      setError(err.response?.data?.detail || 'Agent Run 목록을 불러오지 못했습니다.')
+      setError(err.response?.data?.detail || '분석 실행 목록을 불러오지 못했습니다.')
     } finally {
       setLoading(false)
     }
@@ -365,7 +365,7 @@ export default function AgentMode() {
       return
     }
     if (!selectedDatasetId) {
-      setError('Agent 실행 전에 CSV 데이터셋을 선택하거나 업로드하세요.')
+      setError('분석을 시작하기 전에 CSV 데이터셋을 선택하거나 업로드하세요.')
       return
     }
     if (mismatchWarning && mismatchChoice !== 'proceed') {
@@ -385,7 +385,7 @@ export default function AgentMode() {
       setSelectedRun(normalizeAgentRun(response.data, null, selectedDataset))
       await loadRuns()
     } catch (err) {
-      setError(err.response?.data?.detail || 'Agent Run 생성에 실패했습니다.')
+      setError(err.response?.data?.detail || '분석 실행 생성에 실패했습니다.')
     } finally {
       setCreating(false)
     }
@@ -395,11 +395,11 @@ export default function AgentMode() {
     const runId = getRunId(run)
     const datasetId = getRunDatasetId(run)
     if (!runId) {
-      setError('Agent Run ID를 찾을 수 없습니다. 다시 생성해 주세요.')
+      setError('분석 실행 ID를 찾을 수 없습니다. 다시 생성해 주세요.')
       return
     }
     if (!datasetId) {
-      setError('이 Agent Run에는 CSV 데이터셋이 연결되어 있지 않습니다. 새 Run을 만들 때 데이터셋을 선택하세요.')
+      setError('이 분석 실행에는 CSV 데이터셋이 연결되어 있지 않습니다. 새 분석 실행을 만들 때 데이터셋을 선택하세요.')
       return
     }
     setExecuting(true)
@@ -409,7 +409,7 @@ export default function AgentMode() {
       setSelectedRun(normalizeAgentRun(response.data, run, selectedDataset))
       await loadRuns()
     } catch (err) {
-      setError(err.response?.data?.detail || 'Agent Run 실행에 실패했습니다.')
+      setError(err.response?.data?.detail || '분석 실행에 실패했습니다.')
     } finally {
       setExecuting(false)
     }
@@ -438,11 +438,11 @@ export default function AgentMode() {
     <main className="workspace-page" style={{ display: 'grid', gap: 20 }}>
       <header className="workspace-hero">
         <div>
-          <p className="eyebrow">Agent Mode</p>
+          <p className="eyebrow">목표 기반 분석</p>
           <h1>분석 목표부터 시작하기</h1>
           <p>
             사용자가 원하는 예측 목표를 먼저 입력하면 ModelMate가 선택된 CSV에 맞는 분석 계획을 만들고,
-            실행 trace를 순서대로 남깁니다.
+            상세 실행 기록을 순서대로 남깁니다.
           </p>
         </div>
         <Link className="btn btn-secondary" to="/agent">빠른 자동 분석으로 이동</Link>
@@ -478,7 +478,7 @@ export default function AgentMode() {
           />
           {mismatchWarning && mismatchChoice === 'proceed' && (
             <div className="alert alert-warning" style={{ margin: 0 }}>
-              기존 목표 그대로 진행합니다. 이 선택은 Agent trace에 `goal_dataset_mismatch_warning`으로 기록됩니다.
+              기존 목표 그대로 진행합니다. 이 선택은 상세 실행 기록에 `goal_dataset_mismatch_warning`으로 기록됩니다.
             </div>
           )}
           <label style={{ display: 'grid', gap: 6 }}>
@@ -490,7 +490,7 @@ export default function AgentMode() {
             />
           </label>
           <button className="btn btn-primary" type="button" onClick={createRun} disabled={creating || !selectedDatasetId}>
-            <ListChecks size={16} /> {creating ? '계획 생성 중' : 'Agent Run 만들기'}
+            <ListChecks size={16} /> {creating ? '계획 생성 중' : '분석 실행 만들기'}
           </button>
         </section>
 
@@ -506,18 +506,18 @@ export default function AgentMode() {
         <div className="workspace-grid two-columns">
           <ScopePanel interpreted={selectedRun.interpreted_goal} />
           <section className="card" style={{ display: 'grid', gap: 12 }}>
-            <p className="section-title">Run 상태</p>
+            <p className="section-title">분석 실행 상태</p>
             <strong>{statusLabel(getRunStatus(selectedRun))}</strong>
             <p style={{ margin: 0, color: 'var(--text-2)' }}>
               데이터 연결: {getRunDatasetId(selectedRun) || '연결되지 않음'}
             </p>
             <p style={{ margin: 0, color: 'var(--text-label)', fontSize: 12 }}>
-              Agent Run ID: {getRunId(selectedRun) || 'Agent Run ID를 찾을 수 없습니다. 다시 생성해 주세요.'}
-              {getRunProjectId(selectedRun) ? ` · Project ID: ${getRunProjectId(selectedRun)}` : ''}
+              분석 실행 ID: {getRunId(selectedRun) || '분석 실행 ID를 찾을 수 없습니다. 다시 생성해 주세요.'}
+              {getRunProjectId(selectedRun) ? ` · 프로젝트 ID: ${getRunProjectId(selectedRun)}` : ''}
             </p>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
               <button className="btn btn-primary" type="button" onClick={() => executeRun(selectedRun)} disabled={executing || !getRunDatasetId(selectedRun) || !getRunId(selectedRun)}>
-                <CheckCircle2 size={16} /> {executing ? '실행 중' : '계획 실행'}
+                <CheckCircle2 size={16} /> {executing ? '분석 중' : '분석 시작'}
               </button>
               <TraceLink run={selectedRun} />
             </div>
@@ -530,7 +530,7 @@ export default function AgentMode() {
       <section className="card" style={{ display: 'grid', gap: 14 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <Clock3 size={18} />
-          <p className="section-title" style={{ margin: 0 }}>최근 Agent Run</p>
+          <p className="section-title" style={{ margin: 0 }}>최근 분석 실행</p>
         </div>
         {loading ? (
           <p style={{ color: 'var(--text-label)' }}>불러오는 중입니다.</p>
@@ -553,7 +553,7 @@ export default function AgentMode() {
             ))}
           </div>
         ) : (
-          <p style={{ color: 'var(--text-label)' }}>아직 Agent Run이 없습니다.</p>
+          <p style={{ color: 'var(--text-label)' }}>아직 분석 실행이 없습니다.</p>
         )}
       </section>
     </main>
