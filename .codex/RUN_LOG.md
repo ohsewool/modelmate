@@ -902,3 +902,44 @@ Milestones:
   - Important factors still depend on trace/report data being available; otherwise the UI gives a non-fabricated fallback.
 - Next PR:
   - Deploy/redeploy Railway and verify `/agent-mode/:agentRunId` for completed, review-needed, and no-meaningful-target runs.
+## 2026-06-15 KST - UI/UX PR-04 Report and Prediction API Commercial Polish
+
+- Status: done
+- Branch: `main`
+- Task file: user attachment `UI/UX PR-04: Report and Prediction API Commercial Polish`
+- Planned verification checklist:
+  - [x] Report detail screen has conclusion-first summary, important factors, performance, cautions, and next steps.
+  - [x] Report empty state explains that a report is not ready and links to analysis flow.
+  - [x] Workspace report list empty state gives clear next actions.
+  - [x] Prediction API screen shows readiness overview and does not default everything to green.
+  - [x] Prediction API screen includes sample request/response guidance without exposing secrets.
+  - [x] No backend pipeline, report data, API token, or trace behavior was faked.
+  - [x] Backend compile passes.
+  - [x] Frontend build passes.
+- Files changed:
+  - `frontend/src/pages/Report.jsx`
+  - `frontend/src/pages/workspace/WorkspaceReports.jsx`
+  - `frontend/src/pages/workspace/WorkspacePredictionApis.jsx`
+  - rebuilt `frontend/dist`
+  - `.codex/RUN_LOG.md`
+- Report screen changes:
+  - Added `핵심 요약` with report readiness badge, prediction target, CSV name, problem type, selected model, and one-line conclusion.
+  - Added `중요 요인` with non-causal wording.
+  - Added `예측 성능` with available metrics only and cautious copy for weak/unavailable metrics.
+  - Added `주의사항`, including medical caution for diabetes-like reports.
+  - Added `다음에 할 일` buttons for new prediction, prediction API, another CSV, and detailed execution history.
+  - Improved no-report empty state.
+- Prediction API screen changes:
+  - Added `API 연결 상태 요약` with usable/review-needed/project/token-safety summary.
+  - Added readiness labels: `API 연결 가능`, `API token 생성 필요`, `API 연결 권장하지 않음`, and `API 연결 전 검토가 필요합니다`.
+  - Added sample cURL/request/response guidance while keeping token values hidden.
+  - Improved no-API empty state and next actions.
+- Verification result:
+  - Source inspection confirmed PR-04 components and copy are present.
+  - `python -m compileall backend` passed.
+  - Bundled Vite build passed because `npm` is not available on PATH.
+- Known limitations:
+  - Browser automation is not installed in this runtime, so visual confirmation should happen after Railway redeploy.
+  - API readiness is based on currently available metadata and does not invent performance/schema data.
+- Next PR:
+  - Deploy/redeploy Railway and visually check `/report`, `/reports`, `/prediction-apis`, and `/deploy`.

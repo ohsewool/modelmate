@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { EmptyState, LoadingState, StatusBadge, WorkspacePageHeader, statusLabel } from '../../components/workspace-shell/WorkspaceStates'
+import { LoadingState, StatusBadge, WorkspacePageHeader, statusLabel } from '../../components/workspace-shell/WorkspaceStates'
 import { fmt, loadPredictionApiRows } from './workspaceData'
 import api from '../../api'
 
@@ -23,6 +23,87 @@ function availabilityText(row) {
   return fmt(row.availability?.reason || '사용 가능 상태를 확인해야 합니다.')
 }
 
+function readinessLabel(row) {
+  if (!row) return 'API 연결 전 검토가 필요합니다.'
+  if (row.availability?.available && row.tokens.some(token => token.status === 'active')) return 'API 연결 가능'
+  if (row.availability?.available) return 'API token 생성 필요'
+  if (row.availability?.dataset_active === false || row.availability?.model_ready === false) return 'API 연결 권장하지 않음'
+  return 'API 연결 전 검토가 필요합니다.'
+}
+
+function readinessTone(row) {
+  const label = readinessLabel(row)
+  if (label === 'API 연결 가능') return 'badge badge-green'
+  if (label === 'API 연결 권장하지 않음') return 'badge badge-amber'
+  return 'badge badge-blue'
+}
+
+function ReadinessOverview({ rows, onOpenSettings }) {
+  const usable = rows.filter(row => row.availability?.available && row.tokens.some(token => token.status === 'active')).length
+  const needsReview = rows.filter(row => readinessLabel(row) !== 'API 연결 가능').length
+  return (
+    <section className="card" style={{ display: 'grid', gap: 14 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+        <div>
+          <p className="section-title" style={{ marginBottom: 6 }}>API 연결 상태 요약</p>
+          <h2 style={{ margin: 0, fontSize: 22 }}>예측 API로 연결해도 되는지 먼저 확인하세요</h2>
+        </div>
+        <button className="btn-secondary" onClick={onOpenSettings}>API 설정 열기</button>
+      </div>
+      <div className="workspace-grid four-columns">
+        <div className="card-compact">
+          <p style={{ margin: '0 0 6px', color: 'var(--text-label)', fontSize: 11, fontWeight: 800 }}>API 연결 가능</p>
+          <strong>{usable}개</strong>
+        </div>
+        <div className="card-compact">
+          <p style={{ margin: '0 0 6px', color: 'var(--text-label)', fontSize: 11, fontWeight: 800 }}>검토 필요</p>
+          <strong>{needsReview}개</strong>
+        </div>
+        <div className="card-compact">
+          <p style={{ margin: '0 0 6px', color: 'var(--text-label)', fontSize: 11, fontWeight: 800 }}>전체 프로젝트</p>
+          <strong>{rows.length}개</strong>
+        </div>
+        <div className="card-compact">
+          <p style={{ margin: '0 0 6px', color: 'var(--text-label)', fontSize: 11, fontWeight: 800 }}>보안 안내</p>
+          <strong>token 일부만 표시</strong>
+        </div>
+      </div>
+      <div className="banner-warning" style={{ alignItems: 'flex-start' }}>
+        <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.6 }}>
+          성능이 약하거나 타깃이 불명확한 모델은 바로 운영 API로 연결하지 말고 보고서와 데이터 품질을 먼저 확인하세요.
+        </p>
+      </div>
+    </section>
+  )
+}
+
+function ApiExamplePanel({ row }) {
+  const endpoint = row?.project?.id ? `/api/projects/${row.project.id}/predict` : '/api/v2/<model_id>/predict'
+  const payload = JSON.stringify({ records: [{ feature_1: 10, feature_2: 'A' }] }, null, 2)
+  const curl = `curl -X POST "${endpoint}" \\\n  -H "Content-Type: application/json" \\\n  -H "Authorization: Bearer <prediction_api_token>" \\\n  -d '${payload.replace(/\n/g, '')}'`
+  return (
+    <section className="card" style={{ display: 'grid', gap: 12 }}>
+      <p className="section-title">요청 예시</p>
+      <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.6 }}>
+        실제 endpoint와 token은 프로젝트 상세의 API 탭에서 확인하세요. 전체 token은 목록 화면에 노출하지 않습니다.
+      </p>
+      <div className="workspace-grid two-columns">
+        <div className="card-compact" style={{ display: 'grid', gap: 8 }}>
+          <strong>필수 입력 항목</strong>
+          <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.55 }}>
+            모델 학습에 사용한 컬럼과 같은 이름의 JSON 값을 보내야 합니다. 입력 스키마가 보이지 않으면 프로젝트 상세에서 다시 확인하세요.
+          </p>
+        </div>
+        <div className="card-compact" style={{ display: 'grid', gap: 8 }}>
+          <strong>응답 예시</strong>
+          <code style={{ whiteSpace: 'pre-wrap', fontSize: 12 }}>{JSON.stringify({ prediction: 'class_A', confidence: 0.82 }, null, 2)}</code>
+        </div>
+      </div>
+      <pre style={{ margin: 0, padding: 14, borderRadius: 12, overflowX: 'auto', background: '#0f172a', color: '#e2e8f0', fontSize: 12 }}><code>{curl}</code></pre>
+    </section>
+  )
+}
+
 export default function WorkspacePredictionApis() {
   const nav = useNavigate()
   const [rows, setRows] = useState(null)
@@ -38,60 +119,73 @@ export default function WorkspacePredictionApis() {
     <div className="animate-fade-in" style={{ padding: 24, maxWidth: 1180 }}>
       <WorkspacePageHeader
         title="예측 API"
-        description="프로젝트별 API token 상태, 사용 가능 여부, 호출 횟수, 데이터셋/모델 준비 상태를 확인합니다."
+        description="프로젝트별 API 연결 가능 여부, token 상태, 호출 횟수, 데이터셋/모델 준비 상태를 확인합니다."
         action={<button className="btn-primary" onClick={() => nav('/deploy')}>API 설정 열기</button>}
       />
+      <ReadinessOverview rows={visible} onOpenSettings={() => nav('/deploy')} />
       {!visible.length ? (
-        <EmptyState
-          title="아직 사용할 수 있는 예측 API가 없습니다."
-          description="분석을 완료한 프로젝트에서 예측 API를 만들면 여기에 표시됩니다."
-          action={<button className="btn-primary" onClick={() => nav('/deploy')}>API 설정 열기</button>}
-        />
-      ) : (
-        <section className="card" style={{ overflowX: 'auto' }}>
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>프로젝트</th>
-                <th>API 상태</th>
-                <th>token</th>
-                <th>마지막 사용</th>
-                <th>호출 수</th>
-                <th>데이터셋/모델</th>
-                <th>작업</th>
-              </tr>
-            </thead>
-            <tbody>{visible.map(row => {
-              const active = row.tokens.filter(token => token.status === 'active')
-              const revoked = row.tokens.filter(token => token.status === 'revoked')
-              const calls = row.tokens.reduce((sum, token) => sum + Number(token.usage_count || 0), 0)
-              const status = availabilityStatus(row)
-              return (
-                <tr key={row.project.id}>
-                  <td>
-                    <Link to={`/projects/${row.project.id}?tab=api`}><strong>{row.project.name}</strong></Link>
-                    <br />
-                    <span style={{ color: 'var(--text-label)' }}>{row.project.id}</span>
-                  </td>
-                  <td><StatusBadge status={status} /></td>
-                  <td>
-                    {active.length} 활성 / {revoked.length} 폐기 / {row.tokens.length} 전체
-                    <br />
-                    <span style={{ color: 'var(--text-label)' }}>목록에는 전체 token을 표시하지 않습니다.</span>
-                  </td>
-                  <td>{latestUsed(row.tokens)}</td>
-                  <td>{calls}</td>
-                  <td>
-                    <strong>{statusLabel(status)}</strong>
-                    <br />
-                    <span style={{ color: 'var(--text-2)' }}>{availabilityText(row)}</span>
-                  </td>
-                  <td><button className="btn-secondary" onClick={() => nav(`/projects/${row.project.id}?tab=api`)}>token 관리</button></td>
-                </tr>
-              )
-            })}</tbody>
-          </table>
+        <section className="card empty-state">
+          <strong className="empty-title">아직 API 호출 기록이나 연결 가능한 예측 API가 없어요.</strong>
+          <p className="empty-desc">
+            분석이 완료된 프로젝트에서 API token을 만들면 여기에 표시됩니다. 준비가 끝나면 cURL 예시로 바로 테스트할 수 있습니다.
+          </p>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+            <button className="btn-primary" onClick={() => nav('/deploy')}>API 설정 열기</button>
+            <button className="btn-secondary" onClick={() => nav('/agent-mode')}>목표 기반 분석 시작</button>
+          </div>
         </section>
+      ) : (
+        <>
+          <section className="card" style={{ overflowX: 'auto' }}>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>프로젝트</th>
+                  <th>API 준비도</th>
+                  <th>token</th>
+                  <th>마지막 사용</th>
+                  <th>호출 수</th>
+                  <th>데이터셋/모델</th>
+                  <th>작업</th>
+                </tr>
+              </thead>
+              <tbody>{visible.map(row => {
+                const active = row.tokens.filter(token => token.status === 'active')
+                const revoked = row.tokens.filter(token => token.status === 'revoked')
+                const calls = row.tokens.reduce((sum, token) => sum + Number(token.usage_count || 0), 0)
+                const status = availabilityStatus(row)
+                return (
+                  <tr key={row.project.id}>
+                    <td>
+                      <Link to={`/projects/${row.project.id}?tab=api`}><strong>{row.project.name}</strong></Link>
+                      <br />
+                      <span style={{ color: 'var(--text-label)' }}>{String(row.project.id).slice(0, 8)}</span>
+                    </td>
+                    <td>
+                      <span className={readinessTone(row)}>{readinessLabel(row)}</span>
+                      <br />
+                      <StatusBadge status={status} />
+                    </td>
+                    <td>
+                      {active.length} 활성 / {revoked.length} 폐기 / {row.tokens.length} 전체
+                      <br />
+                      <span style={{ color: 'var(--text-label)' }}>전체 token은 표시하지 않습니다.</span>
+                    </td>
+                    <td>{latestUsed(row.tokens)}</td>
+                    <td>{calls}</td>
+                    <td>
+                      <strong>{statusLabel(status)}</strong>
+                      <br />
+                      <span style={{ color: 'var(--text-2)' }}>{availabilityText(row)}</span>
+                    </td>
+                    <td><button className="btn-secondary" onClick={() => nav(`/projects/${row.project.id}?tab=api`)}>token 관리</button></td>
+                  </tr>
+                )
+              })}</tbody>
+            </table>
+          </section>
+          <ApiExamplePanel row={visible[0]} />
+        </>
       )}
     </div>
   )

@@ -143,6 +143,191 @@ function BusinessSummary({ data }) {
   )
 }
 
+function reportTarget(dataset) {
+  return dataset?.target_col || dataset?.target_column || '예측 타깃'
+}
+
+function reportDatasetName(summary, dataset) {
+  return dataset?.filename || dataset?.original_filename || dataset?.dataset_name || summary?.project_name || '업로드한 CSV'
+}
+
+function detectReportDomain(summary, dataset) {
+  const text = `${reportTarget(dataset)} ${reportDatasetName(summary, dataset)} ${summary?.executive_summary || ''}`.toLowerCase()
+  if (/(diabetes|outcome|glucose|bmi|당뇨)/.test(text)) return 'diabetes'
+  if (/(churn|이탈|retention)/.test(text)) return 'churn'
+  if (/(failure|defect|fault|고장|불량)/.test(text)) return 'failure'
+  if (/(sales|revenue|demand|price|매출|수요|가격)/.test(text)) return 'business'
+  return 'general'
+}
+
+function reportConclusion(summary, dataset, opt) {
+  const target = reportTarget(dataset)
+  const model = summary?.model_selection?.best_model
+  const noTarget = !dataset?.target_col && !dataset?.target_column
+  if (noTarget) {
+    return {
+      status: '검토 필요',
+      title: '명확한 예측 타깃이 부족해 탐색 보고서로 보는 것이 더 적합합니다.',
+      body: '먼저 어떤 값을 예측하고 싶은지 정한 뒤 타깃 컬럼을 다시 선택하는 것을 권장합니다.',
+    }
+  }
+  return {
+    status: model ? '보고서 준비됨' : '주의 필요',
+    title: `${target} 예측 분석 보고서가 준비되었습니다.`,
+    body: model
+      ? reportSummaryText(summary, dataset, opt)
+      : '선택 모델 정보가 충분하지 않아 결과 해석에는 주의가 필요합니다.',
+  }
+}
+
+function ReportConclusion({ summary, dataset, opt }) {
+  const conclusion = reportConclusion(summary, dataset, opt)
+  const domain = detectReportDomain(summary, dataset)
+  const target = reportTarget(dataset)
+  const domainCopy = {
+    diabetes: '이 결과는 의료 진단을 대체하지 않으며, 참고용 예측 분석으로만 사용해야 합니다.',
+    churn: '이탈 가능성이 높은 고객을 우선 확인하고 유지 전략을 세우는 참고 자료로 사용할 수 있습니다.',
+    failure: '고장 또는 불량 위험이 높은 대상을 우선 점검하는 참고 지표로 사용할 수 있습니다.',
+    business: '수요, 매출, 가격 관련 운영 계획을 세울 때 참고할 수 있습니다.',
+    general: '모델 성능과 설명은 업로드된 데이터와 현재 검증 결과에 기반합니다.',
+  }
+  return (
+    <section className="card" style={{ display: 'grid', gap: 14, borderColor: conclusion.status === '주의 필요' || conclusion.status === '검토 필요' ? '#fcd34d' : 'rgba(16,185,129,0.25)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+        <div>
+          <p className="section-title" style={{ marginBottom: 6 }}>핵심 요약</p>
+          <h2 style={{ margin: 0, fontSize: 22, fontWeight: 900 }}>{conclusion.title}</h2>
+        </div>
+        <span className={conclusion.status === '보고서 준비됨' ? 'badge badge-green' : 'badge badge-amber'}>{conclusion.status}</span>
+      </div>
+      <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.65 }}>{conclusion.body}</p>
+      <div className="workspace-grid four-columns">
+        <MiniStat label="예측 목표" value={target} />
+        <MiniStat label="CSV" value={reportDatasetName(summary, dataset)} />
+        <MiniStat label="문제 유형" value={taskLabel(dataset.task_type)} tone="amber" />
+        <MiniStat label="선택 모델" value={summary?.model_selection?.best_model || '확인 필요'} tone={summary?.model_selection?.best_model ? 'green' : 'amber'} />
+      </div>
+      <div className="banner-warning" style={{ alignItems: 'flex-start' }}>
+        <AlertCircle size={16} />
+        <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6 }}>{domainCopy[domain]}</p>
+      </div>
+    </section>
+  )
+}
+
+function ImportantFactors({ features }) {
+  return (
+    <section className="card" style={{ display: 'grid', gap: 12 }}>
+      <p className="section-title">중요 요인</p>
+      {features?.length ? (
+        <div style={{ display: 'grid', gap: 8 }}>
+          {features.slice(0, 5).map((item, index) => {
+            const name = item.feature || item.name || item.column || `요인 ${index + 1}`
+            const value = item.importance ?? item.value ?? item.score
+            return (
+              <div key={`${name}-${index}`} className="card-elevated" style={{ padding: 12 }}>
+                <strong>{name}</strong>
+                <p style={{ margin: '6px 0 0', color: 'var(--text-2)', fontSize: 13, lineHeight: 1.55 }}>
+                  이 컬럼은 모델이 예측할 때 중요하게 사용한 정보입니다. 원인이라고 단정하지 말고 결과 해석의 참고 근거로 확인하세요.
+                  {value !== undefined ? ` 중요도: ${fmt(value)}` : ''}
+                </p>
+              </div>
+            )
+          })}
+        </div>
+      ) : (
+        <div className="banner-warning" style={{ alignItems: 'flex-start' }}>
+          <AlertCircle size={16} />
+          <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6 }}>
+            아직 중요 요인이 계산되지 않았습니다. 분석을 계속하거나 이유 보기 화면에서 확인해 주세요.
+          </p>
+        </div>
+      )}
+    </section>
+  )
+}
+
+function PerformanceSection({ summary, models, primaryMetric }) {
+  const metricRows = models
+    .map(model => ({
+      name: model.model || model.name || model.model_name || '모델',
+      value: model[primaryMetric] ?? model.score ?? model.metric,
+    }))
+    .filter(row => row.value !== undefined && row.value !== null)
+  const weak = metricRows.some(row => Number(row.value) < 0.65)
+  return (
+    <section className="card" style={{ display: 'grid', gap: 12 }}>
+      <p className="section-title">예측 성능</p>
+      {metricRows.length ? (
+        <>
+          <div className="workspace-grid four-columns">
+            {metricRows.slice(0, 4).map(row => <MiniStat key={row.name} label={row.name} value={fmt(row.value)} tone={weak ? 'amber' : 'green'} />)}
+          </div>
+          <p style={{ margin: 0, color: weak ? '#92400e' : 'var(--text-2)', lineHeight: 1.6 }}>
+            {weak
+              ? '현재 성능 지표가 충분히 높지 않을 수 있어 실제 의사결정에는 주의가 필요합니다. 데이터를 보완한 뒤 다시 실행하는 것을 권장합니다.'
+              : '현재 성능 지표는 업로드된 데이터와 검증 결과를 기준으로 계산되었습니다. 실제 사용 전에는 데이터 품질과 주의사항을 함께 확인하세요.'}
+          </p>
+        </>
+      ) : (
+        <div className="banner-warning" style={{ alignItems: 'flex-start' }}>
+          <AlertCircle size={16} />
+          <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6 }}>
+            아직 표시할 성능 지표가 없습니다. 모델 비교가 완료된 뒤 보고서를 다시 열어 주세요.
+          </p>
+        </div>
+      )}
+    </section>
+  )
+}
+
+function ReportLimitations({ summary, dataset }) {
+  const domain = detectReportDomain(summary, dataset)
+  const notes = [
+    '모델 성능과 설명은 업로드된 데이터와 현재 검증 결과에 기반합니다.',
+    '데이터가 부족하거나 결측값이 많으면 결과 신뢰도가 낮아질 수 있습니다.',
+    '예측 타깃이 불명확하거나 데이터 누수 가능성이 있으면 실제 사용 전 확인이 필요합니다.',
+    '운영 API에 연결하기 전에는 입력 형식, 성능, 사용 목적을 다시 검토해야 합니다.',
+  ]
+  if (domain === 'diabetes') notes.unshift('이 결과는 의료 진단을 대체하지 않으며 참고용 예측 분석으로만 사용해야 합니다.')
+  return (
+    <section className="card" style={{ display: 'grid', gap: 10 }}>
+      <p className="section-title">주의사항</p>
+      <ul style={{ margin: 0, paddingLeft: 20, color: 'var(--text-2)', lineHeight: 1.7 }}>
+        {notes.map(note => <li key={note}>{note}</li>)}
+      </ul>
+    </section>
+  )
+}
+
+function ReportNextSteps({ nav, noTarget }) {
+  const actions = noTarget
+    ? [
+      ['데이터 요약 보고서 보기', '/report'],
+      ['타깃 직접 선택', '/agent-mode'],
+      ['목표 다시 입력', '/agent-mode'],
+    ]
+    : [
+      ['새 데이터로 예측', '/predict'],
+      ['예측 API 보기', '/prediction-apis'],
+      ['다른 CSV로 다시 분석', '/upload'],
+      ['상세 실행 기록 보기', '/agent-mode'],
+    ]
+  return (
+    <section className="card" style={{ display: 'grid', gap: 12 }}>
+      <p className="section-title">다음에 할 일</p>
+      <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.6 }}>
+        보고서의 성능, 중요 요인, 주의사항을 확인한 뒤 예측 재사용 여부를 결정하세요.
+      </p>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        {actions.map(([label, path], index) => (
+          <Button key={label} variant={index === 0 ? 'default' : 'secondary'} onClick={() => nav(path)}>{label}</Button>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 export default function Report() {
   const nav = useNavigate()
   const location = useLocation()
@@ -215,9 +400,12 @@ export default function Report() {
       <div style={{ padding: 32, maxWidth: 960 }}>
         <div className="card empty-state">
           <AlertCircle size={42} color="#dc2626" />
-          <p className="empty-title" style={{ marginTop: 16 }}>아직 결과 요약이 준비되지 않았습니다</p>
-          <p className="empty-desc">{error}</p>
-          <Button variant="secondary" onClick={() => nav('/model-lab')}>모델 비교로 이동</Button>
+          <p className="empty-title" style={{ marginTop: 16 }}>아직 보고서가 준비되지 않았어요.</p>
+          <p className="empty-desc">분석이 끝나면 결과를 한눈에 정리해 드립니다. {error}</p>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+            <Button variant="secondary" onClick={() => nav('/agent-mode')}>분석 상태 보기</Button>
+            <Button onClick={() => nav('/agent-mode')}>목표 기반 분석 시작</Button>
+          </div>
         </div>
       </div>
     )
@@ -268,6 +456,8 @@ export default function Report() {
             </div>
           )}
 
+          <ReportConclusion summary={summary} dataset={dataset} opt={opt} />
+
           <StatusRecoveryPanel status={summary.analysis_status} limits={summary.usage_limits} compact />
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 14 }} className="report-stat-grid">
@@ -278,20 +468,15 @@ export default function Report() {
           </div>
 
           <BusinessSummary data={business} />
+          <ImportantFactors features={features} />
+          <PerformanceSection summary={summary} models={topModels} primaryMetric={primaryMetric} />
+          <ReportLimitations summary={summary} dataset={dataset} />
           <TrustSummaryPanel summary={summary} models={topModels} primaryMetric={primaryMetric} />
           <EvidenceSummaryPanel summary={summary} models={topModels} primaryMetric={primaryMetric} features={features} />
           <AnalysisTracePanel summary={summary} />
           <ReportStoryPanel points={summary.presentation_points} summary={summary.executive_summary} />
 
-          <div className="card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, background: 'var(--surface-alt)' }}>
-            <div>
-              <p style={{ margin: '0 0 4px', fontSize: 13, fontWeight: 850, color: 'var(--text)' }}>다음 단계</p>
-              <p style={{ margin: 0, fontSize: 12, color: 'var(--text-2)' }}>
-                선택된 모델이 어떤 정보를 중요하게 보는지 확인한 뒤 새 데이터 예측이나 API 재사용으로 이어갈 수 있습니다.
-              </p>
-            </div>
-            <Button onClick={() => nav('/xai')} style={{ flexShrink: 0 }}>이유 보기로 이동</Button>
-          </div>
+          <ReportNextSteps nav={nav} noTarget={!dataset.target_col && !dataset.target_column} />
         </div>
         <ReportSidePanel
           open={sideOpen}
