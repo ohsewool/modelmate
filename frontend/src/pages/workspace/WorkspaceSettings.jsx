@@ -211,7 +211,7 @@ export default function WorkspaceSettings() {
     <div className="animate-fade-in" style={{ padding: 24, maxWidth: 1100 }}>
       <WorkspacePageHeader
         title="설정"
-        description="계정, 현재 플랜, 사용량, 운영 지원 정보를 확인합니다. 베타 MVP에서는 실제 결제나 자동 업그레이드가 연결되어 있지 않습니다."
+        description="계정, 플랜, 사용량을 확인합니다."
       />
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }} className="admin-detail-grid">
         <section className="card">
@@ -226,7 +226,7 @@ export default function WorkspaceSettings() {
           <p style={{ color: 'var(--text-2)', fontSize: 13, lineHeight: 1.6 }}>
             {usage.upgrade?.message || '베타 기간에는 플랜 변경을 수동으로 처리합니다.'}
           </p>
-          <p style={{ color: 'var(--text-label)', fontSize: 12 }}>결제 기능이 완성된 제품처럼 보이지 않도록 의도적으로 안내 수준으로 표시합니다.</p>
+          <p style={{ color: 'var(--text-label)', fontSize: 12 }}>현재는 결제 없이 안내용으로만 표시합니다.</p>
           <button className="btn-secondary" type="button" onClick={() => setPilotOpen(true)} style={{ marginTop: 12 }}>
             한도 조정 문의
           </button>
@@ -241,7 +241,7 @@ export default function WorkspaceSettings() {
         <section className="card" style={{ display: 'grid', gap: 12 }}>
           <p className="section-title">지원 정보</p>
           <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.6 }}>
-            문제가 발생하면 화면에 표시되는 request ID 또는 error ID를 함께 전달해 주세요. 원인을 더 빠르게 확인할 수 있습니다.
+            문제가 있으면 request ID 또는 error ID를 함께 보내 주세요.
           </p>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             <a href="https://github.com/ohsewool/-/blob/main/docs/privacy.md" target="_blank" rel="noreferrer">개인정보 안내</a>

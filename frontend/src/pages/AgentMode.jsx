@@ -615,6 +615,17 @@ export default function AgentMode() {
         </p>
       </details>
 
+      <section className="card" style={{ padding: 14 }}>
+        <div className="workspace-grid four-columns">
+          {['CSV 선택', '예측값 추천', '분석 실행', '결과 확인'].map((step, index) => (
+            <div key={step} className="card-compact" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ width: 24, height: 24, borderRadius: 8, display: 'grid', placeItems: 'center', background: '#eff6ff', color: '#2563eb', fontSize: 12, fontWeight: 900 }}>{index + 1}</span>
+              <strong>{step}</strong>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {error && <div className="alert alert-warning"><ShieldAlert size={16} /> {error}</div>}
 
       <div className="workspace-grid two-columns">

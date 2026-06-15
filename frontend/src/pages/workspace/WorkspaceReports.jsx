@@ -12,10 +12,19 @@ export default function WorkspaceReports() {
   }, [])
 
   if (!reports) return <div style={{ padding: 24 }}><LoadingState label="보고서를 불러오는 중입니다." /></div>
+  const readyCount = reports.length
+  const modelCount = reports.filter(report => report.best_model || report.model_summary?.best_model).length
+  const metricCount = reports.filter(report => report.metric_summary?.best_metric || report.best_metric).length
 
   return (
     <div className="animate-fade-in" style={{ padding: 24, maxWidth: 1180 }}>
       <WorkspacePageHeader title="보고서" description="분석 보고서와 다음 행동을 확인합니다." action={<button className="btn-primary" onClick={() => nav('/report')}>현재 보고서 열기</button>} />
+      <div className="workspace-grid four-columns" style={{ marginBottom: 18 }}>
+        <section className="card-compact"><p className="section-title">보고서</p><strong>{readyCount}</strong></section>
+        <section className="card-compact"><p className="section-title">모델 요약</p><strong>{modelCount}</strong></section>
+        <section className="card-compact"><p className="section-title">성능 지표</p><strong>{metricCount}</strong></section>
+        <section className="card-compact"><p className="section-title">다음 행동</p><strong>확인</strong></section>
+      </div>
       {!reports.length ? (
         <section className="card empty-state">
           <strong className="empty-title">아직 보고서가 준비되지 않았어요.</strong>

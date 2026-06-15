@@ -37,14 +37,27 @@ export default function WorkspaceJobs() {
   }, [jobs, filter])
 
   if (!jobs) return <div style={{ padding: 24 }}><LoadingState label="작업 상태를 불러오는 중입니다." /></div>
+  const activeCount = jobs.filter(job => ['created', 'queued', 'running'].includes(job.status)).length
+  const failedCount = jobs.filter(isFailed).length
+  const completedCount = jobs.filter(job => ['succeeded', 'success', 'completed'].includes(job.status)).length
 
   return (
     <div className="animate-fade-in" style={{ padding: 24, maxWidth: 1180 }}>
       <WorkspacePageHeader
         title="작업"
-        description="분석 작업의 진행 상태, 실패 원인, 복구 방법, 연결된 프로젝트를 한 곳에서 확인합니다."
-        action={<button className="btn-primary" onClick={() => nav('/new')}>새 분석 시작</button>}
+        description="분석 진행 상태와 복구 안내를 확인합니다."
+        action={<div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          <button className="btn-secondary" onClick={() => nav('/agent-mode')}>목표 기반 분석</button>
+          <button className="btn-primary" onClick={() => nav('/new')}>CSV 올리기</button>
+        </div>}
       />
+
+      <div className="workspace-grid four-columns" style={{ marginBottom: 18 }}>
+        <section className="card-compact"><p className="section-title">전체 작업</p><strong>{jobs.length}</strong></section>
+        <section className="card-compact"><p className="section-title">진행 중</p><strong>{activeCount}</strong></section>
+        <section className="card-compact"><p className="section-title">완료</p><strong>{completedCount}</strong></section>
+        <section className="card-compact"><p className="section-title">실패</p><strong>{failedCount}</strong></section>
+      </div>
 
       <div className="tab-bar" style={{ width: 'fit-content', marginBottom: 18 }}>
         {[
@@ -62,10 +75,10 @@ export default function WorkspaceJobs() {
         <EmptyState
           title={filter === 'failed' ? '아직 실패한 작업이 없습니다.' : '아직 실행한 작업이 없습니다.'}
           description={filter === 'failed'
-            ? '실패한 작업이 생기면 원인, 오류 ID, 복구 안내가 여기에 표시됩니다.'
-            : '목표를 정해 분석을 시작하면 진행 상태와 복구 안내가 여기에 표시됩니다.'}
+            ? '실패 원인과 복구 안내가 여기에 표시됩니다.'
+            : '분석을 시작하면 진행 상태가 여기에 표시됩니다.'}
           action={<div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
-            <button className="btn-primary" onClick={() => nav('/agent-mode')}>목표 기반 분석 시작</button>
+            <button className="btn-primary" onClick={() => nav('/agent-mode')}>목표 기반 분석</button>
             <button className="btn-secondary" onClick={() => nav('/new')}>CSV 올리기</button>
           </div>}
         />

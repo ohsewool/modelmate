@@ -1057,3 +1057,37 @@ Milestones:
 - Known limitations:
   - Browser automation is not installed in this runtime, so final visual QA should happen manually after Railway redeploy.
   - Vite still reports the existing large bundle warning; no new dependency or code-splitting change was introduced in this PR.
+
+## 2026-06-16 KST - UI/UX PR-07 Upload Screen Design Language Alignment
+
+- Status: done
+- Branch: `main`
+- Scope:
+  - Aligned workspace pages with the polished upload-screen design language.
+  - Kept the work scoped to frontend copy/layout hierarchy and did not change backend APIs, routes, agent execution, quick automatic analysis, report data, prediction API behavior, or trace persistence.
+- Files changed:
+  - `frontend/src/components/workspace-shell/WorkspaceShell.jsx`
+  - `frontend/src/pages/AgentMode.jsx`
+  - `frontend/src/pages/workspace/WorkspaceJobs.jsx`
+  - `frontend/src/pages/workspace/WorkspaceProjects.jsx`
+  - `frontend/src/pages/workspace/WorkspaceReports.jsx`
+  - `frontend/src/pages/workspace/WorkspaceSettings.jsx`
+  - `.codex/RUN_LOG.md`
+- Design alignment:
+  - Workspace navigation now uses the user-facing label `목표 기반 분석` instead of exposing `Agent Mode` as the default label.
+  - Projects, Jobs, and Reports pages now include compact summary cards, shorter Korean-first descriptions, and upload-style empty states.
+  - Agent Mode first screen now has a compact step strip that matches the upload flow rhythm: CSV 선택, 예측값 추천, 분석 실행, 결과 확인.
+  - Settings copy was shortened to feel closer to the upload screen tone and avoid over-explaining payment/plan status.
+- CTA cleanup:
+  - Projects and Jobs headers now prioritize `CSV 올리기` / `목표 기반 분석` instead of competing long-form actions.
+  - Empty states now provide one clear primary action and one secondary route where useful.
+- Verification result:
+  - `python -m compileall backend`: passed.
+  - `cd frontend && npm run build`: passed through bundled Vite/Node runtime because `npm` is not available on PATH.
+  - Source check confirmed no `/agent-mode/undefined` literal and no raw default `Agent Mode`, `Agent Run`, or `Tool Calls` labels in the checked workspace/Agent UI. Internal trace variable names such as `observations`, `decisions`, `validations`, and `artifacts` remain in code as expected.
+- Known limitations:
+  - Browser automation is not installed in this runtime, so visual QA should still be completed manually after Railway redeploy.
+  - Dashboard had already been polished in PR-06 and was not heavily changed again in this pass.
+  - Some deeper admin/settings sub-sections may still benefit from future visual polish, but the main workspace pages now follow the upload-screen card and CTA rhythm more closely.
+- Next step:
+  - Push and redeploy Railway, then manually check `/upload`, `/dashboard`, `/agent-mode`, `/projects`, `/jobs`, `/reports`, `/prediction-apis`, and `/settings`.

@@ -13,20 +13,30 @@ export default function WorkspaceProjects() {
   }, [])
 
   if (!data) return <div style={{ padding: 24 }}><LoadingState label="프로젝트를 불러오는 중입니다." /></div>
+  const projects = data.projects || []
+  const activeProjects = projects.filter(project => !['deleted', 'archived'].includes(project.archive_status)).length
+  const reportReady = projects.filter(project => project.last_report_id || project.report_id || project.report).length
+  const apiReady = projects.filter(project => project.prediction_api_enabled || project.api_token_count || project.prediction_tokens?.length).length
 
   return (
     <div className="animate-fade-in" style={{ padding: 24, maxWidth: 1180 }}>
       <WorkspacePageHeader
         title="프로젝트"
-        description="저장된 분석, 연결된 데이터셋, 최근 실행 기록, 보고서와 예측 API를 프로젝트별로 확인합니다."
-        action={<button className="btn-primary" onClick={() => nav('/new')}>새 분석 시작</button>}
+        description="저장된 분석과 결과를 확인합니다."
+        action={<button className="btn-primary" onClick={() => nav('/new')}>CSV 올리기</button>}
       />
-      {!data.projects.length ? (
+      <div className="workspace-grid four-columns" style={{ marginBottom: 18 }}>
+        <section className="card-compact"><p className="section-title">프로젝트</p><strong>{projects.length}</strong></section>
+        <section className="card-compact"><p className="section-title">활성</p><strong>{activeProjects}</strong></section>
+        <section className="card-compact"><p className="section-title">보고서</p><strong>{reportReady}</strong></section>
+        <section className="card-compact"><p className="section-title">예측 API</p><strong>{apiReady}</strong></section>
+      </div>
+      {!projects.length ? (
         <div style={{ display: 'grid', gap: 14 }}>
           <EmptyState
-            title="최근 프로젝트가 없어요."
-            description="첫 CSV를 올려 워크스페이스를 만들어 보세요. 샘플 사용 사례로 전체 흐름을 먼저 확인할 수도 있습니다."
-            action={<div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}><button className="btn-primary" onClick={() => nav('/new')}>CSV 업로드</button><button className="btn-secondary" onClick={() => nav('/agent-mode')}>목표 기반 분석 시작</button><button className="btn-secondary" onClick={() => nav('/new')}>샘플로 체험하기</button></div>}
+            title="아직 프로젝트가 없어요."
+            description="CSV를 올려 첫 프로젝트를 만들어 보세요."
+            action={<div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}><button className="btn-primary" onClick={() => nav('/new')}>CSV 올리기</button><button className="btn-secondary" onClick={() => nav('/agent-mode')}>목표 기반 분석</button></div>}
           />
           <DemoDatasetGuide compact onStart={() => nav('/new')} />
         </div>
@@ -45,9 +55,9 @@ export default function WorkspaceProjects() {
                 <th>작업</th>
               </tr>
             </thead>
-            <tbody>{data.projects.map(project => (
+            <tbody>{projects.map(project => (
               <tr key={project.id}>
-                <td><Link to={`/projects/${project.id}`}><strong>{project.name}</strong></Link><br /><span style={{ color: 'var(--text-label)' }}>{project.id}</span></td>
+                <td><Link to={`/projects/${project.id}`}><strong>{project.name}</strong></Link><br /><span style={{ color: 'var(--text-label)' }}>참조 {String(project.id).slice(0, 8)}</span></td>
                 <td><StatusBadge status={project.archive_status || 'active'} /></td>
                 <td>{fmt(projectTarget(project))}</td>
                 <td>{projectDatasetName(project)}</td>
