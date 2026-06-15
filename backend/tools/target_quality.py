@@ -23,8 +23,8 @@ MEANINGFUL_RE = re.compile(
 ADMIN_RE = re.compile(
     r"(^id$|_id$|uuid|guid|idx|index|serial|row|key|code|code_name|codename|name|"
     r"email|phone|address|addr|zip|postal|url|link|memo|note|description|"
-    r"번호|일련번호|코드|코드명|명$|이름|주소|전화|전화번호|우편번호|일자|날짜|시간|"
-    r"등록|수정|비고|설명|메모|시설명|구분코드|구분코드명|지역명|시군구명|"
+    r"번호|일련번호|코드|코드명|이름|주소|전화|전화번호|우편번호|일자|날짜|시간|"
+    r"등록|수정|비고|설명|메모|시설명|구분코드|구분코드명|지역명|지점명|시군구명|"
     r"관리기관|법정동|행정동)",
     re.I,
 )
@@ -64,7 +64,7 @@ def code_name_pair_warnings(column: str, columns: list[str]) -> list[str]:
         if other_base and other_base == base:
             warnings.append(
                 f"{column} 컬럼은 {other} 컬럼과 코드/코드명 쌍처럼 보입니다. "
-                "서로 직접 연결되어 있을 수 있어 예측 누수 위험이 있습니다."
+                "서로 직접 연결되어 있을 수 있어 예측 필수 항목으로 쓰기 전 확인이 필요합니다."
             )
     return warnings
 
@@ -94,7 +94,6 @@ def score_target_stats(
     unique_ratio = _unique_ratio(unique_count, row_count)
     task_type = infer_task_type_from_stats(name, unique_count, row_count, is_numeric)
     meaningful_name = bool(MEANINGFUL_RE.search(name))
-    score = 0.3
     technical_score = 0.35
     usefulness = 0.0
     labels: list[str] = []

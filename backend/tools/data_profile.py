@@ -14,7 +14,10 @@ from typing import Any
 import pandas as pd
 
 
-ID_NAME_RE = re.compile(r"(^id$|_id$|id_|uuid|guid|name|email|phone|address|addr|주민|이름|주소|전화|메일)", re.I)
+ID_NAME_RE = re.compile(
+    r"(^id$|_id$|id_|uuid|guid|name|email|phone|address|addr|주민|이름|주소|전화|메일|이메일)",
+    re.I,
+)
 
 
 def dataframe_from_arguments(arguments: dict[str, Any]) -> pd.DataFrame | None:

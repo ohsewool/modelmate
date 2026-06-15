@@ -987,3 +987,37 @@ Milestones:
   - Existing console output can show Korean mojibake in PowerShell, but source files are UTF-8 and build successfully.
 - Next PR:
   - Redeploy Railway and walk through the final demo flow using the recommended sample data.
+
+## 2026-06-15 KST - Final QA Pass for UI/UX PR-01 through PR-05
+
+- Status: completed with one critical copy/target-quality fix
+- Branch: `main`
+- Scope:
+  - Verified Korean-first UI/UX polish after UI/UX PR-01 through PR-05.
+  - Checked dashboard, upload route, Agent Mode, Agent Run Detail, report, prediction API, and advanced trace route definitions by source inspection.
+  - Confirmed no `/agent-mode/undefined` literal or raw default trace labels such as `Tool Calls`, `Observations`, `Decisions`, `Validations`, or `Artifacts` are exposed in the checked default UI files.
+- Critical issue found:
+  - Target recommendation backend copy and ID/admin column handling needed final cleanup so user-facing recommendation explanations stay Korean-first and meaningful.
+- Files changed:
+  - `backend/tools/data_profile.py`
+  - `backend/tools/target_quality.py`
+  - `backend/tools/target_recommendation.py`
+  - `.codex/RUN_LOG.md`
+- Fixes applied:
+  - Added `이메일` to ID-like profiling detection.
+  - Kept ID/code/name/address/admin metadata columns from being strongly recommended as primary prediction targets.
+  - Normalized target recommendation wording to clear Korean, e.g. `예측 타깃 후보`.
+  - Kept the deterministic target recommendation behavior intact; no fake data or trace records were added.
+- Target recommendation smoke result:
+  - `sample_data/customer_churn_demo.csv`: recommended `churn`, rejected `customer_id` as ID-like.
+  - Temporary diabetes-shaped QA dataframe: recommended `Outcome`.
+  - `sample_data/public_bike_signup_demo.csv`: returned `needs_human_review` instead of forcing a weak public/admin target.
+- Build result:
+  - `python -m compileall backend`: passed.
+  - `cd frontend && npm run build`: passed through bundled Vite/Node runtime because `npm` is not available on PATH.
+- Deployment check:
+  - Railway root currently references `assets/index-BFkGz1QT.js` and `assets/index-BCKmVHXQ.css`.
+  - Backend Python changes require Railway redeploy for the target recommendation copy fix to appear in production.
+- Known limitations:
+  - Browser automation is not installed in this runtime, so final visual QA should still be performed manually on Railway after redeploy.
+  - The repository does not include a committed Pima diabetes CSV; diabetes behavior was smoke-tested with an in-memory diabetes-shaped dataframe and source-level goal suggestion checks.

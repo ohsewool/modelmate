@@ -90,7 +90,7 @@ def recommend_targets(
     ]
     recommended = accepted[0] if accepted else None
     action = (
-        f"{recommended['column_name']} 컬럼을 의미 있는 타깃 후보로 검토하고 leakage_check_tool을 실행하세요."
+        f"{recommended['column_name']} 컬럼을 예측 타깃 후보로 검토하고 leakage_check_tool을 실행하세요."
         if recommended
         else "좋은 타깃 후보가 없으므로 사용자에게 예측 목적을 다시 확인하세요."
     )
