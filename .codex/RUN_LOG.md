@@ -688,3 +688,56 @@ Milestones:
   - Browser automation is not installed in this runtime, so verification used API smoke checks, direct SPA route checks, and build output.
 - Next PR:
   - none until this hotfix is pushed and Railway serves the rebuilt frontend bundle.
+
+## 2026-06-15 KST - Target Recommendation Quality Hotfix
+
+- Status: done
+- Branch: `main`
+- Task file: user request `Target Recommendation Quality Hotfix`
+- Planned verification checklist:
+  - [x] Target recommendation scores usefulness, not only technical predictability.
+  - [x] ID/code/name/address/date/admin metadata columns are not recommended as top targets unless explicitly chosen.
+  - [x] Code/code-name pairs are flagged as possible leakage risk.
+  - [x] If no meaningful target exists, the API/UI can say `이 CSV에서는 바로 예측할 만한 명확한 타깃을 찾기 어렵습니다.`
+  - [x] Agent Mode suggested goal avoids stale customer-churn text when no meaningful target is available.
+  - [x] Human review options include target usefulness information.
+  - [x] Existing upload/quick analysis/Agent Mode behavior is preserved.
+  - [x] Backend compile passes.
+  - [x] Frontend build passes.
+- Root cause:
+  - Target selection previously leaned on technical predictability and simple name heuristics, so administrative columns such as codes, names, dates, or playground metadata could appear as prediction targets.
+  - Upload and Agent Mode did not carry an explicit target-quality signal, so weak targets could still look like normal recommendations.
+- Files changed:
+  - `backend/tools/target_quality.py`
+  - `backend/tools/target_recommendation.py`
+  - `backend/main_parts/011_analyze_columns.part`
+  - `backend/main_parts/010_upload.part`
+  - `backend/agents/executor.py`
+  - `frontend/src/pages/AgentMode.jsx`
+  - rebuilt `frontend/dist`
+  - `.codex/RUN_LOG.md`
+- Implementation summary:
+  - Added deterministic target usefulness scoring with `technical_score`, `usefulness_score`, `usefulness_label`, `quality_labels`, and human-readable caution messages.
+  - Penalized or rejected ID/code/name/address/date/admin metadata targets for automatic recommendation.
+  - Added code/code-name pair warnings for possible leakage-like direct mappings.
+  - Added `target_quality`, `has_meaningful_target`, and `target_warning` to upload/analyze-column responses.
+  - Agent Mode now avoids using a weak target for dataset-aware goal suggestions and falls back to a review-oriented goal.
+  - Human review target options now show usefulness labels and reasons instead of only raw column names.
+- Verification result:
+  - Function-level target cases:
+    - Pima/diabetes-style CSV recommended `Outcome`, `has_meaningful_target=True`.
+    - Churn-style CSV recommended `churn`, `has_meaningful_target=True`.
+    - Admin/playground CSV returned no recommended target and `needs_human_review`.
+    - Business numeric CSV recommended `demand`, `has_meaningful_target=True`.
+  - Local `/api/upload` smoke:
+    - `pima-indians-diabetes.csv`: `default_target=Outcome`, `meaningful=True`.
+    - `admin-playground.csv`: `meaningful=False`, warning returned.
+    - `business-demand.csv`: `default_target=demand`, `meaningful=True`.
+- Build result:
+  - `python -m compileall backend` passed.
+  - Bundled Vite build passed because `npm` is not available on PATH.
+- Known limitations:
+  - Target usefulness remains deterministic and heuristic-based; ambiguous business CSVs may still require human review.
+  - Admin CSV upload still keeps a fallback `default_target` for legacy compatibility, but marks it as poor and returns the no-meaningful-target warning.
+- Next PR:
+  - No next roadmap PR until this hotfix is reviewed/deployed.

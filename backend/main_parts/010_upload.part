@@ -69,9 +69,14 @@ async def upload(file: UploadFile = File(...), user=Depends(get_current_user)):
     cat_cols = df.select_dtypes(include=["object", "category"]).columns.tolist()
     num_cols = df.select_dtypes(include=["number"]).columns.tolist()
     default_target = infer_default_target(df)
+    target_quality = infer_target_quality(df, default_target)
+    quality = {**quality, "target_quality": target_quality}
     suggested_drop, drop_reasons = suggested_feature_drops(df, target_col=default_target)
     domain_info = infer_target_category(df, default_target)
     saved_dataset = save_dataset_record(user, file.filename, df, default_target, quality, domain_info)
+    if saved_dataset:
+        saved_dataset["target_quality"] = target_quality
+        saved_dataset["has_meaningful_target"] = target_quality.get("has_meaningful_target", False)
     guardrail_warnings = dataset_guardrail_warnings(df)
     set_analysis_status(
         "succeeded",
@@ -88,6 +93,9 @@ async def upload(file: UploadFile = File(...), user=Depends(get_current_user)):
         "encoding": encoding,
         "preview": df.head(8).fillna("").to_dict("records"),
         "default_target": default_target,
+        "target_quality": target_quality,
+        "has_meaningful_target": target_quality.get("has_meaningful_target", False),
+        "target_warning": target_quality.get("message"),
         "missing_total": int(df.isnull().sum().sum()),
         "dataset_quality": quality,
         "saved_dataset": saved_dataset,

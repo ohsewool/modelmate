@@ -317,14 +317,21 @@ def _create_review_if_needed(conn, run: dict[str, Any], step: dict[str, Any], to
     flags = set((run.get("interpreted_goal") or {}).get("review_flags") or [])
     plan_step_id = step["plan_step_id"]
     if tool_name == "target_recommendation_tool" and (step.get("requires_human_review") or "target_ambiguous" in flags):
-        candidates = output.get("candidate_targets") or []
+        candidates = (output.get("candidate_targets") or []) + (output.get("weak_candidate_targets") or [])
         options = [
             {"id": "continue", "label": "추천 타깃으로 계속 진행", "value": (output.get("recommended_target") or {}).get("column_name")},
             {"id": "stop", "label": "분석 중단"},
         ]
         if candidates:
             options = [
-                {"id": f"select:{item.get('column_name')}", "label": f"{item.get('column_name')} 선택", "value": item.get("column_name")}
+                {
+                    "id": f"select:{item.get('column_name')}",
+                    "label": f"{item.get('column_name')}로 예측",
+                    "value": item.get("column_name"),
+                    "reason": item.get("usefulness_explanation") or item.get("reason"),
+                    "description": f"유용성: {item.get('usefulness_label', '검토 필요')} · {', '.join(item.get('quality_labels') or ['검토 필요'])}",
+                    "recommended": item.get("suitability") == "good",
+                }
                 for item in candidates[:5]
             ] + options
         create_human_review_request(
@@ -334,8 +341,8 @@ def _create_review_if_needed(conn, run: dict[str, Any], step: dict[str, Any], to
             tool_call_id=tool_call_id,
             review_type="target_ambiguity",
             severity="warning",
-            title="예측 타깃 확인 필요",
-            message="예측 타깃 후보가 자동 추천되었습니다. 실제 분석 목적에 맞는 타깃 컬럼인지 확인해 주세요.",
+            title="예측할 목표를 선택하세요",
+            message="Agent가 여러 후보를 찾았지만 자동으로 정하기에는 사용 목적이 중요합니다. 어떤 값을 예측하고 싶은지 선택해 주세요.",
             options=options,
         )
         return True

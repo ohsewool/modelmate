@@ -320,47 +320,28 @@ def infer_target_category(df, target_col):
 
 
 def infer_default_target(df):
-    rows = max(len(df), 1)
-    drop_cols, _ = suggested_feature_drops(df, target_col=None)
-    drop_set = set(drop_cols)
-    bad_tokens = ["id", "idx", "code", "번호", "주소", "우편번호", "일자", "날짜", "년월", "date", "time", "name", "명"]
-    good_tokens = [
-        "target", "label", "outcome", "result", "diabetes", "churn", "count", "amount", "score",
-        "grade", "pass", "loan", "default", "price", "rent", "purchase", "conversion",
-        "attrition", "rainfall", "air_quality", "delay", "fraud", "anomaly",
-        "건수", "가입건수", "여부", "구분코드명", "상태", "등급", "결과", "진단", "당뇨", "분류",
-        "성적", "합격", "대출", "연체", "가격", "임대료", "구매", "전환", "퇴사", "강수", "대기질", "지연", "사기"
-    ]
-    best_col = df.columns[-1]
-    best_score = -10**9
-    for idx, col in enumerate(df.columns):
-        name = str(col).lower()
-        compact = name.replace(" ", "").replace("_", "").replace("-", "")
-        s = df[col]
-        unique = int(s.nunique(dropna=True))
-        unique_ratio = unique / rows
-        is_numeric = pd.api.types.is_numeric_dtype(s)
-        score = idx * 0.05
-        if col in drop_set:
-            score -= 25
-        if any(tok in compact for tok in bad_tokens):
-            score -= 12
-        if any(tok in compact for tok in good_tokens):
-            score += 25
-        if is_numeric and unique > 20:
-            score += 8
-        if 2 <= unique <= 20:
-            score += 10
-        if not is_numeric and unique_ratio > 0.85:
-            score -= 30
-        if score > best_score:
-            best_col = col
-            best_score = score
-    best_name = str(best_col)
-    readable_pair = best_name + "명"
-    if readable_pair in df.columns:
-        return readable_pair
-    return best_col
+    from backend.tools.target_quality import best_meaningful_target
+
+    target, _quality = best_meaningful_target(df)
+    return target or df.columns[-1]
+
+
+def infer_target_quality(df, target_col=None):
+    from backend.tools.target_quality import best_meaningful_target, score_dataframe_targets
+
+    target = target_col if target_col in df.columns else None
+    if target:
+        candidates = score_dataframe_targets(df, explicit_target=str(target))
+        selected = next((item for item in candidates if item["column_name"] == str(target)), None)
+        return {
+            "has_meaningful_target": bool(selected and selected["suitability"] == "good"),
+            "recommended": selected,
+            "candidates": candidates[:5],
+            "message": None if selected and selected["suitability"] == "good" else "이 CSV에서는 바로 예측할 만한 명확한 타깃을 찾기 어렵습니다.",
+        }
+    _target, quality = best_meaningful_target(df)
+    quality["candidates"] = (quality.get("candidates") or [])[:5]
+    return quality
 
 
 def _rule_based_column_analysis(df, col_info, demo=False):
@@ -371,16 +352,24 @@ def _rule_based_column_analysis(df, col_info, demo=False):
         or any(kw in c["name"].lower() for kw in ["id", "idx", "no", "uid", "serial", "code", "name"])
     ]
     target_col = infer_default_target(df)
+    target_quality = infer_target_quality(df, target_col)
     numeric_targets = df[target_col].dtype in [np.float64, np.int64, np.float32, np.int32]
     task_type = "regression" if numeric_targets and df[target_col].nunique() > 12 else "classification"
     target_category = infer_target_category(df, target_col)
     return {
         "target_suggestion": target_col,
+        "target_quality": target_quality,
+        "has_meaningful_target": target_quality.get("has_meaningful_target", False),
+        "target_warning": target_quality.get("message"),
         "drop_suggestions": [
             {"col": c, "reason": "식별자나 고유값이 많은 컬럼이라 예측에는 제외하는 것이 좋습니다."}
             for c in suggested
         ],
-        "dataset_summary": f"{n}행 {len(df.columns)}열 데이터입니다. {target_category['dataset_domain']} 데이터로 보고, {target_category['target_category']} 문제로 분석합니다.",
+        "dataset_summary": (
+            f"{n}행 {len(df.columns)}열 데이터입니다. {target_category['dataset_domain']} 데이터로 보고, {target_category['target_category']} 문제로 분석합니다."
+            if target_quality.get("has_meaningful_target", False)
+            else f"{n}행 {len(df.columns)}열 데이터입니다. 바로 예측할 만한 명확한 타깃은 검토가 필요합니다."
+        ),
         "task_type": task_type,
         **target_category,
         "col_labels": {},
@@ -423,7 +412,15 @@ async def analyze_columns(demo: bool = False):
             result["col_labels"] = {}
         target_col = result.get("target_suggestion")
         if target_col not in df.columns:
-            target_col = df.columns[-1]
+            target_col = infer_default_target(df)
+        target_quality = infer_target_quality(df, target_col)
+        if not target_quality.get("has_meaningful_target", False):
+            target_col = infer_default_target(df)
+            target_quality = infer_target_quality(df, target_col)
+        result["target_suggestion"] = target_col
+        result["target_quality"] = target_quality
+        result["has_meaningful_target"] = target_quality.get("has_meaningful_target", False)
+        result["target_warning"] = target_quality.get("message")
         result.update(infer_target_category(df, target_col))
         STATE["col_labels"] = result.get("col_labels", {})
         return result

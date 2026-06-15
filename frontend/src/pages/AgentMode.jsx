@@ -89,7 +89,13 @@ function datasetTitle(dataset) {
 }
 
 function datasetTarget(dataset) {
+  const targetQuality = dataset?.target_quality || dataset?.quality_summary?.target_quality
+  if (targetQuality && targetQuality.has_meaningful_target === false) return ''
   return dataset?.target_col || dataset?.recommended_target || dataset?.target_column || ''
+}
+
+function datasetTargetQuality(dataset) {
+  return dataset?.target_quality || dataset?.quality_summary?.target_quality || null
 }
 
 function datasetSignature(dataset) {
@@ -120,7 +126,7 @@ function suggestedGoalForDataset(dataset) {
   if (target) {
     return `이 CSV로 ${target}을 예측하고 중요한 요인을 보고서로 정리해줘.`
   }
-  return '이 CSV로 예측할 타깃을 추천하고, 예측에 중요한 요인을 보고서로 정리해줘.'
+  return '이 CSV를 먼저 요약하고, 예측할 만한 타깃 후보를 함께 검토해줘.'
 }
 
 function isChurnGoal(goal) {
@@ -207,6 +213,10 @@ function DatasetSelector({ datasets, selectedDatasetId, onSelect, loading }) {
       ) : datasets.length ? (
         <div style={{ display: 'grid', gap: 10 }}>
           {datasets.map(dataset => (
+            (() => {
+              const quality = datasetTargetQuality(dataset)
+              const weakTarget = quality && quality.has_meaningful_target === false
+              return (
             <button
               key={dataset.id || dataset.dataset_id}
               type="button"
@@ -222,9 +232,16 @@ function DatasetSelector({ datasets, selectedDatasetId, onSelect, loading }) {
               <strong>{datasetTitle(dataset)}</strong>
               <span style={{ color: 'var(--text-label)', fontSize: 12 }}>
                 프로젝트: {dataset.project_name || dataset.project_id || '연결 정보 없음'}
-                {datasetTarget(dataset) ? ` · 추천 타깃: ${datasetTarget(dataset)}` : ''}
+                {datasetTarget(dataset) ? ` · 추천 타깃: ${datasetTarget(dataset)}` : ' · 명확한 추천 타깃 없음'}
               </span>
+              {weakTarget && (
+                <span style={{ color: '#92400e', fontSize: 12 }}>
+                  이 CSV에서는 바로 예측할 만한 명확한 타깃을 찾기 어렵습니다.
+                </span>
+              )}
             </button>
+              )
+            })()
           ))}
         </div>
       ) : (
