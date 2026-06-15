@@ -13,6 +13,7 @@ For the final release package, pair these commands with:
 
 ```bash
 python -m compileall backend
+python scripts/run_sample_csv_gate.py
 python scripts/run_upload_validation_qa.py
 python scripts/run_training_benchmark.py
 python scripts/run_full_qa.py --skip-slow
@@ -30,6 +31,28 @@ python scripts/run_workspace_integration_smoke.py --base-url http://localhost:80
 ```
 
 ## Product Smoke Test
+
+## Sample CSV Gate
+
+Run locally:
+
+```bash
+python scripts/run_sample_csv_gate.py
+```
+
+Run against Railway or a local server:
+
+```bash
+python scripts/run_sample_csv_gate.py --base-url https://web-production-5d6fa.up.railway.app
+```
+
+This checks each demo CSV download for:
+
+- non-HTML content;
+- a comma-delimited header row;
+- the expected target column;
+- enough demo rows;
+- response content type and first-line evidence when a base URL is provided.
 
 Run against a local server:
 
@@ -102,6 +125,9 @@ python scripts/run_release_qa.py --base-url https://web-production-5d6fa.up.rail
 ## What Is Checked Automatically
 
 - backend compiles;
+- sample CSV gate confirms the local sample files are valid CSV and, when
+  `--base-url` is supplied, confirms deployed sample download routes do not
+  return SPA HTML;
 - auth smoke can register, login, call `/api/auth/me`, logout, and confirm token
   revocation when a base URL is provided;
 - auth smoke confirms `/api/auth/me` does not expose password or
@@ -189,10 +215,14 @@ python scripts/run_release_qa.py --base-url https://web-production-5d6fa.up.rail
 - workspace integration smoke fails: verify authenticated upload creates
   `current_dataset.project_id`, `/api/run-cv` persists an experiment with
   `dataset_ref`, and completed analyses are mirrored to project job metadata.
+- sample CSV gate fails: verify `/api/samples/{file}/download` and
+  `/samples/{file}` return real CSV content instead of `index.html`.
 
 ## Release Blockers
 
 - backend compile fails;
+- sample CSV download returns HTML, lacks the expected target column, or cannot
+  be parsed as CSV;
 - sample CSV upload fails;
 - target selection fails after upload;
 - report export endpoint returns 500;

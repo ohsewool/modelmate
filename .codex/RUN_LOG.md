@@ -1178,3 +1178,54 @@ Milestones:
   - Full browser click/download verification must be done after Railway redeploy.
 - Next step:
   - Push and redeploy Railway, then test `CSV 받기`, re-upload of downloaded CSV, and `샘플로 시작` for all five sample cards.
+
+## 2026-06-16 KST - Strict QA Gate Added
+
+- Status: done
+- Branch: `main`
+- Scope:
+  - Added a repository QA gate so future work cannot be treated as complete only because build checks passed.
+  - Added evidence requirements, a standard smoke checklist, a final QA template, and a lightweight automated sample CSV gate.
+- Files changed:
+  - `.codex/QA_GATE.md`
+  - `.codex/FINAL_QA_TEMPLATE.md`
+  - `.codex/AGENTS.md`
+  - `.codex/TASK_QUEUE.md`
+  - `.codex/RUN_LOG.md`
+  - `docs/final-qa.md`
+  - `docs/automated-qa.md`
+  - `scripts/run_sample_csv_gate.py`
+  - `scripts/run_release_qa.py`
+  - rebuilt `frontend/dist`
+- QA gate rule:
+  - Build success is required, but not sufficient.
+  - A task can be marked `done` only when backend/frontend builds pass as applicable, the affected user flow is smoke tested, and evidence is recorded.
+  - Untested flows must be reported as `not verified`.
+  - Important unverified flows should leave the task as `needs_manual_verification`, not `done`.
+- Smoke checklist added:
+  - CSV upload
+  - sample CSV download and re-upload
+  - quick automatic analysis
+  - goal-based analysis
+  - Agent Run Detail direct route/refresh
+  - human review
+  - report
+  - prediction API
+  - core navigation routes
+- Evidence template added:
+  - `.codex/FINAL_QA_TEMPLATE.md` with build checks, routes, CSV tests, Agent tests, evidence fields, pass/fail/not verified, and limitations.
+- Automated checks added:
+  - `scripts/run_sample_csv_gate.py`
+  - Local checks verify both `frontend/public/samples` and `frontend/dist/samples`.
+  - Optional `--base-url` checks deployed/local download routes, content type, first line, target columns, parseability, and row count.
+  - `scripts/run_release_qa.py` now runs local sample gate by default and remote sample gate when `--base-url` is provided.
+- Verification result:
+  - `python -m compileall backend`: passed.
+  - `cd frontend && npm run build`: passed through bundled Vite/Node runtime because `npm` is not available on PATH.
+  - `python scripts/run_sample_csv_gate.py`: passed local sample checks, with remote marked `not_verified` when no base URL was supplied.
+  - `python scripts/run_sample_csv_gate.py --base-url https://web-production-5d6fa.up.railway.app`: passed 20/20 checks.
+  - Remote evidence included `text/csv; charset=utf-8` and CSV header first lines for both `/api/samples/{file}/download` and `/samples/{file}` routes.
+- Known limitations:
+  - This gate adds lightweight checks and process rules. It does not replace full manual browser QA for visual layout, UX clarity, or domain-specific result quality.
+- Next step:
+  - Use `.codex/QA_GATE.md` for every future task before marking work `done`.

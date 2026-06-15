@@ -218,6 +218,20 @@ cd frontend && npm run build
 If backend is touched, run the relevant backend tests or smoke scripts available in the repository.
 If no backend test exists, document the manual smoke test clearly.
 
+Build success is required, but not sufficient.
+
+Before marking any task done, read `.codex/QA_GATE.md` and record evidence that the user flow affected by the change was actually smoke tested.
+
+Every completion report must distinguish:
+
+* `passed`: tested and confirmed with evidence
+* `failed`: tested and failed
+* `not verified`: not tested or could not be tested
+
+If an important affected flow cannot be smoke tested, mark the task as `needs_manual_verification`, not `done`.
+
+Minimum evidence should include the tested route, tested CSV filename when relevant, generated dataset/project/run IDs when relevant, final route URL, status, and first line/content type for downloaded sample CSV files.
+
 ## Pull request format
 
 PR title:

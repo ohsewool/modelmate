@@ -7,10 +7,18 @@ Status legend:
 * review_needed
 * fix_needed
 * blocked
+* needs_manual_verification
 * done
 
 Current assumption: PR-26 Workspace Data Integration Fix is done.
 Do not start the next PR until the current PR is marked done.
+
+Strict QA gate:
+
+* Build success alone is never enough to mark a task `done`.
+* The affected user flow must be smoke tested and evidence must be recorded.
+* If a required smoke test cannot be performed, mark the task `needs_manual_verification`, not `done`.
+* See `.codex/QA_GATE.md` and `.codex/FINAL_QA_TEMPLATE.md`.
 
 ---
 

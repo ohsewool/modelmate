@@ -50,6 +50,7 @@ def main():
 
     steps = [
         ("backend_compile", [sys.executable, "-m", "compileall", "backend"], 120),
+        ("sample_csv_gate_local", [sys.executable, str(ROOT / "scripts" / "run_sample_csv_gate.py")], 60),
         ("starter_pack_smoke", [sys.executable, str(ROOT / "scripts" / "run_starter_pack_smoke.py")], 60),
         ("upload_validation_qa", [sys.executable, str(ROOT / "scripts" / "run_upload_validation_qa.py")], 180),
         ("full_qa_skip_slow", [sys.executable, str(ROOT / "scripts" / "run_full_qa.py"), "--skip-slow"], 360),
@@ -62,6 +63,8 @@ def main():
         results = [run_step(name, cmd, timeout) for name, cmd, timeout in steps]
 
     if args.base_url:
+        sample_gate_cmd = [sys.executable, str(ROOT / "scripts" / "run_sample_csv_gate.py"), "--base-url", args.base_url]
+        results.append(run_step("sample_csv_gate_remote", sample_gate_cmd, 120))
         auth_cmd = [sys.executable, str(ROOT / "scripts" / "run_auth_smoke.py"), "--base-url", args.base_url]
         results.append(run_step("auth_smoke", auth_cmd, 180))
         ownership_cmd = [sys.executable, str(ROOT / "scripts" / "run_ownership_smoke.py"), "--base-url", args.base_url]
@@ -91,6 +94,7 @@ def main():
             smoke_cmd.append("--skip-training")
         results.append(run_step("product_smoke", smoke_cmd, 240))
     else:
+        results.append({"name": "sample_csv_gate_remote", "status": "skipped", "reason": "--base-url not provided"})
         results.append({"name": "auth_smoke", "status": "skipped", "reason": "--base-url not provided"})
         results.append({"name": "ownership_smoke", "status": "skipped", "reason": "--base-url not provided"})
         results.append({"name": "project_history_smoke", "status": "skipped", "reason": "--base-url not provided"})
