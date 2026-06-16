@@ -1270,3 +1270,57 @@ Milestones:
 - Known limitations:
   - Admin quota behavior still needs endpoint smoke verification after Railway redeploy or in an environment with FastAPI installed.
   - Pre-existing dirty QA result files were intentionally left untouched.
+
+## 2026-06-16 KST - Full Regression QA After Admin/Quota/Sample Fixes
+
+- Status: completed_with_limitations
+- Branch: `main`
+- Commit under test: `11866ac fix: bypass quotas for admin users`
+- Deployed bundle check:
+  - Railway root serves `index-BWe6NIk_.js`, matching the latest built frontend bundle.
+- Scope:
+  - Verify latest deployed user flow after sample CSV, admin role/quota, card UI, upload/dashboard/Agent Mode, report, and prediction API updates.
+  - Do not add new features or unrelated polish.
+- Build verification:
+  - `python -m compileall backend`: passed with bundled Python runtime.
+  - `cd frontend && npm run build`: passed with bundled Node/Vite runtime; Vite large chunk warning remains non-blocking.
+- Admin/quota verification:
+  - `scripts/run_usage_limits_smoke.py --base-url https://web-production-5d6fa.up.railway.app`: passed 9/9.
+  - Admin login: `admin@modelmate.local`.
+  - Admin usage response: `role=admin`, `plan=admin`, `plan_label=관리자`, `limit_label=제한 없음`.
+  - Admin limits returned `null` for project, dataset, job, prediction API, and report export limits.
+  - Free user project limit remained active: project 4 returned 429 `usage_limit_exceeded`.
+  - Public sample CSV download remained quota-free.
+- Sample CSV verification:
+  - `scripts/run_sample_csv_gate.py --base-url https://web-production-5d6fa.up.railway.app`: passed 20/20.
+  - Verified local `frontend/public/samples`, built `frontend/dist/samples`, deployed `/api/samples/{file}/download`, and deployed `/samples/{file}`.
+  - Files verified: `customer_churn_demo.csv`, `sales_demand_demo.csv`, `equipment_failure_demo.csv`, `marketing_conversion_demo.csv`, `student_performance_demo.csv`.
+  - All deployed sample responses were `text/csv; charset=utf-8`, did not start with HTML, had parseable headers, row counts, and expected target columns.
+- Product/API smoke:
+  - `scripts/run_product_smoke.py --base-url https://web-production-5d6fa.up.railway.app`: passed 16/16.
+  - Covered landing, pricing, health, session, agent tools, deployed model list, report summary/export, invalid CSV friendly error, sample upload, target selection, AutoML training, and report summary after training.
+- Workspace/report/prediction API smoke:
+  - `scripts/run_workspace_integration_smoke.py --base-url https://web-production-5d6fa.up.railway.app`: passed 24/24.
+  - Covered authenticated CSV upload, project metadata, dashboard/project detail/jobs/reports/datasets/settings, prediction token metadata safety, guest upload, guest analysis, guest jobs/reports/settings.
+  - `scripts/run_prediction_token_smoke.py --base-url https://web-production-5d6fa.up.railway.app`: passed 6/7, skipped 1 because the generated project was not model-ready, returning a clean 409 friendly response.
+  - `scripts/run_auth_smoke.py --base-url https://web-production-5d6fa.up.railway.app`: passed 9/9.
+  - `scripts/run_ownership_smoke.py --base-url https://web-production-5d6fa.up.railway.app`: passed 12/12.
+- Agent Mode API smoke:
+  - Admin uploaded `customer_churn_demo.csv`: upload returned shape `[18, 8]`, default target `churn`, saved dataset `2f499845`, project `13e517a3`.
+  - `POST /api/set-target` with `target_col=churn`: passed 200, task type `classification`.
+  - `POST /api/run-cv`: passed 200, best model `Random Forest`.
+  - Agent Run created: `bd2c2e79-7530-42a1-9377-81e52b4a0cca`.
+  - Agent Run preserved references before and after execute: dataset `2f499845`, project `13e517a3`.
+  - Trace URL: `https://web-production-5d6fa.up.railway.app/agent-mode/bd2c2e79-7530-42a1-9377-81e52b4a0cca`.
+  - Trace response: `status=waiting_for_review`, `tool_calls=3`, `observations=3`, `decisions=3`, `validations=3`, `artifacts=1`, `timeline=24`.
+- Route smoke:
+  - `/upload`, `/dashboard`, `/agent-mode`, `/agent-mode/{run_id}`, `/projects`, `/jobs`, `/reports`, `/prediction-apis`, `/settings` all returned 200 and SPA HTML.
+  - No `/undefined` string found in returned route HTML.
+- Not verified:
+  - Full visual/browser click QA was not performed because the repo does not include Playwright/Cypress/browser test tooling and no new dependency was added for this QA-only pass.
+  - `scripts/run_workspace_flow_qa.py` and `scripts/run_full_qa.py --skip-slow` could not run in the available local Python environment because `fastapi` is not installed.
+  - A custom all-sample upload loop timed out on Railway; this was not counted as an app failure because deployed CSV validity passed for all samples and representative sample upload/target/training passed via product smoke.
+- Remaining limitations:
+  - Visual card alignment and Korean-first microcopy were not pixel-verified by browser automation.
+  - Agent goal text in one inline PowerShell QA script showed mojibake because the script literal encoding was lossy; run identity, dataset/project references, and trace persistence were verified through API fields.
+  - For stronger future regression coverage, add a lightweight browser smoke runner rather than relying only on API-level checks.
