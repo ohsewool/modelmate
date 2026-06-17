@@ -37,7 +37,7 @@ export default function AgentInsightCards({ insights }) {
     <div className="card">
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start', marginBottom: 14 }}>
         <div>
-          <p style={{ fontSize: 12, fontWeight: 900, color: '#2563eb', margin: '0 0 5px' }}>AI 판단 요약</p>
+          <p style={{ fontSize: 12, fontWeight: 900, color: '#2563eb', margin: '0 0 5px' }}>분석 판단 요약</p>
           <h2 style={{ fontSize: 18, color: 'var(--text)', margin: 0 }}>에이전트가 먼저 본 핵심</h2>
         </div>
         <span className="badge badge-green" style={{ fontSize: 10 }}>분석 요약</span>

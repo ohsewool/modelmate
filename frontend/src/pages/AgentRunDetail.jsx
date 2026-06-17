@@ -22,9 +22,9 @@ const STATUS_LABELS = {
 
 const REVIEW_REASON_COPY = {
   target_ambiguous: {
-    title: '예측할 타깃 컬럼을 선택하세요',
-    description: 'Agent가 여러 개의 예측 후보를 찾았습니다. 어떤 값을 예측하고 싶은지 선택하면 분석을 계속 진행합니다.',
-    reason: '예측할 컬럼이 명확하지 않습니다. Agent가 여러 개의 후보를 찾았기 때문에 사용자의 선택이 필요합니다.',
+    title: '예측할 값을 선택하세요',
+    description: '여러 개의 예측 후보가 발견되었습니다. 어떤 값을 예측하고 싶은지 선택하면 분석을 계속 진행합니다.',
+    reason: '예측할 값이 명확하지 않습니다. 여러 후보 중 사용자의 선택이 필요합니다.',
   },
   leakage_review_required: {
     title: '데이터 누수 가능성을 확인하세요',
@@ -169,15 +169,15 @@ function targetQualityInfo(run, trace) {
   const noMeaningfulTarget = hasMeaningfulTarget === false || (!target && traceText(trace).includes('명확한 타깃'))
   return {
     target,
-    reason: recommended.usefulness_explanation || recommended.reason || quality.message || 'Agent가 데이터 구조와 컬럼 이름을 바탕으로 예측 타깃 후보를 검토했습니다.',
+    reason: recommended.usefulness_explanation || recommended.reason || quality.message || '데이터 구조와 컬럼 이름을 바탕으로 예측 후보를 검토했습니다.',
     warnings: [
       ...(recommended.warnings || []),
       ...(quality.warnings || []),
       quality.message,
     ].filter(Boolean),
     nextAction: noMeaningfulTarget
-      ? '예측을 바로 진행하기보다 데이터 요약 보고서를 먼저 확인하고, 예측 목적에 맞는 타깃 컬럼을 다시 정하세요.'
-      : '먼저 보고서에서 타깃 추천 이유와 성능을 확인한 뒤 새 데이터 예측 또는 API 생성을 진행하세요.',
+      ? '예측을 바로 진행하기보다 데이터 요약 보고서를 먼저 확인하고, 예측 목적에 맞는 값을 다시 정하세요.'
+      : '먼저 보고서에서 예측값 추천 이유와 성능을 확인한 뒤 새 데이터 예측 또는 API 생성을 진행하세요.',
     noMeaningfulTarget,
   }
 }
@@ -275,7 +275,7 @@ function reviewCopy(review) {
   if (text.includes('api')) return REVIEW_REASON_COPY.api_readiness_review_required
   return {
     title: '사용자 확인이 필요합니다',
-    description: 'Agent가 자동으로 결정하기 어려운 지점을 발견했습니다. 아래 선택지를 확인하면 분석을 계속 진행할 수 있습니다.',
+    description: '자동으로 결정하기 어려운 지점이 발견되었습니다. 아래 선택지를 확인하면 분석을 계속 진행할 수 있습니다.',
     reason: review?.context_summary || '현재 단계에서 사용자의 확인이 필요합니다.',
   }
 }
@@ -322,8 +322,8 @@ function summaryState(run, trace, reviews) {
     return {
       tone: 'warning',
       badge: '검토 필요',
-      title: '명확한 예측 타깃을 찾기 어렵습니다.',
-      summary: '이 CSV는 바로 모델 학습으로 가기보다 데이터 요약과 타깃 검토가 먼저 필요합니다.',
+      title: '명확한 예측값을 찾기 어렵습니다.',
+      summary: '이 CSV는 바로 모델 학습으로 가기보다 데이터 요약과 예측값 검토가 먼저 필요합니다.',
     }
   }
   if (complete) {
@@ -504,7 +504,7 @@ function ConnectedCsvCard({ trace, run }) {
       )}
       {run?.dataset_id && (
         <p style={{ margin: 0, color: 'var(--text-label)', fontSize: 12 }}>
-          데이터 연결 ID: {shortId(run.dataset_id)}
+          상세 정보: 데이터 연결 {shortId(run.dataset_id)}
           {run.project_id ? ` · 프로젝트: ${shortId(run.project_id)}` : ''}
         </p>
       )}
@@ -520,8 +520,8 @@ function FinalResultSummary({ trace, run }) {
   const rows = dataset.row_count ?? dataset.rows ?? run?.row_count
   const cols = dataset.column_count ?? dataset.columns ?? run?.column_count
   const outputs = [
-    'Agent가 데이터 구조를 확인했습니다.',
-    '예측할 타깃 후보를 찾았습니다.',
+    '데이터 구조를 확인했습니다.',
+    '예측할 값 후보를 찾았습니다.',
     '데이터 누수 가능성을 점검했습니다.',
     '모델 학습과 보고서 생성을 준비했습니다.',
     'API 배포 전 확인 항목을 정리했습니다.',
@@ -571,7 +571,7 @@ function PostPredictionGuidance({ trace, run, reviews, onContinue, onRetry, onSt
   } else if (complete) {
     interpretation = '모델이 예측에 사용할 수 있는 구조와 근거를 정리했습니다. 먼저 보고서에서 성능과 주의사항을 확인하는 것을 권장합니다.'
   } else if (reviewNeeded) {
-    interpretation = 'Agent가 자동으로 결정하기 어려운 지점을 발견했습니다. 확인을 마치면 다음 분석 단계로 이어갈 수 있습니다.'
+    interpretation = '자동으로 결정하기 어려운 지점이 발견되었습니다. 확인을 마치면 다음 분석 단계로 이어갈 수 있습니다.'
   }
 
   const actions = []
@@ -691,7 +691,7 @@ function ReviewPanel({ reviews, run, onResolve, onRetry, onStop, onContinue }) {
           <p className="section-title" style={{ margin: 0 }}>사용자 확인이 필요합니다</p>
         </div>
         <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.6 }}>
-          Agent가 자동으로 넘기기 어려운 지점을 발견했습니다. 확인하고 계속 실행하면 다음 분석 단계로 이어지고, 필요하면 현재 단계를 다시 시도하거나 분석을 중단할 수 있습니다.
+          자동으로 넘기기 어려운 지점이 발견되었습니다. 확인하고 계속 실행하면 다음 분석 단계로 이어지고, 필요하면 현재 단계를 다시 시도하거나 분석을 중단할 수 있습니다.
         </p>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button className="btn btn-primary" type="button" onClick={onContinue}>확인하고 계속 실행</button>
@@ -707,7 +707,7 @@ function ReviewPanel({ reviews, run, onResolve, onRetry, onStop, onContinue }) {
       <div>
         <p className="section-title" style={{ marginBottom: 6 }}>사용자 확인이 필요합니다</p>
         <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.6 }}>
-          아래 선택을 완료하면 Agent가 사용자의 의도를 반영해 다음 분석 단계를 계속 진행합니다.
+          아래 선택을 완료하면 사용자의 의도를 반영해 다음 분석 단계를 계속 진행합니다.
         </p>
       </div>
       {pending.map(review => {
@@ -768,7 +768,7 @@ function AdvancedTrace({ trace, reviews }) {
     <details className="card" style={{ display: 'grid', gap: 12 }}>
       <summary id="advanced-trace" style={{ cursor: 'pointer', fontWeight: 850 }}>고급 실행 기록 보기 · 개발자/검증용 상세 기록</summary>
       <p style={{ margin: '12px 0 0', color: 'var(--text-2)', lineHeight: 1.6 }}>
-        개발자와 검증자가 실제 작업 실행, 확인 내용, 판단, 검증 결과, 생성 결과물을 확인하는 영역입니다. 아래 기록은 저장된 trace를 그대로 표시합니다.
+        개발자와 검증자가 실제 작업 실행, 확인 내용, 판단, 검증 결과, 생성 결과물을 확인하는 영역입니다. 아래 기록은 저장된 상세 실행 데이터를 그대로 표시합니다.
       </p>
       <div className="workspace-grid four-columns" style={{ marginTop: 12 }}>
         <MetricBox label="작업 실행" value={toolCalls.length} />

@@ -10,8 +10,8 @@ export default function AgentMissionBrief({ insights, decision }) {
     <div className="card" style={{ border: '1px solid rgba(37,99,235,0.18)', background: 'linear-gradient(135deg, rgba(37,99,235,0.06), rgba(5,150,105,0.04))' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 14, alignItems: 'flex-start', marginBottom: 14 }}>
         <div>
-          <p style={{ fontSize: 12, fontWeight: 900, color: '#2563eb', margin: '0 0 5px' }}>AI 에이전트 브리핑</p>
-          <h2 style={{ fontSize: 20, color: 'var(--text)', margin: 0 }}>제가 이 데이터를 이렇게 처리했습니다</h2>
+          <p style={{ fontSize: 12, fontWeight: 900, color: '#2563eb', margin: '0 0 5px' }}>분석 브리핑</p>
+          <h2 style={{ fontSize: 20, color: 'var(--text)', margin: 0 }}>이 데이터를 이렇게 처리했습니다</h2>
         </div>
         <span className="badge badge-green" style={{ fontSize: 10 }}>자동 판단</span>
       </div>

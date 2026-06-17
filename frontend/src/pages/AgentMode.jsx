@@ -241,10 +241,10 @@ function SelectedCsvSummary({ dataset }) {
   const quality = datasetTargetQuality(dataset)
   const weakTarget = quality?.has_meaningful_target === false
   const hint = weakTarget
-    ? '바로 예측할 만한 명확한 타깃은 검토가 필요합니다.'
+    ? '바로 예측할 만한 명확한 값은 검토가 필요합니다.'
     : target
       ? '예측 분석을 시작할 수 있는 CSV입니다.'
-      : '타깃 후보를 확인한 뒤 분석을 시작하세요.'
+      : '예측값 후보를 확인한 뒤 분석을 시작하세요.'
 
   return (
     <section className="card" style={{ display: 'grid', gap: 14 }}>
@@ -253,7 +253,7 @@ function SelectedCsvSummary({ dataset }) {
           <p className="section-title" style={{ marginBottom: 6 }}>선택한 CSV</p>
           <h2 style={{ margin: 0, fontSize: 22 }}>{selectedDatasetName(dataset)}</h2>
         </div>
-        <span className="status-pill">{weakTarget ? '타깃 검토 필요' : '분석 준비됨'}</span>
+        <span className="status-pill">{weakTarget ? '예측값 검토 필요' : '분석 준비됨'}</span>
       </div>
       <div className="workspace-grid four-columns">
         <div className="card-compact">
@@ -275,7 +275,7 @@ function SelectedCsvSummary({ dataset }) {
       </div>
       <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.6 }}>{hint}</p>
       <p style={{ margin: 0, color: 'var(--text-label)', fontSize: 12 }}>
-        참조 ID: {String(dataset.id || dataset.dataset_id || '').slice(0, 8) || '-'}
+        상세 정보: 데이터 연결 {String(dataset.id || dataset.dataset_id || '').slice(0, 8) || '-'}
         {dataset.project_id ? ` · 프로젝트 ${String(dataset.project_id).slice(0, 8)}` : ''}
       </p>
     </section>
@@ -326,11 +326,11 @@ function TargetRecommendationPanel({ dataset, onFocusGoal }) {
         </div>
       ) : noMeaningfulTarget ? (
         <div className="alert alert-warning" style={{ display: 'grid', gap: 10, margin: 0 }}>
-          <strong>바로 예측할 만한 명확한 타깃을 찾기 어렵습니다.</strong>
+          <strong>바로 예측할 만한 명확한 값을 찾기 어렵습니다.</strong>
           <span>예측보다 요약 보고서가 먼저일 수 있습니다.</span>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <Link className="btn btn-secondary" to="/reports">요약 보고서 보기</Link>
-            <button className="btn btn-secondary" type="button" onClick={onFocusGoal}>타깃 직접 선택</button>
+            <button className="btn btn-secondary" type="button" onClick={onFocusGoal}>예측값 직접 선택</button>
             <button className="btn btn-secondary" type="button" onClick={onFocusGoal}>목표 다시 입력</button>
           </div>
         </div>
@@ -386,12 +386,12 @@ function DatasetSelector({ datasets, selectedDatasetId, onSelect, loading }) {
             >
               <strong>{datasetTitle(dataset)}</strong>
               <span style={{ color: 'var(--text-label)', fontSize: 12 }}>
-                프로젝트: {dataset.project_name || dataset.project_id || '연결 정보 없음'}
-                {datasetTarget(dataset) ? ` · 추천 타깃: ${datasetTarget(dataset)}` : ' · 명확한 추천 타깃 없음'}
+                {dataset.project_name ? `프로젝트: ${dataset.project_name}` : `상세 정보: 프로젝트 ${dataset.project_id ? String(dataset.project_id).slice(0, 8) : '연결 정보 없음'}`}
+                {datasetTarget(dataset) ? ` · 추천 예측값: ${datasetTarget(dataset)}` : ' · 명확한 추천 예측값 없음'}
               </span>
               {weakTarget && (
                 <span style={{ color: '#92400e', fontSize: 12 }}>
-                  이 CSV에서는 바로 예측할 만한 명확한 타깃을 찾기 어렵습니다.
+                  이 CSV에서는 바로 예측할 만한 명확한 값을 찾기 어렵습니다.
                 </span>
               )}
             </button>
@@ -677,16 +677,16 @@ export default function AgentMode() {
             </div>
           )}
           <label style={{ display: 'grid', gap: 6 }}>
-            <span className="section-title">선호 타깃 컬럼</span>
+            <span className="section-title">선호 예측값 컬럼</span>
             <input
               value={targetPreference}
               onChange={event => setTargetPreference(event.target.value)}
-              placeholder="선택 사항입니다. 비워두면 데이터셋 추천 타깃을 사용합니다."
+              placeholder="선택 사항입니다. 비워두면 데이터셋 추천 예측값을 사용합니다."
             />
           </label>
           {selectedTargetUnclear && (
             <div className="alert alert-warning" style={{ margin: 0 }}>
-              추천 타깃이 명확하지 않아 분석 중 사용자 확인이 필요할 수 있습니다.
+              추천 예측값이 명확하지 않아 분석 중 사용자 확인이 필요할 수 있습니다.
             </div>
           )}
           {!selectedDatasetId && (

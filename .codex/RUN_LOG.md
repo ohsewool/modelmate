@@ -1324,3 +1324,59 @@ Milestones:
   - Visual card alignment and Korean-first microcopy were not pixel-verified by browser automation.
   - Agent goal text in one inline PowerShell QA script showed mojibake because the script literal encoding was lossy; run identity, dataset/project references, and trace persistence were verified through API fields.
   - For stronger future regression coverage, add a lightweight browser smoke runner rather than relying only on API-level checks.
+
+## 2026-06-17 KST - UI/UX PR-08 User-Facing Copy and Terminology Cleanup
+
+- Status: completed
+- Branch: `main`
+- Scope:
+  - Clean user-facing Korean copy without changing backend analysis logic or product behavior.
+  - Keep technical identifiers and API examples where they are necessary, but reduce developer-facing wording in default UI.
+- Files changed:
+  - `frontend/src/pageMeta.js`
+  - `frontend/src/components/AgentInsightCards.jsx`
+  - `frontend/src/components/FeedbackDialog.jsx`
+  - `frontend/src/components/PilotInquiryDialog.jsx`
+  - `frontend/src/components/Sidebar.jsx`
+  - `frontend/src/components/agent/AgentHero.jsx`
+  - `frontend/src/components/agent/AgentMissionBrief.jsx`
+  - `frontend/src/components/agent/AgentPlanBoard.jsx`
+  - `frontend/src/components/agent/AgentQuickUploadCard.jsx`
+  - `frontend/src/components/agent/AgentResultPanel.jsx`
+  - `frontend/src/components/agent/AgentStartPanel.jsx`
+  - `frontend/src/components/agent/AgentStepCard.jsx`
+  - `frontend/src/components/deploy/ProjectPredictionTokensPanel.jsx`
+  - `frontend/src/components/history/ExperimentDetail.jsx`
+  - `frontend/src/components/history/RecentExperimentSummary.jsx`
+  - `frontend/src/components/upload/UploadAgentTrace.jsx`
+  - `frontend/src/components/upload/UploadSidePanel.jsx`
+  - `frontend/src/components/workspace/DatasetExperimentLinks.jsx`
+  - `frontend/src/pages/Agent.jsx`
+  - `frontend/src/pages/AgentMode.jsx`
+  - `frontend/src/pages/AgentRunDetail.jsx`
+  - `frontend/src/pages/Home.jsx`
+  - `frontend/src/pages/workspace/ProjectDetail.jsx`
+  - `frontend/src/pages/workspace/RunDetail.jsx`
+  - `frontend/src/pages/workspace/WorkspaceDashboard.jsx`
+  - `frontend/src/pages/workspace/WorkspacePredictionApis.jsx`
+  - `frontend/src/pages/workspace/WorkspaceSettings.jsx`
+  - `frontend/src/pages/workspace/projectDetailData.js`
+- Key copy changes:
+  - `Agent Mode`/agent-heavy language softened to `목표 기반 분석`, `빠른 자동 분석`, `분석 실행`, or plain Korean descriptions.
+  - `trace` in default UI changed to `상세 실행 기록`/`고급 실행 기록`.
+  - `token`/`API token` user-facing labels changed to `API 인증 정보`.
+  - Default `타깃` wording in Agent Mode/Run Detail changed to `예측값` or `예측할 값` where it is user-facing.
+  - Raw `dataset_id`/`project_id` emphasis was reduced to short `상세 정보` references.
+- Intentionally kept technical terms:
+  - Internal code identifiers, API route names, JSON field names, Authorization examples, and XAI route names remain unchanged.
+  - Advanced/developer trace sections still expose real stored records for verification.
+- Build result:
+  - `python -m compileall backend`: passed with bundled Python runtime.
+  - `cd frontend && npm run build`: passed using bundled Node/Vite runtime because `npm` is not on PATH.
+  - Vite large chunk warning remains non-blocking.
+- Smoke result:
+  - Static copy scan confirmed no default UI occurrences of `Agent Mode`, `Agent Run`, `API token`, `trace 보기`, or Korean `토큰` remain in the checked frontend source strings.
+  - No browser click smoke was run for this copy-only pass.
+- Known limitations:
+  - Some technical terms remain in API examples, internal identifiers, and advanced verification areas by design.
+  - Railway redeploy is needed for the updated frontend copy and generated bundle to appear on the public site.

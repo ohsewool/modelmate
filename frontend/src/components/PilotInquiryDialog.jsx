@@ -104,7 +104,7 @@ export default function PilotInquiryDialog({ open, onClose, initial = {} }) {
 
         <div className="banner-warning">
           <p style={{ margin: 0, fontSize: 13 }}>
-            민감정보, 결제정보, API token, CSV 원문은 입력하지 마세요. 사용 목적과 필요한 한도만 간단히 적어 주세요.
+            민감정보, 결제정보, API 인증 정보, CSV 원문은 입력하지 마세요. 사용 목적과 필요한 한도만 간단히 적어 주세요.
           </p>
         </div>
 

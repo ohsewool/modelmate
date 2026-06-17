@@ -2,9 +2,9 @@ export default function AgentHero() {
   return (
     <section className="card" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.35fr) minmax(280px, 0.65fr)', gap: 20, alignItems: 'center', marginBottom: 18 }}>
       <div>
-        <p style={{ fontSize: 12, fontWeight: 850, color: '#7c3aed', margin: '0 0 8px' }}>AI 분석 에이전트</p>
+        <p style={{ fontSize: 12, fontWeight: 850, color: '#7c3aed', margin: '0 0 8px' }}>빠른 자동 분석</p>
         <h1 style={{ fontSize: 24, fontWeight: 950, margin: '0 0 8px', color: 'var(--text)', letterSpacing: 0 }}>
-          CSV를 맡기면 AI가 판단하고 실행합니다
+          CSV를 올리면 분석 흐름을 자동으로 실행합니다
         </h1>
         <p style={{ fontSize: 13, lineHeight: 1.65, color: 'var(--text-2)', margin: 0 }}>
           데이터 성격, 맞힐 값, 모델 후보, 개선 필요성, 핵심 결론까지 한 번에 정리합니다.

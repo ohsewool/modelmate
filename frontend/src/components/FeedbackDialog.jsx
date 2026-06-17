@@ -127,7 +127,7 @@ export default function FeedbackDialog({ open, onClose, initial = {} }) {
 
         <label style={{ display: 'flex', gap: 8, alignItems: 'center', color: 'var(--text-2)', fontSize: 13 }}>
           <input type="checkbox" checked={form.attach_context} onChange={event => update('attach_context', event.target.checked)} />
-          현재 페이지 정보와 프로젝트/실행 ID를 함께 보냅니다. CSV 원문이나 전체 token은 포함하지 않습니다.
+          현재 페이지 정보와 프로젝트/실행 ID를 함께 보냅니다. CSV 원문이나 전체 API 인증 값은 포함하지 않습니다.
         </label>
 
         {state.message && <div className="banner-success"><p style={{ margin: 0 }}>{state.message}</p></div>}

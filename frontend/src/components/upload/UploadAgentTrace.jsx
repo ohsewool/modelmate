@@ -44,7 +44,7 @@ export default function UploadAgentTrace(props) {
   return (
     <section className="card" style={{ display: 'grid', gap: 13 }}>
       <div>
-        <p style={{ margin: '0 0 5px', fontSize: 12, fontWeight: 900, color: '#7c3aed' }}>AI 판단 로그</p>
+        <p style={{ margin: '0 0 5px', fontSize: 12, fontWeight: 900, color: '#7c3aed' }}>분석 판단 기록</p>
         <h2 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: 'var(--text)' }}>
           CSV를 분석 흐름으로 바꾼 과정
         </h2>

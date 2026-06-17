@@ -1,6 +1,6 @@
 const PAGE_META = {
   '/upload': { title: '데이터 넣기', desc: 'CSV 업로드' },
-  '/agent': { title: 'AI 한 번에 실행', desc: '선택 기능' },
+  '/agent': { title: '빠른 자동 분석', desc: '선택 기능' },
   '/model-lab': { title: '모델 고르기', desc: '모델 성능 비교' },
   '/report': { title: '결과 요약', desc: '분석 결과 확인' },
   '/xai': { title: '이유 보기', desc: '예측 근거 확인' },

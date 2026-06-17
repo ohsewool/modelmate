@@ -33,8 +33,8 @@ export default function AgentStepCard({ step, idx }) {
 function Header({ step, idx, skipped }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
-      <span style={{ fontSize: 11, fontWeight: 900, color: 'var(--text-label)' }}>AI STEP {step.step ?? idx + 1}</span>
-      <h3 style={{ fontSize: 14, color: 'var(--text)', margin: 0 }}>{step.name || 'AI 실행 단계'}</h3>
+      <span style={{ fontSize: 11, fontWeight: 900, color: 'var(--text-label)' }}>분석 단계 {step.step ?? idx + 1}</span>
+      <h3 style={{ fontSize: 14, color: 'var(--text)', margin: 0 }}>{step.name || '자동 분석 단계'}</h3>
       <span className={skipped ? 'badge badge-amber' : 'badge badge-green'} style={{ fontSize: 10 }}>{skipped ? '건너뜀' : '완료'}</span>
     </div>
   )

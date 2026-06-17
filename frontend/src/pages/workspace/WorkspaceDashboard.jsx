@@ -125,7 +125,7 @@ export default function WorkspaceDashboard() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 12 }} className="admin-stat-grid">
             <MetricCard label="프로젝트" value={data.projects.length} sub="저장된 분석 공간" />
             <MetricCard label="데이터셋" value={data.datasets.length} sub="활성 업로드" />
-            <MetricCard label="오늘 작업" value={data.usage?.usage?.jobs_today ?? 0} sub={`${data.usage?.plan || 'free'} 플랜`} />
+            <MetricCard label="오늘 작업" value={data.usage?.usage?.jobs_today ?? 0} sub={data.usage?.plan_label || (data.usage?.plan === 'free' ? 'Free 플랜' : `${data.usage?.plan || 'Free'} 플랜`)} />
             <MetricCard label="예측 API" value={data.deployed.length} sub="공유 모델 기록" />
           </div>
 

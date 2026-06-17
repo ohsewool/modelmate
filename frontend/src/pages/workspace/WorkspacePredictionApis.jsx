@@ -26,7 +26,7 @@ function availabilityText(row) {
 function readinessLabel(row) {
   if (!row) return 'API 연결 전 검토가 필요합니다.'
   if (row.availability?.available && row.tokens.some(token => token.status === 'active')) return 'API 연결 가능'
-  if (row.availability?.available) return 'API token 생성 필요'
+  if (row.availability?.available) return 'API 인증 정보 생성 필요'
   if (row.availability?.dataset_active === false || row.availability?.model_ready === false) return 'API 연결 권장하지 않음'
   return 'API 연결 전 검토가 필요합니다.'
 }
@@ -65,12 +65,12 @@ function ReadinessOverview({ rows, onOpenSettings }) {
         </div>
         <div className="card-compact">
           <p style={{ margin: '0 0 6px', color: 'var(--text-label)', fontSize: 11, fontWeight: 800 }}>보안 안내</p>
-          <strong>token 일부만 표시</strong>
+          <strong>인증 정보 일부만 표시</strong>
         </div>
       </div>
       <div className="banner-warning" style={{ alignItems: 'flex-start' }}>
         <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.6 }}>
-          운영 연결 전 보고서와 데이터 품질을 확인하세요.
+          아직 운영 연결 단계가 아닙니다. 보고서와 데이터 품질을 먼저 확인하세요.
         </p>
       </div>
     </section>
@@ -85,7 +85,7 @@ function ApiExamplePanel({ row }) {
     <section className="card" style={{ display: 'grid', gap: 12 }}>
       <p className="section-title">요청 예시</p>
       <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.6 }}>
-        endpoint와 token은 프로젝트 상세에서 확인하세요.
+        실제 연결 주소와 API 인증 정보는 프로젝트 상세의 자세한 정보에서 확인하세요.
       </p>
       <div className="workspace-grid two-columns">
         <div className="card-compact" style={{ display: 'grid', gap: 8 }}>
@@ -119,7 +119,7 @@ export default function WorkspacePredictionApis() {
     <div className="animate-fade-in" style={{ padding: 24, maxWidth: 1180 }}>
       <WorkspacePageHeader
         title="예측 API"
-        description="API 준비도와 token 상태를 확인합니다."
+        description="외부 서비스에서 모델을 재사용할 수 있는지 준비 상태를 확인합니다."
         action={<button className="btn-primary" onClick={() => nav('/deploy')}>API 설정 열기</button>}
       />
       <ReadinessOverview rows={visible} onOpenSettings={() => nav('/deploy')} />
@@ -127,7 +127,7 @@ export default function WorkspacePredictionApis() {
         <section className="card empty-state">
           <strong className="empty-title">아직 예측 API가 없어요.</strong>
           <p className="empty-desc">
-            분석 완료 후 API token을 만들면 여기에 표시됩니다.
+            분석이 완료된 프로젝트에서 API 인증 정보를 만들면 여기에 표시됩니다.
           </p>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
             <button className="btn-primary" onClick={() => nav('/deploy')}>API 설정 열기</button>
@@ -144,7 +144,7 @@ export default function WorkspacePredictionApis() {
                 <tr>
                   <th>프로젝트</th>
                   <th>API 준비도</th>
-                  <th>token</th>
+                  <th>인증 정보</th>
                   <th>마지막 사용</th>
                   <th>호출 수</th>
                   <th>데이터셋/모델</th>
@@ -171,7 +171,7 @@ export default function WorkspacePredictionApis() {
                     <td>
                       {active.length} 활성 / {revoked.length} 폐기 / {row.tokens.length} 전체
                       <br />
-                      <span style={{ color: 'var(--text-label)' }}>전체 token은 표시하지 않습니다.</span>
+                      <span style={{ color: 'var(--text-label)' }}>전체 인증 값은 다시 표시하지 않습니다.</span>
                     </td>
                     <td>{latestUsed(row.tokens)}</td>
                     <td>{calls}</td>
@@ -180,7 +180,7 @@ export default function WorkspacePredictionApis() {
                       <br />
                       <span style={{ color: 'var(--text-2)' }}>{availabilityText(row)}</span>
                     </td>
-                    <td><button className="btn-secondary" onClick={() => nav(`/projects/${row.project.id}?tab=api`)}>token 관리</button></td>
+                    <td><button className="btn-secondary" onClick={() => nav(`/projects/${row.project.id}?tab=api`)}>API 인증 정보 관리</button></td>
                   </tr>
                 )
               })}</tbody>

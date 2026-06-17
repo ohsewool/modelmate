@@ -202,7 +202,7 @@ export default function WorkspaceSettings() {
     ['데이터셋', usage?.usage?.datasets, usage?.limits?.max_datasets],
     ['오늘 실행한 작업', usage?.usage?.jobs_today, usage?.limits?.max_jobs_per_day],
     ['예측 API 호출', usage?.usage?.prediction_api_calls_today, usage?.limits?.max_prediction_api_calls_per_day],
-    ['API token', usage?.usage?.prediction_tokens, usage?.limits?.max_prediction_tokens],
+    ['API 인증 정보', usage?.usage?.prediction_tokens, usage?.limits?.max_prediction_tokens],
   ], [usage])
   const isAdmin = usage?.is_admin || usage?.role === 'admin' || usage?.plan === 'admin'
 

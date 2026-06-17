@@ -57,5 +57,5 @@ function makeConclusion(item, metric) {
   const model = item.best_model || '선택된 모델'
   const target = item.target || '목표값'
   const score = metric?.value == null ? '성능 점수' : `${metric.label} ${fmt(metric.value)}`
-  return `${model}이 ${target} 예측에서 가장 좋은 결과를 냈습니다. 대표 성능은 ${score}이며, 필요하면 세부 보기에서 모델별 비교와 AI 결론을 확인할 수 있습니다.`
+  return `${model}이 ${target} 예측에서 가장 좋은 결과를 냈습니다. 대표 성능은 ${score}이며, 필요하면 세부 보기에서 모델별 비교와 분석 결론을 확인할 수 있습니다.`
 }

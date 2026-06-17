@@ -55,7 +55,7 @@ export default function ExperimentDetail({ item, owner, onClose, onNavigate }) {
         </div>
         {item.presentation_conclusion && (
           <div style={{ borderRadius: 12, border: '1px solid rgba(37,99,235,0.18)', background: 'rgba(37,99,235,0.06)', padding: 14, marginBottom: 14 }}>
-            <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 900, color: '#2563eb' }}>AI 에이전트 결론</p>
+            <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 900, color: '#2563eb' }}>자동 분석 결론</p>
             <p style={{ margin: 0, fontSize: 13, color: 'var(--text)', lineHeight: 1.65 }}>{item.presentation_conclusion}</p>
           </div>
         )}

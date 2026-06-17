@@ -5,7 +5,7 @@ import UploadReadinessChecklist from './UploadReadinessChecklist'
 
 const tabs = [
   ['readiness', CheckCircle2, '준비도'],
-  ['trace', Sparkles, 'AI 판단'],
+  ['trace', Sparkles, '분석 판단'],
   ['quality', FileText, '품질'],
   ['drops', ListFilter, '제외'],
 ]
@@ -91,7 +91,7 @@ export default function UploadSidePanel({
         {activeTab === 'quality' && <DatasetQualityCard quality={uploadInfo.dataset_quality} />}
         {activeTab === 'drops' && hasDrops && (
           <div className="card">
-            <h2 style={{ fontSize: 16, color: 'var(--text)', margin: '0 0 12px' }}>AI가 제외를 추천한 이유</h2>
+            <h2 style={{ fontSize: 16, color: 'var(--text)', margin: '0 0 12px' }}>제외를 추천한 이유</h2>
             <div style={{ display: 'grid', gap: 8 }}>
               {dropSuggestions.map((item, idx) => (
                 <div key={`${item.col}-${idx}`} style={{ padding: 12, borderRadius: 10, background: 'rgba(220,38,38,0.05)', border: '1px solid rgba(220,38,38,0.14)' }}>

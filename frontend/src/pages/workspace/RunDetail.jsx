@@ -95,8 +95,8 @@ export default function RunDetail() {
         </section>
       )}
       <section className="card">
-        <p className="section-title">실행 trace</p>
-        <p style={{ margin: '0 0 14px', color: 'var(--text-2)', fontSize: 13 }}>실제 저장된 실행 메타데이터를 기반으로 표시합니다. 없는 단계는 명확히 표시합니다.</p>
+        <p className="section-title">상세 실행 기록</p>
+        <p style={{ margin: '0 0 14px', color: 'var(--text-2)', fontSize: 13 }}>저장된 실행 정보를 기반으로 표시합니다. 없는 단계는 명확히 표시합니다.</p>
         <Timeline items={timeline} />
       </section>
     </div>

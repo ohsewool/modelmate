@@ -43,7 +43,7 @@ export default function DatasetExperimentLinks({ experiments, onSelect }) {
                   </span>
                   <span style={{ display: 'block', fontSize: 11, color: 'var(--text-label)' }}>{item.timestamp || '-'}</span>
                 </span>
-                <Badge variant={item.agent_run ? 'default' : 'secondary'}>{item.agent_run ? 'AI' : 'CV'}</Badge>
+                <Badge variant={item.agent_run ? 'default' : 'secondary'}>{item.agent_run ? '자동' : 'CV'}</Badge>
               </button>
             )
           })}

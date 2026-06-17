@@ -129,11 +129,11 @@ export default function ProjectDetail() {
   async function createToken() {
     setMessage('')
     try {
-      const res = await api.post(`/projects/${projectId}/prediction-tokens`, { label: '프로젝트 API token' })
-      setMessage(`token을 생성했습니다. 전체 token은 지금 한 번만 표시됩니다: ${res.data.plaintext_token}`)
+      const res = await api.post(`/projects/${projectId}/prediction-tokens`, { label: '프로젝트 API 인증 정보' })
+      setMessage(`API 인증 정보를 만들었습니다. 전체 인증 값은 지금 한 번만 표시됩니다: ${res.data.plaintext_token}`)
       await reload()
     } catch (err) {
-      setMessage(err.response?.data?.detail?.user_friendly_message || '예측 API token을 만들 수 없습니다.')
+      setMessage(err.response?.data?.detail?.user_friendly_message || '예측 API 인증 정보를 만들 수 없습니다.')
     }
   }
 
@@ -215,7 +215,7 @@ function OverviewTab({ project, run, dataset, data, timeline, onRerun }) {
         {(project.known_warnings || []).length ? project.known_warnings.map(item => <div key={item} className="banner-warning"><p style={{ margin: 0 }}>{item}</p></div>) : <p style={{ margin: 0, color: 'var(--text-2)' }}>현재 프로젝트 요약에서 차단 경고가 확인되지 않았습니다.</p>}
         <p style={{ margin: 0, color: 'var(--text-label)', fontSize: 12 }}>다음 추천 행동: {project.next_recommended_action || '보고서와 API 상태를 확인하세요.'}</p>
       </section>
-      {run ? <section className="card"><p className="section-title">최근 실행 trace</p><Timeline items={timeline} /></section> : <EmptyState title="아직 실행 기록이 없습니다." description="분석을 시작하면 실행 기록과 판단 흐름이 프로젝트에 저장됩니다." />}
+      {run ? <section className="card"><p className="section-title">최근 실행 기록</p><Timeline items={timeline} /></section> : <EmptyState title="아직 실행 기록이 없습니다." description="분석을 시작하면 실행 기록과 판단 흐름이 프로젝트에 저장됩니다." />}
     </div>
   )
 }
@@ -273,18 +273,18 @@ function ApiTab({ data, onCreate }) {
   return (
     <section className="card" style={{ display: 'grid', gap: 12 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-        <div><p className="section-title">예측 API</p><p style={{ margin: 0, color: 'var(--text-2)' }}>프로젝트 단위 token으로 학습 모델을 재사용합니다. 전체 token 값은 생성 직후 한 번만 표시됩니다.</p></div>
+        <div><p className="section-title">예측 API</p><p style={{ margin: 0, color: 'var(--text-2)' }}>프로젝트 단위 API 인증 정보로 학습 모델을 재사용합니다. 전체 인증 값은 생성 직후 한 번만 표시됩니다.</p></div>
         <StatusBadge status={availability?.available ? 'active' : 'disabled'} />
       </div>
       <div className="banner-warning"><p style={{ margin: 0 }}>모델: {availability?.model_ready ? '준비됨' : '준비 필요'} / 데이터셋: {availability?.dataset_active ? '활성' : '비활성'} / 상태: {availability?.available ? '사용 가능' : disabledReason}</p></div>
-      <button className="btn-primary" type="button" disabled={!availability?.available} onClick={onCreate}><KeyRound size={15} /> token 만들기</button>
+      <button className="btn-primary" type="button" disabled={!availability?.available} onClick={onCreate}><KeyRound size={15} /> API 인증 정보 만들기</button>
       {tokens.length ? tokens.map(token => (
         <div key={token.token_id} className="card-compact">
           <strong>{token.token_prefix}</strong> <StatusBadge status={token.status} />
           <p style={{ margin: '6px 0 0', color: 'var(--text-2)', fontSize: 12 }}>생성 {fmt(token.created_at)} / 호출 {token.usage_count || 0} / 마지막 사용 {fmt(token.last_used_at)}</p>
-          <p style={{ margin: '6px 0 0', color: 'var(--text-label)', fontSize: 12 }}>목록에는 전체 token을 다시 표시하지 않습니다.</p>
+          <p style={{ margin: '6px 0 0', color: 'var(--text-label)', fontSize: 12 }}>목록에는 전체 인증 값을 다시 표시하지 않습니다.</p>
         </div>
-      )) : <p style={{ margin: 0, color: 'var(--text-2)' }}>아직 생성된 프로젝트 API token이 없습니다.</p>}
+      )) : <p style={{ margin: 0, color: 'var(--text-2)' }}>아직 생성된 프로젝트 API 인증 정보가 없습니다.</p>}
       <details>
         <summary style={{ cursor: 'pointer', fontWeight: 800 }}>사용 예시 보기</summary>
         <pre style={{ whiteSpace: 'pre-wrap', marginTop: 10, padding: 12, border: '1px solid var(--border)', borderRadius: 8, background: 'var(--surface-alt)' }}>{`curl -X POST "/api/predict/${data.project.id}" \\\n  -H "Authorization: Bearer <MODEL_MATE_TOKEN>" \\\n  -H "Content-Type: application/json" \\\n  -d '{"rows":[{"feature_a":1}]}'`}</pre>

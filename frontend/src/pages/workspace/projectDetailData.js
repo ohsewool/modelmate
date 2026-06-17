@@ -132,8 +132,8 @@ export function makeRunTimeline(run, project, jobs = []) {
     {
       name: 'API 준비 상태',
       status: project?.has_prediction_api ? 'ready' : 'unknown',
-      observation: project?.has_prediction_api ? '예측 API 메타데이터가 있습니다.' : 'API token이 아직 준비되지 않았습니다.',
-      decision: project?.has_prediction_api ? 'API 탭에서 token 상태 확인' : '모델 공유 후 API를 만들 수 있습니다.',
+      observation: project?.has_prediction_api ? '예측 API 메타데이터가 있습니다.' : 'API 인증 정보가 아직 준비되지 않았습니다.',
+      decision: project?.has_prediction_api ? 'API 탭에서 인증 상태 확인' : '모델 공유 후 API를 만들 수 있습니다.',
     },
   ]
 }

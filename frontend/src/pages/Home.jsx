@@ -60,7 +60,7 @@ export default function Home() {
                   ModelMate
                 </h1>
                 <p style={{ margin: '18px 0 0', fontSize: 19, lineHeight: 1.48, fontWeight: 750, maxWidth: 660 }}>
-                  CSV 기반 예측 분석<br />목표 기반 AI 실행<br />보고서 · 예측 API 생성
+                  CSV 기반 예측 분석<br />목표 기반 분석 실행<br />보고서 · 예측 API 생성
                 </p>
                 <p style={{ margin: '12px 0 24px', fontSize: 15, lineHeight: 1.65, color: 'var(--text-2)', maxWidth: 600 }}>
                   CSV를 올리고, 예측할 값을 정한 뒤, 보고서와 API로 재사용하세요.
@@ -142,7 +142,7 @@ export default function Home() {
             <div>
               <h2 style={{ margin: '0 0 8px', fontSize: 22, fontWeight: 900 }}>분석 결과를 저장하고 다시 사용할 수 있습니다</h2>
               <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.7 }}>
-                프로젝트, 실행 기록, 보고서, 예측 API token을 한곳에서 관리합니다. token 전체 값은 생성 직후 한 번만 표시합니다.
+                프로젝트, 실행 기록, 보고서, 예측 API 인증 정보를 한곳에서 관리합니다. 전체 인증 값은 생성 직후 한 번만 표시합니다.
               </p>
             </div>
             <Button variant="secondary" onClick={() => nav('/login')}>프로젝트 보기</Button>

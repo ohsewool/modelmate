@@ -10,7 +10,7 @@ export default function AgentStartPanel({ fileRef, dragging, setDragging, onFile
         <div style={{ width: 58, height: 58, borderRadius: 16, display: 'grid', placeItems: 'center', background: 'rgba(124,58,237,0.1)', color: '#7c3aed', marginBottom: 14 }}>
           <AgentIcon />
         </div>
-        <h2 style={{ fontSize: 18, color: 'var(--text)', margin: '0 0 8px' }}>AI에게 CSV 맡기기</h2>
+        <h2 style={{ fontSize: 18, color: 'var(--text)', margin: '0 0 8px' }}>CSV로 빠른 자동 분석 시작</h2>
         <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.65, margin: '0 0 16px' }}>
           업로드된 데이터를 보고 목적을 정한 뒤 모델 비교와 결론 작성을 이어서 진행합니다.
         </p>

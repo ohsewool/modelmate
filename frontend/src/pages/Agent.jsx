@@ -115,7 +115,7 @@ export default function Agent() {
 
       {error && (
         <div className="card" style={{ borderColor: 'rgba(220,38,38,0.22)', background: 'rgba(220,38,38,0.05)', marginBottom: 16 }}>
-          <h2 style={{ fontSize: 16, color: '#dc2626', margin: '0 0 8px' }}>AI 분석 코치를 시작하지 못했습니다</h2>
+          <h2 style={{ fontSize: 16, color: '#dc2626', margin: '0 0 8px' }}>빠른 자동 분석을 시작하지 못했습니다</h2>
           <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6, margin: '0 0 14px' }}>{error}</p>
           <Button onClick={() => nav('/upload')} variant="secondary">데이터 확인하기</Button>
         </div>

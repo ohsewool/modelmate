@@ -27,7 +27,7 @@ export default function AgentQuickUploadCard({ fileRef, dragging, setDragging, o
       />
       <div>
         <p style={{ fontSize: 12, fontWeight: 900, color: '#7c3aed', margin: '0 0 6px' }}>CSV 바로 넣고 실행</p>
-        <h2 style={{ fontSize: 18, color: 'var(--text)', margin: '0 0 6px' }}>파일을 넣으면 AI 코치가 바로 시작합니다</h2>
+        <h2 style={{ fontSize: 18, color: 'var(--text)', margin: '0 0 6px' }}>파일을 넣으면 자동 분석이 바로 시작됩니다</h2>
         <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6, margin: 0 }}>
           업로드, 데이터 종류 판단, 맞힐 값 설정, 모델 비교를 한 번에 진행합니다.
         </p>

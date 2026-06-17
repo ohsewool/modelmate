@@ -9,8 +9,8 @@ export const AGENT_PLAN = [
 export default function AgentPlanBoard({ activeIndex, completed }) {
   return (
     <div className="card">
-      <p style={{ fontSize: 12, fontWeight: 900, color: '#7c3aed', margin: '0 0 6px' }}>AI 계획</p>
-      <h2 style={{ fontSize: 18, color: 'var(--text)', margin: '0 0 14px' }}>에이전트가 진행할 순서</h2>
+      <p style={{ fontSize: 12, fontWeight: 900, color: '#7c3aed', margin: '0 0 6px' }}>분석 계획</p>
+      <h2 style={{ fontSize: 18, color: 'var(--text)', margin: '0 0 14px' }}>자동 분석이 진행할 순서</h2>
       <div style={{ display: 'grid', gap: 10 }}>
         {AGENT_PLAN.map((item, idx) => {
           const done = completed || idx < activeIndex
