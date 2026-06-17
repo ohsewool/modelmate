@@ -1657,3 +1657,44 @@ Milestones:
   - Browser click QA on the deployed AI4I run should be repeated after Railway serves this new bundle.
 - Next step:
   - Push and let Railway redeploy, then revisit the AI4I Agent Run Detail page.
+
+## 2026-06-18 KST - Landing CTA Auth Redirect Hotfix
+
+- Status: completed
+- Branch: `main`
+- Scope:
+  - Fix unauthenticated landing page analysis CTA behavior.
+  - Preserve authenticated upload/dashboard/sample flow.
+  - Preserve explicit guest demo entry, but stop normal landing CTAs from creating or entering demo mode automatically.
+- Files changed:
+  - `frontend/src/pages/Home.jsx`
+  - `frontend/src/App.jsx`
+  - `frontend/src/pages/Login.jsx`
+  - `frontend/src/AuthContext.jsx`
+  - `frontend/src/api.js`
+  - generated frontend dist bundle
+  - `.codex/RUN_LOG.md`
+- Fixes applied:
+  - Landing page now checks auth state before analysis CTAs.
+  - Unauthenticated `CSV 분석 시작` and `CSV 올리기` route to `/login?redirect=%2Fupload`.
+  - Unauthenticated `샘플로 체험하기` routes to `/login?redirect=%2Fupload%3Fsample%3D1`.
+  - Unauthenticated `프로젝트 보기` routes to `/login?redirect=%2Fdashboard`.
+  - `RequireAuth` now preserves the original internal route in the login `redirect` query.
+  - Login success now respects `redirect` and falls back to `/dashboard`.
+  - Invalid token recovery no longer auto-creates a guest user.
+  - API request interceptor no longer creates a guest session automatically; it only forwards an existing explicit guest session.
+- Verification:
+  - `python -m compileall backend`: passed with bundled Python runtime.
+  - `cd frontend && npm run build`: passed with bundled Node/Vite runtime.
+  - Vite large chunk warning remains non-blocking.
+- Manual QA checklist to repeat after deploy:
+  - Logged-out landing header `CSV 분석 시작` should open login, not dashboard/upload.
+  - Logged-out hero `CSV 올리기` should open login with `/upload` redirect.
+  - Logged-out hero `샘플로 체험하기` should open login with `/upload?sample=1` redirect.
+  - Direct logged-out `/dashboard`, `/upload`, `/agent-mode`, `/projects`, `/reports`, `/prediction-apis`, and `/jobs` should redirect to login with the original path.
+  - After login, user should land on the requested redirect target.
+  - Explicit guest demo start on the login page remains available by design.
+- Known limitations:
+  - Browser click QA on Railway is needed after deploy to confirm the latest bundle is served.
+- Next step:
+  - Commit, push, and let Railway redeploy the updated frontend bundle.

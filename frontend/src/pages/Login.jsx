@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { GoogleLogin } from '@react-oauth/google'
 import { ArrowRight, Eye, EyeOff, ShieldCheck } from 'lucide-react'
 import { useAuth } from '../AuthContext'
@@ -9,6 +9,9 @@ import { Button } from '../components/ui/button'
 export default function Login() {
   const { user, login, startGuest } = useAuth()
   const nav = useNavigate()
+  const location = useLocation()
+  const redirect = new URLSearchParams(location.search).get('redirect') || '/dashboard'
+  const safeRedirect = redirect.startsWith('/') && !redirect.startsWith('//') ? redirect : '/dashboard'
 
   const [mode, setMode] = useState('login')
   const [email, setEmail] = useState('')
@@ -19,7 +22,7 @@ export default function Login() {
   const [error, setError] = useState('')
   const [showPw, setShowPw] = useState(false)
 
-  useEffect(() => { if (user) nav('/upload') }, [user, nav])
+  useEffect(() => { if (user && !user.is_guest) nav(safeRedirect, { replace: true }) }, [user, nav, safeRedirect])
 
   async function handleEmailSubmit(e) {
     e.preventDefault()
@@ -30,7 +33,7 @@ export default function Login() {
       const body = mode === 'login' ? { email, password } : { email, password, name }
       const { data } = await api.post(endpoint, body)
       login(data.token, data.user)
-      nav(data.user?.role === 'admin' ? '/history' : '/upload')
+      nav(safeRedirect, { replace: true })
     } catch (e) {
       setError(e.response?.data?.detail || '로그인을 완료하지 못했습니다. 입력값을 확인하고 다시 시도해 주세요.')
     } finally {
@@ -42,7 +45,7 @@ export default function Login() {
     try {
       const { data } = await api.post('/auth/google', { credential: credentialResponse.credential })
       login(data.token, data.user)
-      nav(data.user?.role === 'admin' ? '/history' : '/upload')
+      nav(safeRedirect, { replace: true })
     } catch (e) {
       setError('Google 로그인에 실패했습니다. 잠시 후 다시 시도해 주세요.')
     }

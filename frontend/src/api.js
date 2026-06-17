@@ -71,8 +71,10 @@ api.interceptors.request.use(config => {
   }
   if (token) config.headers.Authorization = `Bearer ${token}`
   if (!token && !config.skipGuestSession) {
-    const guest = ensureGuestSession()
-    config.headers['X-ModelMate-Guest-Session'] = guest.guest_session_id
+    const guest = readGuestSession()
+    if (guest) {
+      config.headers['X-ModelMate-Guest-Session'] = guest.guest_session_id
+    }
   }
   if (presenterMode && localStorage.getItem('mm_demo_mode') === '1') {
     config.params = { ...(config.params || {}), demo: true }

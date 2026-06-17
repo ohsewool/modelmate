@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 import { AuthProvider } from './AuthContext'
 import { useAuth } from './AuthContext'
@@ -30,6 +30,7 @@ const GOOGLE_CLIENT_ID = '373474705259-7b18amrkom84aqqt59n87lglhrgq1trj.apps.goo
 
 function RequireAuth({ children }) {
   const { user, loading } = useAuth()
+  const location = useLocation()
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: 'var(--bg)', color: 'var(--text)' }}>
@@ -37,7 +38,10 @@ function RequireAuth({ children }) {
       </div>
     )
   }
-  if (!user) return <Navigate to="/login" replace />
+  if (!user) {
+    const redirect = `${location.pathname}${location.search || ''}`
+    return <Navigate to={`/login?redirect=${encodeURIComponent(redirect)}`} replace />
+  }
   return children
 }
 

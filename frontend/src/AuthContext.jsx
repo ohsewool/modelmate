@@ -30,8 +30,6 @@ export function AuthProvider({ children }) {
           })
         } catch {
           clearStoredAuth()
-          const session = ensureGuestSession()
-          if (!cancelled) setUser({ id: session.guest_session_id, name: '게스트 데모', email: '', role: 'guest', is_guest: true })
         }
       } else if (guest) {
         try {
