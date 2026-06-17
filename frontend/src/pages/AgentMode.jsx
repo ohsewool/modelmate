@@ -282,25 +282,6 @@ function SelectedCsvSummary({ dataset }) {
   )
 }
 
-function SuggestedGoalCard({ suggestedGoal, onUseSuggestion }) {
-  return (
-    <section className="card" style={{ display: 'grid', gap: 12 }}>
-      <div>
-        <p className="section-title" style={{ marginBottom: 6 }}>추천 분석 목표</p>
-        <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.6 }}>
-          추천 목표를 그대로 쓰거나 수정하세요.
-        </p>
-      </div>
-      <div className="alert alert-success" style={{ margin: 0 }}>
-        {suggestedGoal || 'CSV를 선택하면 추천 목표가 표시됩니다.'}
-      </div>
-      <button className="btn btn-secondary" type="button" onClick={onUseSuggestion} disabled={!suggestedGoal}>
-        이 목표로 시작
-      </button>
-    </section>
-  )
-}
-
 function TargetRecommendationPanel({ dataset, onFocusGoal }) {
   const quality = datasetTargetQuality(dataset)
   const target = datasetTarget(dataset)
@@ -311,20 +292,17 @@ function TargetRecommendationPanel({ dataset, onFocusGoal }) {
   ].filter((item, index, arr) => item?.column_name && arr.findIndex(other => other?.column_name === item.column_name) === index)
   const noMeaningfulTarget = quality?.has_meaningful_target === false || (!target && dataset)
 
+  if (!dataset) return null
+
   return (
     <section className="card" style={{ display: 'grid', gap: 12 }}>
       <div>
-        <p className="section-title" style={{ marginBottom: 6 }}>예측할 값 추천</p>
+        <p className="section-title" style={{ marginBottom: 6 }}>예측할 값 확인</p>
         <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.6 }}>
-          예측할 값을 먼저 정합니다.
+          이 CSV에서 가장 먼저 검토할 예측값입니다.
         </p>
       </div>
-      {!dataset ? (
-        <div className="empty-state" style={{ padding: 16 }}>
-          <strong>CSV를 먼저 선택해 주세요.</strong>
-          <p>CSV를 고르면 추천값을 보여드립니다.</p>
-        </div>
-      ) : noMeaningfulTarget ? (
+      {noMeaningfulTarget ? (
         <div className="alert alert-warning" style={{ display: 'grid', gap: 10, margin: 0 }}>
           <strong>바로 예측할 만한 명확한 값을 찾기 어렵습니다.</strong>
           <span>예측보다 요약 보고서가 먼저일 수 있습니다.</span>
@@ -336,10 +314,10 @@ function TargetRecommendationPanel({ dataset, onFocusGoal }) {
         </div>
       ) : (
         <div style={{ display: 'grid', gap: 8 }}>
-          {candidates.slice(0, 4).map(candidate => (
-            <div key={candidate.column_name} className="card-compact" style={{ display: 'grid', gap: 6 }}>
+          {candidates.slice(0, 1).map(candidate => (
+            <div key={candidate.column_name} className="card-compact" style={{ display: 'grid', gap: 8 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
-                <strong>{candidate.column_name}</strong>
+                <strong style={{ fontSize: 20 }}>{candidate.column_name}</strong>
                 <span className="status-pill">{targetUsefulnessLabel(candidate)}</span>
               </div>
               <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.55 }}>
@@ -347,6 +325,24 @@ function TargetRecommendationPanel({ dataset, onFocusGoal }) {
               </p>
             </div>
           ))}
+          {candidates.length > 1 && (
+            <details className="card-compact" style={{ padding: 12 }}>
+              <summary style={{ cursor: 'pointer', fontWeight: 800 }}>다른 후보 보기</summary>
+              <div style={{ display: 'grid', gap: 8, marginTop: 10 }}>
+                {candidates.slice(1, 4).map(candidate => (
+                  <div key={candidate.column_name} style={{ display: 'grid', gap: 4 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                      <strong>{candidate.column_name}</strong>
+                      <span className="status-pill">{targetUsefulnessLabel(candidate)}</span>
+                    </div>
+                    <p style={{ margin: 0, color: 'var(--text-2)', fontSize: 13, lineHeight: 1.45 }}>
+                      {candidate.usefulness_explanation || candidate.reason || '추가 후보입니다.'}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </details>
+          )}
         </div>
       )}
     </section>
@@ -429,6 +425,81 @@ function MismatchWarning({ warning, suggestedGoal, onUseSuggestion, onProceed, o
         <button className="btn btn-secondary" type="button" onClick={onEdit}>목표 직접 수정</button>
       </div>
     </div>
+  )
+}
+
+function AnalysisGoalCard({
+  goalText,
+  setGoalText,
+  goalRef,
+  placeholder,
+  suggestedGoal,
+  onUseSuggestion,
+  mismatchWarning,
+  mismatchChoice,
+  onProceed,
+  onEdit,
+  targetPreference,
+  setTargetPreference,
+  selectedTargetUnclear,
+  creating,
+  canCreateRun,
+  onCreate,
+}) {
+  return (
+    <section className="card" style={{ display: 'grid', gap: 16 }}>
+      <div>
+        <p className="section-title">분석 목표 확인</p>
+        <p style={{ margin: '0 0 10px', color: 'var(--text-2)', lineHeight: 1.6 }}>
+          추천 목표를 확인하고 필요하면 한 문장으로 수정하세요.
+        </p>
+        <textarea
+          ref={goalRef}
+          value={goalText}
+          onChange={event => {
+            setGoalText(event.target.value)
+          }}
+          rows={4}
+          style={{ width: '100%', resize: 'vertical' }}
+          placeholder={placeholder}
+        />
+        {suggestedGoal && goalText !== suggestedGoal && (
+          <button className="btn btn-secondary" type="button" onClick={onUseSuggestion} style={{ marginTop: 8 }}>
+            추천 목표로 바꾸기
+          </button>
+        )}
+      </div>
+
+      <label style={{ display: 'grid', gap: 6 }}>
+        <span className="section-title">예측값 컬럼</span>
+        <input
+          value={targetPreference}
+          onChange={event => setTargetPreference(event.target.value)}
+          placeholder="비워두면 추천 예측값을 사용합니다."
+        />
+      </label>
+
+      <MismatchWarning
+        warning={mismatchWarning}
+        suggestedGoal={suggestedGoal}
+        onUseSuggestion={onUseSuggestion}
+        onProceed={onProceed}
+        onEdit={onEdit}
+      />
+      {mismatchWarning && mismatchChoice === 'proceed' && (
+        <div className="alert alert-warning" style={{ margin: 0 }}>
+          기존 목표 그대로 진행합니다. 이 선택은 상세 실행 기록에 `goal_dataset_mismatch_warning`으로 기록됩니다.
+        </div>
+      )}
+      {selectedTargetUnclear && (
+        <div className="alert alert-warning" style={{ margin: 0 }}>
+          추천 예측값이 명확하지 않아 분석 중 사용자 확인이 필요할 수 있습니다.
+        </div>
+      )}
+      <button className="btn btn-primary" type="button" onClick={onCreate} disabled={creating || !canCreateRun}>
+        <ListChecks size={16} /> {creating ? '준비 중' : '분석 시작'}
+      </button>
+    </section>
   )
 }
 
@@ -587,9 +658,17 @@ export default function AgentMode() {
     goalRef.current?.focus()
   }
 
+  function updateGoalText(value) {
+    setGoalText(value)
+    setMismatchChoice('')
+  }
+
   const selectedTargetUnclear = Boolean(selectedDataset && datasetTargetQuality(selectedDataset)?.has_meaningful_target === false)
   const canCreateRun = Boolean(selectedDatasetId && goalText.trim())
   const placeholder = suggestedGoal || '예: 이 CSV로 당뇨병 여부를 예측하고 중요한 요인을 보고서로 정리해줘.'
+  const selectedRunStatus = getRunStatus(selectedRun)
+  const executionStarted = Boolean(selectedRun && selectedRunStatus && selectedRunStatus !== 'planned')
+  const setupVisible = !executionStarted
 
   return (
     <main className="workspace-page" style={{ display: 'grid', gap: 20 }}>
@@ -605,7 +684,6 @@ export default function AgentMode() {
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
             <Link className="btn btn-secondary" to="/upload?returnTo=agent-mode"><Upload size={16} /> CSV 올리기</Link>
             <Link className="btn btn-secondary" to="/agent">빠른 자동 분석 시작</Link>
-            <button className="btn btn-primary" type="button" onClick={editGoal}>목표 기반 분석 시작</button>
           </div>
         </div>
         <div className="workspace-grid four-columns" style={{ width: '100%' }}>
@@ -627,98 +705,55 @@ export default function AgentMode() {
 
       {error && <div className="alert alert-warning"><ShieldAlert size={16} /> {error}</div>}
 
-      <div className="workspace-grid two-columns">
+      <div className={selectedDataset ? 'workspace-grid two-columns' : ''}>
         <SelectedCsvSummary dataset={selectedDataset} />
-        <SuggestedGoalCard suggestedGoal={suggestedGoal} onUseSuggestion={useSuggestedGoal} />
+        {!selectedDataset && (
+          <DatasetSelector
+            datasets={datasets}
+            selectedDatasetId={selectedDatasetId}
+            onSelect={selectDataset}
+            loading={datasetLoading}
+          />
+        )}
       </div>
 
-      <div className="workspace-grid two-columns">
-        <TargetRecommendationPanel dataset={selectedDataset} onFocusGoal={editGoal} />
-        <DatasetSelector
-          datasets={datasets}
-          selectedDatasetId={selectedDatasetId}
-          onSelect={selectDataset}
-          loading={datasetLoading}
-        />
-      </div>
-
-      <div className="workspace-grid two-columns">
-        <section className="card" style={{ display: 'grid', gap: 16 }}>
-          <div>
-            <p className="section-title">분석 목표 입력</p>
-            <p style={{ margin: '0 0 10px', color: 'var(--text-2)', lineHeight: 1.6 }}>
-              추천 목표를 확인하고 필요하면 수정하세요.
-            </p>
-            <textarea
-              ref={goalRef}
-              value={goalText}
-              onChange={event => {
-                setGoalText(event.target.value)
-                setMismatchChoice('')
-              }}
-              rows={5}
-              style={{ width: '100%', resize: 'vertical' }}
-              placeholder={placeholder}
-            />
-            <p style={{ margin: '8px 0 0', color: 'var(--text-label)', fontSize: 12 }}>
-              추천 목표: {suggestedGoal}
-            </p>
-          </div>
-          <MismatchWarning
-            warning={mismatchWarning}
+      {selectedDataset && setupVisible && (
+        <div className="workspace-grid two-columns">
+          <TargetRecommendationPanel dataset={selectedDataset} onFocusGoal={editGoal} />
+          <AnalysisGoalCard
+            goalText={goalText}
+            setGoalText={updateGoalText}
+            goalRef={goalRef}
+            placeholder={placeholder}
             suggestedGoal={suggestedGoal}
             onUseSuggestion={useSuggestedGoal}
+            mismatchWarning={mismatchWarning}
+            mismatchChoice={mismatchChoice}
             onProceed={proceedWithMismatch}
             onEdit={editGoal}
+            targetPreference={targetPreference}
+            setTargetPreference={setTargetPreference}
+            selectedTargetUnclear={selectedTargetUnclear}
+            creating={creating}
+            canCreateRun={canCreateRun}
+            onCreate={createRun}
           />
-          {mismatchWarning && mismatchChoice === 'proceed' && (
-            <div className="alert alert-warning" style={{ margin: 0 }}>
-              기존 목표 그대로 진행합니다. 이 선택은 상세 실행 기록에 `goal_dataset_mismatch_warning`으로 기록됩니다.
-            </div>
-          )}
-          <label style={{ display: 'grid', gap: 6 }}>
-            <span className="section-title">선호 예측값 컬럼</span>
-            <input
-              value={targetPreference}
-              onChange={event => setTargetPreference(event.target.value)}
-              placeholder="선택 사항입니다. 비워두면 데이터셋 추천 예측값을 사용합니다."
-            />
-          </label>
-          {selectedTargetUnclear && (
-            <div className="alert alert-warning" style={{ margin: 0 }}>
-              추천 예측값이 명확하지 않아 분석 중 사용자 확인이 필요할 수 있습니다.
-            </div>
-          )}
-          {!selectedDatasetId && (
-            <div className="alert alert-warning" style={{ margin: 0 }}>
-              목표 기반 분석을 만들려면 먼저 CSV를 선택하거나 업로드해 주세요.
-            </div>
-          )}
-          <button className="btn btn-primary" type="button" onClick={createRun} disabled={creating || !canCreateRun}>
-            <ListChecks size={16} /> {creating ? '계획 생성 중' : '분석 시작'}
-          </button>
-        </section>
+        </div>
+      )}
 
-        <section className="card" style={{ display: 'grid', gap: 14 }}>
-          <p className="section-title">분석 방식 선택</p>
-          <div className="card-compact" style={{ display: 'grid', gap: 8 }}>
-            <strong>빠른 자동 분석</strong>
-            <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.55 }}>
-              CSV 업로드부터 모델 비교까지 빠르게 진행합니다.
-            </p>
-            <Link className="btn btn-secondary" to="/agent">빠른 자동 분석 시작</Link>
+      {selectedDataset && setupVisible && (
+        <details className="card" style={{ padding: 14 }}>
+          <summary style={{ cursor: 'pointer', fontWeight: 850 }}>다른 CSV 선택</summary>
+          <div style={{ marginTop: 12 }}>
+            <DatasetSelector
+              datasets={datasets}
+              selectedDatasetId={selectedDatasetId}
+              onSelect={selectDataset}
+              loading={datasetLoading}
+            />
           </div>
-          <div className="card-compact" style={{ display: 'grid', gap: 8 }}>
-            <strong>목표 기반 분석</strong>
-            <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.55 }}>
-              목표와 타깃을 확인하며 실행 기록을 남깁니다.
-            </p>
-            <button className="btn btn-primary" type="button" onClick={createRun} disabled={creating || !canCreateRun}>
-              목표 기반 분석 시작
-            </button>
-          </div>
-        </section>
-      </div>
+        </details>
+      )}
 
       {selectedRun && (
         <div className="workspace-grid two-columns">
@@ -727,17 +762,31 @@ export default function AgentMode() {
             <p className="section-title">분석 실행 상태</p>
             <strong>{statusLabel(getRunStatus(selectedRun))}</strong>
             <p style={{ margin: 0, color: 'var(--text-2)' }}>
-              데이터 연결: {getRunDatasetId(selectedRun) || '연결되지 않음'}
+              {selectedRunStatus === 'running'
+                ? '분석을 실행하고 있습니다. 완료되면 결과와 상세 실행 기록을 확인할 수 있습니다.'
+                : ['completed', 'succeeded', 'success'].includes(selectedRunStatus)
+                  ? '분석이 완료되었습니다. 결과 보고서와 예측 API 준비 상태를 확인해 보세요.'
+                  : selectedRunStatus === 'waiting_for_review'
+                    ? '사용자 확인이 필요한 단계에서 멈췄습니다. 상세 실행 기록에서 확인 항목을 볼 수 있습니다.'
+                    : '분석 계획이 준비되었습니다. 실행을 시작하면 상세 기록이 남습니다.'}
             </p>
             <p style={{ margin: 0, color: 'var(--text-label)', fontSize: 12 }}>
-              분석 실행 ID: {getRunId(selectedRun) || '분석 실행 ID를 찾을 수 없습니다. 다시 생성해 주세요.'}
-              {getRunProjectId(selectedRun) ? ` · 프로젝트 ID: ${getRunProjectId(selectedRun)}` : ''}
+              데이터 연결: {getRunDatasetId(selectedRun) ? String(getRunDatasetId(selectedRun)).slice(0, 8) : '연결되지 않음'}
+              {getRunId(selectedRun) ? ` · 실행 ${String(getRunId(selectedRun)).slice(0, 8)}` : ''}
             </p>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              <button className="btn btn-primary" type="button" onClick={() => executeRun(selectedRun)} disabled={executing || !getRunDatasetId(selectedRun) || !getRunId(selectedRun)}>
-                <CheckCircle2 size={16} /> {executing ? '분석 중' : '분석 시작'}
-              </button>
+              {!['completed', 'succeeded', 'success'].includes(selectedRunStatus) && (
+                <button className="btn btn-primary" type="button" onClick={() => executeRun(selectedRun)} disabled={executing || !getRunDatasetId(selectedRun) || !getRunId(selectedRun)}>
+                  <CheckCircle2 size={16} /> {executing ? '분석 중' : '분석 시작'}
+                </button>
+              )}
               <TraceLink run={selectedRun} />
+              {['completed', 'succeeded', 'success'].includes(selectedRunStatus) && (
+                <>
+                  <Link className="btn btn-secondary" to="/reports">보고서 보기</Link>
+                  <Link className="btn btn-secondary" to="/prediction-apis">예측 API 확인</Link>
+                </>
+              )}
             </div>
           </section>
         </div>
@@ -745,35 +794,33 @@ export default function AgentMode() {
 
       {selectedRun?.plan && <PlanPreview plan={selectedRun.plan} />}
 
-      <section className="card" style={{ display: 'grid', gap: 14 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Clock3 size={18} />
-          <p className="section-title" style={{ margin: 0 }}>최근 분석 실행</p>
-        </div>
-        {loading ? (
-          <p style={{ color: 'var(--text-label)' }}>불러오는 중입니다.</p>
-        ) : runs.length ? (
-          <div style={{ display: 'grid', gap: 10 }}>
-            {runs.map(run => (
-              <div key={getRunId(run) || run.created_at} className="card-compact" style={{ display: 'grid', gap: 7 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
-                  <strong>{runTitle(run)}</strong>
-                  <span className="status-pill">{statusLabel(getRunStatus(run))}</span>
-                </div>
-                <p style={{ margin: 0, color: 'var(--text-2)', fontSize: 13 }}>
-                  데이터셋: {getRunDatasetId(run) || '연결되지 않음'} · 프로젝트: {getRunProjectId(run) || '없음'}
-                </p>
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  <button className="btn btn-secondary" type="button" onClick={() => setSelectedRun(run)}>계획 보기</button>
-                  <TraceLink run={run} />
-                </div>
+      <details className="card" style={{ padding: 14 }}>
+        <summary style={{ cursor: 'pointer', fontWeight: 850 }}>
+          <Clock3 size={16} style={{ verticalAlign: 'middle', marginRight: 6 }} />
+          최근 실행 기록 보기
+        </summary>
+        <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
+          {loading ? (
+            <p style={{ color: 'var(--text-label)' }}>불러오는 중입니다.</p>
+          ) : runs.length ? runs.map(run => (
+            <div key={getRunId(run) || run.created_at} className="card-compact" style={{ display: 'grid', gap: 7 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
+                <strong>{runTitle(run)}</strong>
+                <span className="status-pill">{statusLabel(getRunStatus(run))}</span>
               </div>
-            ))}
-          </div>
-        ) : (
-          <p style={{ color: 'var(--text-label)' }}>아직 분석 실행이 없습니다.</p>
-        )}
-      </section>
+              <p style={{ margin: 0, color: 'var(--text-2)', fontSize: 13 }}>
+                데이터 연결: {getRunDatasetId(run) ? String(getRunDatasetId(run)).slice(0, 8) : '연결되지 않음'}
+              </p>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <button className="btn btn-secondary" type="button" onClick={() => setSelectedRun(run)}>계획 보기</button>
+                <TraceLink run={run} />
+              </div>
+            </div>
+          )) : (
+            <p style={{ color: 'var(--text-label)' }}>아직 분석 실행이 없습니다.</p>
+          )}
+        </div>
+      </details>
     </main>
   )
 }

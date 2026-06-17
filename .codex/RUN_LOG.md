@@ -1380,3 +1380,40 @@ Milestones:
 - Known limitations:
   - Some technical terms remain in API examples, internal identifiers, and advanced verification areas by design.
   - Railway redeploy is needed for the updated frontend copy and generated bundle to appear on the public site.
+
+## 2026-06-17 KST - UI/UX PR-09 Simplify Goal-Based Analysis Start Screen
+
+- Status: completed
+- Branch: `main`
+- Scope:
+  - Simplify `/agent-mode` start screen without backend changes or new features.
+  - Reduce visible sections in setup state and make the next action obvious.
+- Files changed:
+  - `frontend/src/pages/AgentMode.jsx`
+  - `frontend/dist/index.html`
+  - `frontend/dist/assets/index-EQewyGJr.js`
+- Sections removed/collapsed:
+  - Separate recommended-goal card was merged into the analysis goal confirmation card.
+  - Full CSV dataset selector is hidden once a CSV is selected and moved under `다른 CSV 선택`.
+  - Full target candidate list now shows only the best candidate by default, with others under `다른 후보 보기`.
+  - Recent analysis runs are moved into collapsed `최근 실행 기록 보기`.
+  - How-it-works remains collapsed by default.
+  - Analysis method selection card was removed from setup state; quick automatic analysis remains a secondary link.
+- CTA cleanup:
+  - Setup state now has one dominant primary action in the main content: `분석 시작`.
+  - Secondary actions are `CSV 올리기`, `빠른 자동 분석 시작`, and collapsed `다른 CSV 선택`.
+- State-based visibility:
+  - No CSV: show hero, selected CSV empty state, and CSV selector/upload path.
+  - CSV selected: show selected CSV summary, prediction value confirmation, and analysis goal confirmation.
+  - Execution started: hide setup-only cards and show run status/actions.
+  - Completed run: show report/API/detail actions instead of another setup CTA.
+- Verification result:
+  - `python -m compileall backend`: passed with bundled Python runtime.
+  - `cd frontend && npm run build`: passed with bundled Node/Vite runtime because `npm` is not on PATH.
+  - Vite large chunk warning remains non-blocking.
+- Smoke result:
+  - Static source review confirmed duplicate setup sections were removed or collapsed in `AgentMode.jsx`.
+  - Browser click QA was not run in this pass because no local server was started.
+- Known limitations:
+  - Visual comparison against deployed `/agent-mode` still requires Railway redeploy and manual browser check.
+  - Detailed pixel/interaction QA is still manual.
