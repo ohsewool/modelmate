@@ -56,6 +56,60 @@ def _agent_run_aliases(payload: dict) -> dict:
     }
 
 
+def _dataset_summary_for_run(conn, run: dict | None) -> dict | None:
+    if not run:
+        return None
+    dataset_id = run.get("dataset_id")
+    project_id = run.get("project_id")
+    user_id = run.get("user_id")
+    if dataset_id:
+        try:
+            row = conn.execute(
+                "SELECT * FROM datasets WHERE id=? AND (? IS NULL OR user_id=?)",
+                (dataset_id, user_id, user_id),
+            ).fetchone()
+            if row:
+                item = dict(row)
+                quality = _safe_json(item.get("quality"), {}) if "_safe_json" in globals() else {}
+                return {
+                    "dataset_id": item.get("id"),
+                    "id": item.get("id"),
+                    "project_id": item.get("project_id"),
+                    "filename": item.get("filename"),
+                    "original_filename": item.get("original_filename") or item.get("filename"),
+                    "row_count": item.get("rows"),
+                    "column_count": item.get("columns"),
+                    "target_col": item.get("target_col"),
+                    "domain": item.get("domain"),
+                    "target_quality": (quality or {}).get("target_quality"),
+                    "quality_summary": quality,
+                }
+        except Exception:
+            pass
+    current = STATE.get("current_dataset") if "STATE" in globals() else None
+    current_id = str((current or {}).get("id") or (current or {}).get("dataset_id") or "")
+    if dataset_id and current_id == str(dataset_id):
+        return {
+            "dataset_id": current_id,
+            "id": current_id,
+            "project_id": (current or {}).get("project_id") or project_id,
+            "filename": (current or {}).get("filename"),
+            "row_count": (current or {}).get("rows") or (current or {}).get("row_count"),
+            "column_count": (current or {}).get("columns") or (current or {}).get("column_count"),
+            "target_col": (current or {}).get("target_col"),
+            "domain": (current or {}).get("domain"),
+        }
+    return None
+
+
+def _attach_dataset_summary(conn, trace: dict) -> dict:
+    run = trace.get("analysis_run") or trace.get("run") or trace.get("agent_run") or {}
+    dataset = _dataset_summary_for_run(conn, run)
+    if dataset:
+        trace = {**trace, "dataset": dataset, "dataset_info": dataset}
+    return trace
+
+
 @app.post("/api/agent-runs")
 async def create_goal_first_agent_run_api(
     body: AgentGoalRunBody,
@@ -153,6 +207,7 @@ async def execute_goal_first_agent_run_api(analysis_run_id: str, user=Depends(ge
     conn = get_db()
     try:
         trace = execute_agent_run(conn, analysis_run_id)
+        trace = _attach_dataset_summary(conn, trace or {})
     finally:
         conn.close()
     if not trace:
@@ -171,6 +226,7 @@ async def get_goal_first_agent_trace_api(analysis_run_id: str, user=Depends(get_
     conn = get_db()
     try:
         trace = get_analysis_timeline(conn, analysis_run_id)
+        trace = _attach_dataset_summary(conn, trace or {})
     finally:
         conn.close()
     if not trace:

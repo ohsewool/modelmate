@@ -1504,3 +1504,37 @@ Milestones:
   - Existing dirty QA result files were left untouched and excluded from this commit.
 - Next step:
   - Railway redeploy is needed for public site behavior to reflect the pushed changes.
+
+## 2026-06-18 KST - Critical Fix Runtime Crash and Dataset State Contamination
+
+- Status: completed
+- Branch: `main`
+- Scope:
+  - Prevent Agent execution from using a stale global dataframe when the persisted Agent Run `dataset_id` does not match the active uploaded dataset.
+  - Add safer Agent Mode execution checks and Agent Run Detail rendering filters so stale candidates or important factors from another CSV are not shown in the main UI.
+- Root cause found:
+  - `backend/agents/executor.py` injected `backend.main.STATE["df"]` into tool runtime arguments without validating that `STATE["current_dataset"].id` matched the Agent Run `dataset_id`.
+  - This could mix an old diabetes dataframe with a newer AI4I Agent Run if global state and persisted run metadata diverged.
+- Backend fixes:
+  - Added `_active_dataset_state(run)` invariant check in the executor.
+  - Execution is blocked with `dataset_state_mismatch` validation and a dataset gate decision when active dataset metadata does not match the run.
+  - Tool runtime arguments now receive a dataframe only from the validated matching dataset state.
+  - Agent trace API now attaches dataset metadata by run `dataset_id` when available, so detail pages can render row/column/project context without relying on stale frontend state.
+- Frontend fixes:
+  - `/agent-mode` validates run `dataset_id` and `project_id` against the selected CSV before execution.
+  - `/agent-mode` blocks execution if the selected prediction value is not present in the selected dataset columns when column metadata is available.
+  - `/agent-mode/:agentRunId` adds invariant warnings when run and trace dataset ids disagree.
+  - Important factors and review options in the default user-facing UI are filtered to columns known to belong to the current trace dataset.
+  - Advanced trace remains unchanged and still shows persisted raw records for verification.
+  - Progress count now stops at failed/blocked/review steps instead of counting later stale completed steps.
+- Verification:
+  - `python -m compileall backend`: passed with bundled Python runtime.
+  - `cd frontend && npm run build`: passed with bundled Node/Vite runtime.
+  - Vite large chunk warning remains non-blocking.
+  - Direct executor import smoke could not run in the bundled Python environment because `fastapi` is not installed there; compile/build verification passed and runtime behavior should be verified on the Railway/server environment.
+- Known limitations:
+  - Full browser reproduction with real `UCI ai4i2020.csv` was not completed in this local pass.
+  - Existing contaminated historical traces are not deleted; the default UI now filters stale fields, while advanced trace still preserves raw records.
+  - Existing dirty QA result files were left untouched and excluded from this commit.
+- Next step:
+  - Railway redeploy is needed, then manually test diabetes -> AI4I upload/run sequence on the deployed site.

@@ -74,12 +74,16 @@ function isRunReviewNeeded(run) {
 
 function getCompletedStepCount(steps, run) {
   if (isRunComplete(run)) return steps.length
-  return steps.filter(isStepDone).length
+  const stopIndex = steps.findIndex(step => ['failed', 'blocked', 'waiting_for_review'].includes(getStepStatus(step)) || step?.requires_human_review)
+  const visibleSteps = stopIndex >= 0 ? steps.slice(0, stopIndex) : steps
+  return visibleSteps.filter(isStepDone).length
 }
 
 function getCurrentStep(steps, run) {
   if (isRunComplete(run)) return null
-  return steps.find(isStepActive) || steps.find(step => !isStepDone(step)) || steps[steps.length - 1]
+  return steps.find(step => ['failed', 'blocked', 'waiting_for_review', 'running'].includes(getStepStatus(step)) || step?.requires_human_review)
+    || steps.find(step => !isStepDone(step))
+    || steps[steps.length - 1]
 }
 
 function targetLabel(target) {
@@ -107,6 +111,42 @@ function traceText(trace) {
   } catch {
     return ''
   }
+}
+
+function traceDatasetColumns(trace) {
+  const dataset = trace?.dataset || trace?.dataset_info || {}
+  const candidates = [
+    dataset.columns,
+    dataset.column_names,
+    dataset.column_list,
+    dataset.quality_summary?.columns,
+    dataset.target_quality?.columns,
+    trace?.profile?.columns,
+  ]
+  for (const item of candidates) {
+    if (Array.isArray(item)) return item.map(String)
+  }
+  return []
+}
+
+function isKnownDatasetColumn(trace, column) {
+  const columns = traceDatasetColumns(trace)
+  if (!columns.length || !column) return true
+  return columns.includes(String(column))
+}
+
+function traceInvariantWarning(run, trace) {
+  const dataset = trace?.dataset || trace?.dataset_info || {}
+  const runDatasetId = run?.dataset_id
+  const traceDatasetId = dataset.dataset_id || dataset.id
+  if (runDatasetId && traceDatasetId && String(runDatasetId) !== String(traceDatasetId)) {
+    return '분석 정보가 현재 CSV와 일치하지 않아 다시 불러옵니다. CSV를 다시 선택해 주세요.'
+  }
+  const target = run?.target_column || run?.target_col || run?.interpreted_goal?.target_preference || dataset.target_col
+  if (target && !isKnownDatasetColumn(trace, target)) {
+    return '선택한 예측값이 현재 CSV 컬럼과 일치하지 않습니다. CSV를 다시 선택해 주세요.'
+  }
+  return ''
 }
 
 function detectTargetDomain(run, trace) {
@@ -233,9 +273,9 @@ function collectTopFeatures(trace) {
     Object.values(value).forEach(visit)
   }
   visit(trace)
-  if (explicit.length) return explicit
+  if (explicit.length) return explicit.filter(name => isKnownDatasetColumn(trace, name))
   const fallback = ['BMI', 'Glucose', 'Age', 'tenure', 'monthly_fee', 'price', 'demand', 'revenue']
-  return fallback.filter(name => text.includes(name.toLowerCase())).slice(0, 3)
+  return fallback.filter(name => text.includes(name.toLowerCase()) && isKnownDatasetColumn(trace, name)).slice(0, 3)
 }
 
 function detectGoalDatasetMismatch(run, trace) {
@@ -700,7 +740,7 @@ function UserPlanTimeline({ steps }) {
   )
 }
 
-function ReviewPanel({ reviews, run, onResolve, onRetry, onStop, onContinue }) {
+function ReviewPanel({ reviews, run, trace, onResolve, onRetry, onStop, onContinue }) {
   if (isRunComplete(run)) return null
   const pending = reviews.filter(review => review.status === 'pending')
   if (!pending.length && run?.status !== 'waiting_for_review') return null
@@ -743,7 +783,12 @@ function ReviewPanel({ reviews, run, onResolve, onRetry, onStop, onContinue }) {
             <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.6 }}>{copy.description}</p>
             <p style={{ margin: 0, color: 'var(--text-label)', fontSize: 13, lineHeight: 1.55 }}>{copy.reason}</p>
             <div style={{ display: 'grid', gap: 8 }}>
-              {(review.options || []).map((option, index) => {
+              {(review.options || [])
+                .filter(option => {
+                  const column = optionColumn(option)
+                  return !column || isKnownDatasetColumn(trace, column)
+                })
+                .map((option, index) => {
                 const column = optionColumn(option)
                 return (
                   <div key={option.id} className="card-compact" style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -982,6 +1027,7 @@ export default function AgentRunDetail() {
   const reviewPending = isRunReviewNeeded(run) || reviews.some(review => review.status === 'pending')
   const complete = isRunComplete(run) && !detailQuality.noMeaningfulTarget && !reviewPending
   const mismatchWarning = detectGoalDatasetMismatch(run, trace)
+  const invariantWarning = traceInvariantWarning(run, trace)
 
   if (loading) return <LoadingState label="상세 실행 기록을 불러오는 중입니다." />
   if (error && !trace) {
@@ -1000,6 +1046,7 @@ export default function AgentRunDetail() {
       {warning && <div className="alert alert-warning"><AlertTriangle size={16} /> {warning}</div>}
       {error && <div className="alert alert-warning"><AlertTriangle size={16} /> {error}</div>}
       {mismatchWarning && <div className="alert alert-warning"><AlertTriangle size={16} /> {mismatchWarning}</div>}
+      {invariantWarning && <div className="alert alert-warning"><AlertTriangle size={16} /> {invariantWarning}</div>}
 
       <CoreResultCards trace={trace} run={run} />
 
@@ -1008,6 +1055,7 @@ export default function AgentRunDetail() {
       <ReviewPanel
         reviews={reviews}
         run={run}
+        trace={trace}
         onResolve={resolveReview}
         onRetry={retryStep}
         onStop={stopRun}

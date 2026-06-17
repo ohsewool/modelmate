@@ -75,6 +75,32 @@ def execute_agent_run(conn, analysis_run_id: str) -> dict[str, Any]:
         update_analysis_run_status(conn, run["id"], "blocked")
         return get_analysis_timeline(conn, run["id"])
 
+    dataset_state = _active_dataset_state(run)
+    if not dataset_state["ok"]:
+        create_validation_result(
+            conn,
+            run["id"],
+            plan_step_id=None,
+            severity="blocking",
+            validation_type="dataset_state_mismatch",
+            message=dataset_state["message"],
+            passed=False,
+        )
+        create_decision(
+            conn,
+            run["id"],
+            "dataset_state_mismatch",
+            "선택한 CSV와 현재 메모리의 분석 데이터가 일치하지 않아 실행을 중단했습니다.",
+            decision_type="dataset_gate",
+            summary="CSV를 다시 선택하거나 업로드한 뒤 분석 실행을 다시 만들어 주세요.",
+            selected_value={
+                "run_dataset_id": run.get("dataset_id"),
+                "active_dataset_id": dataset_state.get("active_dataset_id"),
+            },
+        )
+        update_analysis_run_status(conn, run["id"], "blocked")
+        return get_analysis_timeline(conn, run["id"])
+
     update_analysis_run_status(conn, run["id"], "running")
     final_status = "completed"
     for step in plan.get("steps") or []:
@@ -89,7 +115,7 @@ def execute_agent_run(conn, analysis_run_id: str) -> dict[str, Any]:
 
         update_plan_step_status(conn, run["id"], plan_step_id, "running")
         safe_arguments = _tool_arguments(tool_name, context)
-        runtime_arguments = _runtime_tool_arguments(tool_name, safe_arguments)
+        runtime_arguments = _runtime_tool_arguments(tool_name, safe_arguments, dataset_state=dataset_state)
         tool_call = create_tool_call(
             conn,
             run["id"],
@@ -186,18 +212,56 @@ def _tool_arguments(tool_name: str, context: dict[str, Any]) -> dict[str, Any]:
     return {key: value for key, value in args.items() if value is not None}
 
 
-def _runtime_tool_arguments(tool_name: str, safe_arguments: dict[str, Any]) -> dict[str, Any]:
+def _active_dataset_state(run: dict[str, Any]) -> dict[str, Any]:
+    try:
+        import backend.main as modelmate
+
+        current = modelmate.STATE.get("current_dataset") or {}
+        df = modelmate.STATE.get("df")
+        expected_dataset_id = str(run.get("dataset_id") or "")
+        active_dataset_id = str(current.get("id") or current.get("dataset_id") or "")
+        active_project_id = str(current.get("project_id") or "")
+        expected_project_id = str(run.get("project_id") or "")
+        if not df is None and expected_dataset_id and active_dataset_id == expected_dataset_id:
+            if expected_project_id and active_project_id and active_project_id != expected_project_id:
+                return {
+                    "ok": False,
+                    "message": "선택한 CSV와 프로젝트 정보가 현재 분석 데이터와 일치하지 않습니다. CSV를 다시 선택해 주세요.",
+                    "active_dataset_id": active_dataset_id,
+                    "active_project_id": active_project_id,
+                }
+            columns = [str(col) for col in getattr(df, "columns", [])]
+            return {
+                "ok": True,
+                "dataframe": df,
+                "active_dataset_id": active_dataset_id,
+                "active_project_id": active_project_id,
+                "columns": columns,
+                "row_count": int(len(df)),
+                "column_count": int(len(columns)),
+            }
+        return {
+            "ok": False,
+            "message": "분석 정보가 현재 CSV와 일치하지 않아 다시 불러옵니다. CSV를 다시 선택하거나 업로드해 주세요.",
+            "active_dataset_id": active_dataset_id or None,
+            "active_project_id": active_project_id or None,
+        }
+    except Exception as exc:
+        return {
+            "ok": False,
+            "message": f"CSV 상태를 확인하지 못했습니다: {exc}",
+            "active_dataset_id": None,
+        }
+
+
+def _runtime_tool_arguments(tool_name: str, safe_arguments: dict[str, Any], *, dataset_state: dict[str, Any] | None = None) -> dict[str, Any]:
     runtime = dict(safe_arguments)
     if any(key in runtime for key in ("csv_text", "records", "file_path", "dataframe")):
         return runtime
     if tool_name in ("data_profile_tool", "schema_validation_tool", "automl_training_tool"):
-        try:
-            import backend.main as modelmate
-            df = modelmate.STATE.get("df")
-            if df is not None:
-                runtime["dataframe"] = df
-        except Exception:
-            pass
+        df = (dataset_state or {}).get("dataframe")
+        if df is not None:
+            runtime["dataframe"] = df
     return runtime
 
 

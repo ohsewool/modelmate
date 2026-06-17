@@ -107,6 +107,13 @@ function datasetColumns(dataset) {
   return Array.isArray(columns) ? columns.length : columns ?? '-'
 }
 
+function datasetColumnNames(dataset) {
+  const columns = dataset?.column_names || dataset?.column_list || dataset?.columns_list || dataset?.quality_summary?.columns || dataset?.target_quality?.columns
+  if (Array.isArray(columns)) return columns.map(String)
+  if (Array.isArray(dataset?.columns)) return dataset.columns.map(String)
+  return []
+}
+
 function selectedDatasetName(dataset) {
   return dataset?.filename || dataset?.original_filename || dataset?.name || '선택한 CSV'
 }
@@ -630,12 +637,30 @@ export default function AgentMode() {
   async function executeRun(run = selectedRun) {
     const runId = getRunId(run)
     const datasetId = getRunDatasetId(run)
+    const selectedId = selectedDataset?.dataset_id || selectedDataset?.id || selectedDatasetId
+    const selectedProjectId = selectedDataset?.project_id || ''
     if (!runId) {
       setError('분석 실행 ID를 찾을 수 없습니다. 다시 생성해 주세요.')
       return
     }
     if (!datasetId) {
       setError('이 분석 실행에는 CSV 데이터셋이 연결되어 있지 않습니다. 새 분석 실행을 만들 때 데이터셋을 선택하세요.')
+      return
+    }
+    if (selectedId && String(datasetId) !== String(selectedId)) {
+      setSelectedRun(null)
+      setError('분석 정보가 현재 CSV와 일치하지 않아 다시 불러옵니다. CSV를 다시 선택하거나 분석 실행을 새로 만들어 주세요.')
+      return
+    }
+    if (selectedProjectId && getRunProjectId(run) && String(getRunProjectId(run)) !== String(selectedProjectId)) {
+      setSelectedRun(null)
+      setError('선택한 CSV와 분석 실행의 프로젝트가 일치하지 않습니다. CSV를 다시 선택해 주세요.')
+      return
+    }
+    const columns = datasetColumnNames(selectedDataset)
+    const selectedTarget = targetPreference.trim() || datasetTarget(selectedDataset)
+    if (selectedTarget && columns.length && !columns.includes(selectedTarget)) {
+      setError('선택한 예측값이 현재 CSV 컬럼과 일치하지 않습니다. 예측값을 다시 선택해 주세요.')
       return
     }
     setExecuting(true)
