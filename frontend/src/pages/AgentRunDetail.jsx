@@ -86,6 +86,17 @@ function getCurrentStep(steps, run) {
     || steps[steps.length - 1]
 }
 
+function isWorkflowComplete(steps, run) {
+  if (isRunComplete(run)) return true
+  const total = steps?.length || 0
+  if (!total) return false
+  return getCompletedStepCount(steps, run) >= total
+}
+
+function hasPendingReview(reviews) {
+  return reviews.some(review => review?.status === 'pending')
+}
+
 function targetLabel(target) {
   const value = String(target || '').toLowerCase()
   if (['diabetes', 'outcome'].includes(value)) return '당뇨병 여부'
@@ -350,10 +361,11 @@ function optionLabel(option, index) {
   return option.label || `선택지 ${index + 1}`
 }
 
-function summaryState(run, trace, reviews) {
+function summaryState(run, trace, reviews, steps = []) {
   const quality = targetQualityInfo(run, trace)
-  const reviewNeeded = isRunReviewNeeded(run) || reviews.some(review => review.status === 'pending')
-  const complete = isRunComplete(run) && !quality.noMeaningfulTarget
+  const reviewNeeded = isRunReviewNeeded(run) || hasPendingReview(reviews)
+  const workflowComplete = isWorkflowComplete(steps, run)
+  const complete = workflowComplete && !quality.noMeaningfulTarget
   const failed = run?.status === 'failed'
   if (failed) {
     return {
@@ -363,12 +375,24 @@ function summaryState(run, trace, reviews) {
       summary: '실패 원인과 재시도 방법을 확인한 뒤 다시 실행할 수 있습니다.',
     }
   }
+  if (workflowComplete && reviewNeeded) {
+    return {
+      tone: 'warning',
+      badge: '분석 완료 · 검토 필요',
+      title: '분석 완료 · 검토 필요',
+      summary: '분석은 완료되었지만 결과를 사용하기 전에 성능과 주요 요인을 확인해 주세요.',
+      workflowComplete,
+      reviewAfterComplete: true,
+    }
+  }
   if (reviewNeeded) {
     return {
       tone: 'warning',
       badge: '확인이 필요합니다',
       title: '사용자 확인이 필요합니다.',
-      summary: '예측할 값이나 주의 항목이 명확하지 않아 사용자의 선택을 기다리고 있습니다.',
+      summary: '다음 분석 단계로 진행하기 전에 선택을 확인해 주세요.',
+      workflowComplete,
+      reviewAfterComplete: false,
     }
   }
   if (quality.noMeaningfulTarget) {
@@ -386,6 +410,8 @@ function summaryState(run, trace, reviews) {
       badge: '분석 완료',
       title: `${target} 예측 분석이 완료되었습니다.`,
       summary: '보고서에서 성능과 주의사항을 확인한 뒤 새 데이터 예측 또는 예측 API 생성으로 이어갈 수 있습니다.',
+      workflowComplete,
+      reviewAfterComplete: false,
     }
   }
   return {
@@ -393,15 +419,18 @@ function summaryState(run, trace, reviews) {
     badge: '분석 중',
     title: '분석을 진행하고 있습니다.',
     summary: 'CSV 구조와 예측 목표를 확인하면서 다음 분석 단계를 준비하고 있습니다.',
+    workflowComplete,
+    reviewAfterComplete: false,
   }
 }
 
 function SummaryHero({ run, trace, reviews, steps, onContinue, actionLoading }) {
   const info = datasetInfo(trace, run)
-  const state = summaryState(run, trace, reviews)
+  const state = summaryState(run, trace, reviews, steps)
   const completedCount = getCompletedStepCount(steps, run)
   const current = getCurrentStep(steps, run)
-  const complete = isRunComplete(run) && state.badge === '분석 완료'
+  const complete = state.workflowComplete
+  const canContinue = !complete && (isRunReviewNeeded(run) || hasPendingReview(reviews))
   return (
     <section className="workspace-hero" style={{ alignItems: 'stretch' }}>
       <div style={{ display: 'grid', gap: 12 }}>
@@ -425,7 +454,19 @@ function SummaryHero({ run, trace, reviews, steps, onContinue, actionLoading }) 
       </div>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignContent: 'flex-start', justifyContent: 'flex-end' }}>
         <Link className="btn btn-secondary" to="/agent-mode">목표 기반 분석으로 돌아가기</Link>
-        {!complete && (
+        {state.reviewAfterComplete && (
+          <>
+            <Link className="btn btn-primary" to="/reports">검토 완료하고 결과 보기</Link>
+            <a className="btn btn-secondary" href="#advanced-trace">상세 실행 기록 보기</a>
+          </>
+        )}
+        {!state.reviewAfterComplete && complete && (
+          <>
+            <Link className="btn btn-primary" to="/reports">결과 보고서 보기</Link>
+            <Link className="btn btn-secondary" to="/prediction-apis">예측 API 만들기</Link>
+          </>
+        )}
+        {canContinue && (
           <button className="btn btn-primary" type="button" onClick={onContinue} disabled={actionLoading || !run?.dataset_id}>
             <CheckCircle2 size={16} /> {actionLoading ? '진행 중' : '확인하고 계속 실행'}
           </button>
@@ -505,12 +546,13 @@ function ProgressSummary({ steps, run, trace }) {
   const current = getCurrentStep(steps, run)
   const next = steps.find(step => step.order > (current?.order || 0) && !isStepDone(step))
   const quality = targetQualityInfo(run, trace)
-  const complete = isRunComplete(run) && !quality.noMeaningfulTarget
+  const complete = isWorkflowComplete(steps, run) && !quality.noMeaningfulTarget
+  const displayStatus = complete && isRunReviewNeeded(run) ? '분석 완료 · 검토 필요' : statusLabel(run?.status)
   return (
     <Section title="진행 요약" icon={<ListChecks size={18} />}>
       <div style={{ display: 'grid', gap: 8 }}>
         <p style={{ margin: 0, color: 'var(--text-2)' }}>
-          현재 상태는 <strong>{statusLabel(run?.status)}</strong>입니다.
+          현재 상태는 <strong>{displayStatus}</strong>입니다.
           {` ${completedCount}/${steps.length || 0}개 단계가 완료되었습니다.`}
         </p>
         {complete ? (
@@ -612,7 +654,7 @@ function FinalResultSummary({ trace, run }) {
   )
 }
 
-function PostPredictionGuidance({ trace, run, reviews, onContinue, onRetry, onStop }) {
+function PostPredictionGuidance({ trace, run, reviews, steps = [], onContinue, onRetry, onStop }) {
   const dataset = trace?.dataset || trace?.dataset_info || {}
   const target = run?.target_column || run?.target_col || run?.interpreted_goal?.target_preference || dataset.target_col
   const quality = targetQualityInfo(run, trace)
@@ -620,13 +662,17 @@ function PostPredictionGuidance({ trace, run, reviews, onContinue, onRetry, onSt
   const usage = domainUsageCopy(domain, target)
   const weakPerformance = isWeakPerformance(trace)
   const apiRisk = isApiRisky(trace)
-  const reviewNeeded = isRunReviewNeeded(run) || reviews.some(review => review.status === 'pending')
-  const complete = isRunComplete(run)
+  const reviewNeeded = isRunReviewNeeded(run) || hasPendingReview(reviews)
+  const workflowComplete = isWorkflowComplete(steps, run)
+  const reviewAfterComplete = workflowComplete && reviewNeeded
+  const complete = workflowComplete
   const topFeatures = collectTopFeatures(trace)
 
   let interpretation = '모델이 데이터 안에서 예측에 쓸 수 있는 패턴을 찾았습니다.'
   if (quality.noMeaningfulTarget) {
     interpretation = '이 CSV에서는 바로 예측할 만한 명확한 예측값을 찾기 어렵습니다.'
+  } else if (reviewAfterComplete) {
+    interpretation = '현재 결과는 참고 지표로 사용할 수 있지만, 실제 의사결정 전에는 성능과 주요 요인을 확인하는 것이 좋습니다.'
   } else if (weakPerformance) {
     interpretation = '모델이 어느 정도 예측 가능성을 찾았지만, 성능이 충분히 높지 않을 수 있어 실제 의사결정에는 주의가 필요합니다.'
   } else if (reviewNeeded) {
@@ -636,7 +682,14 @@ function PostPredictionGuidance({ trace, run, reviews, onContinue, onRetry, onSt
   }
 
   const actions = []
-  if (reviewNeeded) {
+  if (reviewAfterComplete) {
+    actions.push(
+      <Link key="report" className="btn btn-primary" to="/reports">검토 완료하고 결과 보기</Link>,
+      <a key="trace" className="btn btn-secondary" href="#advanced-trace">상세 실행 기록 보기</a>,
+      <Link key="goal" className="btn btn-secondary" to="/agent-mode">목표 기반 분석으로 돌아가기</Link>,
+      <button key="api-disabled" className="btn btn-secondary" type="button" disabled title="예측 API를 만들기 전에 결과 검토가 필요합니다.">예측 API는 검토 후 사용</button>,
+    )
+  } else if (reviewNeeded) {
     actions.push(
       <button key="continue" className="btn btn-primary" type="button" onClick={onContinue}>확인하고 계속 실행</button>,
       <a key="target" className="btn btn-secondary" href="#review-panel">예측값 선택</a>,
@@ -741,8 +794,8 @@ function UserPlanTimeline({ steps }) {
   )
 }
 
-function ReviewPanel({ reviews, run, trace, onResolve, onRetry, onStop, onContinue }) {
-  if (isRunComplete(run)) return null
+function ReviewPanel({ reviews, run, trace, steps = [], onResolve, onRetry, onStop, onContinue }) {
+  if (isWorkflowComplete(steps, run)) return null
   const pending = reviews.filter(review => review.status === 'pending')
   if (!pending.length && run?.status !== 'waiting_for_review') return null
 
@@ -1057,6 +1110,7 @@ export default function AgentRunDetail() {
         reviews={reviews}
         run={run}
         trace={trace}
+        steps={planSteps}
         onResolve={resolveReview}
         onRetry={retryStep}
         onStop={stopRun}
@@ -1067,6 +1121,7 @@ export default function AgentRunDetail() {
         trace={trace}
         run={run}
         reviews={reviews}
+        steps={planSteps}
         onContinue={continueRun}
         onRetry={retryStep}
         onStop={stopRun}

@@ -1620,3 +1620,40 @@ Milestones:
   - Live deployed verification requires Railway redeploy of this commit.
 - Next step:
   - Push and let Railway redeploy, then open the same `/agent-mode/:agentRunId` route and confirm no full-page ErrorBoundary appears.
+
+## 2026-06-18 KST - Final UX Fix Analysis Complete + Review Needed CTA Cleanup
+
+- Status: completed
+- Branch: `main`
+- Scope:
+  - Clean up confusing Agent Run Detail CTA/state logic when a run has completed all steps but still has review/caution status.
+  - No target recommendation logic, backend behavior, or page redesign was changed.
+- Root cause:
+  - Agent Run Detail treated `run.status === "waiting_for_review"` as a continuing review checkpoint even when all plan steps were already complete (`10/10`).
+  - This allowed the primary CTA `확인하고 계속 실행` to appear after the workflow had already reached the final step.
+- Files changed:
+  - `frontend/src/pages/AgentRunDetail.jsx`
+  - generated frontend dist bundle
+  - `.codex/RUN_LOG.md`
+- Fixes applied:
+  - Added `isWorkflowComplete(steps, run)` to distinguish final-step completion from mid-flow review checkpoints.
+  - Added `hasPendingReview(reviews)` helper for safer pending-review checks.
+  - Updated `summaryState` to produce combined state `분석 완료 · 검토 필요` when progress is complete but review/caution remains.
+  - Updated `SummaryHero` so completed review-needed runs show `검토 완료하고 결과 보기` and `상세 실행 기록 보기`, not `확인하고 계속 실행`.
+  - Updated `PostPredictionGuidance` so completed review-needed runs show result-review actions and disable API creation until review.
+  - Updated `ReviewPanel` so it does not show mid-flow review controls when the workflow is already complete.
+  - Updated progress summary display to use `분석 완료 · 검토 필요` for complete-but-review-needed runs.
+- Expected AI4I behavior:
+  - For `UCI ai4i2020.csv` / `Machine failure` with `10/10` progress and review-needed status:
+    - Title/status: `분석 완료 · 검토 필요`.
+    - Primary CTA: `검토 완료하고 결과 보기`.
+    - No `확인하고 계속 실행` CTA in the completed state.
+    - Prediction API action is not primary and remains gated until review.
+- Verification:
+  - `python -m compileall backend`: passed with bundled Python runtime.
+  - `cd frontend && npm run build`: passed with bundled Node/Vite runtime.
+  - Vite large chunk warning remains non-blocking.
+- Known limitations:
+  - Browser click QA on the deployed AI4I run should be repeated after Railway serves this new bundle.
+- Next step:
+  - Push and let Railway redeploy, then revisit the AI4I Agent Run Detail page.
