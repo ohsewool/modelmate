@@ -179,6 +179,9 @@ function targetQualityInfo(run, trace) {
       ? '예측을 바로 진행하기보다 데이터 요약 보고서를 먼저 확인하고, 예측 목적에 맞는 값을 다시 정하세요.'
       : '먼저 보고서에서 예측값 추천 이유와 성능을 확인한 뒤 새 데이터 예측 또는 API 생성을 진행하세요.',
     noMeaningfulTarget,
+    problemType: recommended.inferred_task_type || quality.problem_type,
+    analysisSuitability: quality.analysis_suitability,
+    apiReady: quality.api_ready !== false && hasMeaningfulTarget !== false,
   }
 }
 
@@ -193,11 +196,21 @@ function isApiRisky(trace) {
 }
 
 function problemTypeLabel(run, trace) {
+  const taskType = run?.task_type || run?.interpreted_goal?.task_type || trace?.task_type || trace?.dataset?.task_type || trace?.dataset_info?.task_type
+  if (taskType === 'regression') return '숫자 예측'
+  if (taskType === 'classification') return '분류 예측'
+  const quality = targetQualityInfo(run, trace)
+  if (quality.problemType === 'regression') return '숫자 예측'
+  if (quality.problemType === 'classification') return '분류 예측'
   const domain = detectTargetDomain(run, trace)
   const target = datasetInfo(trace, run).target
-  if (!target) return '예측 타깃 검토'
+  if (!target) return '예측값 검토'
   if (domain === 'business') return '회귀 또는 수요 예측'
   return '분류 예측'
+}
+
+function infoValue(value) {
+  return value === null || value === undefined || value === '' ? '데이터 정보를 불러오지 못했습니다.' : value
 }
 
 function collectTopFeatures(trace) {
@@ -300,7 +313,7 @@ function optionLabel(option, index) {
 function summaryState(run, trace, reviews) {
   const quality = targetQualityInfo(run, trace)
   const reviewNeeded = isRunReviewNeeded(run) || reviews.some(review => review.status === 'pending')
-  const complete = isRunComplete(run)
+  const complete = isRunComplete(run) && !quality.noMeaningfulTarget
   const failed = run?.status === 'failed'
   if (failed) {
     return {
@@ -451,7 +464,7 @@ function ProgressSummary({ steps, run }) {
   const completedCount = getCompletedStepCount(steps, run)
   const current = getCurrentStep(steps, run)
   const next = steps.find(step => step.order > (current?.order || 0) && !isStepDone(step))
-  const complete = isRunComplete(run)
+  const complete = isRunComplete(run) && !quality.noMeaningfulTarget
   return (
     <Section title="진행 요약" icon={<ListChecks size={18} />}>
       <div style={{ display: 'grid', gap: 8 }}>
@@ -492,9 +505,9 @@ function ConnectedCsvCard({ trace, run }) {
     <Section title="연결된 CSV" icon={<Database size={18} />}>
       <div className="workspace-grid four-columns">
         <MetricBox label="파일" value={filename} />
-        <MetricBox label="데이터 행" value={rows ?? '확인 중'} />
-        <MetricBox label="컬럼" value={cols ?? '확인 중'} />
-        <MetricBox label="선택 타깃" value={target || '확인 필요'} />
+        <MetricBox label="데이터 행" value={infoValue(rows)} />
+        <MetricBox label="컬럼" value={infoValue(cols)} />
+        <MetricBox label="선택 예측값" value={target || '확인 필요'} />
       </div>
       {!run?.dataset_id && (
         <div className="alert alert-warning">
@@ -519,6 +532,7 @@ function FinalResultSummary({ trace, run }) {
   const filename = dataset.filename || dataset.original_filename || run?.dataset_name || '연결된 CSV'
   const rows = dataset.row_count ?? dataset.rows ?? run?.row_count
   const cols = dataset.column_count ?? dataset.columns ?? run?.column_count
+  const quality = targetQualityInfo(run, trace)
   const outputs = [
     '데이터 구조를 확인했습니다.',
     '예측할 값 후보를 찾았습니다.',
@@ -533,16 +547,22 @@ function FinalResultSummary({ trace, run }) {
       </div>
       <div className="workspace-grid four-columns">
         <MetricBox label="CSV" value={filename} />
-        <MetricBox label="데이터 행" value={rows ?? '확인 중'} />
-        <MetricBox label="컬럼" value={cols ?? '확인 중'} />
-        <MetricBox label="예측 타깃" value={targetText} />
+        <MetricBox label="데이터 행" value={infoValue(rows)} />
+        <MetricBox label="컬럼" value={infoValue(cols)} />
+        <MetricBox label="예측값" value={targetText} />
       </div>
       <ul style={{ margin: 0, paddingLeft: 20, color: 'var(--text-2)', lineHeight: 1.7 }}>
         {outputs.map(item => <li key={item}>{item}</li>)}
       </ul>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         <Link className="btn btn-primary" to="/reports">결과 보고서 보기</Link>
-        <Link className="btn btn-secondary" to="/prediction-apis">예측 API 만들기</Link>
+        {quality.apiReady ? (
+          <Link className="btn btn-secondary" to="/prediction-apis">예측 API 만들기</Link>
+        ) : (
+          <button className="btn btn-secondary" type="button" disabled title="예측 API를 만들려면 먼저 예측값을 확정해야 합니다.">
+            예측 API는 예측값 확정 후 사용
+          </button>
+        )}
         <Link className="btn btn-secondary" to="/predict">새 데이터 예측하기</Link>
         <Link className="btn btn-secondary" to="/upload?returnTo=agent-mode">다른 CSV로 분석하기</Link>
         <a className="btn btn-secondary" href="#advanced-trace">고급 실행 기록 보기</a>
@@ -565,7 +585,7 @@ function PostPredictionGuidance({ trace, run, reviews, onContinue, onRetry, onSt
 
   let interpretation = '모델이 데이터 안에서 예측에 쓸 수 있는 패턴을 찾았습니다.'
   if (quality.noMeaningfulTarget) {
-    interpretation = '이 CSV에서는 바로 예측할 만한 명확한 타깃을 찾기 어렵습니다.'
+    interpretation = '이 CSV에서는 바로 예측할 만한 명확한 예측값을 찾기 어렵습니다.'
   } else if (weakPerformance) {
     interpretation = '모델이 어느 정도 예측 가능성을 찾았지만, 성능이 충분히 높지 않을 수 있어 실제 의사결정에는 주의가 필요합니다.'
   } else if (complete) {
@@ -578,20 +598,20 @@ function PostPredictionGuidance({ trace, run, reviews, onContinue, onRetry, onSt
   if (reviewNeeded) {
     actions.push(
       <button key="continue" className="btn btn-primary" type="button" onClick={onContinue}>확인하고 계속 실행</button>,
-      <a key="target" className="btn btn-secondary" href="#review-panel">타깃 컬럼 선택</a>,
+      <a key="target" className="btn btn-secondary" href="#review-panel">예측값 선택</a>,
       <button key="stop" className="btn btn-secondary" type="button" onClick={onStop}>분석 중단</button>,
       <Link key="goal" className="btn btn-secondary" to="/agent-mode">목표 다시 입력</Link>,
     )
   } else if (quality.noMeaningfulTarget) {
     actions.push(
       <Link key="report" className="btn btn-primary" to="/reports">데이터 요약 보고서 보기</Link>,
-      <Link key="target" className="btn btn-secondary" to="/agent-mode">타깃 다시 선택하기</Link>,
+      <Link key="target" className="btn btn-secondary" to="/agent-mode">예측값 다시 선택하기</Link>,
       <Link key="upload" className="btn btn-secondary" to="/upload?returnTo=agent-mode">다른 CSV로 다시 분석하기</Link>,
     )
   } else if (weakPerformance) {
     actions.push(
       <Link key="quality" className="btn btn-primary" to="/projects">데이터 품질 확인하기</Link>,
-      <Link key="target" className="btn btn-secondary" to="/agent-mode">타깃 다시 선택하기</Link>,
+      <Link key="target" className="btn btn-secondary" to="/agent-mode">예측값 다시 선택하기</Link>,
       <button key="retry" className="btn btn-secondary" type="button" onClick={onRetry}>다른 모델로 재시도</button>,
       <Link key="report" className="btn btn-secondary" to="/reports">보고서만 보기</Link>,
     )
@@ -606,7 +626,9 @@ function PostPredictionGuidance({ trace, run, reviews, onContinue, onRetry, onSt
       <Link key="report" className="btn btn-primary" to="/reports">결과 보고서 보기</Link>,
       <a key="factors" className="btn btn-secondary" href="#important-factors">중요 요인 확인하기</a>,
       <Link key="predict" className="btn btn-secondary" to="/predict">새 데이터 예측하기</Link>,
-      <Link key="api" className="btn btn-secondary" to="/prediction-apis">예측 API 만들기</Link>,
+      quality.apiReady
+        ? <Link key="api" className="btn btn-secondary" to="/prediction-apis">예측 API 만들기</Link>
+        : <button key="api-disabled" className="btn btn-secondary" type="button" disabled>예측값 확정 후 API 사용</button>,
       <Link key="upload" className="btn btn-secondary" to="/upload?returnTo=agent-mode">다른 CSV로 다시 분석하기</Link>,
     )
   }
@@ -635,12 +657,12 @@ function PostPredictionGuidance({ trace, run, reviews, onContinue, onRetry, onSt
       </div>
 
       <div className="card-compact" style={{ display: 'grid', gap: 8 }}>
-        <strong>추천 타깃 요약</strong>
+          <strong>추천 예측값 요약</strong>
         <div className="workspace-grid four-columns">
-          <MetricBox label="추천 타깃" value={targetLabel(quality.target || target)} />
+          <MetricBox label="추천 예측값" value={targetLabel(quality.target || target)} />
           <MetricBox label="추천 이유" value={quality.noMeaningfulTarget ? '검토 필요' : '예측 목적과 관련 있음'} />
           <MetricBox label="주의할 점" value={quality.warnings.length ? `${quality.warnings.length}개` : '현재 없음'} />
-          <MetricBox label="다음 추천 행동" value={quality.noMeaningfulTarget ? '타깃 검토' : weakPerformance ? '품질 확인' : '보고서 확인'} />
+          <MetricBox label="다음 추천 행동" value={quality.noMeaningfulTarget ? '예측값 검토' : weakPerformance ? '품질 확인' : '보고서 확인'} />
         </div>
         <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.65 }}>{quality.reason}</p>
         {quality.warnings.length > 0 && (
@@ -956,7 +978,8 @@ export default function AgentRunDetail() {
 
   const run = trace?.analysis_run || trace?.run
   const planSteps = trace?.plan_steps || trace?.steps || []
-  const complete = isRunComplete(run)
+  const detailQuality = targetQualityInfo(run, trace)
+  const complete = isRunComplete(run) && !detailQuality.noMeaningfulTarget
   const mismatchWarning = detectGoalDatasetMismatch(run, trace)
 
   if (loading) return <LoadingState label="상세 실행 기록을 불러오는 중입니다." />

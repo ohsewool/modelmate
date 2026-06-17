@@ -1417,3 +1417,44 @@ Milestones:
 - Known limitations:
   - Visual comparison against deployed `/agent-mode` still requires Railway redeploy and manual browser check.
   - Detailed pixel/interaction QA is still manual.
+
+## 2026-06-17 KST - PR-10 Dataset-Type Branching and Analysis State Consistency
+
+- Status: completed
+- Branch: `main`
+- Scope:
+  - Fix target recommendation and result-state consistency for clear prediction CSVs, ambiguous public/admin aggregate CSVs, and invalid/unsuitable CSVs.
+  - Keep existing upload, quick analysis, goal-based analysis, report, prediction API, advanced execution records, and Railway compatibility intact.
+- Files changed:
+  - `backend/tools/target_quality.py`
+  - `backend/tools/target_recommendation.py`
+  - `backend/main_parts/011_analyze_columns.part`
+  - `frontend/src/pages/AgentMode.jsx`
+  - `frontend/src/pages/AgentRunDetail.jsx`
+  - `frontend/dist/index.html`
+  - `frontend/dist/assets/index-CTsRmJ9Y.js`
+  - removed stale generated bundle `frontend/dist/assets/index-EQewyGJr.js`
+- Branching logic verification:
+  - `customer_churn_demo.csv`: `churn`, `clear_classification_prediction`, API ready.
+  - `equipment_failure_demo.csv`: `failure_risk`, `clear_classification_prediction`, API ready.
+  - `sales_demand_demo.csv`: `demand`, `clear_regression_prediction`, API ready.
+  - synthetic public bike signup aggregate CSV: no strong automatic target, `ambiguous_prediction_target`, optional `가입건수` regression candidate, API not ready.
+  - invalid id/name-only CSV: no recommended target, `prediction_unsuitable`, API not ready.
+- State/API gating result:
+  - Ambiguous or unsuitable targets no longer render as completed/API-ready by default.
+  - Agent Run Detail only shows completion summary when the run is complete and a meaningful prediction value is available.
+  - Prediction API action is disabled when prediction value confirmation is still required.
+  - Row/column cards now show known values or a clear unavailable message instead of staying at an endless checking state.
+- Copy cleanup:
+  - User-facing target wording in touched Agent Mode and Agent Run Detail areas was shifted toward `예측값`.
+  - Technical records remain available in advanced execution sections.
+- Build result:
+  - `python -m compileall backend`: passed with bundled Python runtime.
+  - `cd frontend && npm run build`: passed with bundled Node/Vite runtime.
+  - Vite large chunk warning remains non-blocking.
+- Known limitations:
+  - Browser click QA against the deployed Railway app still requires redeploy.
+  - Public/admin aggregate detection is deterministic heuristic logic, not a semantic LLM classifier.
+  - Existing dirty QA result files were not included in this PR scope.
+- Next step:
+  - Railway redeploy is needed for the updated frontend bundle and backend target-quality logic to appear on the public site.

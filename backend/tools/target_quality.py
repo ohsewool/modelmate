@@ -20,6 +20,18 @@ MEANINGFUL_RE = re.compile(
     re.I,
 )
 
+COUNT_RE = re.compile(
+    r"(count|cnt|quantity|volume|demand|sales|revenue|price|amount|"
+    r"건수|수량|인원|승객|가입건수|대여건수|이용건수|매출|수요|가격|금액)",
+    re.I,
+)
+
+AGGREGATE_DIMENSION_RE = re.compile(
+    r"(year|month|date|period|category|group|gender|age|region|type|"
+    r"년월|연월|월|기간|구분|분류|성별|연령|연령대|지역|회원)",
+    re.I,
+)
+
 ADMIN_RE = re.compile(
     r"(^id$|_id$|uuid|guid|idx|index|serial|row|key|code|code_name|codename|name|"
     r"email|phone|address|addr|zip|postal|url|link|memo|note|description|"
@@ -50,6 +62,14 @@ def _base_name(column: str) -> str:
         if name.endswith(suffix):
             return name[: -len(suffix)]
     return name
+
+
+def _is_public_aggregate(columns: list[str]) -> bool:
+    joined = " ".join(str(col) for col in columns)
+    has_count = bool(COUNT_RE.search(joined))
+    dimension_count = sum(1 for col in columns if AGGREGATE_DIMENSION_RE.search(str(col)))
+    public_hint = any(token in joined for token in ("공공", "자전거", "따릉이", "회원", "가입", "통계"))
+    return has_count and dimension_count >= 2 and public_hint
 
 
 def code_name_pair_warnings(column: str, columns: list[str]) -> list[str]:
@@ -94,6 +114,8 @@ def score_target_stats(
     unique_ratio = _unique_ratio(unique_count, row_count)
     task_type = infer_task_type_from_stats(name, unique_count, row_count, is_numeric)
     meaningful_name = bool(MEANINGFUL_RE.search(name))
+    if COUNT_RE.search(name) and is_numeric and unique_count > 1 and task_type == "unsuitable":
+        task_type = "regression"
     technical_score = 0.35
     usefulness = 0.0
     labels: list[str] = []
@@ -121,6 +143,9 @@ def score_target_stats(
         usefulness += 0.2
     if any(token in compact for token in ("demand", "revenue", "sales", "매출", "수요", "수익")):
         usefulness += 0.08
+    if COUNT_RE.search(name) and is_numeric:
+        usefulness += 0.22
+        labels.append("숫자 예측 후보")
     if INPUT_FEATURE_RE.search(name) and not explicit_target:
         usefulness -= 0.18
         warnings.append("일반 입력 변수처럼 보이므로 사용자가 직접 원하지 않으면 타깃 우선순위를 낮춥니다.")
@@ -144,7 +169,10 @@ def score_target_stats(
     if score >= 0.68 and not ADMIN_RE.search(name):
         usefulness_label = "높음"
         suitability = "good"
-        explanation = f"{name} 컬럼은 결과나 상태를 나타내는 예측 목표로 사용할 가능성이 높습니다."
+        if task_type == "regression":
+            explanation = f"{name} 컬럼은 숫자 값을 예측하는 후보로 사용할 가능성이 높습니다."
+        else:
+            explanation = f"{name} 컬럼은 결과나 상태를 나타내는 예측값으로 사용할 가능성이 높습니다."
     elif score >= 0.42:
         usefulness_label = "보통"
         suitability = "warning"
@@ -202,16 +230,56 @@ def score_dataframe_targets(df: pd.DataFrame, explicit_target: str | None = None
 
 def best_meaningful_target(df: pd.DataFrame) -> tuple[str | None, dict[str, Any]]:
     ranked = score_dataframe_targets(df)
+    public_aggregate = _is_public_aggregate([str(col) for col in df.columns])
+    if public_aggregate:
+        numeric_candidates = [
+            item for item in ranked
+            if COUNT_RE.search(item["column_name"])
+            and item["inferred_task_type"] == "regression"
+            and item["suitability"] != "poor"
+        ]
+        fallback = numeric_candidates[0] if numeric_candidates else (ranked[0] if ranked else None)
+        return (
+            (fallback or {}).get("column_name"),
+            {
+                "has_meaningful_target": False,
+                "analysis_suitability": "ambiguous_prediction_target",
+                "problem_type": (fallback or {}).get("inferred_task_type") or "unknown",
+                "candidates": ranked,
+                "recommended": fallback,
+                "optional_prediction_candidate": fallback,
+                "api_ready": False,
+                "primary_recommended_action": "summary_report_first",
+                "message": (
+                    "이 CSV는 바로 예측 모델을 만들기보다 월별/그룹별 현황을 요약하는 데 더 적합합니다. "
+                    "예측을 진행하려면 가입건수처럼 숫자로 된 값을 직접 선택하는 것이 좋습니다."
+                ),
+            },
+        )
     good = [item for item in ranked if item["suitability"] == "good" and item["inferred_task_type"] != "unsuitable"]
     if good:
-        return good[0]["column_name"], {"has_meaningful_target": True, "candidates": ranked, "recommended": good[0]}
+        problem_type = good[0]["inferred_task_type"]
+        return good[0]["column_name"], {
+            "has_meaningful_target": True,
+            "analysis_suitability": "clear_regression_prediction" if problem_type == "regression" else "clear_classification_prediction",
+            "problem_type": problem_type,
+            "candidates": ranked,
+            "recommended": good[0],
+            "api_ready": True,
+        }
     fallback = ranked[0] if ranked else None
+    any_usable = any(item["inferred_task_type"] != "unsuitable" and item["suitability"] != "poor" for item in ranked)
+    recommended = fallback if any_usable else None
     return (
-        (fallback or {}).get("column_name"),
+        (recommended or {}).get("column_name"),
         {
             "has_meaningful_target": False,
+            "analysis_suitability": "ambiguous_prediction_target" if any_usable else "prediction_unsuitable",
+            "problem_type": (recommended or {}).get("inferred_task_type") or "unsuitable",
             "candidates": ranked,
-            "recommended": fallback,
-            "message": "이 CSV에서는 바로 예측할 만한 명확한 타깃을 찾기 어렵습니다.",
+            "recommended": recommended,
+            "api_ready": False,
+            "primary_recommended_action": "summary_report_first" if any_usable else "upload_another_csv",
+            "message": "이 CSV에서는 바로 예측할 만한 명확한 예측값을 찾기 어렵습니다.",
         },
     )

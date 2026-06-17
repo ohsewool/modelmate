@@ -89,28 +89,37 @@ def recommend_targets(
         if item not in accepted
     ]
     recommended = accepted[0] if accepted else None
+    weak = [
+        item for item in candidates
+        if item["suitability"] != "good" and item["inferred_task_type"] != "unsuitable"
+    ]
+    suitability = (
+        "clear_regression_prediction" if recommended and recommended["inferred_task_type"] == "regression"
+        else "clear_classification_prediction" if recommended
+        else "ambiguous_prediction_target" if weak
+        else "prediction_unsuitable"
+    )
     action = (
-        f"{recommended['column_name']} 컬럼을 예측 타깃 후보로 검토하고 leakage_check_tool을 실행하세요."
+        f"{recommended['column_name']} 컬럼을 예측값 후보로 검토하고 leakage_check_tool을 실행하세요."
         if recommended
-        else "좋은 타깃 후보가 없으므로 사용자에게 예측 목적을 다시 확인하세요."
+        else "명확한 예측값 후보가 없으므로 요약 보고서를 먼저 보거나 사용자에게 예측 목적을 다시 확인하세요."
     )
     return {
         "status": "recommended" if recommended else "needs_human_review",
         "summary": (
             f"Found {len(accepted)} meaningful target candidate(s)."
             if recommended
-            else "이 CSV에서는 바로 예측할 만한 명확한 타깃을 찾기 어렵습니다."
+            else "이 CSV에서는 바로 예측할 만한 명확한 예측값을 찾기 어렵습니다."
         ),
+        "analysis_suitability": suitability,
         "user_goal": user_goal,
         "validation_status": (validation or {}).get("validation_status"),
         "candidate_targets": accepted,
-        "weak_candidate_targets": [
-            item for item in candidates
-            if item["suitability"] != "good" and item["inferred_task_type"] != "unsuitable"
-        ],
+        "weak_candidate_targets": weak,
         "rejected_targets": rejected,
         "recommended_target": recommended,
         "has_meaningful_target": bool(recommended),
+        "api_ready": bool(recommended),
         "target_quality_labels": (recommended or {}).get("quality_labels") or ["검토 필요"],
         "recommended_next_action": action,
     }

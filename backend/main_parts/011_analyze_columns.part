@@ -333,11 +333,23 @@ def infer_target_quality(df, target_col=None):
     if target:
         candidates = score_dataframe_targets(df, explicit_target=str(target))
         selected = next((item for item in candidates if item["column_name"] == str(target)), None)
+        task_type = (selected or {}).get("inferred_task_type") or "unknown"
+        meaningful = bool(selected and selected["suitability"] == "good")
+        usable_after_confirmation = bool(selected and selected["suitability"] != "poor" and task_type != "unsuitable")
         return {
-            "has_meaningful_target": bool(selected and selected["suitability"] == "good"),
+            "has_meaningful_target": meaningful,
+            "analysis_suitability": (
+                "clear_regression_prediction" if meaningful and task_type == "regression"
+                else "clear_classification_prediction" if meaningful
+                else "ambiguous_prediction_target" if usable_after_confirmation
+                else "prediction_unsuitable"
+            ),
+            "problem_type": task_type,
             "recommended": selected,
             "candidates": candidates[:5],
-            "message": None if selected and selected["suitability"] == "good" else "이 CSV에서는 바로 예측할 만한 명확한 타깃을 찾기 어렵습니다.",
+            "api_ready": meaningful,
+            "primary_recommended_action": "start_analysis" if meaningful else "summary_report_first" if usable_after_confirmation else "upload_another_csv",
+            "message": None if meaningful else "이 CSV에서는 바로 예측할 만한 명확한 예측값을 찾기 어렵습니다.",
         }
     _target, quality = best_meaningful_target(df)
     quality["candidates"] = (quality.get("candidates") or [])[:5]

@@ -282,7 +282,7 @@ function SelectedCsvSummary({ dataset }) {
   )
 }
 
-function TargetRecommendationPanel({ dataset, onFocusGoal }) {
+function TargetRecommendationPanel({ dataset, onFocusGoal, onUseCandidate }) {
   const quality = datasetTargetQuality(dataset)
   const target = datasetTarget(dataset)
   const recommended = quality?.recommended || (target ? { column_name: target, suitability: 'good', usefulness_explanation: 'CSV 구조를 기준으로 추천된 예측값입니다.' } : null)
@@ -291,6 +291,7 @@ function TargetRecommendationPanel({ dataset, onFocusGoal }) {
     ...(quality?.candidates || quality?.candidate_targets || []),
   ].filter((item, index, arr) => item?.column_name && arr.findIndex(other => other?.column_name === item.column_name) === index)
   const noMeaningfulTarget = quality?.has_meaningful_target === false || (!target && dataset)
+  const optionalCandidate = quality?.optional_prediction_candidate || quality?.recommended
 
   if (!dataset) return null
 
@@ -305,9 +306,14 @@ function TargetRecommendationPanel({ dataset, onFocusGoal }) {
       {noMeaningfulTarget ? (
         <div className="alert alert-warning" style={{ display: 'grid', gap: 10, margin: 0 }}>
           <strong>바로 예측할 만한 명확한 값을 찾기 어렵습니다.</strong>
-          <span>예측보다 요약 보고서가 먼저일 수 있습니다.</span>
+          <span>{quality?.message || '예측보다 요약 보고서가 먼저일 수 있습니다.'}</span>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <Link className="btn btn-secondary" to="/reports">요약 보고서 보기</Link>
+            {optionalCandidate?.column_name && optionalCandidate?.inferred_task_type !== 'unsuitable' && (
+              <button className="btn btn-secondary" type="button" onClick={() => onUseCandidate(optionalCandidate.column_name)}>
+                {optionalCandidate.column_name} 예측하기
+              </button>
+            )}
             <button className="btn btn-secondary" type="button" onClick={onFocusGoal}>예측값 직접 선택</button>
             <button className="btn btn-secondary" type="button" onClick={onFocusGoal}>목표 다시 입력</button>
           </div>
@@ -594,6 +600,10 @@ export default function AgentMode() {
       setError('분석을 시작하기 전에 CSV 데이터셋을 선택하거나 업로드하세요.')
       return
     }
+    if (selectedTargetUnclear && !targetPreference.trim()) {
+      setError('이 CSV는 예측값이 명확하지 않습니다. 요약 보고서를 먼저 보거나 예측할 값을 직접 선택해 주세요.')
+      return
+    }
     if (mismatchWarning && mismatchChoice !== 'proceed') {
       setError('분석 목표와 CSV 내용이 맞지 않을 수 있습니다. 추천 목표로 변경하거나 기존 목표 그대로 진행을 선택해 주세요.')
       return
@@ -663,8 +673,16 @@ export default function AgentMode() {
     setMismatchChoice('')
   }
 
+  function usePredictionCandidate(columnName) {
+    setTargetPreference(columnName)
+    setGoalText(`이 CSV로 ${columnName} 값을 예측하고 중요한 요인을 보고서로 정리해줘.`)
+    setMismatchChoice('')
+    setError('')
+    goalRef.current?.focus()
+  }
+
   const selectedTargetUnclear = Boolean(selectedDataset && datasetTargetQuality(selectedDataset)?.has_meaningful_target === false)
-  const canCreateRun = Boolean(selectedDatasetId && goalText.trim())
+  const canCreateRun = Boolean(selectedDatasetId && goalText.trim() && (!selectedTargetUnclear || targetPreference.trim()))
   const placeholder = suggestedGoal || '예: 이 CSV로 당뇨병 여부를 예측하고 중요한 요인을 보고서로 정리해줘.'
   const selectedRunStatus = getRunStatus(selectedRun)
   const executionStarted = Boolean(selectedRun && selectedRunStatus && selectedRunStatus !== 'planned')
@@ -719,7 +737,7 @@ export default function AgentMode() {
 
       {selectedDataset && setupVisible && (
         <div className="workspace-grid two-columns">
-          <TargetRecommendationPanel dataset={selectedDataset} onFocusGoal={editGoal} />
+          <TargetRecommendationPanel dataset={selectedDataset} onFocusGoal={editGoal} onUseCandidate={usePredictionCandidate} />
           <AnalysisGoalCard
             goalText={goalText}
             setGoalText={updateGoalText}
