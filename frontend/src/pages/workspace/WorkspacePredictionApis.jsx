@@ -1,34 +1,35 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { LoadingState, StatusBadge, WorkspacePageHeader, statusLabel } from '../../components/workspace-shell/WorkspaceStates'
-import { fmt, loadPredictionApiRows } from './workspaceData'
+import { asArray, fmt, loadPredictionApiRows } from './workspaceData'
 import api from '../../api'
 
 function latestUsed(tokens) {
-  return tokens.map(token => token.last_used_at).filter(Boolean).sort().at(-1) || '-'
+  return asArray(tokens).map(token => token?.last_used_at).filter(Boolean).sort().at(-1) || '-'
 }
 
 function availabilityStatus(row) {
-  if (row.availability?.available) return 'active'
-  const reason = row.availability?.reason || ''
+  if (row?.availability?.available) return 'active'
+  const reason = row?.availability?.reason || ''
   if (reason.includes('deleted')) return 'deleted'
   if (reason.includes('model')) return 'needs_review'
   return 'disabled'
 }
 
 function availabilityText(row) {
-  if (row.availability?.available) return '예측 API를 사용할 수 있습니다.'
-  if (row.availability?.dataset_active === false) return '연결된 데이터셋이 삭제되어 예측 API를 사용할 수 없습니다.'
-  if (row.availability?.model_ready === false) return '모델이 아직 준비되지 않았습니다.'
-  return fmt(row.availability?.reason || '사용 가능 상태를 확인해야 합니다.')
+  if (row?.availability?.available) return '예측 API를 사용할 수 있습니다.'
+  if (row?.availability?.dataset_active === false) return '연결된 데이터셋이 삭제되어 예측 API를 사용할 수 없습니다.'
+  if (row?.availability?.model_ready === false) return '모델이 아직 준비되지 않았습니다.'
+  return fmt(row?.availability?.reason || '사용 가능 상태를 확인해야 합니다.')
 }
 
 function readinessLabel(row) {
-  if (!row) return 'API 연결 전 검토가 필요합니다.'
-  if (row.availability?.available && row.tokens.some(token => token.status === 'active')) return 'API 연결 가능'
-  if (row.availability?.available) return 'API 인증 정보 생성 필요'
+  if (!row) return 'API 연결 점검이 필요합니다.'
+  const tokens = asArray(row.tokens)
+  if (row.availability?.available && tokens.some(token => token?.status === 'active')) return 'API 연결 가능'
+  if (row.availability?.available) return 'API token 생성 필요'
   if (row.availability?.dataset_active === false || row.availability?.model_ready === false) return 'API 연결 권장하지 않음'
-  return 'API 연결 전 검토가 필요합니다.'
+  return 'API 연결 점검이 필요합니다.'
 }
 
 function readinessTone(row) {
@@ -39,14 +40,15 @@ function readinessTone(row) {
 }
 
 function ReadinessOverview({ rows, onOpenSettings }) {
-  const usable = rows.filter(row => row.availability?.available && row.tokens.some(token => token.status === 'active')).length
-  const needsReview = rows.filter(row => readinessLabel(row) !== 'API 연결 가능').length
+  const safeRows = asArray(rows)
+  const usable = safeRows.filter(row => row?.availability?.available && asArray(row?.tokens).some(token => token?.status === 'active')).length
+  const needsReview = safeRows.filter(row => readinessLabel(row) !== 'API 연결 가능').length
   return (
     <section className="card" style={{ display: 'grid', gap: 14 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
         <div>
           <p className="section-title" style={{ marginBottom: 6 }}>API 연결 상태 요약</p>
-          <h2 style={{ margin: 0, fontSize: 22 }}>API 연결 상태</h2>
+          <h2 style={{ margin: 0, fontSize: 22 }}>예측 API 준비 상태</h2>
         </div>
         <button className="btn-secondary" onClick={onOpenSettings}>API 설정 열기</button>
       </div>
@@ -61,16 +63,16 @@ function ReadinessOverview({ rows, onOpenSettings }) {
         </div>
         <div className="card-compact">
           <p style={{ margin: '0 0 6px', color: 'var(--text-label)', fontSize: 11, fontWeight: 800 }}>전체 프로젝트</p>
-          <strong>{rows.length}개</strong>
+          <strong>{safeRows.length}개</strong>
         </div>
         <div className="card-compact">
           <p style={{ margin: '0 0 6px', color: 'var(--text-label)', fontSize: 11, fontWeight: 800 }}>보안 안내</p>
-          <strong>인증 정보 일부만 표시</strong>
+          <strong>token 일부만 표시</strong>
         </div>
       </div>
       <div className="banner-warning" style={{ alignItems: 'flex-start' }}>
         <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.6 }}>
-          아직 운영 연결 단계가 아닙니다. 보고서와 데이터 품질을 먼저 확인하세요.
+          아직 운영 배포 자동화 단계가 아닙니다. 보고서와 데이터 상태를 먼저 확인한 뒤 API 연결을 검토하세요.
         </p>
       </div>
     </section>
@@ -85,13 +87,13 @@ function ApiExamplePanel({ row }) {
     <section className="card" style={{ display: 'grid', gap: 12 }}>
       <p className="section-title">요청 예시</p>
       <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.6 }}>
-        실제 연결 주소와 API 인증 정보는 프로젝트 상세의 자세한 정보에서 확인하세요.
+        실제 연결 주소와 API token은 프로젝트 상세 화면에서 확인하세요.
       </p>
       <div className="workspace-grid two-columns">
         <div className="card-compact" style={{ display: 'grid', gap: 8 }}>
           <strong>필수 입력 항목</strong>
           <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.55 }}>
-            학습 컬럼과 같은 이름의 JSON 값을 보내세요.
+            학습 컬럼과 같은 이름의 JSON 값을 보내야 합니다.
           </p>
         </div>
         <div className="card-compact" style={{ display: 'grid', gap: 8 }}>
@@ -109,12 +111,12 @@ export default function WorkspacePredictionApis() {
   const [rows, setRows] = useState(null)
 
   useEffect(() => {
-    api.get('/projects').then(res => loadPredictionApiRows(res.data || [])).then(setRows).catch(() => setRows([]))
+    api.get('/projects').then(res => loadPredictionApiRows(asArray(res.data))).then(setRows).catch(() => setRows([]))
   }, [])
 
   if (!rows) return <div style={{ padding: 24 }}><LoadingState label="예측 API 상태를 불러오는 중입니다." /></div>
 
-  const visible = rows.filter(row => row.availability || row.tokens.length)
+  const visible = asArray(rows).filter(row => row?.availability || asArray(row?.tokens).length)
   return (
     <div className="animate-fade-in" style={{ padding: 24, maxWidth: 1180 }}>
       <WorkspacePageHeader
@@ -125,9 +127,9 @@ export default function WorkspacePredictionApis() {
       <ReadinessOverview rows={visible} onOpenSettings={() => nav('/deploy')} />
       {!visible.length ? (
         <section className="card empty-state">
-          <strong className="empty-title">아직 예측 API가 없어요.</strong>
+          <strong className="empty-title">아직 사용할 수 있는 예측 API가 없습니다.</strong>
           <p className="empty-desc">
-            분석이 완료된 프로젝트에서 API 인증 정보를 만들면 여기에 표시됩니다.
+            분석을 완료한 프로젝트에서 API token을 만들면 여기에 표시됩니다.
           </p>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
             <button className="btn-primary" onClick={() => nav('/deploy')}>API 설정 열기</button>
@@ -139,52 +141,55 @@ export default function WorkspacePredictionApis() {
           <section className="card" style={{ display: 'grid', gap: 12 }}>
             <p className="section-title" style={{ margin: 0 }}>예측 API 목록</p>
             <div style={{ overflowX: 'auto' }}>
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>프로젝트</th>
-                  <th>API 준비도</th>
-                  <th>인증 정보</th>
-                  <th>마지막 사용</th>
-                  <th>호출 수</th>
-                  <th>데이터셋/모델</th>
-                  <th>작업</th>
-                </tr>
-              </thead>
-              <tbody>{visible.map(row => {
-                const active = row.tokens.filter(token => token.status === 'active')
-                const revoked = row.tokens.filter(token => token.status === 'revoked')
-                const calls = row.tokens.reduce((sum, token) => sum + Number(token.usage_count || 0), 0)
-                const status = availabilityStatus(row)
-                return (
-                  <tr key={row.project.id}>
-                    <td>
-                      <Link to={`/projects/${row.project.id}?tab=api`}><strong>{row.project.name}</strong></Link>
-                      <br />
-                      <span style={{ color: 'var(--text-label)' }}>{String(row.project.id).slice(0, 8)}</span>
-                    </td>
-                    <td>
-                      <span className={readinessTone(row)}>{readinessLabel(row)}</span>
-                      <br />
-                      <StatusBadge status={status} />
-                    </td>
-                    <td>
-                      {active.length} 활성 / {revoked.length} 폐기 / {row.tokens.length} 전체
-                      <br />
-                      <span style={{ color: 'var(--text-label)' }}>전체 인증 값은 다시 표시하지 않습니다.</span>
-                    </td>
-                    <td>{latestUsed(row.tokens)}</td>
-                    <td>{calls}</td>
-                    <td>
-                      <strong>{statusLabel(status)}</strong>
-                      <br />
-                      <span style={{ color: 'var(--text-2)' }}>{availabilityText(row)}</span>
-                    </td>
-                    <td><button className="btn-secondary" onClick={() => nav(`/projects/${row.project.id}?tab=api`)}>API 인증 정보 관리</button></td>
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>프로젝트</th>
+                    <th>API 준비도</th>
+                    <th>token</th>
+                    <th>마지막 사용</th>
+                    <th>호출 수</th>
+                    <th>데이터셋/모델</th>
+                    <th>작업</th>
                   </tr>
-                )
-              })}</tbody>
-            </table>
+                </thead>
+                <tbody>{visible.map((row, index) => {
+                  const tokens = asArray(row?.tokens)
+                  const project = row?.project || {}
+                  const projectId = project.id
+                  const active = tokens.filter(token => token?.status === 'active')
+                  const revoked = tokens.filter(token => token?.status === 'revoked')
+                  const calls = tokens.reduce((sum, token) => sum + Number(token?.usage_count || 0), 0)
+                  const status = availabilityStatus(row)
+                  return (
+                    <tr key={projectId || row?.model_id || row?.id || index}>
+                      <td>
+                        {projectId ? <Link to={`/projects/${projectId}?tab=api`}><strong>{project.name || '프로젝트'}</strong></Link> : <strong>{project.name || '프로젝트 정보 없음'}</strong>}
+                        <br />
+                        <span style={{ color: 'var(--text-label)' }}>{projectId ? String(projectId).slice(0, 8) : '연결 정보 없음'}</span>
+                      </td>
+                      <td>
+                        <span className={readinessTone(row)}>{readinessLabel(row)}</span>
+                        <br />
+                        <StatusBadge status={status} />
+                      </td>
+                      <td>
+                        {active.length} 활성 / {revoked.length} 폐기 / {tokens.length} 전체
+                        <br />
+                        <span style={{ color: 'var(--text-label)' }}>전체 token 값은 다시 표시하지 않습니다.</span>
+                      </td>
+                      <td>{latestUsed(tokens)}</td>
+                      <td>{calls}</td>
+                      <td>
+                        <strong>{statusLabel(status)}</strong>
+                        <br />
+                        <span style={{ color: 'var(--text-2)' }}>{availabilityText(row)}</span>
+                      </td>
+                      <td><button className="btn-secondary" disabled={!projectId} onClick={() => projectId && nav(`/projects/${projectId}?tab=api`)}>API token 관리</button></td>
+                    </tr>
+                  )
+                })}</tbody>
+              </table>
             </div>
           </section>
           <ApiExamplePanel row={visible[0]} />

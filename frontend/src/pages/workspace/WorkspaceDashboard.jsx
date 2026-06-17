@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import DemoDatasetGuide from '../../components/upload/DemoDatasetGuide'
 import { EmptyState, LoadingState, StatusBadge } from '../../components/workspace-shell/WorkspaceStates'
-import { fmt, loadWorkspaceOverview, primaryMetric, projectDatasetName, projectTarget } from './workspaceData'
+import { asArray, fmt, loadWorkspaceOverview, primaryMetric, projectDatasetName, projectTarget } from './workspaceData'
 
 function MetricCard({ label, value, sub }) {
   return <div className="card"><p className="section-title">{label}</p><strong style={{ fontSize: 26 }}>{value}</strong><p style={{ margin: '6px 0 0', color: 'var(--text-2)', fontSize: 12 }}>{sub}</p></div>
@@ -39,10 +39,15 @@ function ProductHomeHero({ onUpload, onQuick, onGoal, onSample }) {
 }
 
 function RecommendedNextAction({ data, latestRun, nav }) {
-  const hasDataset = data.datasets.length > 0
-  const hasRun = data.history.length > 0 || data.jobs.length > 0
-  const hasReport = data.reports?.length > 0
-  const hasApi = data.deployed.length > 0
+  const datasets = asArray(data?.datasets)
+  const history = asArray(data?.history)
+  const jobs = asArray(data?.jobs)
+  const reports = asArray(data?.reports)
+  const deployed = asArray(data?.deployed)
+  const hasDataset = datasets.length > 0
+  const hasRun = history.length > 0 || jobs.length > 0
+  const hasReport = reports.length > 0
+  const hasApi = deployed.length > 0
   let title = '다음에 할 일'
   let description = '첫 CSV를 올리고 예측할 값을 정해 보세요.'
   let cta = 'CSV 올리기'
@@ -94,10 +99,15 @@ export default function WorkspaceDashboard() {
   if (error) return <div style={{ padding: 24 }}><div className="banner-warning">{error}</div></div>
   if (!data) return <div style={{ padding: 24 }}><LoadingState /></div>
 
-  const recentProjects = data.projects.slice(0, 5)
-  const activeJobs = data.jobs.filter(job => ['created', 'queued', 'running'].includes(job.status)).slice(0, 4)
-  const failedJobs = data.jobs.filter(job => job.status === 'failed' || job.error_type || job.error_message).slice(0, 4)
-  const latestRun = data.history[0]
+  const projects = asArray(data.projects).filter(Boolean)
+  const datasets = asArray(data.datasets).filter(Boolean)
+  const jobs = asArray(data.jobs).filter(Boolean)
+  const history = asArray(data.history).filter(Boolean)
+  const deployed = asArray(data.deployed).filter(Boolean)
+  const recentProjects = projects.slice(0, 5)
+  const activeJobs = jobs.filter(job => ['created', 'queued', 'running'].includes(job.status)).slice(0, 4)
+  const failedJobs = jobs.filter(job => job.status === 'failed' || job.error_type || job.error_message).slice(0, 4)
+  const latestRun = history[0]
 
   return (
     <div className="animate-fade-in" style={{ padding: 24, maxWidth: 1180 }}>
@@ -107,7 +117,7 @@ export default function WorkspaceDashboard() {
         onGoal={() => nav('/agent-mode')}
         onSample={() => nav('/new')}
       />
-      {data.projects.length === 0 ? (
+      {projects.length === 0 ? (
         <div style={{ display: 'grid', gap: 14 }}>
           <EmptyState
             title="아직 분석할 데이터가 없어요."
@@ -123,10 +133,10 @@ export default function WorkspaceDashboard() {
       ) : (
         <div style={{ display: 'grid', gap: 18 }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 12 }} className="admin-stat-grid">
-            <MetricCard label="프로젝트" value={data.projects.length} sub="저장된 분석 공간" />
-            <MetricCard label="데이터셋" value={data.datasets.length} sub="활성 업로드" />
+            <MetricCard label="프로젝트" value={projects.length} sub="저장된 분석 공간" />
+            <MetricCard label="데이터셋" value={datasets.length} sub="활성 업로드" />
             <MetricCard label="오늘 작업" value={data.usage?.usage?.jobs_today ?? 0} sub={data.usage?.plan_label || (data.usage?.plan === 'free' ? 'Free 플랜' : `${data.usage?.plan || 'Free'} 플랜`)} />
-            <MetricCard label="예측 API" value={data.deployed.length} sub="공유 모델 기록" />
+            <MetricCard label="예측 API" value={deployed.length} sub="공유 모델 기록" />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }} className="admin-detail-grid">

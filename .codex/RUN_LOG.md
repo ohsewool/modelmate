@@ -1538,3 +1538,46 @@ Milestones:
   - Existing dirty QA result files were left untouched and excluded from this commit.
 - Next step:
   - Railway redeploy is needed, then manually test diabetes -> AI4I upload/run sequence on the deployed site.
+
+## 2026-06-18 KST - Final Bugfix Remaining Full-page Runtime Error
+
+- Status: completed
+- Branch: `main`
+- Scope:
+  - Fix the remaining class of full-page runtime crashes caused by partial or mismatched workspace API response shapes.
+  - Keep the change narrow to defensive rendering and response normalization for workspace pages.
+- Observed error IDs:
+  - `err_nH2r0YiceEbXhw`
+  - `req_Jr7oKm3nB8dJVyyK`
+  - Search result: the IDs were not found in backend/source logs in this repository, so they appear to be client-generated ErrorBoundary/request IDs rather than persisted backend log IDs.
+- Root cause found:
+  - Workspace pages assumed list endpoints always returned raw arrays and complete nested fields.
+  - If `/projects`, `/jobs`, `/reports`, `/datasets`, `/deployed`, or `/prediction-tokens` returned an object wrapper, `null`, or a partial row, components could call `.length`, `.filter`, `.map`, `.some`, or `.reduce` on an invalid value.
+  - The highest-risk component was `WorkspacePredictionApis`, where `row.tokens.some/filter/reduce` and `row.project.id` could throw during render and trigger the full-page ErrorBoundary.
+- Files changed:
+  - `frontend/src/pages/workspace/workspaceData.js`
+  - `frontend/src/pages/workspace/WorkspaceDashboard.jsx`
+  - `frontend/src/pages/workspace/WorkspacePredictionApis.jsx`
+  - `frontend/src/pages/workspace/WorkspaceProjects.jsx`
+  - `frontend/src/pages/workspace/WorkspaceReports.jsx`
+  - `frontend/src/pages/workspace/WorkspaceJobs.jsx`
+  - generated frontend dist bundle
+- Fixes applied:
+  - Added `asArray()` response normalization for raw arrays and common wrappers such as `projects`, `items`, `datasets`, `reports`, `jobs`, and `tokens`.
+  - Normalized workspace overview, job, report, and prediction API loader results before rendering.
+  - Added local defensive rendering for prediction API rows with missing `tokens`, `availability`, or `project`.
+  - Disabled project-specific API actions when no valid project id is present instead of navigating to an undefined route.
+  - Normalized dashboard, projects, jobs, and reports page list data before using array methods.
+- Route QA:
+  - Static/source route check confirmed no direct `/undefined`, `/agent-mode/undefined`, `/reports/undefined`, or `/prediction-apis/undefined` pattern was introduced.
+  - Covered routes by source/build inspection: `/upload`, `/dashboard`, `/agent-mode`, `/projects`, `/jobs`, `/reports`, `/prediction-apis`, `/settings`.
+  - Browser automation was not completed in this local pass because the available Node REPL automation check failed before importing Playwright.
+- Verification:
+  - `python -m compileall backend`: passed with bundled Python runtime.
+  - `cd frontend && npm run build`: passed with bundled Node/Vite runtime.
+  - Vite large chunk warning remains non-blocking.
+- Known limitations:
+  - The exact deployed click path that generated `err_nH2r0YiceEbXhw` could not be reproduced locally from persisted logs.
+  - Live Railway/browser confirmation is still needed after redeploy.
+- Next step:
+  - Railway redeploy is needed, then manually revisit the route/action that previously showed the full-page error.

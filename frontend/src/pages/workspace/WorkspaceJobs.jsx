@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { CopyButton, LoadingState, StatusBadge, WorkspacePageHeader } from '../../components/workspace-shell/WorkspaceStates'
-import { fmt, loadWorkspaceJobs } from './workspaceData'
+import { asArray, fmt, loadWorkspaceJobs } from './workspaceData'
 
 function isFailed(job) {
-  return job.status === 'failed' || job.error_type || job.error_message
+  return job?.status === 'failed' || job?.error_type || job?.error_message
 }
 
 function jobTitle(job) {
@@ -12,7 +12,7 @@ function jobTitle(job) {
 }
 
 function errorInfo(job) {
-  const id = job.error_id || job.request_id || job.job_id
+  const id = job?.error_id || job?.request_id || job?.job_id
   const parts = [
     job.error_type && `코드: ${job.error_type}`,
     id && `ID: ${id}`,
@@ -30,16 +30,17 @@ export default function WorkspaceJobs() {
   }, [])
 
   const filtered = useMemo(() => {
-    if (!jobs) return []
-    if (filter === 'failed') return jobs.filter(isFailed)
-    if (filter === 'active') return jobs.filter(job => ['created', 'queued', 'running'].includes(job.status))
-    return jobs
+    const safeJobs = asArray(jobs).filter(Boolean)
+    if (filter === 'failed') return safeJobs.filter(isFailed)
+    if (filter === 'active') return safeJobs.filter(job => ['created', 'queued', 'running'].includes(job?.status))
+    return safeJobs
   }, [jobs, filter])
 
   if (!jobs) return <div style={{ padding: 24 }}><LoadingState label="작업 상태를 불러오는 중입니다." /></div>
-  const activeCount = jobs.filter(job => ['created', 'queued', 'running'].includes(job.status)).length
-  const failedCount = jobs.filter(isFailed).length
-  const completedCount = jobs.filter(job => ['succeeded', 'success', 'completed'].includes(job.status)).length
+  const safeJobs = asArray(jobs).filter(Boolean)
+  const activeCount = safeJobs.filter(job => ['created', 'queued', 'running'].includes(job?.status)).length
+  const failedCount = safeJobs.filter(isFailed).length
+  const completedCount = safeJobs.filter(job => ['succeeded', 'success', 'completed'].includes(job?.status)).length
 
   return (
     <div className="animate-fade-in" style={{ padding: 24, maxWidth: 1180 }}>
@@ -53,7 +54,7 @@ export default function WorkspaceJobs() {
       />
 
       <div className="workspace-grid four-columns" style={{ marginBottom: 18 }}>
-        <section className="card-compact"><p className="section-title">전체 작업</p><strong>{jobs.length}</strong></section>
+        <section className="card-compact"><p className="section-title">전체 작업</p><strong>{safeJobs.length}</strong></section>
         <section className="card-compact"><p className="section-title">진행 중</p><strong>{activeCount}</strong></section>
         <section className="card-compact"><p className="section-title">완료</p><strong>{completedCount}</strong></section>
         <section className="card-compact"><p className="section-title">실패</p><strong>{failedCount}</strong></section>

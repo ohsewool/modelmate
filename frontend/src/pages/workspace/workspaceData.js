@@ -1,5 +1,16 @@
 import api from '../../api'
 
+export function asArray(value) {
+  if (Array.isArray(value)) return value
+  if (Array.isArray(value?.projects)) return value.projects
+  if (Array.isArray(value?.items)) return value.items
+  if (Array.isArray(value?.datasets)) return value.datasets
+  if (Array.isArray(value?.reports)) return value.reports
+  if (Array.isArray(value?.jobs)) return value.jobs
+  if (Array.isArray(value?.tokens)) return value.tokens
+  return []
+}
+
 export async function loadWorkspaceOverview() {
   const [projectsRes, historyRes, datasetsRes, usageRes, deployedRes] = await Promise.all([
     api.get('/projects').catch(() => ({ data: [] })),
@@ -8,22 +19,22 @@ export async function loadWorkspaceOverview() {
     api.get('/me/usage').catch(() => ({ data: null })),
     api.get('/deployed').catch(() => ({ data: [] })),
   ])
-  const projects = projectsRes.data || []
+  const projects = asArray(projectsRes.data)
   const jobs = await loadJobsForProjects(projects.slice(0, 12))
   const reports = await loadReportsForProjects(projects.slice(0, 12))
   return {
     projects,
-    history: historyRes.data || [],
-    datasets: datasetsRes.data || [],
+    history: asArray(historyRes.data),
+    datasets: asArray(datasetsRes.data),
     usage: usageRes.data,
-    deployed: deployedRes.data || [],
+    deployed: asArray(deployedRes.data),
     jobs,
     reports,
   }
 }
 
 export async function loadJobsForProjects(projects) {
-  const nested = await Promise.all(projects.map(project =>
+  const nested = await Promise.all(asArray(projects).filter(project => project?.id).map(project =>
     api.get(`/projects/${project.id}/jobs`)
       .then(res => (res.data || []).map(job => ({ ...job, project })))
       .catch(() => [])
@@ -33,13 +44,16 @@ export async function loadJobsForProjects(projects) {
 
 export async function loadWorkspaceJobs() {
   const direct = await api.get('/jobs').catch(() => null)
-  if (Array.isArray(direct?.data)) return direct.data
+  if (direct?.data) {
+    const directJobs = asArray(direct.data)
+    if (directJobs.length || Array.isArray(direct.data)) return directJobs
+  }
   const projectsRes = await api.get('/projects').catch(() => ({ data: [] }))
-  return loadJobsForProjects(projectsRes.data || [])
+  return loadJobsForProjects(asArray(projectsRes.data))
 }
 
 export async function loadReportsForProjects(projects) {
-  const nested = await Promise.all(projects.map(project =>
+  const nested = await Promise.all(asArray(projects).filter(project => project?.id).map(project =>
     api.get(`/projects/${project.id}/reports`)
       .then(res => (res.data || []).map(report => ({ ...report, project })))
       .catch(() => [])
@@ -49,15 +63,18 @@ export async function loadReportsForProjects(projects) {
 
 export async function loadWorkspaceReports() {
   const direct = await api.get('/reports').catch(() => null)
-  if (Array.isArray(direct?.data)) return direct.data
+  if (direct?.data) {
+    const directReports = asArray(direct.data)
+    if (directReports.length || Array.isArray(direct.data)) return directReports
+  }
   const projectsRes = await api.get('/projects').catch(() => ({ data: [] }))
-  return loadReportsForProjects(projectsRes.data || [])
+  return loadReportsForProjects(asArray(projectsRes.data))
 }
 
 export async function loadPredictionApiRows(projects) {
-  return Promise.all(projects.map(project =>
+  return Promise.all(asArray(projects).filter(project => project?.id).map(project =>
     api.get(`/projects/${project.id}/prediction-tokens`)
-      .then(res => ({ project, availability: res.data.availability, tokens: res.data.tokens || [] }))
+      .then(res => ({ project, availability: res.data?.availability || null, tokens: asArray(res.data?.tokens) }))
       .catch(() => ({ project, availability: null, tokens: [] }))
   ))
 }

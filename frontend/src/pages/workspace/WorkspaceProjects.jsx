@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import DemoDatasetGuide from '../../components/upload/DemoDatasetGuide'
 import { EmptyState, LoadingState, StatusBadge, WorkspacePageHeader } from '../../components/workspace-shell/WorkspaceStates'
-import { fmt, loadWorkspaceOverview, primaryMetric, projectDatasetName, projectTarget } from './workspaceData'
+import { asArray, fmt, loadWorkspaceOverview, primaryMetric, projectDatasetName, projectTarget } from './workspaceData'
 
 export default function WorkspaceProjects() {
   const nav = useNavigate()
@@ -13,7 +13,7 @@ export default function WorkspaceProjects() {
   }, [])
 
   if (!data) return <div style={{ padding: 24 }}><LoadingState label="프로젝트를 불러오는 중입니다." /></div>
-  const projects = data.projects || []
+  const projects = asArray(data.projects).filter(Boolean)
   const activeProjects = projects.filter(project => !['deleted', 'archived'].includes(project.archive_status)).length
   const reportReady = projects.filter(project => project.last_report_id || project.report_id || project.report).length
   const apiReady = projects.filter(project => project.prediction_api_enabled || project.api_token_count || project.prediction_tokens?.length).length
