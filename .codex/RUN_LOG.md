@@ -1458,3 +1458,49 @@ Milestones:
   - Existing dirty QA result files were not included in this PR scope.
 - Next step:
   - Railway redeploy is needed for the updated frontend bundle and backend target-quality logic to appear on the public site.
+
+## 2026-06-18 KST - LOGIC-02 Generalized Target Recommendation Engine and State Safety Fix
+
+- Status: completed
+- Branch: `main`
+- Scope:
+  - Generalize target recommendation scoring so semantically meaningful prediction values outrank technically easy but feature-like columns.
+  - Add confidence levels, feature-like penalties, duplicate/leakage handling, safer ambiguous-state behavior, and API gating support.
+- Files changed:
+  - `backend/tools/target_quality.py`
+  - `backend/tools/target_recommendation.py`
+  - `backend/main_parts/010_upload.part`
+  - `backend/main_parts/011_analyze_columns.part`
+  - `backend/main_parts/052_workspace_projects.part`
+  - `frontend/src/pages/AgentMode.jsx`
+  - `frontend/src/pages/AgentRunDetail.jsx`
+  - generated frontend dist bundle
+- Scoring/rules added:
+  - Strong classification outcomes: `survived`, `churn`, `converted`, `passed`, `failure_risk`, `fraud`, `outcome`, `target`, etc.
+  - Strong regression outcomes: `demand`, `sales`, `revenue`, `amount`, `score`, `count`, `가입건수`, etc.
+  - Feature-like penalties for identifiers, names/text labels, date/grouping fields, demographic descriptors, Titanic input features such as `pclass`, `sex`, `age`, `fare`, and operational/sensor fields.
+  - Confidence levels: `high`, `medium`, `needs_review`, `low`.
+  - Duplicate/leakage target handling: `survived` excludes `alive` as an equivalent target/input leakage risk.
+  - Domain hints for passenger survival, churn, failure/defect, demand/sales, public aggregate, and unknown data.
+- State/API gating fixes:
+  - `infer_default_target` no longer falls back to the last column when no meaningful prediction value exists.
+  - Upload/analyze paths now preserve `None` for unconfirmed prediction values and keep row/column summaries available.
+  - Ambiguous public/admin aggregate CSVs recommend summary report first and keep prediction API unavailable until the user confirms a prediction value.
+  - Agent Run Detail avoids showing completed/API actions when review is pending or no meaningful prediction value exists.
+- QA datasets:
+  - `titanic_survival.csv` synthetic: recommends `survived`, classification, domain `승객 생존 예측`, excludes `alive`, API ready only after valid analysis completion.
+  - `customer_churn_demo.csv`: recommends `churn`, classification, high confidence.
+  - `equipment_failure_demo.csv`: recommends `failure_risk`, classification, high confidence.
+  - `sales_demand_demo.csv`: recommends `demand`, regression, high confidence; `price` no longer wins the tie.
+  - public bike signup aggregate synthetic: no forced prediction value, optional `가입건수` regression candidate, summary report first, API not ready.
+  - invalid id/name-only CSV: no prediction value, `prediction_unsuitable`, upload another CSV action, API not ready.
+- Build result:
+  - `python -m compileall backend`: passed with bundled Python runtime.
+  - `cd frontend && npm run build`: passed with bundled Node/Vite runtime.
+  - Vite large chunk warning remains non-blocking.
+- Known limitations:
+  - QA was deterministic script-level QA, not browser click QA against Railway.
+  - The recommendation engine is heuristic and deterministic; it does not use an LLM semantic classifier.
+  - Existing dirty QA result files were left untouched and excluded from this commit.
+- Next step:
+  - Railway redeploy is needed for public site behavior to reflect the pushed changes.

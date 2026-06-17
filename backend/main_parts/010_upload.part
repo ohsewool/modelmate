@@ -72,7 +72,15 @@ async def upload(file: UploadFile = File(...), user=Depends(get_current_user)):
     target_quality = infer_target_quality(df, default_target)
     quality = {**quality, "target_quality": target_quality}
     suggested_drop, drop_reasons = suggested_feature_drops(df, target_col=default_target)
-    domain_info = infer_target_category(df, default_target)
+    if default_target in df.columns:
+        domain_info = infer_target_category(df, default_target)
+    else:
+        domain_info = infer_dataset_domain(df)
+        domain_info.update({
+            "target_category": "예측값 검토 필요",
+            "target_category_reason": "자동으로 확정할 만한 예측값이 없어 요약 보고서 또는 사용자 선택이 먼저 필요합니다.",
+            "target_unique_count": 0,
+        })
     saved_dataset = save_dataset_record(user, file.filename, df, default_target, quality, domain_info)
     if saved_dataset:
         saved_dataset["target_quality"] = target_quality

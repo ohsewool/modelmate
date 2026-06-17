@@ -588,10 +588,10 @@ function PostPredictionGuidance({ trace, run, reviews, onContinue, onRetry, onSt
     interpretation = '이 CSV에서는 바로 예측할 만한 명확한 예측값을 찾기 어렵습니다.'
   } else if (weakPerformance) {
     interpretation = '모델이 어느 정도 예측 가능성을 찾았지만, 성능이 충분히 높지 않을 수 있어 실제 의사결정에는 주의가 필요합니다.'
-  } else if (complete) {
-    interpretation = '모델이 예측에 사용할 수 있는 구조와 근거를 정리했습니다. 먼저 보고서에서 성능과 주의사항을 확인하는 것을 권장합니다.'
   } else if (reviewNeeded) {
     interpretation = '자동으로 결정하기 어려운 지점이 발견되었습니다. 확인을 마치면 다음 분석 단계로 이어갈 수 있습니다.'
+  } else if (complete) {
+    interpretation = '모델이 예측에 사용할 수 있는 구조와 근거를 정리했습니다. 먼저 보고서에서 성능과 주의사항을 확인하는 것을 권장합니다.'
   }
 
   const actions = []
@@ -979,7 +979,8 @@ export default function AgentRunDetail() {
   const run = trace?.analysis_run || trace?.run
   const planSteps = trace?.plan_steps || trace?.steps || []
   const detailQuality = targetQualityInfo(run, trace)
-  const complete = isRunComplete(run) && !detailQuality.noMeaningfulTarget
+  const reviewPending = isRunReviewNeeded(run) || reviews.some(review => review.status === 'pending')
+  const complete = isRunComplete(run) && !detailQuality.noMeaningfulTarget && !reviewPending
   const mismatchWarning = detectGoalDatasetMismatch(run, trace)
 
   if (loading) return <LoadingState label="상세 실행 기록을 불러오는 중입니다." />

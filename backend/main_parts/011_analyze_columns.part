@@ -31,6 +31,12 @@ def infer_dataset_domain(df):
     def has_any(words):
         return any(word in joined for word in words)
 
+    if has_any(["survived", "alive", "pclass", "passengerid", "sibsp", "parch", "embarked", "embark_town"]) and has_any(["survived", "alive"]):
+        return {
+            "dataset_domain": "승객 생존 예측",
+            "dataset_domain_reason": "survived, alive, pclass, fare처럼 승객 생존 여부와 관련된 컬럼이 있습니다.",
+            "dataset_domain_confidence": "높음",
+        }
     if has_any(["sleep", "lifelog", "activity", "heart", "hr", "step", "calorie", "wearable", "수면", "라이프로그", "활동"]):
         return {
             "dataset_domain": "수면/건강 라이프로그",
@@ -323,7 +329,7 @@ def infer_default_target(df):
     from backend.tools.target_quality import best_meaningful_target
 
     target, _quality = best_meaningful_target(df)
-    return target or df.columns[-1]
+    return target
 
 
 def infer_target_quality(df, target_col=None):
@@ -336,6 +342,7 @@ def infer_target_quality(df, target_col=None):
         task_type = (selected or {}).get("inferred_task_type") or "unknown"
         meaningful = bool(selected and selected["suitability"] == "good")
         usable_after_confirmation = bool(selected and selected["suitability"] != "poor" and task_type != "unsuitable")
+        excluded = (selected or {}).get("excluded_duplicate_targets") or []
         return {
             "has_meaningful_target": meaningful,
             "analysis_suitability": (
@@ -345,8 +352,12 @@ def infer_target_quality(df, target_col=None):
                 else "prediction_unsuitable"
             ),
             "problem_type": task_type,
+            "confidence": (selected or {}).get("confidence_level") or ("high" if meaningful else "needs_review" if usable_after_confirmation else "low"),
             "recommended": selected,
+            "recommended_prediction_value": str(target) if meaningful else None,
             "candidates": candidates[:5],
+            "alternative_candidates": [item for item in candidates if item["column_name"] != str(target)][:5],
+            "excluded_columns": excluded,
             "api_ready": meaningful,
             "primary_recommended_action": "start_analysis" if meaningful else "summary_report_first" if usable_after_confirmation else "upload_another_csv",
             "message": None if meaningful else "이 CSV에서는 바로 예측할 만한 명확한 예측값을 찾기 어렵습니다.",
@@ -365,9 +376,19 @@ def _rule_based_column_analysis(df, col_info, demo=False):
     ]
     target_col = infer_default_target(df)
     target_quality = infer_target_quality(df, target_col)
-    numeric_targets = df[target_col].dtype in [np.float64, np.int64, np.float32, np.int32]
-    task_type = "regression" if numeric_targets and df[target_col].nunique() > 12 else "classification"
-    target_category = infer_target_category(df, target_col)
+    if target_col in df.columns:
+        numeric_targets = df[target_col].dtype in [np.float64, np.int64, np.float32, np.int32]
+        task_type = "regression" if numeric_targets and df[target_col].nunique() > 12 else "classification"
+        target_category = infer_target_category(df, target_col)
+    else:
+        task_type = "검토 필요"
+        domain = infer_dataset_domain(df)
+        target_category = {
+            **domain,
+            "target_category": "예측값 검토 필요",
+            "target_category_reason": "자동으로 확정할 만한 예측값이 없어 요약 보고서 또는 사용자 선택이 먼저 필요합니다.",
+            "target_unique_count": 0,
+        }
     return {
         "target_suggestion": target_col,
         "target_quality": target_quality,
@@ -380,7 +401,7 @@ def _rule_based_column_analysis(df, col_info, demo=False):
         "dataset_summary": (
             f"{n}행 {len(df.columns)}열 데이터입니다. {target_category['dataset_domain']} 데이터로 보고, {target_category['target_category']} 문제로 분석합니다."
             if target_quality.get("has_meaningful_target", False)
-            else f"{n}행 {len(df.columns)}열 데이터입니다. 바로 예측할 만한 명확한 타깃은 검토가 필요합니다."
+            else f"{n}행 {len(df.columns)}열 데이터입니다. 바로 예측할 만한 명확한 예측값은 검토가 필요합니다."
         ),
         "task_type": task_type,
         **target_category,
@@ -433,7 +454,12 @@ async def analyze_columns(demo: bool = False):
         result["target_quality"] = target_quality
         result["has_meaningful_target"] = target_quality.get("has_meaningful_target", False)
         result["target_warning"] = target_quality.get("message")
-        result.update(infer_target_category(df, target_col))
+        if target_col in df.columns:
+            result.update(infer_target_category(df, target_col))
+        else:
+            result.update(infer_dataset_domain(df))
+            result["target_category"] = "예측값 검토 필요"
+            result["target_category_reason"] = "자동으로 확정할 만한 예측값이 없습니다."
         STATE["col_labels"] = result.get("col_labels", {})
         return result
     except Exception as e:

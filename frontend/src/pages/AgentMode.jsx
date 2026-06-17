@@ -308,7 +308,7 @@ function TargetRecommendationPanel({ dataset, onFocusGoal, onUseCandidate }) {
           <strong>바로 예측할 만한 명확한 값을 찾기 어렵습니다.</strong>
           <span>{quality?.message || '예측보다 요약 보고서가 먼저일 수 있습니다.'}</span>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <Link className="btn btn-secondary" to="/reports">요약 보고서 보기</Link>
+            <Link className="btn btn-secondary" to="/reports">요약 보고서 만들기</Link>
             {optionalCandidate?.column_name && optionalCandidate?.inferred_task_type !== 'unsuitable' && (
               <button className="btn btn-secondary" type="button" onClick={() => onUseCandidate(optionalCandidate.column_name)}>
                 {optionalCandidate.column_name} 예측하기

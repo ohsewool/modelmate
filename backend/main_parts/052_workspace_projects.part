@@ -360,12 +360,13 @@ def ensure_default_project(user_id, name="기본 프로젝트"):
 
 
 def save_dataset_record(user, filename, df, target_col, quality, domain_info):
+    target_value = str(target_col) if target_col else None
     dataset_meta = {
         "id": None,
         "project_id": None,
         "project_name": None,
         "filename": filename,
-        "target_col": str(target_col),
+        "target_col": target_value,
         "rows": int(df.shape[0]),
         "columns": int(df.shape[1]),
         "domain": domain_info.get("dataset_domain"),
@@ -384,7 +385,7 @@ def save_dataset_record(user, filename, df, target_col, quality, domain_info):
            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
         (
             dataset_id, project["id"], user["sub"], filename, filename, int(df.shape[0]), int(df.shape[1]),
-            str(target_col), domain_info.get("dataset_domain"), json.dumps(quality, ensure_ascii=False), now, now,
+            target_value, domain_info.get("dataset_domain"), json.dumps(quality, ensure_ascii=False), now, now,
             "active", "active", "upload", 0,
         ),
     )
