@@ -1581,3 +1581,42 @@ Milestones:
   - Live Railway/browser confirmation is still needed after redeploy.
 - Next step:
   - Railway redeploy is needed, then manually revisit the route/action that previously showed the full-page error.
+
+## 2026-06-18 KST - Final Crash Fix `quality is not defined`
+
+- Status: completed
+- Branch: `main`
+- Scope:
+  - Fix the exact production runtime crash reported by the deployed frontend ErrorBoundary.
+  - No target recommendation logic, backend behavior, or UI redesign was changed.
+- Production error lookup:
+  - Error ID: `err_1ozkar0anRFyQ`
+  - Request ID: `req_j6AyWDKzmsNd8z8D`
+  - Monitoring event: `frontend.error_reported`
+  - Route: `/agent-mode/cdd18aa2-68a9-4d63-8948-6b66e1aab548`
+  - Message: `quality is not defined`
+  - Error name: `ReferenceError`
+  - Previous similar event: `err_eydebq2Swq0ETA` on `/agent-mode/787cec63-737f-4174-9b1b-41e8643a6ffe`
+- Root cause:
+  - `frontend/src/pages/AgentRunDetail.jsx` function `ProgressSummary` referenced `quality.noMeaningfulTarget` without defining `quality` in that component scope.
+  - Other Agent Run Detail sections derived `quality` with `targetQualityInfo(run, trace)`, but `ProgressSummary` did not receive `trace` or define the value locally.
+  - Incognito still crashed because this was a production bundle runtime ReferenceError, not cache or stale browser storage.
+- Fix:
+  - Updated `ProgressSummary({ steps, run, trace })`.
+  - Added `const quality = targetQualityInfo(run, trace)` before using `quality.noMeaningfulTarget`.
+  - Passed `trace={trace}` from `AgentRunDetail` into `ProgressSummary`.
+  - Searched frontend source for related bare `quality`, `confidence`, `readiness`, `recommendation`, `candidates`, `importantFactors`, `selectedTarget`, and `predictionValue` usage. The remaining `quality` usages are scoped declarations or derived values.
+- Files changed:
+  - `frontend/src/pages/AgentRunDetail.jsx`
+  - generated frontend dist bundle
+  - `.codex/RUN_LOG.md`
+- Verification:
+  - `python -m compileall backend`: passed with bundled Python runtime.
+  - `cd frontend && npm run build`: passed with bundled Node/Vite runtime.
+  - Vite large chunk warning remains non-blocking.
+- QA notes:
+  - Exact crashed route identified from production monitoring: `/agent-mode/:agentRunId`.
+  - The local source now has no unscoped `quality` reference in `AgentRunDetail`.
+  - Live deployed verification requires Railway redeploy of this commit.
+- Next step:
+  - Push and let Railway redeploy, then open the same `/agent-mode/:agentRunId` route and confirm no full-page ErrorBoundary appears.

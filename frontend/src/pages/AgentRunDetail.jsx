@@ -500,10 +500,11 @@ function friendlyStepPurpose(step) {
   return copy[label] || step?.purpose || '분석 흐름에 필요한 작업을 수행합니다.'
 }
 
-function ProgressSummary({ steps, run }) {
+function ProgressSummary({ steps, run, trace }) {
   const completedCount = getCompletedStepCount(steps, run)
   const current = getCurrentStep(steps, run)
   const next = steps.find(step => step.order > (current?.order || 0) && !isStepDone(step))
+  const quality = targetQualityInfo(run, trace)
   const complete = isRunComplete(run) && !quality.noMeaningfulTarget
   return (
     <Section title="진행 요약" icon={<ListChecks size={18} />}>
@@ -1072,7 +1073,7 @@ export default function AgentRunDetail() {
       />
 
       <ConnectedCsvCard trace={trace} run={run} />
-      <ProgressSummary steps={planSteps} run={run} />
+      <ProgressSummary steps={planSteps} run={run} trace={trace} />
 
       <Section title="진행 타임라인" icon={<Box size={18} />}>
         <UserPlanTimeline steps={planSteps} />
