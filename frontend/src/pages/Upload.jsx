@@ -20,10 +20,12 @@ export default function Upload() {
   const [dropCols, setDropCols] = useState(() => draft.current?.dropCols || [])
   const [colLabels, setColLabels] = useState(() => draft.current?.colLabels || {})
   const [edaInfo, setEdaInfo] = useState(() => draft.current?.edaInfo || null)
+  const [modelResult, setModelResult] = useState(null)
   const [uploadError, setUploadError] = useState(null)
   const [operationalStatus, setOperationalStatus] = useState(null)
   const [usageLimits, setUsageLimits] = useState(null)
   const [targetError, setTargetError] = useState('')
+  const [modelError, setModelError] = useState('')
   const [needsReupload, setNeedsReupload] = useState(false)
   const [sideTab, setSideTab] = useState('readiness')
   const [sideOpen, setSideOpen] = useState(false)
@@ -170,8 +172,14 @@ export default function Upload() {
   }
 
   async function handleSetTarget() {
+    if (!target) {
+      setTargetError('예측할 타깃 컬럼을 먼저 선택해 주세요.')
+      return
+    }
     setLoading('target')
     setTargetError('')
+    setModelError('')
+    setModelResult(null)
     try {
       const { data } = await api.post('/set-target', { target_col: target, drop_cols: dropCols, col_labels: colLabels })
       setEdaInfo(data)
@@ -200,6 +208,38 @@ export default function Upload() {
     }
   }
 
+  async function handleRunModelComparison() {
+    if (!edaInfo || !target) {
+      setModelError('모델 비교를 시작하려면 먼저 타깃과 문제 유형을 확인해 주세요.')
+      return
+    }
+    if (loading === 'model') return
+    setLoading('model')
+    setModelError('')
+    try {
+      const { data } = await api.post('/run-cv')
+      setModelResult(data)
+      setOperationalStatus(data.analysis_status || null)
+    } catch (e) {
+      const detail = e.response?.data?.detail
+      const message = typeof detail === 'object'
+        ? (detail.user_friendly_message || detail.message || detail.technical_message)
+        : detail || e.message
+      if (typeof detail === 'object') {
+        setOperationalStatus({
+          status: 'failed',
+          current_step: detail.failed_stage || 'automl_training',
+          progress_message: detail.user_friendly_message || detail.message,
+          error_message: detail.technical_message,
+          recommended_next_action: detail.recommended_next_action,
+        })
+      }
+      setModelError(message || '모델 비교 중 문제가 발생했습니다. 데이터 형식이나 타깃값을 확인한 뒤 다시 실행해 주세요.')
+    } finally {
+      setLoading('')
+    }
+  }
+
   function toggleDrop(col) {
     setDropCols(prev => prev.includes(col) ? prev.filter(c => c !== col) : [...prev, col])
   }
@@ -215,9 +255,11 @@ export default function Upload() {
     setDropCols([])
     setColLabels({})
     setEdaInfo(null)
+    setModelResult(null)
     setSelectedStarterPack(null)
     setUploadError(message ? { message, tips: ['파일 선택을 눌러 같은 CSV를 다시 올리면 분석을 이어갈 수 있습니다.'] } : null)
     setTargetError('')
+    setModelError('')
     setNeedsReupload(false)
     clearUploadDraft()
   }
@@ -229,9 +271,11 @@ export default function Upload() {
     setDropCols([])
     setColLabels({})
     setEdaInfo(null)
+    setModelResult(null)
     setOperationalStatus(null)
     setUsageLimits(null)
     setTargetError('')
+    setModelError('')
     setNeedsReupload(false)
     clearUploadDraft()
   }
@@ -249,6 +293,14 @@ export default function Upload() {
   const targetConfidence = confidenceLabel(aiAnalysis?.target_quality?.confidence || aiAnalysis?.target_category_confidence || '중간')
   const datasetDomain = selectedStarterPack?.category || aiAnalysis?.dataset_domain || '도메인 확인 필요'
   const domainConfidence = selectedStarterPack ? '높음' : aiAnalysis?.dataset_domain_confidence || targetConfidence
+  const targetQuality = aiAnalysis?.target_quality || uploadInfo?.target_quality || {}
+  const targetQualityConfidence = targetQuality?.confidence || aiAnalysis?.confidence || uploadInfo?.target_quality?.confidence
+  const requiresTargetReview = targetQualityConfidence === 'medium' || targetQuality?.requires_review
+  const requiresManualTarget = uploadInfo && (!target || targetQualityConfidence === 'low' || uploadInfo.has_meaningful_target === false)
+  const canPrepareAnalysis = !!target && !needsReupload && !loading
+  const currentStep = getAnalysisStep({ uploadInfo, aiAnalysis, target, edaInfo, modelResult, loading, requiresManualTarget, requiresTargetReview })
+  const modelRows = modelResult?.results || []
+  const modelSummary = summarizeModelResult(modelResult, target, uploadInfo?.filename)
 
   return (
     <div className="animate-fade-in" style={{ padding: 32, maxWidth: 1240 }}>
@@ -263,6 +315,8 @@ export default function Upload() {
           CSV를 직접 올리거나 사용 사례 샘플로 시작하세요. ModelMate가 데이터 구조, 추천 타깃, 제외 후보를 먼저 정리합니다.
         </p>
       </section>
+
+      <StepProgress current={currentStep} />
 
       {!uploadInfo ? (
         <div style={{ display: 'grid', gap: 14 }}>
@@ -392,6 +446,22 @@ export default function Upload() {
                 </div>
               )}
 
+              {requiresManualTarget && (
+                <div className="banner-warning" style={{ marginBottom: 14 }}>
+                  <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6 }}>
+                    예측할 값을 자동으로 확정하기 어렵습니다. 분석할 컬럼을 직접 선택해 주세요.
+                  </p>
+                </div>
+              )}
+
+              {!requiresManualTarget && requiresTargetReview && (
+                <div className="banner-warning" style={{ marginBottom: 14 }}>
+                  <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6 }}>
+                    추천 결과를 확인해 주세요. 이 타깃으로 모델을 학습해도 괜찮다면 아래 설정으로 분석 준비를 눌러 주세요.
+                  </p>
+                </div>
+              )}
+
               <div style={{ display: 'grid', gap: 14 }}>
                 <SettingPanel
                   title="맞히려는 값"
@@ -431,12 +501,87 @@ export default function Upload() {
                       이제 여러 모델을 비교해서 이 데이터에 가장 잘 맞는 모델을 찾을 수 있습니다.
                     </p>
                   </div>
-                  <Button onClick={() => nav('/model-lab')}>모델 비교하러 가기</Button>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                    <Button onClick={handleRunModelComparison} disabled={!!loading}>
+                      {loading === 'model' && <span className="spinner" />}
+                      모델 비교 시작
+                    </Button>
+                    <Button variant="secondary" onClick={() => nav('/model-lab')}>고급 모델 화면</Button>
+                  </div>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 12 }}>
                   <KPICard label="학습 데이터" value={edaInfo.n_samples?.toLocaleString?.() || edaInfo.n_samples} color="blue" />
                   <KPICard label="사용 정보" value={edaInfo.n_features} color="cyan" />
                   <KPICard label="정답 비율" value={edaInfo.failure_rate != null ? `${edaInfo.failure_rate}%` : '-'} color="green" />
+                </div>
+                {modelError && (
+                  <div className="banner-warning" style={{ marginTop: 14 }}>
+                    <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6 }}>{modelError}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {modelResult && (
+              <div className="card animate-fade-in">
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'flex-start', marginBottom: 16 }}>
+                  <div>
+                    <p style={{ fontSize: 12, fontWeight: 900, color: '#059669', margin: '0 0 6px' }}>분석 완료</p>
+                    <h2 style={{ fontSize: 19, color: 'var(--text)', margin: '0 0 6px' }}>{modelSummary.title}</h2>
+                    <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.65, margin: 0 }}>{modelSummary.description}</p>
+                  </div>
+                  <span className="badge badge-green">완료</span>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginBottom: 16 }}>
+                  <KPICard label="선택 타깃" value={shortName(target, colLabels)} color="violet" />
+                  <KPICard label="문제 유형" value={modelResult.task_type === 'regression' ? '회귀 예측' : '분류 예측'} color="cyan" />
+                  <KPICard label="최고 모델" value={shortModel(modelResult.best_model)} color="green" />
+                  <KPICard label="대표 지표" value={modelSummary.metric} color="blue" />
+                </div>
+                {modelRows.length > 0 && (
+                  <div style={{ overflowX: 'auto', marginBottom: 16 }}>
+                    <table className="data-table">
+                      <thead>
+                        <tr>
+                          <th>모델</th>
+                          <th>상태</th>
+                          <th>{modelResult.task_type === 'regression' ? 'R2' : 'Accuracy'}</th>
+                          {modelResult.task_type !== 'regression' && <th>F1</th>}
+                          {modelResult.task_type !== 'regression' && <th>ROC-AUC</th>}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {modelRows.map(row => (
+                          <tr key={row.model}>
+                            <td style={{ fontWeight: 800 }}>{shortModel(row.model)}</td>
+                            <td>{row.status === 'ok' ? '완료' : '실패'}</td>
+                            <td>{formatMetric(modelResult.task_type === 'regression' ? row.r2 : row.accuracy)}</td>
+                            {modelResult.task_type !== 'regression' && <td>{formatMetric(row.f1)}</td>}
+                            {modelResult.task_type !== 'regression' && <td>{formatMetric(row.roc_auc)}</td>}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+                {modelResult.feature_importance?.length > 0 && (
+                  <div style={{ marginBottom: 16 }}>
+                    <p style={{ fontSize: 12, fontWeight: 900, color: 'var(--text)', margin: '0 0 8px' }}>중요 요인</p>
+                    <ChipList
+                      items={modelResult.feature_importance.slice(0, 6).map(item => item.feature)}
+                      colLabels={colLabels}
+                      empty="중요 요인을 아직 표시할 수 없습니다."
+                      onClick={() => {}}
+                      tone="green"
+                    />
+                  </div>
+                )}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  <Button onClick={() => nav('/report')}>보고서 보기</Button>
+                  <Button variant="secondary" onClick={() => nav('/predict')}>새 데이터 예측하기</Button>
+                  <Button variant="secondary" onClick={() => nav('/prediction-apis')}>예측 API 만들기</Button>
+                  <Button variant="secondary" onClick={reset}>다른 CSV로 분석하기</Button>
+                  <Button variant="secondary" onClick={() => nav('/projects')}>상세 실행 기록 보기</Button>
                 </div>
               </div>
             )}
@@ -502,6 +647,77 @@ function labelFor(col, labels) {
 
 function shortName(col, labels) {
   return labels[col] || col || '-'
+}
+
+function shortModel(name) {
+  return String(name || '-').split(' ')[0]
+}
+
+function formatMetric(value) {
+  const num = Number(value)
+  return Number.isFinite(num) ? num.toFixed(4) : '-'
+}
+
+function summarizeModelResult(result, target, filename) {
+  const taskType = result?.task_type === 'regression' ? 'regression' : 'classification'
+  const rows = result?.results || []
+  const bestRow = rows.find(row => row.model === result?.best_model) || rows.find(row => row.status === 'ok') || {}
+  const metricValue = taskType === 'regression'
+    ? bestRow.r2 ?? result?.final_r2
+    : bestRow.roc_auc ?? bestRow.accuracy ?? result?.final_accuracy ?? result?.final_f1
+  const metricLabel = taskType === 'regression' ? 'R2' : (bestRow.roc_auc != null ? 'ROC-AUC' : 'Accuracy')
+  const targetText = target || '선택한 타깃'
+  return {
+    title: `${targetText} 예측 분석이 완료되었습니다.`,
+    description: `${filename || '선택한 CSV'} 기준으로 ${rows.length || '여러'}개 모델을 비교했고, ${shortModel(result?.best_model)} 모델이 가장 적합한 후보로 선택되었습니다. 보고서에서 성능, 중요 요인, 주의사항을 확인한 뒤 예측 API나 새 데이터 예측으로 이어갈 수 있습니다.`,
+    metric: metricValue != null ? `${metricLabel} ${formatMetric(metricValue)}` : '확인 필요',
+  }
+}
+
+function getAnalysisStep({ uploadInfo, aiAnalysis, target, edaInfo, modelResult, loading, requiresManualTarget, requiresTargetReview }) {
+  if (modelResult) return 'completed'
+  if (loading === 'model') return 'model'
+  if (edaInfo) return 'model_ready'
+  if (loading === 'target') return 'confirm'
+  if (uploadInfo && (requiresManualTarget || requiresTargetReview || target)) return 'target'
+  if (uploadInfo || aiAnalysis || loading === 'ai') return 'summary'
+  if (loading === 'upload' || loading === 'sample') return 'upload'
+  return 'upload'
+}
+
+function StepProgress({ current }) {
+  const steps = [
+    ['upload', 'CSV 업로드'],
+    ['summary', '데이터 구조 확인'],
+    ['target', '예측값 추천'],
+    ['confirm', '예측값 확인'],
+    ['model', '모델 비교'],
+    ['completed', '분석 완료'],
+  ]
+  const currentIndex = Math.max(0, steps.findIndex(([key]) => key === current))
+  return (
+    <section className="card" style={{ marginBottom: 18, padding: 14 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 8 }}>
+        {steps.map(([key, label], index) => {
+          const done = index < currentIndex
+          const active = index === currentIndex
+          return (
+            <div key={key} style={{
+              borderRadius: 8,
+              padding: '10px 12px',
+              border: `1px solid ${active ? 'rgba(37,99,235,0.35)' : done ? 'rgba(5,150,105,0.25)' : 'var(--border-sub)'}`,
+              background: active ? 'rgba(37,99,235,0.08)' : done ? 'rgba(5,150,105,0.07)' : 'var(--surface-alt)',
+            }}>
+              <p style={{ margin: 0, fontSize: 11, fontWeight: 900, color: active ? '#2563eb' : done ? '#059669' : 'var(--text-label)' }}>
+                {done ? '완료' : active ? '현재 단계' : '대기'}
+              </p>
+              <p style={{ margin: '3px 0 0', fontSize: 13, fontWeight: 850, color: 'var(--text)' }}>{label}</p>
+            </div>
+          )
+        })}
+      </div>
+    </section>
+  )
 }
 
 function UploadIcon() {

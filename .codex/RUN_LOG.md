@@ -1816,3 +1816,36 @@ Milestones:
   - Full browser click QA on Railway is still needed after deploy.
 - Next step:
   - Commit, push, and let Railway redeploy.
+
+## 2026-06-19 KST - PR-05 New Analysis Flow Stabilization
+
+- Status: completed
+- Branch: `main`
+- Scope:
+  - Stabilize the normal `새 분석 시작` flow on `/upload` as the main step-by-step CSV AutoML workflow.
+  - Preserve Quick Auto Analysis, Agent Mode, and core backend training behavior.
+- Files changed:
+  - `frontend/src/pages/Upload.jsx`
+  - generated frontend dist bundle
+  - `.codex/RUN_LOG.md`
+- Fixes applied:
+  - Added a compact step progress strip for `CSV 업로드 -> 데이터 구조 확인 -> 예측값 추천 -> 예측값 확인 -> 모델 비교 -> 분석 완료`.
+  - Added explicit target confirmation guidance for medium-confidence target recommendations.
+  - Added safe manual-target guidance for low-confidence or unclear target recommendations.
+  - Added inline model comparison execution on the normal upload flow using the existing `/api/run-cv` backend.
+  - Prevented duplicate model-comparison clicks while loading.
+  - Added local model-comparison error handling so a training failure shows a Korean recovery message instead of a crash or blank result.
+  - Added a result summary card with selected target, problem type, best model, representative metric, compared model table, important factors, and next actions.
+  - Reset model results and errors when a new dataset is uploaded, selected, or reset to avoid cross-dataset contamination.
+- Dataset state safety:
+  - Upload/select reset still clears target recommendation, selected target, EDA, model result, operational status, and stored upload draft.
+  - Model comparison result is only shown for the currently active uploaded dataset after target confirmation.
+- Verification:
+  - `python -m compileall backend`: passed with bundled Python runtime.
+  - `cd frontend && npm run build`: npm shim unavailable in this environment, so equivalent `node node_modules/vite/bin/vite.js build` was run and passed.
+  - Vite large chunk warning remains non-blocking.
+- Known limitations:
+  - Manual browser QA with equipment, Titanic-like, ambiguous, and dataset-switching CSVs still needs to be repeated on Railway after deploy.
+  - Advanced model tuning remains available on `/model-lab`; PR-05 only adds the stable default model-comparison handoff on `/upload`.
+- Next step:
+  - Commit, push, and let Railway redeploy.
