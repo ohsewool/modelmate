@@ -1739,3 +1739,42 @@ Milestones:
   - This PR adds identity/schema guards and state resets, but full browser click QA across multiple uploaded CSVs still needs to be repeated on the deployed app.
 - Next step:
   - Commit, push, and let Railway redeploy the updated bundle.
+
+## 2026-06-19 KST - PR-03 Target Recommendation v2
+
+- Status: completed
+- Branch: `main`
+- Scope:
+  - Improve deterministic target recommendation scoring, problem type detection, confidence handling, and review gating.
+  - Preserve existing upload, quick analysis, Agent Mode, report, and AutoML flows.
+- Files changed:
+  - `backend/tools/target_quality.py`
+  - `backend/tools/target_recommendation.py`
+  - `backend/main_parts/011_analyze_columns.part`
+  - `frontend/src/pages/Upload.jsx`
+  - `frontend/src/pages/AgentMode.jsx`
+  - generated frontend dist bundle
+  - `.codex/RUN_LOG.md`
+- Fixes applied:
+  - Reworked target scoring around outcome-like names, dtype, cardinality, uniqueness, missing ratio, public aggregate detection, ID/date/code/name exclusion, feature/sensor demotion, and leakage/duplicate target warnings.
+  - Standardized target confidence to `high`, `medium`, and `low`.
+  - Added structured target quality fields: recommended target, problem type, confidence label, requires_review, reason, alternative candidates, excluded columns, and recommended next action.
+  - Stopped upload UI from falling back to the last CSV column when no meaningful target is found.
+  - Agent Mode now treats low-confidence/review-required target quality as a review-needed setup state without faking analysis results.
+- Target QA:
+  - Equipment failure synthetic data: `Machine failure`, classification, high.
+  - Titanic synthetic data: `Survived`, classification, high; `PassengerId`, `Name`, `Ticket`, `Cabin`, `Pclass`, `Age`, and `Fare` are not recommended as primary target.
+  - Customer churn synthetic/sample data: `churn`, classification, high.
+  - Student sample data: `passed`, classification, high.
+  - Sales/demand sample data: `demand`, regression, high.
+  - Public bike sample data: no automatic target; regression candidate exists with medium confidence and review required.
+  - Ambiguous synthetic data: no automatic target; low confidence and review required.
+- Verification:
+  - `python -m compileall backend`: passed with bundled Python runtime.
+  - `cd frontend && npm run build`: npm shim unavailable in this environment, so equivalent `node node_modules/vite/bin/vite.js build` was run and passed.
+  - Vite large chunk warning remains non-blocking.
+- Known limitations:
+  - Full browser upload QA should still be repeated on Railway after deploy.
+  - Public/statistical datasets are intentionally conservative and may require user confirmation even when a numeric count column exists.
+- Next step:
+  - Commit, push, and let Railway redeploy the updated frontend/backend bundle.

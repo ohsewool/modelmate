@@ -49,7 +49,7 @@ def _candidate_summary(column: str, profile: dict[str, Any]) -> dict[str, Any]:
         "usefulness_label": quality["usefulness_label"],
         "usefulness_explanation": quality["usefulness_explanation"],
         "quality_labels": quality["quality_labels"],
-        "confidence_level": quality.get("confidence_level", "needs_review"),
+        "confidence_level": quality.get("confidence_level", "low"),
         "reason": reason,
         "warnings": quality["warnings"],
         "excluded_duplicate_targets": quality.get("excluded_duplicate_targets", []),
@@ -88,7 +88,7 @@ def recommend_targets(
     ]
     if public_aggregate:
         accepted = []
-    confidence_rank = {"high": 3, "medium": 2, "needs_review": 1, "low": 0}
+    confidence_rank = {"high": 3, "medium": 2, "low": 1}
     accepted.sort(
         key=lambda item: (
             confidence_rank.get(item.get("confidence_level"), 0),
@@ -136,7 +136,7 @@ def recommend_targets(
     confidence = (
         recommended.get("confidence_level", "medium")
         if recommended
-        else "needs_review" if weak
+        else "medium" if weak
         else "low"
     )
     excluded_from_recommended = (recommended or {}).get("excluded_duplicate_targets") or []

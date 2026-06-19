@@ -99,11 +99,14 @@ export default function Upload() {
 
       const preferredTarget = starterPack?.recommendedTarget
       const reuseTarget = reanalysisItem?.target_col || reanalysisItem?.target
+      const backendRecommendedTarget = data.has_meaningful_target !== false && data.default_target && data.columns?.includes(data.default_target)
+        ? data.default_target
+        : ''
       const targetToUse = preferredTarget && data.columns?.includes(preferredTarget)
         ? preferredTarget
         : reuseTarget && data.columns?.includes(reuseTarget)
           ? reuseTarget
-          : data.default_target || data.columns?.at(-1) || ''
+          : backendRecommendedTarget
       const reuseDrops = [
         ...(reanalysisItem?.drop_cols || []),
         ...(reanalysisItem?.auto_drop_cols || []),
@@ -129,7 +132,9 @@ export default function Upload() {
         const { data: ai } = await api.post('/analyze-columns')
         setAiAnalysis(ai)
         if (ai.col_labels) setColLabels(ai.col_labels)
-        if (!preferredTarget && !reuseTarget && ai.target_suggestion && data.columns.includes(ai.target_suggestion)) {
+        const aiConfidence = ai.target_quality?.confidence || ai.confidence
+        const aiCanSuggestTarget = ai.has_meaningful_target !== false && aiConfidence !== 'low'
+        if (!preferredTarget && !reuseTarget && aiCanSuggestTarget && ai.target_suggestion && data.columns.includes(ai.target_suggestion)) {
           setTarget(ai.target_suggestion)
         }
         if (!reuseDrops.length && ai.drop_suggestions?.length) {
@@ -240,7 +245,8 @@ export default function Upload() {
     ? (selectedStarterPack.problemType === 'regression' ? '회귀 예측' : '분류 예측')
     : aiAnalysis?.target_category || (aiAnalysis?.task_type === 'regression' ? '연속값 예측' : '목표 확인 필요')
   const targetReason = selectedStarterPack?.businessQuestion || aiAnalysis?.target_category_reason || '데이터 구조만으로는 실제 업무 의미를 완전히 판단하기 어렵습니다.'
-  const targetConfidence = aiAnalysis?.target_category_confidence || '중간'
+  const confidenceLabel = value => ({ high: '높음', medium: '중간', low: '낮음' }[value] || value || '중간')
+  const targetConfidence = confidenceLabel(aiAnalysis?.target_quality?.confidence || aiAnalysis?.target_category_confidence || '중간')
   const datasetDomain = selectedStarterPack?.category || aiAnalysis?.dataset_domain || '도메인 확인 필요'
   const domainConfidence = selectedStarterPack ? '높음' : aiAnalysis?.dataset_domain_confidence || targetConfidence
 
@@ -393,6 +399,7 @@ export default function Upload() {
                   color="#2563eb"
                 >
                   <select value={target} onChange={e => { setTarget(e.target.value); setDropCols(prev => prev.filter(c => c !== e.target.value)) }} className="input" style={{ maxWidth: 360 }}>
+                    {!target && <option value="">예측할 타깃을 선택해 주세요</option>}
                     {uploadInfo.columns.map(c => <option key={c} value={c}>{labelFor(c, colLabels)}</option>)}
                   </select>
                 </SettingPanel>

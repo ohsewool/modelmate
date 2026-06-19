@@ -343,6 +343,7 @@ def infer_target_quality(df, target_col=None):
         meaningful = bool(selected and selected["suitability"] == "good")
         usable_after_confirmation = bool(selected and selected["suitability"] != "poor" and task_type != "unsuitable")
         excluded = (selected or {}).get("excluded_duplicate_targets") or []
+        confidence = (selected or {}).get("confidence_level") or ("high" if meaningful else "medium" if usable_after_confirmation else "low")
         return {
             "has_meaningful_target": meaningful,
             "analysis_suitability": (
@@ -352,7 +353,9 @@ def infer_target_quality(df, target_col=None):
                 else "prediction_unsuitable"
             ),
             "problem_type": task_type,
-            "confidence": (selected or {}).get("confidence_level") or ("high" if meaningful else "needs_review" if usable_after_confirmation else "low"),
+            "confidence": confidence,
+            "confidence_label": {"high": "높음", "medium": "중간", "low": "낮음"}.get(confidence, "낮음"),
+            "requires_review": confidence != "high" or not meaningful,
             "recommended": selected,
             "recommended_prediction_value": str(target) if meaningful else None,
             "candidates": candidates[:5],

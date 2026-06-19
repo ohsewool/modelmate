@@ -98,6 +98,11 @@ function datasetTargetQuality(dataset) {
   return dataset?.target_quality || dataset?.quality_summary?.target_quality || null
 }
 
+function targetQualityNeedsReview(quality) {
+  if (!quality) return false
+  return quality.has_meaningful_target === false || quality.requires_review === true || quality.confidence === 'low'
+}
+
 function datasetRows(dataset) {
   return dataset?.row_count ?? dataset?.rows ?? '-'
 }
@@ -257,7 +262,7 @@ function SelectedCsvSummary({ dataset }) {
 
   const target = datasetTarget(dataset)
   const quality = datasetTargetQuality(dataset)
-  const weakTarget = quality?.has_meaningful_target === false
+  const weakTarget = targetQualityNeedsReview(quality)
   const hint = weakTarget
     ? '바로 예측할 만한 명확한 값은 검토가 필요합니다.'
     : target
@@ -311,7 +316,7 @@ function TargetRecommendationPanel({ dataset, onFocusGoal, onUseCandidate }) {
     const name = candidateColumnName(item)
     return name && candidateBelongsToDataset(item, dataset) && arr.findIndex(other => candidateColumnName(other) === name) === index
   })
-  const noMeaningfulTarget = quality?.has_meaningful_target === false || (!target && dataset)
+  const noMeaningfulTarget = quality?.has_meaningful_target === false || quality?.confidence === 'low' || (!target && dataset)
   const optionalCandidateRaw = quality?.optional_prediction_candidate || quality?.recommended
   const optionalCandidate = candidateBelongsToDataset(optionalCandidateRaw, dataset) ? optionalCandidateRaw : null
 
@@ -394,7 +399,7 @@ function DatasetSelector({ datasets, selectedDatasetId, onSelect, loading }) {
           {datasets.map(dataset => (
             (() => {
               const quality = datasetTargetQuality(dataset)
-              const weakTarget = quality && quality.has_meaningful_target === false
+              const weakTarget = targetQualityNeedsReview(quality)
               return (
             <button
               key={dataset.id || dataset.dataset_id}
@@ -724,7 +729,7 @@ export default function AgentMode() {
     goalRef.current?.focus()
   }
 
-  const selectedTargetUnclear = Boolean(selectedDataset && datasetTargetQuality(selectedDataset)?.has_meaningful_target === false)
+  const selectedTargetUnclear = Boolean(selectedDataset && targetQualityNeedsReview(datasetTargetQuality(selectedDataset)))
   const canCreateRun = Boolean(selectedDatasetId && goalText.trim() && (!selectedTargetUnclear || targetPreference.trim()))
   const placeholder = suggestedGoal || '예: 이 CSV로 당뇨병 여부를 예측하고 중요한 요인을 보고서로 정리해줘.'
   const selectedRunStatus = getRunStatus(selectedRun)
