@@ -1817,6 +1817,38 @@ Milestones:
 - Next step:
   - Commit, push, and let Railway redeploy.
 
+## 2026-06-19 KST - PR-07 Prediction API Readiness and API UX
+
+- Status: completed
+- Branch: `main`
+- Scope:
+  - Improve Prediction API readiness states, list UX, documentation preview, and Korean-first API authentication wording without changing core model training logic.
+- Files changed:
+  - `backend/main_parts/088_prediction_tokens.part`
+  - `frontend/src/pages/workspace/WorkspacePredictionApis.jsx`
+  - generated frontend dist bundle
+  - `.codex/RUN_LOG.md`
+- Fixes applied:
+  - Added user-facing readiness states on the Prediction API page: `API 연결 가능`, `API 생성 준비 완료`, `검토 후 API 연결 가능`, `API 연결 준비 중`, `API 연결 불가`, and `분석 실패`.
+  - Prediction API list now shows project, dataset, target, problem type, best model, main metric, API authentication status, last used time, call count, and contextual action.
+  - Replaced visible `token` copy with `API 인증 정보` while preserving backend field names for compatibility.
+  - Added an API documentation preview with endpoint, method, Authorization header, request JSON, response JSON, and cURL example.
+  - Empty state now explains that a completed model comparison is required before API authentication information can be created.
+  - Review-required and not-ready states block API action with clear Korean explanations instead of making the model look broken.
+  - Cleaned backend user-facing token creation/regeneration warnings to Korean-first API authentication wording.
+- Dataset/API safety:
+  - UI readiness uses project dataset, target, model, metric, dataset availability, and token status instead of showing stale or fake API data.
+  - Deleted dataset/project availability continues to block API usage through existing backend checks.
+- Verification:
+  - `python -m compileall backend`: passed with bundled Python runtime.
+  - `cd frontend && npm run build`: npm shim unavailable in this environment, so equivalent `node node_modules/vite/bin/vite.js build` was run and passed.
+  - Vite large chunk warning remains non-blocking.
+- Known limitations:
+  - Browser QA on Railway should still verify ready, review-required, not-ready, failed, and empty-account states.
+  - API creation remains project-detail driven; this PR improves readiness and documentation UX rather than adding a new API creation flow.
+- Next step:
+  - Commit, push, and let Railway redeploy.
+
 ## 2026-06-19 KST - PR-06 Report Detail and Result Summary UX
 
 - Status: completed

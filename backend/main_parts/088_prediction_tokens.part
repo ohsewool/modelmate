@@ -197,7 +197,7 @@ async def create_project_prediction_token(project_id: str, body: dict = None, us
         if not availability["available"]:
             raise HTTPException(409, {
                 "error_type": availability["reason"],
-                "user_friendly_message": "이 프로젝트는 아직 예측 API 토큰을 만들 수 없습니다.",
+                "user_friendly_message": "이 프로젝트는 아직 예측 API 인증 정보를 만들 수 없습니다.",
                 "recommended_next_action": "데이터셋과 학습된 공유 모델이 준비된 뒤 다시 시도하세요.",
                 "availability": availability,
             })
@@ -209,7 +209,7 @@ async def create_project_prediction_token(project_id: str, body: dict = None, us
             "project_id": project_id,
             "token": _public_token_row(row),
             "plaintext_token": plaintext,
-            "show_once_warning": "이 토큰은 다시 표시되지 않습니다. 지금 복사해서 안전한 곳에 보관하세요.",
+            "show_once_warning": "이 API 인증 정보는 다시 표시되지 않습니다. 지금 복사해서 안전한 곳에 보관하세요.",
             "endpoint": availability["endpoint"],
             "availability": availability,
         }
@@ -255,7 +255,7 @@ async def regenerate_project_prediction_token(project_id: str, token_id: str, bo
         if not availability["available"]:
             raise HTTPException(409, {
                 "error_type": availability["reason"],
-                "user_friendly_message": "이 프로젝트는 새 예측 API 토큰을 만들 수 없습니다.",
+                "user_friendly_message": "이 프로젝트는 새 예측 API 인증 정보를 만들 수 없습니다.",
                 "recommended_next_action": "데이터셋과 학습된 공유 모델 상태를 확인하세요.",
                 "availability": availability,
             })
@@ -272,7 +272,7 @@ async def regenerate_project_prediction_token(project_id: str, token_id: str, bo
             "old_token_id": token_id,
             "token": _public_token_row(new_row),
             "plaintext_token": plaintext,
-            "show_once_warning": "새 토큰은 다시 표시되지 않습니다. 기존 토큰은 폐기되었습니다.",
+            "show_once_warning": "새 API 인증 정보는 다시 표시되지 않습니다. 기존 인증 정보는 폐기되었습니다.",
             "endpoint": availability["endpoint"],
             "availability": availability,
         }
