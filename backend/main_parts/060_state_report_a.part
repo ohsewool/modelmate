@@ -2,8 +2,11 @@
 
 @app.get("/api/state")
 async def get_state():
+    df = STATE.get("df")
     return {
-        "has_data":      STATE.get("df") is not None,
+        "has_data":      df is not None,
+        "current_dataset": STATE.get("current_dataset"),
+        "columns":       df.columns.tolist() if df is not None else [],
         "has_model":     STATE.get("best_model") is not None,
         "best_model":    STATE.get("best_model_name"),
         "target_col":    STATE.get("target_col"),

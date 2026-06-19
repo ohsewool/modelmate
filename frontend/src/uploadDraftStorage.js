@@ -17,6 +17,44 @@ export function loadUploadDraft() {
   }
 }
 
+export function uploadDraftDatasetId(draft) {
+  const info = draft?.uploadInfo || draft || {}
+  return String(
+    info?.dataset_id ||
+    info?.saved_dataset?.id ||
+    info?.saved_dataset?.dataset_id ||
+    info?.current_dataset?.id ||
+    info?.current_dataset?.dataset_id ||
+    '',
+  )
+}
+
+export function uploadDraftColumnSignature(draft) {
+  const info = draft?.uploadInfo || draft || {}
+  const columns = Array.isArray(info?.columns) ? info.columns : []
+  return columns.map(String).join('\u001f')
+}
+
+export function uploadDraftMatchesState(draft, state) {
+  if (!draft) return false
+  if (!state?.has_data) return false
+
+  const draftDatasetId = uploadDraftDatasetId(draft)
+  const stateDatasetId = String(
+    state?.current_dataset?.id ||
+    state?.current_dataset?.dataset_id ||
+    state?.dataset_id ||
+    '',
+  )
+  if (draftDatasetId && stateDatasetId && draftDatasetId !== stateDatasetId) return false
+
+  const draftColumns = uploadDraftColumnSignature(draft)
+  const stateColumns = Array.isArray(state?.columns) ? state.columns.map(String).join('\u001f') : ''
+  if (draftColumns && stateColumns && draftColumns !== stateColumns) return false
+
+  return true
+}
+
 export function saveUploadDraft(data) {
   const draft = {
     ...data,

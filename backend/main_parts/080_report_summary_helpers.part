@@ -19,6 +19,8 @@ def summarize_dataset_state():
     return {
         "loaded": True,
         "raw_shape": list(df.shape),
+        "columns": df.columns.tolist(),
+        "feature_columns": X.columns.tolist() if X is not None else [],
         "training_shape": list(X.shape) if X is not None else None,
         "target_col": STATE.get("target_col"),
         "task_type": STATE.get("task_type"),

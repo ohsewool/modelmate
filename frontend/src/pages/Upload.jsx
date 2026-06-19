@@ -9,7 +9,7 @@ import ReanalysisNotice from '../components/upload/ReanalysisNotice'
 import UploadJudgmentBrief from '../components/upload/UploadJudgmentBrief'
 import UploadSidePanel from '../components/upload/UploadSidePanel'
 import StatusRecoveryPanel from '../components/StatusRecoveryPanel'
-import { clearUploadDraft, loadUploadDraft, saveUploadDraft } from '../uploadDraftStorage'
+import { clearUploadDraft, loadUploadDraft, saveUploadDraft, uploadDraftMatchesState } from '../uploadDraftStorage'
 
 export default function Upload() {
   const [dragging, setDragging] = useState(false)
@@ -45,6 +45,9 @@ export default function Upload() {
       setUsageLimits(r.data?.usage_limits || null)
       if (!r.data?.has_data) {
         clearUploadState('이전 화면 정보는 남아 있지만 서버에 원본 CSV가 없습니다. 같은 CSV를 다시 올려 주세요.')
+      }
+      if (r.data?.has_data && !uploadDraftMatchesState(draft.current, r.data)) {
+        clearUploadState('현재 서버의 CSV와 저장된 화면 상태가 일치하지 않아 이전 분석 정보를 지웠습니다. CSV를 다시 선택하거나 업로드해 주세요.')
       }
     }).catch(() => {})
   }, [])
@@ -83,6 +86,7 @@ export default function Upload() {
 
   async function handleFile(file, starterPack = null) {
     if (!file) return
+    resetDatasetDependentState()
     setUploadError(null)
     setLoading(starterPack ? 'sample' : 'upload')
     if (starterPack) setSelectedStarterPack(starterPack)
@@ -208,6 +212,20 @@ export default function Upload() {
     setEdaInfo(null)
     setSelectedStarterPack(null)
     setUploadError(message ? { message, tips: ['파일 선택을 눌러 같은 CSV를 다시 올리면 분석을 이어갈 수 있습니다.'] } : null)
+    setTargetError('')
+    setNeedsReupload(false)
+    clearUploadDraft()
+  }
+
+  function resetDatasetDependentState() {
+    setUploadInfo(null)
+    setAiAnalysis(null)
+    setTarget('')
+    setDropCols([])
+    setColLabels({})
+    setEdaInfo(null)
+    setOperationalStatus(null)
+    setUsageLimits(null)
     setTargetError('')
     setNeedsReupload(false)
     clearUploadDraft()

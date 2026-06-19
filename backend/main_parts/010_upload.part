@@ -1,3 +1,14 @@
+def clear_dataset_dependent_state_for_upload():
+    for key in [
+        "X", "y", "cv_results", "best_model", "best_model_name", "predictions",
+        "target_col", "drop_cols", "auto_drop_cols", "auto_drop_reasons",
+        "cat_cols", "num_cols", "encoders", "target_encoder", "task_type",
+        "n_unique_target", "col_labels", "optuna_result", "shap_values",
+        "shap_sample_idx", "current_dataset",
+    ]:
+        STATE.pop(key, None)
+
+
 @app.post("/api/upload")
 async def upload(file: UploadFile = File(...), user=Depends(get_current_user)):
     set_analysis_status("running", "csv_upload", "CSV 파일을 읽고 데이터셋으로 사용할 수 있는지 확인하는 중입니다.")
@@ -62,9 +73,8 @@ async def upload(file: UploadFile = File(...), user=Depends(get_current_user)):
             ],
         })
         raise HTTPException(400, detail)
+    clear_dataset_dependent_state_for_upload()
     STATE["df"] = df
-    STATE.pop("X", None); STATE.pop("y", None)
-    STATE.pop("cv_results", None); STATE.pop("best_model", None)
 
     cat_cols = df.select_dtypes(include=["object", "category"]).columns.tolist()
     num_cols = df.select_dtypes(include=["number"]).columns.tolist()

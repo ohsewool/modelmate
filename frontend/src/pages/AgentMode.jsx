@@ -114,6 +114,17 @@ function datasetColumnNames(dataset) {
   return []
 }
 
+function candidateColumnName(candidate) {
+  return candidate?.column_name || candidate?.name || candidate?.column || ''
+}
+
+function candidateBelongsToDataset(candidate, dataset) {
+  const name = candidateColumnName(candidate)
+  if (!name) return false
+  const columns = datasetColumnNames(dataset)
+  return !columns.length || columns.includes(String(name))
+}
+
 function selectedDatasetName(dataset) {
   return dataset?.filename || dataset?.original_filename || dataset?.name || '선택한 CSV'
 }
@@ -296,9 +307,13 @@ function TargetRecommendationPanel({ dataset, onFocusGoal, onUseCandidate }) {
   const candidates = [
     ...(recommended?.column_name ? [recommended] : []),
     ...(quality?.candidates || quality?.candidate_targets || []),
-  ].filter((item, index, arr) => item?.column_name && arr.findIndex(other => other?.column_name === item.column_name) === index)
+  ].filter((item, index, arr) => {
+    const name = candidateColumnName(item)
+    return name && candidateBelongsToDataset(item, dataset) && arr.findIndex(other => candidateColumnName(other) === name) === index
+  })
   const noMeaningfulTarget = quality?.has_meaningful_target === false || (!target && dataset)
-  const optionalCandidate = quality?.optional_prediction_candidate || quality?.recommended
+  const optionalCandidateRaw = quality?.optional_prediction_candidate || quality?.recommended
+  const optionalCandidate = candidateBelongsToDataset(optionalCandidateRaw, dataset) ? optionalCandidateRaw : null
 
   if (!dataset) return null
 
@@ -548,6 +563,9 @@ export default function AgentMode() {
 
   useEffect(() => {
     if (!selectedDataset) return
+    if (selectedRun && getRunDatasetId(selectedRun) && String(getRunDatasetId(selectedRun)) !== String(selectedDatasetId)) {
+      setSelectedRun(null)
+    }
     const shouldReplace =
       !goalText.trim() ||
       goalText === lastSuggestedGoal ||
@@ -712,6 +730,9 @@ export default function AgentMode() {
   const selectedRunStatus = getRunStatus(selectedRun)
   const executionStarted = Boolean(selectedRun && selectedRunStatus && selectedRunStatus !== 'planned')
   const setupVisible = !executionStarted
+  const visibleRuns = selectedDatasetId
+    ? runs.filter(run => String(getRunDatasetId(run) || '') === String(selectedDatasetId))
+    : runs
 
   return (
     <main className="workspace-page" style={{ display: 'grid', gap: 20 }}>
@@ -845,7 +866,7 @@ export default function AgentMode() {
         <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
           {loading ? (
             <p style={{ color: 'var(--text-label)' }}>불러오는 중입니다.</p>
-          ) : runs.length ? runs.map(run => (
+          ) : visibleRuns.length ? visibleRuns.map(run => (
             <div key={getRunId(run) || run.created_at} className="card-compact" style={{ display: 'grid', gap: 7 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
                 <strong>{runTitle(run)}</strong>

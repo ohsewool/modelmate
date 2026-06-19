@@ -328,6 +328,19 @@ function ReportNextSteps({ nav, noTarget }) {
   )
 }
 
+function featureName(item) {
+  return item?.feature || item?.name || item?.column || ''
+}
+
+function filterFeaturesForDataset(features, dataset) {
+  const columns = [
+    ...(Array.isArray(dataset?.columns) ? dataset.columns : []),
+    ...(Array.isArray(dataset?.feature_columns) ? dataset.feature_columns : []),
+  ].map(String)
+  if (!columns.length) return features || []
+  return (features || []).filter(item => columns.includes(String(featureName(item))))
+}
+
 export default function Report() {
   const nav = useNavigate()
   const location = useLocation()
@@ -381,7 +394,7 @@ export default function Report() {
   const primaryMetric = summary?.model_selection?.score_info?.primary
   const opt = summary?.optimization || {}
   const dataset = summary?.dataset || {}
-  const features = summary?.feature_evidence?.items || []
+  const features = filterFeaturesForDataset(summary?.feature_evidence?.items || [], dataset)
   const business = summary?.business_summary
 
   if (loading) {

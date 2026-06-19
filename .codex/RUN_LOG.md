@@ -1698,3 +1698,44 @@ Milestones:
   - Browser click QA on Railway is needed after deploy to confirm the latest bundle is served.
 - Next step:
   - Commit, push, and let Railway redeploy the updated frontend bundle.
+
+## 2026-06-19 KST - PR-02 Stale Dataset State Guard
+
+- Status: completed
+- Branch: `main`
+- Scope:
+  - Prevent stale dataset state and cross-dataset contamination when uploading or switching CSV datasets.
+  - No UI redesign, AutoML rewrite, report logic expansion, or prediction API behavior change.
+- Files changed:
+  - `backend/main_parts/010_upload.part`
+  - `backend/main_parts/060_state_report_a.part`
+  - `backend/main_parts/080_report_summary_helpers.part`
+  - `frontend/src/uploadDraftStorage.js`
+  - `frontend/src/pages/Upload.jsx`
+  - `frontend/src/pages/AgentMode.jsx`
+  - `frontend/src/pages/Report.jsx`
+  - generated frontend dist bundle
+  - `.codex/RUN_LOG.md`
+- Fixes applied:
+  - Added backend `clear_dataset_dependent_state_for_upload()` and call it before storing a newly uploaded dataframe.
+  - Cleared previous target/model/result/XAI/report-dependent state keys on new upload: target, drop columns, encoders, task type, CV results, best model, predictions, Optuna result, SHAP values, current dataset, and related metadata.
+  - `/api/state` now includes `current_dataset` and current dataframe `columns` so the frontend can verify draft identity.
+  - Report dataset summary now includes raw columns and feature columns.
+  - Upload draft restore now compares saved draft dataset id and column signature with `/api/state`; mismatched drafts are cleared with a safe local message.
+  - Starting a new file upload immediately clears previous upload analysis state before the new upload request completes.
+  - Agent Mode target candidates and optional candidates are filtered to columns that exist in the selected dataset schema.
+  - Agent Mode clears a selected run if its dataset id no longer matches the selected dataset.
+  - Agent Mode recent run list is filtered to the selected dataset by default.
+  - Report important factors are filtered against the current report dataset columns/feature columns.
+- Verification:
+  - `python -m compileall backend`: passed with bundled Python runtime.
+  - `cd frontend && npm run build`: passed with bundled Node/Vite runtime.
+  - Vite large chunk warning remains non-blocking.
+- Manual QA still recommended after Railway deploy:
+  - Diabetes dataset -> equipment failure dataset switch should not show diabetes columns.
+  - Equipment failure dataset -> churn/Titanic-like dataset switch should not show machine failure columns.
+  - `/dashboard`, `/agent-mode`, `/reports`, `/prediction-apis`, and `/jobs` should show empty/safe states instead of stale results when no matching dataset result exists.
+- Known limitations:
+  - This PR adds identity/schema guards and state resets, but full browser click QA across multiple uploaded CSVs still needs to be repeated on the deployed app.
+- Next step:
+  - Commit, push, and let Railway redeploy the updated bundle.
