@@ -1778,3 +1778,41 @@ Milestones:
   - Public/statistical datasets are intentionally conservative and may require user confirmation even when a numeric count column exists.
 - Next step:
   - Commit, push, and let Railway redeploy the updated frontend/backend bundle.
+
+## 2026-06-19 KST - PR-04 Quick Auto Analysis Flow
+
+- Status: completed
+- Branch: `main`
+- Scope:
+  - Improve the quick automatic analysis path without changing the normal upload flow, Agent Mode trace flow, or core AutoML training logic.
+- Files changed:
+  - `backend/main_parts/001_imports_db.part`
+  - `backend/main_parts/052_workspace_projects.part`
+  - `backend/main_parts/099_quick_analysis.part`
+  - `frontend/src/pages/Agent.jsx`
+  - generated frontend dist bundle
+  - `.codex/RUN_LOG.md`
+- Fixes applied:
+  - Added persisted CSV file storage for newly uploaded/saved datasets so recent datasets can be reused by quick analysis going forward.
+  - Added `file_path` dataset metadata migration.
+  - Added `/api/quick-analysis/start` as a thin adapter around the existing dataset load, target recommendation, `/api/set-target`, and `/api/run-cv` flow.
+  - Quick analysis now respects Target Recommendation v2 confidence:
+    - `high`: proceeds to target setup and model comparison.
+    - `medium`: returns `needs_review` unless user confirms the target.
+    - `low`: does not train and asks the user to select a target.
+  - Quick analysis supports current uploaded CSV, saved datasets with stored CSV file path, and sample CSV files.
+  - Reworked `/agent` into a Korean-first quick automatic analysis page with recent dataset cards, sample cards, progress steps, review guidance, and safe result handoff.
+  - Avoids `/undefined` navigation and routes completed results to report/projects/prediction API entry points.
+- Dataset state safety:
+  - Quick analysis clears stale dataset-dependent state before loading a dataset.
+  - Existing AutoML training and model comparison are reused instead of duplicated.
+  - Existing saved datasets without a persisted CSV path return a friendly re-upload message instead of stale or fake execution.
+- Verification:
+  - `python -m compileall backend`: passed with bundled Python runtime.
+  - `cd frontend && npm run build`: npm shim unavailable in this environment, so equivalent `node node_modules/vite/bin/vite.js build` was run and passed.
+  - Vite large chunk warning remains non-blocking.
+- Known limitations:
+  - Existing datasets created before this PR may not have `file_path`, so quick re-analysis may ask for re-upload.
+  - Full browser click QA on Railway is still needed after deploy.
+- Next step:
+  - Commit, push, and let Railway redeploy.

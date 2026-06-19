@@ -51,7 +51,9 @@ security = HTTPBearer(auto_error=False)
 
 DB_PATH    = os.getenv("DB_PATH", os.path.join(os.path.dirname(__file__), "..", "modelmate.db"))
 MODELS_DIR = os.path.join(os.path.dirname(__file__), "..", "deployed_models")
+DATASETS_DIR = os.getenv("DATASETS_DIR", os.path.join(os.path.dirname(__file__), "..", "uploaded_datasets"))
 os.makedirs(MODELS_DIR, exist_ok=True)
+os.makedirs(DATASETS_DIR, exist_ok=True)
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)

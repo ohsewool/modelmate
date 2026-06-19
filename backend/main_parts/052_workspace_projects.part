@@ -35,6 +35,7 @@ def ensure_dataset_management_columns():
         "retention_status": "TEXT DEFAULT 'active'",
         "source_type": "TEXT DEFAULT 'upload'",
         "is_demo_dataset": "INTEGER DEFAULT 0",
+        "file_path": "TEXT",
     }.items():
         if col not in dataset_cols:
             add_column_once(conn, "datasets", col, col_type)
@@ -359,7 +360,16 @@ def ensure_default_project(user_id, name="기본 프로젝트"):
     return dict(row)
 
 
-def save_dataset_record(user, filename, df, target_col, quality, domain_info):
+def _persist_dataset_file(user_id, dataset_id, filename, df):
+    safe_name = os.path.basename(filename or "dataset.csv")
+    target_dir = os.path.join(DATASETS_DIR, str(user_id))
+    os.makedirs(target_dir, exist_ok=True)
+    path = os.path.join(target_dir, f"{dataset_id}_{safe_name}")
+    df.to_csv(path, index=False, encoding="utf-8-sig")
+    return path
+
+
+def save_dataset_record(user, filename, df, target_col, quality, domain_info, source_type="upload", is_demo_dataset=0):
     target_value = str(target_col) if target_col else None
     dataset_meta = {
         "id": None,
@@ -377,16 +387,17 @@ def save_dataset_record(user, filename, df, target_col, quality, domain_info):
     import uuid
     project = ensure_default_project(user["sub"])
     dataset_id = str(uuid.uuid4())[:8]
+    file_path = _persist_dataset_file(user["sub"], dataset_id, filename, df)
     now = datetime.now().isoformat()
     conn = get_db()
     conn.execute(
         """INSERT INTO datasets
-           (id,project_id,user_id,filename,original_filename,rows,columns,target_col,domain,quality,created_at,updated_at,delete_status,retention_status,source_type,is_demo_dataset)
-           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+           (id,project_id,user_id,filename,original_filename,rows,columns,target_col,domain,quality,created_at,updated_at,delete_status,retention_status,source_type,is_demo_dataset,file_path)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
         (
             dataset_id, project["id"], user["sub"], filename, filename, int(df.shape[0]), int(df.shape[1]),
             target_value, domain_info.get("dataset_domain"), json.dumps(quality, ensure_ascii=False), now, now,
-            "active", "active", "upload", 0,
+            "active", "active", source_type, int(is_demo_dataset), file_path,
         ),
     )
     conn.execute("UPDATE projects SET updated_at=? WHERE id=?", (now, project["id"]))
@@ -396,6 +407,9 @@ def save_dataset_record(user, filename, df, target_col, quality, domain_info):
         "id": dataset_id,
         "project_id": project["id"],
         "project_name": project["name"],
+        "file_path": file_path,
+        "source_type": source_type,
+        "is_demo_dataset": bool(is_demo_dataset),
     })
     STATE["current_dataset"] = dataset_meta
     return dataset_meta

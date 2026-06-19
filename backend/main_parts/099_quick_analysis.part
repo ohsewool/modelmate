@@ -1,0 +1,189 @@
+class QuickAnalysisBody(BaseModel):
+    dataset_id: str | None = None
+    sample_file: str | None = None
+    target_col: str | None = None
+    confirm_target: bool = False
+
+
+def _quick_failure(stage: str, message: str, action: str):
+    return {
+        "status": "failed",
+        "current_step": stage,
+        "progress_message": message,
+        "recommended_next_action": action,
+    }
+
+
+def _load_dataset_for_quick_analysis(body: QuickAnalysisBody, user):
+    if body.sample_file:
+        safe_name = os.path.basename(body.sample_file)
+        path = sample_file_path(safe_name)
+        df = pd.read_csv(path)
+        return df, {
+            "filename": safe_name,
+            "source_type": "sample",
+            "is_demo_dataset": True,
+            "file_path": path,
+        }
+
+    if body.dataset_id:
+        row = assert_dataset_owner(user, body.dataset_id)
+        item = dict(row)
+        if item.get("deleted_at"):
+            raise HTTPException(400, _quick_failure(
+                "dataset_selection",
+                "삭제된 데이터셋은 빠른 자동 분석에 사용할 수 없습니다.",
+                "CSV를 다시 업로드하거나 다른 데이터셋을 선택해 주세요.",
+            ))
+        file_path = item.get("file_path")
+        if not file_path or not os.path.exists(file_path):
+            raise HTTPException(409, _quick_failure(
+                "dataset_selection",
+                "이 데이터셋의 원본 CSV가 저장되어 있지 않아 바로 재분석할 수 없습니다.",
+                "같은 CSV를 다시 업로드하거나 샘플 데이터셋으로 시작해 주세요.",
+            ))
+        df = pd.read_csv(file_path)
+        return df, {
+            "id": item.get("id"),
+            "dataset_id": item.get("id"),
+            "project_id": item.get("project_id"),
+            "filename": item.get("filename"),
+            "source_type": item.get("source_type") or "upload",
+            "is_demo_dataset": bool(item.get("is_demo_dataset") or 0),
+            "file_path": file_path,
+        }
+
+    df = STATE.get("df")
+    if df is not None:
+        current = STATE.get("current_dataset") or {}
+        return df, {
+            **current,
+            "filename": current.get("filename") or "current_uploaded_dataset.csv",
+            "source_type": current.get("source_type") or "current_state",
+        }
+    raise HTTPException(400, _quick_failure(
+        "dataset_selection",
+        "빠른 자동 분석에 사용할 CSV가 없습니다.",
+        "CSV를 업로드하거나 샘플 데이터셋을 선택해 주세요.",
+    ))
+
+
+@app.post("/api/quick-analysis/start")
+async def start_quick_analysis(body: QuickAnalysisBody, user=Depends(get_current_user)):
+    require_current_user(user)
+    if "enforce_training_job_limits" in globals():
+        enforce_training_job_limits(user)
+
+    set_analysis_status("running", "csv_check", "빠른 자동 분석을 위해 CSV를 확인하는 중입니다.")
+    df, source = _load_dataset_for_quick_analysis(body, user)
+
+    clear_dataset_dependent_state_for_upload()
+    STATE["df"] = df
+
+    default_target = infer_default_target(df)
+    target_quality = infer_target_quality(df, default_target)
+    domain_info = infer_target_category(df, default_target) if default_target in df.columns else infer_dataset_domain(df)
+
+    saved_dataset = None
+    if body.sample_file:
+        quality = {"target_quality": target_quality}
+        if "enforce_dataset_upload_limits" in globals():
+            enforce_dataset_upload_limits(user, os.path.getsize(source["file_path"]), int(df.shape[0]), int(df.shape[1]))
+        saved_dataset = save_dataset_record(
+            user,
+            source["filename"],
+            df,
+            default_target,
+            quality,
+            domain_info,
+            source_type="sample",
+            is_demo_dataset=1,
+        )
+        source.update(saved_dataset or {})
+    else:
+        STATE["current_dataset"] = source
+
+    candidates = target_quality.get("candidates") or []
+    selected_target = body.target_col if body.target_col in df.columns else default_target
+    confidence = target_quality.get("confidence") or "low"
+    requires_review = bool(target_quality.get("requires_review") or confidence != "high")
+
+    if body.target_col and body.target_col in df.columns:
+        selected_target = body.target_col
+        requires_review = False
+        confidence = "manual"
+
+    if not selected_target or (requires_review and not body.confirm_target):
+        set_analysis_status(
+            "needs_review",
+            "target_recommendation",
+            "추천 예측값을 자동으로 확정하기 전에 확인이 필요합니다.",
+            recommended_next_action="추천 타깃을 확인하거나 직접 타깃 컬럼을 선택해 주세요.",
+        )
+        return {
+            "status": "needs_review",
+            "current_step": "target_recommendation",
+            "progress": [
+                "CSV 확인 완료",
+                "예측값 추천 완료",
+                "추천 결과 확인 필요",
+            ],
+            "dataset": {
+                **source,
+                "row_count": int(df.shape[0]),
+                "column_count": int(df.shape[1]),
+                "columns": df.columns.tolist(),
+            },
+            "target_quality": target_quality,
+            "recommended_target": selected_target,
+            "problem_type": target_quality.get("problem_type") or "needs_review",
+            "confidence": confidence,
+            "requires_review": True,
+            "candidates": candidates[:8],
+            "message": target_quality.get("message") or "추천 결과를 확인해 주세요.",
+            "recommended_next_action": "타깃을 확인하면 모델 비교를 시작할 수 있습니다.",
+        }
+
+    set_analysis_status("running", "target_setup", f"{selected_target} 컬럼으로 분석 데이터를 준비하는 중입니다.")
+    eda_result = await set_target({
+        "target_col": selected_target,
+        "drop_cols": [],
+        "col_labels": {},
+    })
+
+    set_analysis_status("running", "model_comparison", "모델 비교를 시작하는 중입니다.")
+    cv_result = await run_cv(user=user)
+    set_analysis_status(
+        "succeeded",
+        "analysis_completed",
+        "빠른 자동 분석이 완료되었습니다.",
+        recommended_next_action="결과 요약, 보고서, 예측 API 준비 상태를 확인해 주세요.",
+    )
+
+    return {
+        "status": "succeeded",
+        "current_step": "analysis_completed",
+        "progress": [
+            "CSV 확인 완료",
+            "예측값 추천 완료",
+            "문제 유형 판단 완료",
+            "모델 비교 완료",
+            "결과 생성 완료",
+            "분석 완료",
+        ],
+        "dataset": {
+            **(STATE.get("current_dataset") or source),
+            "row_count": int(df.shape[0]),
+            "column_count": int(df.shape[1]),
+            "columns": df.columns.tolist(),
+        },
+        "target_quality": target_quality,
+        "selected_target": selected_target,
+        "problem_type": STATE.get("task_type") or target_quality.get("problem_type"),
+        "confidence": confidence,
+        "eda": eda_result,
+        "model_result": cv_result,
+        "analysis_status": STATE.get("analysis_status"),
+        "recommended_next_action": "결과 요약 또는 보고서를 확인해 주세요.",
+        "result_path": "/report",
+    }
