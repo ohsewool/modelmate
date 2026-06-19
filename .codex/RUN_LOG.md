@@ -1817,6 +1817,37 @@ Milestones:
 - Next step:
   - Commit, push, and let Railway redeploy.
 
+## 2026-06-19 KST - PR-06 Report Detail and Result Summary UX
+
+- Status: completed
+- Branch: `main`
+- Scope:
+  - Improve report list cards, report metadata, and result summary display without changing core training logic or adding LLM integration.
+- Files changed:
+  - `backend/main_parts/052_workspace_projects.part`
+  - `backend/main_parts/081_report_summary_api.part`
+  - `frontend/src/pages/Report.jsx`
+  - `frontend/src/pages/workspace/WorkspaceReports.jsx`
+  - generated frontend dist bundle
+  - `.codex/RUN_LOG.md`
+- Fixes applied:
+  - Enriched project report metadata with dataset name/id, row/column counts, target, task type, best model, metric summary, status, and recommended next action.
+  - Report list now shows dataset, target, problem type, best model, main metric, status, created time, and a useful action instead of placeholder `-` values.
+  - Empty reports state now guides users back to the normal new analysis flow.
+  - Report detail no longer describes an unavailable model as a selected model; it clearly says model comparison is needed when model output is missing.
+  - Report detail top stats use Korean fallback labels such as `모델 결과 없음`, `타깃 확인 필요`, and `데이터 요약 없음`.
+  - Cleaned one remaining backend report summary phrase to Korean-first copy.
+  - Existing feature filtering still prevents important features from being shown when they are not present in the dataset schema.
+- Verification:
+  - `python -m compileall backend`: passed with bundled Python runtime.
+  - `cd frontend && npm run build`: npm shim unavailable in this environment, so equivalent `node node_modules/vite/bin/vite.js build` was run and passed.
+  - Vite large chunk warning remains non-blocking.
+- Known limitations:
+  - Full browser QA should still be repeated on Railway with completed, review-needed, empty, and dataset-switching report states.
+  - HTML report export still uses the current analysis session where persisted report bodies are not yet available.
+- Next step:
+  - Commit, push, and let Railway redeploy.
+
 ## 2026-06-19 KST - PR-05 New Analysis Flow Stabilization
 
 - Status: completed

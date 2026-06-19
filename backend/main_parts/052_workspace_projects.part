@@ -290,14 +290,36 @@ def _project_reports(conn, project_id, user_id):
     for run in _project_runs(conn, project_id, user_id):
         if not run.get("report_id"):
             continue
+        dataset = conn.execute(
+            "SELECT * FROM datasets WHERE project_id=? AND user_id=? AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 1",
+            (project_id, user_id),
+        ).fetchone()
+        metric_value = run.get("metric_value")
+        metric_name = run.get("metric_name")
+        metric_summary = {
+            "best_metric": metric_value,
+            "metric_name": metric_name,
+            "display": f"{metric_name}: {safe_round(metric_value)}" if metric_name and metric_value is not None else None,
+        }
         reports.append({
             "report_id": run["report_id"],
             "analysis_run_id": run["analysis_run_id"],
             "created_at": run["created_at"],
-            "title": f"{run.get('target') or 'CSV'} analysis report",
-            "status": "metadata_available",
+            "title": f"{run.get('target') or 'CSV'} 예측 분석 보고서",
+            "status": "ready" if run.get("best_model") else "needs_review",
             "export_available": False,
-            "message": "Saved report metadata is available. HTML export uses the current analysis session until report persistence is added.",
+            "dataset_id": dataset["id"] if dataset else None,
+            "dataset_name": dataset["filename"] if dataset else None,
+            "row_count": dataset["rows"] if dataset else None,
+            "column_count": dataset["columns"] if dataset else None,
+            "target": run.get("target"),
+            "task_type": run.get("task_type"),
+            "best_model": run.get("best_model"),
+            "model_summary": {"best_model": run.get("best_model")},
+            "metric_summary": metric_summary,
+            "warnings_count": run.get("warnings_count"),
+            "message": "저장된 분석 결과 메타데이터를 기준으로 표시합니다. HTML export는 현재 분석 세션을 사용할 수 있습니다.",
+            "recommended_next_action": "보고서에서 성능과 주의사항을 확인한 뒤 새 데이터 예측 또는 예측 API로 이어가세요.",
         })
     return reports
 
@@ -535,12 +557,20 @@ async def list_workspace_reports(user=Depends(get_current_user)):
                 "report_id": run["report_id"],
                 "analysis_run_id": run["analysis_run_id"],
                 "created_at": run["created_at"],
-                "title": f"{run.get('target') or 'CSV'} analysis report",
-                "status": "metadata_available",
+                "title": f"{run.get('target') or 'CSV'} 예측 분석 보고서",
+                "status": "ready" if run.get("best_model") else "needs_review",
                 "export_available": False,
                 "best_model": run.get("best_model"),
-                "metric_summary": {"best_metric": run.get("metric_value"), "metric_name": run.get("metric_name")},
-                "message": "Saved report metadata is available. HTML export uses the current analysis session until report persistence is added.",
+                "model_summary": {"best_model": run.get("best_model")},
+                "metric_summary": {
+                    "best_metric": run.get("metric_value"),
+                    "metric_name": run.get("metric_name"),
+                    "display": f"{run.get('metric_name')}: {safe_round(run.get('metric_value'))}" if run.get("metric_name") and run.get("metric_value") is not None else None,
+                },
+                "target": run.get("target"),
+                "task_type": run.get("task_type"),
+                "message": "저장된 분석 결과 메타데이터를 기준으로 표시합니다. HTML export는 현재 분석 세션을 사용할 수 있습니다.",
+                "recommended_next_action": "보고서에서 성능과 주의사항을 확인한 뒤 새 데이터 예측 또는 예측 API로 이어가세요.",
                 "project": None,
             })
     finally:

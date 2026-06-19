@@ -79,8 +79,11 @@ function summaryFromExperiment(item) {
 }
 
 function reportSummaryText(summary, dataset, opt) {
-  const model = summary?.model_selection?.best_model || '선택된 모델'
+  const model = summary?.model_selection?.best_model
   const target = dataset?.target_col || '타깃'
+  if (!model) {
+    return '모델 비교 결과가 아직 준비되지 않았습니다. 먼저 CSV 업로드, 타깃 확인, 모델 비교를 완료해 주세요.'
+  }
   if (opt?.status === 'improved' || opt?.status === 'ok') {
     return `${model}이 '${target}' 예측에 가장 적합한 모델로 선택되었고, 자동 개선 결과까지 반영되었습니다.`
   }
@@ -97,10 +100,11 @@ function MiniStat({ label, value, tone = 'blue' }) {
     amber: ['#fffbeb', '#d97706'],
   }
   const [bg, fg] = colors[tone] || colors.blue
+  const displayValue = value === null || value === undefined || value === '' || value === '-' ? '확인 필요' : value
   return (
     <div className="card-elevated" style={{ minHeight: 88, background: bg }}>
       <p style={{ margin: '0 0 8px', fontSize: 11, fontWeight: 800, color: 'var(--text-label)' }}>{label}</p>
-      <p style={{ margin: 0, fontSize: 23, fontWeight: 900, color: fg, lineHeight: 1.1 }}>{value}</p>
+      <p style={{ margin: 0, fontSize: 23, fontWeight: 900, color: fg, lineHeight: 1.1 }}>{displayValue}</p>
     </div>
   )
 }
@@ -168,12 +172,12 @@ function reportConclusion(summary, dataset, opt) {
     return {
       status: '검토 필요',
       title: '명확한 예측 타깃이 부족해 탐색 보고서로 보는 것이 더 적합합니다.',
-      body: '먼저 어떤 값을 예측하고 싶은지 정한 뒤 타깃 컬럼을 다시 선택하는 것을 권장합니다.',
+      body: '먼저 어떤 값을 예측하고 싶은지 정한 뒤 타깃 컬럼을 다시 선택하는 것을 권장합니다. 분석 결과를 억지로 확정하지 않습니다.',
     }
   }
   return {
     status: model ? '보고서 준비됨' : '주의 필요',
-    title: `${target} 예측 분석 보고서가 준비되었습니다.`,
+    title: model ? `${target} 예측 분석 보고서가 준비되었습니다.` : '분석 결과 요약을 준비하려면 모델 비교가 필요합니다.',
     body: model
       ? reportSummaryText(summary, dataset, opt)
       : '선택 모델 정보가 충분하지 않아 결과 해석에는 주의가 필요합니다.',
@@ -416,8 +420,8 @@ export default function Report() {
           <p className="empty-title" style={{ marginTop: 16 }}>아직 보고서가 준비되지 않았어요.</p>
           <p className="empty-desc">분석이 끝나면 결과를 한눈에 정리해 드립니다. {error}</p>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
-            <Button variant="secondary" onClick={() => nav('/agent-mode')}>분석 상태 보기</Button>
-            <Button onClick={() => nav('/agent-mode')}>목표 기반 분석 시작</Button>
+            <Button variant="secondary" onClick={() => nav('/dashboard')}>대시보드로 이동</Button>
+            <Button onClick={() => nav('/upload')}>새 분석 시작</Button>
           </div>
         </div>
       </div>
@@ -439,7 +443,7 @@ export default function Report() {
                   {reportSummaryText(summary, dataset, opt)}
                 </p>
                 <p style={{ margin: '6px 0 0', color: 'var(--text-label)', fontSize: 12 }}>
-                  {new Date(summary.generated_at).toLocaleString()} / 타깃 {dataset.target_col || '-'}
+                  {new Date(summary.generated_at).toLocaleString()} / 타깃 {dataset.target_col || '타깃 확인 필요'}
                 </p>
               </div>
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
@@ -475,9 +479,9 @@ export default function Report() {
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 14 }} className="report-stat-grid">
             <MiniStat label="준비도" value={pct(summary.readiness_score)} tone="green" />
-            <MiniStat label="선택 모델" value={summary.model_selection?.best_model || '-'} />
+            <MiniStat label="선택 모델" value={summary.model_selection?.best_model || '모델 결과 없음'} />
             <MiniStat label="예측 유형" value={taskLabel(dataset.task_type)} tone="amber" />
-            <MiniStat label="사용 정보" value={dataset.training_shape?.[1] ?? '-'} />
+            <MiniStat label="사용 정보" value={dataset.training_shape?.[1] ?? '데이터 요약 없음'} />
           </div>
 
           <BusinessSummary data={business} />

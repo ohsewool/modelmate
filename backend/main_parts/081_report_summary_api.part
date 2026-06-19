@@ -67,7 +67,7 @@ async def report_summary():
             "succeeded" if model is not None else "running",
             "report_summary",
             "결과 요약을 생성했습니다." if model is not None else "모델 결과가 아직 준비되지 않았습니다.",
-            recommended_next_action="HTML report export 또는 prediction API 공유를 확인하세요.",
+            recommended_next_action="HTML 보고서 export 또는 예측 API 공유를 확인하세요.",
         ),
         "usage_limits": MVP_USAGE_LIMITS,
         "generated_at": datetime.now().isoformat(timespec="seconds"),
