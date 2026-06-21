@@ -20,6 +20,7 @@ def main() -> int:
     login = (SRC / "pages" / "Login.jsx").read_text(encoding="utf-8")
     upload = (SRC / "pages" / "Upload.jsx").read_text(encoding="utf-8")
     agent_run_detail = (SRC / "pages" / "AgentRunDetail.jsx").read_text(encoding="utf-8")
+    prediction_apis = (SRC / "pages" / "workspace" / "WorkspacePredictionApis.jsx").read_text(encoding="utf-8")
 
     require(app, "function RequireAuth", "protected route guard")
     require(app, "encodeURIComponent(redirect)", "original route redirect")
@@ -48,6 +49,7 @@ def main() -> int:
         "explicit.filter(name => isVerifiedDatasetColumn(trace, name))",
         "trace features filtered by current dataset columns",
     )
+    assert "availabilityStatus(row)" not in prediction_apis, "Undefined API readiness helper must not be rendered"
 
     source_files = list(SRC.rglob("*.jsx")) + list(SRC.rglob("*.js"))
     undefined_routes: list[str] = []

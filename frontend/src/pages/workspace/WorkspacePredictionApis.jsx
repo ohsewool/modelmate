@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { LoadingState, StatusBadge, WorkspacePageHeader, statusLabel } from '../../components/workspace-shell/WorkspaceStates'
-import { asArray, fmt, loadPredictionApiRows } from './workspaceData'
+import { LoadingState, WorkspacePageHeader } from '../../components/workspace-shell/WorkspaceStates'
+import { asArray, loadPredictionApiRows } from './workspaceData'
 import api from '../../api'
 
 function latestUsed(tokens) {
@@ -97,10 +97,6 @@ function apiReadiness(row) {
     explanation: '모델 비교가 완료된 분석 결과만 예측 API로 만들 수 있습니다.',
     canOpenApi: false,
   }
-}
-
-function availabilityText(row) {
-  return apiReadiness(row).explanation
 }
 
 function readinessLabel(row) {
@@ -263,7 +259,6 @@ export default function WorkspacePredictionApis() {
                   const active = tokens.filter(token => token?.status === 'active')
                   const revoked = tokens.filter(token => token?.status === 'revoked')
                   const calls = tokens.reduce((sum, token) => sum + Number(token?.usage_count || 0), 0)
-                  const status = availabilityStatus(row)
                   const readiness = apiReadiness(row)
                   return (
                     <tr key={projectId || row?.model_id || row?.id || index}>

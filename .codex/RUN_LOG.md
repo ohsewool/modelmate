@@ -2280,3 +2280,36 @@ Milestones:
   - Separate-origin deployments must configure both build-time `VITE_API_URL` and runtime `ALLOWED_ORIGINS`; the current same-origin service does not need either override.
 - Next step:
   - Manually confirm Railway volume mounts and required auth secrets, then run a protected-route browser refresh and one full training flow before a public release.
+
+## 2026-06-22 KST - Hotfix-03 Final Manual UX Stabilization
+
+- Status: implementation and local verification completed; Railway redeploy verification pending
+- Branch: `main`
+- Concrete issues found:
+  - A fresh authenticated user opening `/prediction-apis` hit a full-page error because `WorkspacePredictionApis` referenced the removed `availabilityStatus` helper.
+  - `/reports` rendered four summary cards containing `0` and `확인 필요` before its honest empty state, adding noise when no report existed.
+- Files changed:
+  - `frontend/src/pages/workspace/WorkspacePredictionApis.jsx`
+  - `frontend/src/pages/workspace/WorkspaceReports.jsx`
+  - `scripts/check_frontend_qa_contracts.py`
+  - generated `frontend/dist` bundle
+- Fixes applied:
+  - Removed the stale `availabilityStatus(row)` read and unused imports/helper so Prediction APIs render from the existing `apiReadiness()` result only.
+  - Added a static regression contract that rejects the stale helper call.
+  - Show report metric cards only when at least one report exists; report-less accounts now see the actionable empty state directly.
+- Browser verification before deployment:
+  - Logged-out landing and direct `/dashboard` access redirected to login with the original path.
+  - A fresh normal account opened `/dashboard`, `/upload`, `/agent-mode`, `/projects`, `/jobs`, `/reports`, and `/settings` without page errors or unsafe `/undefined` links.
+  - `/prediction-apis` reproduced `ReferenceError: availabilityStatus is not defined`, confirming the exact fix target.
+  - The customer churn sample loaded as 18 rows/8 columns, recommended `churn`, excluded `customer_id`, and exposed no raw enum text.
+  - Goal-based analysis reloaded the saved sample, showed the dataset-aware churn goal, and retained its project/data connection.
+- Automated verification:
+  - Bundled Python `-m compileall backend`: passed.
+  - `scripts/check_frontend_qa_contracts.py`: passed.
+  - Vite production build: passed (2,339 modules; existing bundle-size advisory only).
+  - `git diff --check`: passed apart from line-ending conversion notices.
+- Not verified:
+  - Full AutoML training, completed report detail, and a live Prediction API call were not executed during this focused pass.
+  - Post-fix Railway browser verification must wait for the new bundle to deploy.
+- Next step:
+  - Push the hotfix, confirm Railway serves the new bundle, then repeat `/prediction-apis`, `/reports`, protected-route, and sample-flow browser checks.

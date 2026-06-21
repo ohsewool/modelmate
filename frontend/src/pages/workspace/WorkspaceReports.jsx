@@ -62,12 +62,6 @@ export default function WorkspaceReports() {
   return (
     <div className="workspace-page animate-fade-in">
       <WorkspacePageHeader title="보고서" description="완료된 분석 결과와 AI 요약 보고서를 확인합니다." action={<button className="btn-primary" onClick={() => nav(safeReports.length ? '/report' : '/upload')}>{safeReports.length ? '보고서 보기' : '새 분석 시작하기'}</button>} />
-      <div className="workspace-grid four-columns" style={{ marginBottom: 18 }}>
-        <section className="metric-card"><p className="section-title">보고서</p><strong>{readyCount}</strong></section>
-        <section className="metric-card"><p className="section-title">모델 요약</p><strong>{modelCount || '확인 필요'}</strong></section>
-        <section className="metric-card"><p className="section-title">성능 지표</p><strong>{metricCount || '확인 필요'}</strong></section>
-        <section className="metric-card"><p className="section-title">다음 행동</p><strong>{readyCount ? '보고서 검토' : '분석 시작'}</strong></section>
-      </div>
       {!safeReports.length ? (
         <section className="card empty-state">
           <strong className="empty-title">아직 보고서가 준비되지 않았어요.</strong>
@@ -80,7 +74,14 @@ export default function WorkspaceReports() {
           </div>
         </section>
       ) : (
-        <section className="card" style={{ display: 'grid', gap: 12 }}>
+        <>
+          <div className="workspace-grid four-columns" style={{ marginBottom: 18 }}>
+            <section className="metric-card"><p className="section-title">보고서</p><strong>{readyCount}</strong></section>
+            <section className="metric-card"><p className="section-title">모델 요약</p><strong>{modelCount || '확인 필요'}</strong></section>
+            <section className="metric-card"><p className="section-title">성능 지표</p><strong>{metricCount || '확인 필요'}</strong></section>
+            <section className="metric-card"><p className="section-title">다음 행동</p><strong>보고서 검토</strong></section>
+          </div>
+          <section className="card" style={{ display: 'grid', gap: 12 }}>
           <p className="section-title" style={{ margin: 0 }}>보고서 목록</p>
           <div className="table-scroll">
           <table className="data-table">
@@ -106,7 +107,8 @@ export default function WorkspaceReports() {
             ))}</tbody>
           </table>
           </div>
-        </section>
+          </section>
+        </>
       )}
     </div>
   )
