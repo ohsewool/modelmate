@@ -9,7 +9,7 @@ import FeedbackDialog from '../FeedbackDialog'
 const NAV = [
   { to: '/dashboard', label: '대시보드', icon: BarChart3 },
   { to: '/projects', label: '프로젝트', icon: Briefcase },
-  { to: '/jobs', label: '작업', icon: ListChecks },
+  { to: '/jobs', label: '작업 기록', icon: ListChecks },
   { to: '/reports', label: '보고서', icon: FileText },
   { to: '/prediction-apis', label: '예측 API', icon: KeyRound },
   { to: '/settings', label: '설정', icon: Settings },
@@ -57,7 +57,7 @@ export default function WorkspaceShell({ children }) {
         </div>
         <div style={{ padding: 12, display: 'grid', gap: 8 }}>
           <button className="btn-primary" style={{ width: '100%' }} onClick={() => { setOpen(false); nav('/new') }}>
-            <Plus size={15} /> 새 분석 시작
+            <Plus size={15} /> 새 분석 시작하기
           </button>
           <button className="btn-secondary" style={{ width: '100%', justifyContent: 'center' }} onClick={() => { setOpen(false); nav('/agent') }}>
             <Wand2 size={15} /> 빠른 자동 분석
@@ -102,7 +102,7 @@ export default function WorkspaceShell({ children }) {
         </div>
       </aside>
       <div style={{ minWidth: 0, display: 'grid', gridTemplateRows: '56px minmax(0, 1fr)' }}>
-        <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '0 20px', borderBottom: '1px solid var(--border)', background: 'var(--surface)' }}>
+        <header className="workspace-topbar">
           <button
             className="hamburger-btn"
             type="button"
@@ -111,10 +111,8 @@ export default function WorkspaceShell({ children }) {
             onClick={() => setOpen(value => !value)}
             style={{ border: '1px solid var(--border)', background: 'var(--surface)', borderRadius: 8, padding: 8 }}
           ><Menu size={18} /></button>
-          <div style={{ flex: 1, minWidth: 0, color: 'var(--text-2)', fontSize: 13 }}>저장된 프로젝트, 작업, 보고서, 예측 API를 한 곳에서 관리합니다.</div>
-          <button className="btn-secondary" onClick={() => nav('/agent')}><Wand2 size={15} /> 빠른 자동 분석</button>
-          <button className="btn-secondary" onClick={() => nav('/agent-mode')}><ListChecks size={15} /> 목표 기반 분석</button>
-          <button className="btn-primary" onClick={() => nav('/new')}><Plus size={15} /> 새 분석</button>
+          <div className="workspace-topbar-copy">프로젝트, 작업 기록, 보고서, 예측 API를 한 곳에서 관리합니다.</div>
+          <button className="btn-primary workspace-topbar-primary" onClick={() => nav('/new')}><Plus size={15} /> 새 분석 시작하기</button>
           <button className="btn-secondary workspace-close-mobile" aria-label="사이드바 닫기" onClick={() => setOpen(false)}><X size={16} /></button>
         </header>
         <main style={{ overflowY: 'auto', minWidth: 0 }}>

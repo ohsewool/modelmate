@@ -37,28 +37,28 @@ export default function WorkspaceJobs() {
     return safeJobs
   }, [jobs, filter])
 
-  if (!jobs) return <div style={{ padding: 24 }}><LoadingState label="작업 상태를 불러오는 중입니다." /></div>
+  if (!jobs) return <div className="workspace-page"><LoadingState label="작업 기록을 불러오는 중입니다." /></div>
   const safeJobs = asArray(jobs).filter(Boolean)
   const activeCount = safeJobs.filter(job => ['created', 'queued', 'running'].includes(job?.status)).length
   const failedCount = safeJobs.filter(isFailed).length
   const completedCount = safeJobs.filter(job => ['succeeded', 'success', 'completed'].includes(job?.status)).length
 
   return (
-    <div className="animate-fade-in" style={{ padding: 24, maxWidth: 1180 }}>
+    <div className="workspace-page animate-fade-in">
       <WorkspacePageHeader
-        title="작업"
-        description="분석 진행 상태와 복구 안내를 확인합니다."
+        title="작업 기록"
+        description="분석 진행 상태, 실패 원인, 다음 복구 방법을 확인합니다."
         action={<div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
           <button className="btn-secondary" onClick={() => nav('/agent-mode')}>목표 기반 분석</button>
-          <button className="btn-primary" onClick={() => nav('/new')}>CSV 올리기</button>
+          <button className="btn-primary" onClick={() => nav('/new')}>새 분석 시작하기</button>
         </div>}
       />
 
       <div className="workspace-grid four-columns" style={{ marginBottom: 18 }}>
-        <section className="card-compact"><p className="section-title">전체 작업</p><strong>{safeJobs.length}</strong></section>
-        <section className="card-compact"><p className="section-title">진행 중</p><strong>{activeCount}</strong></section>
-        <section className="card-compact"><p className="section-title">완료</p><strong>{completedCount}</strong></section>
-        <section className="card-compact"><p className="section-title">실패</p><strong>{failedCount}</strong></section>
+        <section className="metric-card"><p className="section-title">전체 작업</p><strong>{safeJobs.length}</strong></section>
+        <section className="metric-card"><p className="section-title">진행 중</p><strong>{activeCount}</strong></section>
+        <section className="metric-card"><p className="section-title">완료</p><strong>{completedCount}</strong></section>
+        <section className="metric-card"><p className="section-title">실패</p><strong>{failedCount}</strong></section>
       </div>
 
       <section className="card" style={{ display: 'grid', gap: 16 }}>
@@ -86,18 +86,18 @@ export default function WorkspaceJobs() {
             </div>
           </div>
         ) : (
-        <div style={{ overflowX: 'auto' }}>
+        <div className="table-scroll">
           <table className="data-table">
             <thead>
               <tr>
-                <th>작업</th>
+                <th>분석 실행</th>
                 <th>프로젝트</th>
                 <th>상태</th>
                 <th>현재 단계</th>
                 <th>시작</th>
                 <th>완료/실패</th>
                 <th>오류와 복구</th>
-                <th>작업</th>
+                <th>다음 행동</th>
               </tr>
             </thead>
             <tbody>{filtered.map(job => (
@@ -126,7 +126,7 @@ export default function WorkspaceJobs() {
                 </td>
                 <td style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {job.project?.id && <button className="btn-secondary" onClick={() => nav(`/projects/${job.project.id}`)}>프로젝트 열기</button>}
-                  {job.project?.id && job.analysis_run_id && <button className="btn-secondary" onClick={() => nav(`/projects/${job.project.id}/runs/${job.analysis_run_id}`)}>실행 상세</button>}
+                  {job.project?.id && job.analysis_run_id && <button className="btn-secondary" onClick={() => nav(`/projects/${job.project.id}/runs/${job.analysis_run_id}`)}>상세 실행 기록 보기</button>}
                   {job.project?.id && <button className="btn-secondary" onClick={() => nav(`/projects/${job.project.id}?tab=runs`)}>재실행 확인</button>}
                 </td>
               </tr>

@@ -46,7 +46,7 @@ export function WorkspacePageHeader({ eyebrow, title, description, action }) {
         <h1>{title}</h1>
         {description && <p>{description}</p>}
       </div>
-      {action && <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>{action}</div>}
+      {action && <div className="workspace-hero-actions">{action}</div>}
     </section>
   )
 }

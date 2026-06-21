@@ -159,8 +159,8 @@ function ResultPanel({ result, nav }) {
       <div className="workspace-grid four-columns">
         <div className="card-compact"><p className="section-title">문제 유형</p><strong>{problemTypeLabel(result.problem_type)}</strong></div>
         <div className="card-compact"><p className="section-title">추천 신뢰도</p><strong>{confidenceLabel(result.confidence)}</strong></div>
-        <div className="card-compact"><p className="section-title">선택 모델</p><strong>{model.best_model || '-'}</strong></div>
-        <div className="card-compact"><p className="section-title">데이터</p><strong>{dataset.row_count || '-'}행</strong></div>
+        <div className="card-compact"><p className="section-title">선택 모델</p><strong>{model.best_model || '확인 필요'}</strong></div>
+        <div className="card-compact"><p className="section-title">데이터</p><strong>{dataset.row_count ? `${dataset.row_count}행` : '확인 필요'}</strong></div>
       </div>
       {!!features.length && (
         <div className="card-compact">
@@ -244,8 +244,8 @@ export default function Agent() {
   }
 
   return (
-    <div className="animate-fade-in" style={{ padding: 32, maxWidth: 1180 }}>
-      <section className="card" style={{ display: 'grid', gap: 16, marginBottom: 18 }}>
+    <div className="workspace-page animate-fade-in">
+      <section className="workspace-hero">
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' }}>
           <div>
             <p className="eyebrow">빠른 자동 분석</p>
@@ -254,7 +254,7 @@ export default function Agent() {
               데이터 점검, 예측값 추천, 문제 유형 판단, 모델 비교를 하나의 짧은 흐름으로 진행합니다. 추천 신뢰도가 낮으면 학습 전에 멈추고 확인을 요청합니다.
             </p>
           </div>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <div className="workspace-hero-actions">
             <Button onClick={() => fileRef.current?.click()}>CSV 올리고 바로 시작</Button>
             <Button variant="secondary" onClick={() => nav('/agent-mode')}>목표 기반 분석</Button>
           </div>

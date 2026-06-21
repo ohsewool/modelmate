@@ -303,17 +303,13 @@ export default function Upload() {
   const modelSummary = summarizeModelResult(modelResult, target, uploadInfo?.filename)
 
   return (
-    <div className="animate-fade-in" style={{ padding: 32, maxWidth: 1240 }}>
-      <section style={{
-        borderRadius: 8, padding: '22px 24px', marginBottom: 18,
-        background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border)',
-        boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
-      }}>
-        <p style={{ fontSize: 12, fontWeight: 900, color: '#2563eb', margin: '0 0 8px' }}>분석 흐름 · 데이터 넣기</p>
-        <h1 style={{ fontSize: 22, fontWeight: 900, margin: '0 0 6px', letterSpacing: 0 }}>CSV 업로드</h1>
-        <p style={{ fontSize: 13, lineHeight: 1.55, color: 'var(--text-2)', margin: 0 }}>
-          CSV를 직접 올리거나 사용 사례 샘플로 시작하세요. ModelMate가 데이터 구조, 추천 타깃, 제외 후보를 먼저 정리합니다.
-        </p>
+    <div className="workspace-page workspace-page-wide animate-fade-in">
+      <section className="workspace-hero">
+        <div>
+          <p className="eyebrow">새 분석</p>
+          <h1>CSV 업로드</h1>
+          <p>CSV를 직접 올리거나 사용 사례 샘플로 시작하세요. 데이터 구조와 예측값 후보를 먼저 정리합니다.</p>
+        </div>
       </section>
 
       <StepProgress current={currentStep} />

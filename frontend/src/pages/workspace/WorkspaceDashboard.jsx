@@ -5,7 +5,7 @@ import { EmptyState, LoadingState, StatusBadge } from '../../components/workspac
 import { asArray, fmt, loadWorkspaceOverview, primaryMetric, projectDatasetName, projectTarget } from './workspaceData'
 
 function MetricCard({ label, value, sub }) {
-  return <div className="card"><p className="section-title">{label}</p><strong style={{ fontSize: 26 }}>{value}</strong><p style={{ margin: '6px 0 0', color: 'var(--text-2)', fontSize: 12 }}>{sub}</p></div>
+  return <div className="metric-card"><p className="section-title">{label}</p><strong>{value}</strong><p style={{ margin: 0, color: 'var(--text-2)', fontSize: 12 }}>{sub}</p></div>
 }
 
 function usageSummary(usage) {
@@ -18,21 +18,18 @@ function usageSummary(usage) {
   return `오늘 작업 ${jobs}, API 호출 ${api}`
 }
 
-function ProductHomeHero({ onUpload, onQuick, onGoal, onSample }) {
+function ProductHomeHero({ onUpload, onQuick, onGoal }) {
   return (
     <section className="workspace-hero" style={{ marginBottom: 18 }}>
       <div>
         <p className="eyebrow">CSV 예측 분석 워크스페이스</p>
-        <h1>CSV를 올리면 예측할 값을 함께 정하고 결과와 다음 행동까지 정리해 드립니다.</h1>
-        <p>
-          복잡한 ML 용어 없이 데이터 기반 예측 작업을 시작하고, 보고서와 예측 API로 재사용할 수 있습니다.
-        </p>
+        <h1>대시보드</h1>
+        <p>업로드한 CSV와 분석 결과를 한눈에 확인합니다.</p>
       </div>
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-        <button className="btn-primary" type="button" onClick={onUpload}>CSV 올리기</button>
-        <button className="btn-secondary" type="button" onClick={onQuick}>빠른 자동 분석 시작</button>
-        <button className="btn-secondary" type="button" onClick={onGoal}>목표 기반 분석 시작</button>
-        <button className="btn-secondary" type="button" onClick={onSample}>샘플 파일로 시작</button>
+      <div className="workspace-hero-actions">
+        <button className="btn-primary" type="button" onClick={onUpload}>새 분석 시작하기</button>
+        <button className="btn-secondary" type="button" onClick={onQuick}>빠른 자동 분석</button>
+        <button className="btn-secondary" type="button" onClick={onGoal}>목표 기반 분석</button>
       </div>
     </section>
   )
@@ -96,8 +93,8 @@ export default function WorkspaceDashboard() {
     loadWorkspaceOverview().then(setData).catch(() => setError('워크스페이스 요약을 불러오지 못했습니다.'))
   }, [])
 
-  if (error) return <div style={{ padding: 24 }}><div className="banner-warning">{error}</div></div>
-  if (!data) return <div style={{ padding: 24 }}><LoadingState /></div>
+  if (error) return <div className="workspace-page"><div className="banner-warning">{error}</div></div>
+  if (!data) return <div className="workspace-page"><LoadingState /></div>
 
   const projects = asArray(data.projects).filter(Boolean)
   const datasets = asArray(data.datasets).filter(Boolean)
@@ -110,12 +107,11 @@ export default function WorkspaceDashboard() {
   const latestRun = history[0]
 
   return (
-    <div className="animate-fade-in" style={{ padding: 24, maxWidth: 1180 }}>
+    <div className="workspace-page animate-fade-in">
       <ProductHomeHero
         onUpload={() => nav('/new')}
         onQuick={() => nav('/agent')}
         onGoal={() => nav('/agent-mode')}
-        onSample={() => nav('/new')}
       />
       {projects.length === 0 ? (
         <div style={{ display: 'grid', gap: 14 }}>
@@ -170,9 +166,10 @@ export default function WorkspaceDashboard() {
             <RecommendedNextAction data={data} latestRun={latestRun} nav={nav} />
           </div>
 
-          <section className="card">
+          <section className="card workspace-section">
             <p className="section-title">최근 프로젝트</p>
             {recentProjects.length ? (
+              <div className="table-scroll">
               <table className="data-table">
                 <tbody>{recentProjects.map(project => (
                   <tr key={project.id}>
@@ -184,6 +181,7 @@ export default function WorkspaceDashboard() {
                   </tr>
                 ))}</tbody>
               </table>
+              </div>
             ) : (
               <EmptyState
                 title="최근 프로젝트가 없어요."

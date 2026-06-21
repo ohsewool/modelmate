@@ -79,7 +79,11 @@ html.dark {
   .workspace-page {
     padding: 24px;
     max-width: 1180px;
-    margin: 0;
+    width: 100%;
+    margin: 0 auto;
+  }
+  .workspace-page-wide {
+    max-width: 1280px;
   }
   .workspace-hero {
     background: var(--surface);
@@ -92,6 +96,107 @@ html.dark {
     align-items: flex-start;
     gap: 18px;
     min-width: 0;
+  }
+  .workspace-hero-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-items: center;
+  }
+  .workspace-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 56px;
+    padding: 0 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .workspace-topbar-copy {
+    flex: 1;
+    min-width: 0;
+    color: var(--text-2);
+    font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .workspace-section {
+    display: grid;
+    gap: 16px;
+  }
+  .workspace-section-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .workspace-section-head h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 850;
+    letter-spacing: 0;
+  }
+  .workspace-section-head p {
+    margin: 5px 0 0;
+    color: var(--text-2);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+  .metric-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    min-height: 102px;
+    display: grid;
+    align-content: space-between;
+    gap: 10px;
+    box-shadow: 0 1px 2px rgba(15,23,42,0.035);
+  }
+  .metric-card strong {
+    font-size: 24px;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+  }
+  .table-scroll {
+    width: 100%;
+    overflow-x: auto;
+  }
+  .analysis-steps {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--border);
+  }
+  .analysis-step {
+    min-width: 0;
+    padding: 10px 12px;
+    background: var(--surface-alt);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 800;
+  }
+  .analysis-step-number {
+    width: 22px;
+    height: 22px;
+    flex: 0 0 22px;
+    border-radius: 6px;
+    display: grid;
+    place-items: center;
+    background: #eff6ff;
+    color: #2563eb;
+    font-size: 11px;
+    font-weight: 900;
   }
   .workspace-hero h1 {
     margin: 0;
@@ -567,10 +672,11 @@ html.dark {
   @media (max-width: 900px) {
     .workspace-page { padding: 16px; }
     .workspace-hero { flex-direction: column; }
-    .workspace-grid.two-columns,
-    .workspace-grid.four-columns {
+    .workspace-grid.two-columns {
       grid-template-columns: 1fr;
     }
+    .workspace-grid.four-columns { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .workspace-hero-actions { justify-content: flex-start; }
   }
 }
 
@@ -595,7 +701,11 @@ html.dark .banner-danger  { background: rgba(244,63,94,0.1);   border-color: rgb
 .animate-slide-up { animation: slideUp 0.35s ease; }
 
 /* ── 반응형 (모바일) ─────────────────────────────────── */
-@media (max-width: 768px) {
+  @media (max-width: 768px) {
+  .public-nav { padding: 0 14px !important; }
+  .public-nav-actions { gap: 6px !important; }
+  .public-nav-link,
+  .public-nav-actions .btn-secondary { display: none !important; }
   .workspace-shell { grid-template-columns: 1fr !important; }
   .workspace-sidebar {
     position: fixed;
@@ -616,6 +726,9 @@ html.dark .banner-danger  { background: rgba(244,63,94,0.1);   border-color: rgb
     background: rgba(15,23,42,0.35);
   }
   .workspace-close-mobile { display: inline-flex !important; }
+  .workspace-topbar { padding: 0 12px; }
+  .workspace-topbar-copy { display: none; }
+  .workspace-topbar-primary { margin-left: auto; }
 
   /* 사이드바: 모바일에서 드로어로 */
   .sidebar {
@@ -649,10 +762,7 @@ html.dark .banner-danger  { background: rgba(244,63,94,0.1);   border-color: rgb
   }
 
   /* 페이지 패딩 줄이기 */
-  main > div {
-    padding-left: 12px !important;
-    padding-right: 12px !important;
-  }
+  main > div { padding-left: 12px !important; padding-right: 12px !important; }
 
   .card {
     padding: 14px;
@@ -679,9 +789,14 @@ html.dark .banner-danger  { background: rgba(244,63,94,0.1);   border-color: rgb
     grid-template-columns: 1fr !important;
   }
 
-  .home-hero-grid h1 {
-    font-size: 48px !important;
-  }
+  .home-hero-grid h1 { font-size: 40px !important; }
+
+  .analysis-steps { grid-template-columns: 1fr 1fr; }
+  .workspace-grid.four-columns { grid-template-columns: 1fr; }
+  .workspace-hero h1 { font-size: 24px; }
+  .workspace-hero-actions,
+  .workspace-hero-actions > * { width: 100%; }
+  .workspace-section-head { align-items: stretch; }
 
   .admin-stat-grid,
   .admin-detail-grid,

@@ -16,7 +16,7 @@ const workflowSteps = [
 
 const featureChips = ['데이터 구조 분석', '타깃 추천', '모델 비교', '근거 기반 보고서', '예측 API']
 
-const trustItems = ['데이터 품질 경고', '필수 가능성 확인', '모델 성능 기준', '예측 이유 설명']
+const trustItems = ['데이터 품질 경고', '데이터 누수 가능성 확인', '모델 성능 기준', '예측 이유 설명']
 
 export default function Home() {
   const nav = useNavigate()
@@ -34,7 +34,7 @@ export default function Home() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)', overflowX: 'hidden' }}>
-      <nav style={{
+      <nav className="public-nav" style={{
         height: 58, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '0 28px', borderBottom: '1px solid var(--border)', background: 'var(--surface)',
         position: 'sticky', top: 0, zIndex: 20,
@@ -49,9 +49,9 @@ export default function Home() {
           <span style={{ fontSize: 18, fontWeight: 900, letterSpacing: 0 }}>ModelMate</span>
         </button>
 
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-          <Link to="/pricing" style={navLinkStyle}>요금 안내</Link>
-          <a href="https://github.com/ohsewool/-/blob/main/docs/privacy.md" style={navLinkStyle}>개인정보 안내</a>
+        <div className="public-nav-actions" style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          <Link className="public-nav-link" to="/pricing" style={navLinkStyle}>요금 안내</Link>
+          <a className="public-nav-link" href="https://github.com/ohsewool/-/blob/main/docs/privacy.md" style={navLinkStyle}>개인정보 안내</a>
           <button onClick={toggle} title={dark ? '밝은 화면' : '어두운 화면'} className="theme-toggle">
             {dark ? <Sun size={15} /> : <Moon size={15} />}
           </button>

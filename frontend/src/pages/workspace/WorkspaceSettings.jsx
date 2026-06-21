@@ -206,13 +206,13 @@ export default function WorkspaceSettings() {
   ], [usage])
   const isAdmin = usage?.is_admin || usage?.role === 'admin' || usage?.plan === 'admin'
 
-  if (!usage) return <div style={{ padding: 24 }}><LoadingState label="설정 정보를 불러오는 중입니다." /></div>
+  if (!usage) return <div className="workspace-page"><LoadingState label="설정 정보를 불러오는 중입니다." /></div>
 
   return (
-    <div className="animate-fade-in" style={{ padding: 24, maxWidth: 1100 }}>
+    <div className="workspace-page animate-fade-in">
       <WorkspacePageHeader
         title="설정"
-        description="계정, 플랜, 사용량을 확인합니다."
+        description="계정, 현재 플랜, 사용량, 운영 지원 정보를 확인합니다."
       />
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }} className="admin-detail-grid">
         <section className="card">

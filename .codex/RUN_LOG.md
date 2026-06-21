@@ -2059,3 +2059,34 @@ Milestones:
   - Browser-level authenticated scenario QA still requires the deployed Railway environment and representative saved projects.
 - Next step:
   - Deploy the frontend bundle and verify dashboard, report, Prediction API, and Agent Mode copy against saved production data.
+
+## 2026-06-21 KST - PR-12 UI/UX Final Polish
+
+- Status: completed
+- Branch: `main`
+- Scope:
+  - Align the landing, workspace shell, dashboard, upload, quick analysis, Agent Mode, projects, jobs, reports, Prediction APIs, settings, and report detail with the existing `/upload` visual language.
+- Files changed:
+  - shared workspace shell/state components and `frontend/src/index.css`
+  - `Home`, `Upload`, `Agent`, `AgentMode`, and `Report` pages
+  - dashboard, projects, jobs, reports, Prediction APIs, and settings workspace pages
+  - generated frontend dist bundle
+- Implementation:
+  - Added common centered page widths, hero actions, section hierarchy, metric cards, responsive analysis steps, and scrollable table containers.
+  - Reduced the workspace top bar to one primary action and kept quick/goal analysis paths in the sidebar and relevant page heroes.
+  - Standardized page titles, short subtitles, primary actions, loading containers, summary cards, empty states, and table sections.
+  - Kept report and Agent result details summary-first while preserving real technical trace and API documentation areas.
+  - Added narrow-screen wrapping for page actions and a compact public landing navigation.
+  - Corrected the landing trust label from `필수 가능성 확인` to `데이터 누수 가능성 확인`.
+- Verification:
+  - Bundled Python `-m compileall backend`: passed.
+  - Bundled Node/Vite production build: passed (2,339 modules).
+  - `git diff --check`: passed.
+  - Core route source audit: dashboard, upload, quick analysis, Agent Mode, projects, jobs, reports, Prediction APIs, settings, and report detail use the shared page/card hierarchy.
+  - Unsafe route string scan: no `/undefined`, `/agent-mode/undefined`, `/reports/undefined`, or `/prediction-apis/undefined` references found in page sources.
+  - Existing `run_final_qa.py` could not run in the bundled Python environment because FastAPI is not installed; no backend source was changed by this PR.
+- Known limitations:
+  - Authenticated browser-level scenarios with saved production projects still require post-deploy manual verification.
+  - The existing frontend bundle remains larger than Vite's 500 kB advisory threshold; code splitting was outside this visual-polish scope.
+- Next step:
+  - Commit and push, allow Railway to redeploy, then visually verify desktop and mobile widths with representative empty and populated accounts.

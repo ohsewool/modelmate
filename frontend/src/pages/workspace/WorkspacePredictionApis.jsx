@@ -216,15 +216,15 @@ export default function WorkspacePredictionApis() {
     api.get('/projects').then(res => loadPredictionApiRows(asArray(res.data))).then(setRows).catch(() => setRows([]))
   }, [])
 
-  if (!rows) return <div style={{ padding: 24 }}><LoadingState label="예측 API 상태를 불러오는 중입니다." /></div>
+  if (!rows) return <div className="workspace-page"><LoadingState label="예측 API 상태를 불러오는 중입니다." /></div>
 
   const visible = asArray(rows).filter(row => row?.availability || asArray(row?.tokens).length)
   return (
-    <div className="animate-fade-in" style={{ padding: 24, maxWidth: 1180 }}>
+    <div className="workspace-page animate-fade-in">
       <WorkspacePageHeader
         title="예측 API"
-        description="분석 결과를 재사용 가능한 예측 API로 연결할 수 있는지 확인합니다."
-        action={<button className="btn-primary" onClick={() => nav('/deploy')}>API 설정 열기</button>}
+        description="분석 결과를 API로 연결할 수 있는 상태와 필요한 검토 항목을 확인합니다."
+        action={<button className="btn-primary" onClick={() => nav(visible.length ? '/deploy' : '/upload')}>{visible.length ? '예측 API 만들기' : '새 분석 시작하기'}</button>}
       />
       <ReadinessOverview rows={visible} onOpenSettings={() => nav('/deploy')} />
       {!visible.length ? (
@@ -234,7 +234,7 @@ export default function WorkspacePredictionApis() {
             모델 비교가 완료된 분석 결과에서 API 인증 정보를 만들면 여기에 표시됩니다. 먼저 CSV 분석을 완료해 주세요.
           </p>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
-            <button className="btn-primary" onClick={() => nav('/upload')}>새 분석 시작</button>
+            <button className="btn-primary" onClick={() => nav('/upload')}>새 분석 시작하기</button>
             <button className="btn-secondary" onClick={() => nav('/reports')}>결과 보고서 보기</button>
           </div>
         </section>
@@ -242,7 +242,7 @@ export default function WorkspacePredictionApis() {
         <>
           <section className="card" style={{ display: 'grid', gap: 12 }}>
             <p className="section-title" style={{ margin: 0 }}>예측 API 목록</p>
-            <div style={{ overflowX: 'auto' }}>
+          <div className="table-scroll">
               <table className="data-table">
                 <thead>
                   <tr>

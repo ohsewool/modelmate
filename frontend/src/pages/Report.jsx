@@ -486,7 +486,7 @@ export default function Report() {
 
   if (loading) {
     return (
-      <div style={{ padding: 32, maxWidth: 1120 }}>
+      <div className="workspace-page">
         <div className="card empty-state">
           <Loader2 className="animate-spin" size={36} color="#2563eb" />
           <p className="empty-title" style={{ marginTop: 16 }}>결과 요약을 불러오는 중입니다</p>
@@ -497,7 +497,7 @@ export default function Report() {
 
   if (error) {
     return (
-      <div style={{ padding: 32, maxWidth: 960 }}>
+      <div className="workspace-page">
         <div className="card empty-state">
           <AlertCircle size={42} color="#dc2626" />
           <p className="empty-title" style={{ marginTop: 16 }}>아직 보고서가 준비되지 않았어요.</p>
@@ -512,7 +512,7 @@ export default function Report() {
   }
 
   return (
-    <div className="animate-fade-in" style={{ padding: 32, maxWidth: 1280 }}>
+    <div className="workspace-page workspace-page-wide animate-fade-in">
       <div className={`report-workspace ${sideOpen ? 'report-workspace-open' : ''}`}>
         <div className="report-main-flow">
           <div className="card">

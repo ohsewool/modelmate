@@ -753,15 +753,15 @@ export default function AgentMode() {
               CSV 선택 → 목표 확인 → 분석 실행
             </p>
           </div>
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          <div className="workspace-hero-actions">
             <Link className="btn btn-secondary" to="/upload?returnTo=agent-mode"><Upload size={16} /> CSV 올리기</Link>
-            <Link className="btn btn-secondary" to="/agent">빠른 자동 분석 시작</Link>
+            <Link className="btn btn-secondary" to="/agent">빠른 자동 분석</Link>
           </div>
         </div>
-        <div className="workspace-grid four-columns" style={{ width: '100%' }}>
+        <div className="analysis-steps">
           {['CSV 선택', '예측값 추천', '분석 실행', '결과 확인'].map((step, index) => (
-            <div key={step} className="card-compact" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ width: 24, height: 24, borderRadius: 8, display: 'grid', placeItems: 'center', background: '#eff6ff', color: '#2563eb', fontSize: 12, fontWeight: 900 }}>{index + 1}</span>
+            <div key={step} className="analysis-step">
+              <span className="analysis-step-number">{index + 1}</span>
               <strong>{step}</strong>
             </div>
           ))}
