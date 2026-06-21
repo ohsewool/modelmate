@@ -4,6 +4,7 @@ import { AlertTriangle, Box, CheckCircle2, Database, FileText, ListChecks } from
 import api from '../api'
 import { EmptyState, ErrorState, LoadingState, StatusBadge } from '../components/workspace-shell/WorkspaceStates'
 import { goalContext, goalTargetReason } from '../utils/goalContext'
+import { userStatusLabel, workflowStepLabel } from '../utils/userCopy'
 
 const STATUS_LABELS = {
   supported: '지원 가능',
@@ -12,10 +13,10 @@ const STATUS_LABELS = {
   completed: '분석 완료',
   succeeded: '분석 완료',
   success: '분석 완료',
-  failed: '실패',
+  failed: '분석 실패',
   running: '분석 중',
   planned: '실행 예정',
-  pending: '대기 중',
+  pending: '분석 대기 중',
   blocked: '사용자 확인 필요',
   stopped: '중단됨',
   waiting_for_review: '확인이 필요합니다',
@@ -820,7 +821,7 @@ function UserPlanTimeline({ steps }) {
       {steps.map(step => (
         <div key={step.plan_step_id} className="card-compact" style={{ display: 'grid', gap: 7 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
-            <strong>{step.order}. {friendlyStepName(step)}</strong>
+              <strong>{step.order}. {workflowStepLabel(friendlyStepName(step))}</strong>
             <span className="status-pill">{statusLabel(step.status)}</span>
           </div>
           <p style={{ margin: 0, color: 'var(--text-2)', fontSize: 13, lineHeight: 1.55 }}>{friendlyStepPurpose(step)}</p>
@@ -1000,7 +1001,7 @@ function AdvancedTrace({ trace, reviews }) {
           empty="사용자 확인 기록이 없습니다."
           render={review => (
             <div key={review.id} className="card-compact">
-              <strong>{review.status}</strong>
+              <strong>{userStatusLabel(review.status)}</strong>
               <p style={{ margin: '6px 0 0', color: 'var(--text-2)' }}>{review.prompt || review.context_summary}</p>
             </div>
           )}

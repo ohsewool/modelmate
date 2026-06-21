@@ -21,7 +21,7 @@ export default function AnalysisTracePanel({ summary }) {
     ['분석 목표 해석', '목표 기반 계획', 'done', dataset.domain || 'CSV 예측 목표를 분석 흐름으로 해석했습니다.', `예측할 값: ${dataset.target_col || '-'}`, '낮음', '데이터 점검'],
     ['데이터 구조 확인', '데이터 구조 분석', stepStatus(readiness.dataset_uploaded || readiness.has_data), `${dataset.training_shape?.[0] ?? '-'}행 / ${dataset.training_shape?.[1] ?? '-'}개 정보`, '학습 가능한 표 구조 확인', '낮음', '스키마 검증'],
     ['CSV 형식 검증', '스키마 검증', stepStatus(readiness.dataset_uploaded || readiness.has_data), '결측값과 사용 가능 컬럼을 점검했습니다.', '학습 진행 가능', risks.length ? '중간' : '낮음', '예측할 값 추천'],
-    ['예측할 값 추천', '타깃 추천', stepStatus(readiness.target_selected || readiness.has_target), `추천 예측값: ${dataset.target_col || '-'}`, `문제 유형: ${dataset.task_type || '-'}`, '낮음', '누수 검사'],
+    ['예측값 추천', '예측값 추천', stepStatus(readiness.target_selected || readiness.has_target), `추천 예측값: ${dataset.target_col || '확인 필요'}`, `문제 유형: ${dataset.task_type || '확인 필요'}`, '낮음', '데이터 누수 점검'],
     ['데이터 누수 점검', '누수 검사', 'done', `${summary?.preprocessing?.auto_drop_cols?.length || 0}개 컬럼 제외/주의`, '의심 컬럼은 제외 또는 검토 대상으로 처리', summary?.preprocessing?.auto_drop_cols?.length ? '중간' : '낮음', '모델 비교'],
     ['모델 비교 완료', 'AutoML 모델 비교', stepStatus(readiness.cv_completed || readiness.model_ready), `${model.models?.length || 0}개 모델 비교`, `가장 좋은 모델: ${model.best_model || '-'}`, '낮음', '성능 판단'],
     ['예측 성능 판단', '성능 검토', stepStatus(model.best_model), `대표 지표: ${model.score_info?.primary || '-'}`, business.recommended_decision || '결과 사용 가능 여부 판단', risks.length ? '중간' : '낮음', '근거 생성'],

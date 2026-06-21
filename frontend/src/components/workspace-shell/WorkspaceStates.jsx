@@ -1,44 +1,26 @@
+import { userStatusLabel } from '../../utils/userCopy'
+
 export function statusLabel(status) {
-  const labels = {
-    created: '생성됨',
-    queued: '대기 중',
-    running: '실행 중',
-    succeeded: '완료',
-    success: '완료',
-    failed: '실패',
-    cancelled: '취소됨',
-    canceled: '취소됨',
-    needs_review: '검토 필요',
-    ready: '준비됨',
-    active: '활성',
-    revoked: '폐기됨',
-    disabled: '비활성화됨',
-    deleted: '삭제됨',
-    archived: '보관됨',
-    warning: '주의',
-    blocked: '차단됨',
-    unavailable: '사용 불가',
-    expired: '만료됨',
-    usage_limited: '한도 도달',
-    contacted: '연락함',
-    closed: '닫힘',
-    unknown: '확인 필요',
-  }
-  return labels[status || 'unknown'] || status || labels.unknown
+  return userStatusLabel(status)
 }
 
 export function StatusBadge({ status }) {
   const value = status || 'unknown'
   const styles = {
     created: 'badge-blue',
+    pending: 'badge-blue',
+    planned: 'badge-blue',
     queued: 'badge-blue',
     running: 'badge-cyan',
+    completed: 'badge-green',
     succeeded: 'badge-green',
     success: 'badge-green',
     failed: 'badge-red',
     cancelled: 'badge-amber',
     canceled: 'badge-amber',
     needs_review: 'badge-amber',
+    waiting_for_review: 'badge-amber',
+    review_required: 'badge-amber',
     ready: 'badge-green',
     active: 'badge-green',
     revoked: 'badge-amber',

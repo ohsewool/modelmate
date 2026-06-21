@@ -12,7 +12,7 @@ import StatusRecoveryPanel from '../components/StatusRecoveryPanel'
 import { goalContext } from '../utils/goalContext'
 
 const fmt = value => {
-  if (value === null || value === undefined || value === '') return '-'
+  if (value === null || value === undefined || value === '') return '확인 필요'
   if (typeof value === 'number') return Number.isInteger(value) ? value : value.toFixed(4)
   return value
 }
@@ -21,7 +21,7 @@ const pct = value => `${Math.round((Number(value) || 0) * 100)}%`
 const taskLabel = value => ({
   classification: '분류 예측',
   regression: '숫자 예측',
-}[value] || value || '-')
+}[value] || '문제 유형 확인 필요')
 
 function summaryFromExperiment(item) {
   const results = item?.results || []
@@ -71,8 +71,8 @@ function summaryFromExperiment(item) {
     },
     presentation_points: [
       `데이터 분야: ${item?.dataset_domain || '기록 없음'}`,
-      `타깃 값: ${item?.target || '-'}`,
-      `선택 모델: ${item?.best_model || '-'}`,
+      `예측 대상: ${item?.target || '확인 필요'}`,
+      `추천 모델: ${item?.best_model || '확인 필요'}`,
     ],
     executive_summary: item?.presentation_conclusion || '저장된 실험 기록을 바탕으로 복원한 결과 요약입니다.',
     feature_evidence: { items: item?.feature_importance || [] },
@@ -364,7 +364,7 @@ function AiReportSummary({ data }) {
     return (
       <div className="banner-warning">
         <AlertCircle size={16} />
-        <p style={{ margin: 0 }}>AI 요약을 사용할 수 없어 기본 분석 요약을 표시하고 있습니다.</p>
+        <p style={{ margin: 0 }}>AI 요약을 생성하지 못해 기본 분석 요약을 표시합니다.</p>
       </div>
     )
   }
@@ -501,7 +501,7 @@ export default function Report() {
         <div className="card empty-state">
           <AlertCircle size={42} color="#dc2626" />
           <p className="empty-title" style={{ marginTop: 16 }}>아직 보고서가 준비되지 않았어요.</p>
-          <p className="empty-desc">분석이 끝나면 결과를 한눈에 정리해 드립니다. {error}</p>
+          <p className="empty-desc">아직 분석 결과가 없습니다. CSV를 업로드하고 새 분석을 시작해 주세요.</p>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
             <Button variant="secondary" onClick={() => nav('/dashboard')}>대시보드로 이동</Button>
             <Button onClick={() => nav('/upload')}>새 분석 시작</Button>

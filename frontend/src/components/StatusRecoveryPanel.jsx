@@ -1,4 +1,5 @@
 import { AlertTriangle, CheckCircle2, Clock3, RotateCcw } from 'lucide-react'
+import { workflowStepLabel } from '../utils/userCopy'
 
 const tone = status => ({
   succeeded: ['#dcfce7', '#047857', CheckCircle2, '완료'],
@@ -25,7 +26,7 @@ export default function StatusRecoveryPanel({ status, limits, compact = false })
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 5 }}>
             <p style={{ margin: 0, fontSize: 13, fontWeight: 900, color: 'var(--text)' }}>작업 상태</p>
             <span className="badge" style={{ background: bg, color: fg }}>{label}</span>
-            {status?.current_step && <span style={{ fontSize: 12, color: 'var(--text-label)' }}>{status.current_step}</span>}
+            {status?.current_step && <span style={{ fontSize: 12, color: 'var(--text-label)' }}>{workflowStepLabel(status.current_step)}</span>}
           </div>
           <p style={{ margin: '0 0 6px', fontSize: 12, color: 'var(--text-2)', lineHeight: 1.55 }}>
             {status?.progress_message || '현재 분석 상태를 확인할 수 있습니다.'}

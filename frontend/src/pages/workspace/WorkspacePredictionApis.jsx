@@ -167,11 +167,11 @@ function ApiExamplePanel({ row }) {
     <section className="card" style={{ display: 'grid', gap: 12 }}>
       <p className="section-title">API 문서 미리보기</p>
       <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.6 }}>
-        실제 endpoint와 API 인증 정보는 프로젝트 상세 화면에서 확인하세요. 전체 인증 값은 생성 직후 한 번만 표시됩니다.
+        실제 API 주소와 API 인증 정보는 프로젝트 상세 화면에서 확인하세요. 전체 인증 값은 생성 직후 한 번만 표시됩니다.
       </p>
       <div className="workspace-grid two-columns">
         <div className="card-compact" style={{ display: 'grid', gap: 8 }}>
-          <strong>Endpoint</strong>
+          <strong>API 주소</strong>
           <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.55 }}>
             <code>POST {endpoint}</code>
           </p>
@@ -185,11 +185,11 @@ function ApiExamplePanel({ row }) {
       </div>
       <div className="workspace-grid two-columns">
         <div className="card-compact" style={{ display: 'grid', gap: 8 }}>
-          <strong>Request JSON</strong>
+          <strong>요청 예시</strong>
           <code style={{ whiteSpace: 'pre-wrap', fontSize: 12 }}>{payload}</code>
         </div>
         <div className="card-compact" style={{ display: 'grid', gap: 8 }}>
-          <strong>Response JSON</strong>
+          <strong>응답 예시</strong>
           <code style={{ whiteSpace: 'pre-wrap', fontSize: 12 }}>{responseExample}</code>
         </div>
       </div>

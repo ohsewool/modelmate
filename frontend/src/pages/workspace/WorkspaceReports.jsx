@@ -7,9 +7,9 @@ const statusLabel = status => ({
   ready: '분석 완료',
   succeeded: '분석 완료',
   metadata_available: '분석 완료',
-  needs_review: '검토 필요',
+  needs_review: '분석 완료 · 검토 필요',
   failed: '분석 실패',
-  running: '분석 중',
+  running: '보고서 생성 중',
 }[status] || '결과 확인 필요')
 
 const statusClass = status => {
@@ -28,7 +28,7 @@ function reportDataset(report) {
 }
 
 function reportTarget(report) {
-  return report.target || report.target_col || report.dataset?.target_col || report.project?.last_target || '타깃 확인 필요'
+  return report.target || report.target_col || report.dataset?.target_col || report.project?.last_target || '예측값 확인 필요'
 }
 
 function reportModel(report) {
@@ -84,7 +84,7 @@ export default function WorkspaceReports() {
           <p className="section-title" style={{ margin: 0 }}>보고서 목록</p>
           <div style={{ overflowX: 'auto' }}>
           <table className="data-table">
-            <thead><tr><th>보고서</th><th>데이터셋</th><th>타깃</th><th>유형</th><th>추천 모델</th><th>주요 지표</th><th>상태</th><th>다음 행동</th></tr></thead>
+            <thead><tr><th>보고서</th><th>데이터셋</th><th>예측값</th><th>유형</th><th>추천 모델</th><th>성능 지표</th><th>상태</th><th>다음 행동</th></tr></thead>
             <tbody>{safeReports.map((report, index) => (
               <tr key={`${report.project?.id}-${report.report_id || index}`}>
                 <td>

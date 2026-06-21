@@ -2,14 +2,14 @@ import { BarChart3, CheckCircle2, FileText, Sparkles } from 'lucide-react'
 import { Badge } from '../ui/badge'
 
 const fmt = value => {
-  if (value === null || value === undefined || value === '') return '-'
+  if (value === null || value === undefined || value === '') return '확인 필요'
   if (typeof value === 'number') return Number.isInteger(value) ? value : value.toFixed(4)
   return value
 }
 
 const metricLabel = key => ({ accuracy: '정확도', f1: 'F1', rmse: '오차', mae: '평균 오차', roc_auc: 'ROC-AUC', r2: 'R2' }[key] || key)
-const optStatusLabel = value => ({ ok: '개선 확인', improved: '개선 완료', no_change: '변화 없음', kept_original: '원래 모델 유지', skipped: '개선 생략', not_tunable: '개선 생략', failed: '개선 실패' }[value] || value || '-')
-const statusLabel = key => ({ dataset_uploaded: '데이터 업로드', target_selected: '정답 선택', cv_completed: '모델 비교 완료', model_ready: '모델 준비 완료', optuna_checked: '성능 개선 확인' }[key] || key.replaceAll('_', ' '))
+const optStatusLabel = value => ({ ok: '개선 확인', improved: '개선 완료', no_change: '변화 없음', kept_original: '기존 모델 유지', skipped: '성능 개선 생략', not_tunable: '성능 개선 생략', failed: '성능 개선 실패' }[value] || '성능 개선 확인 필요')
+const statusLabel = key => ({ dataset_uploaded: 'CSV 업로드', target_selected: '예측값 선택', cv_completed: '모델 비교 완료', model_ready: '모델 결과 준비', optuna_checked: '성능 개선 확인' }[key] || '분석 상태 확인')
 
 const tabs = [
   ['status', CheckCircle2, '진행'],

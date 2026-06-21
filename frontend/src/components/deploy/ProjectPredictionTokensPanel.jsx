@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { AlertCircle, CheckCircle2, Clipboard, KeyRound, RefreshCw, ShieldOff } from 'lucide-react'
 import api from '../../api'
 import { statusLabel } from '../workspace-shell/WorkspaceStates'
+import { apiReasonLabel } from '../../utils/userCopy'
 
 const fmt = value => value || '-'
 
@@ -42,7 +43,7 @@ export default function ProjectPredictionTokensPanel({ models = [] }) {
       setAvailability(res.data.availability || null)
       api.get('/me/usage').then(usageRes => setUsage(usageRes.data)).catch(() => setUsage(null))
     } catch (err) {
-      setMessage(err.response?.data?.detail?.user_friendly_message || '토큰 정보를 불러오지 못했습니다. 로그인 또는 프로젝트 소유권을 확인하세요.')
+      setMessage(err.response?.data?.detail?.user_friendly_message || 'API 인증 정보를 불러오지 못했습니다. 로그인과 프로젝트 권한을 확인해 주세요.')
     } finally {
       setLoading(false)
     }
@@ -118,14 +119,14 @@ print(response.json())`
           </p>
         </div>
         <span className={availability?.available ? 'badge badge-green' : 'badge badge-amber'}>
-          {availability?.available ? 'API 준비됨' : '준비 필요'}
+          {availability?.available ? 'API 연결 가능' : '검토 후 API 연결 가능'}
         </span>
       </div>
 
       <div className="banner-success" style={{ alignItems: 'flex-start' }}>
         {availability?.available ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
           <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)', lineHeight: 1.55 }}>
-            모델: {availability?.model_ready ? '준비됨' : '아직 없음'} · 데이터셋: {availability?.dataset_active ? '활성' : '삭제됨/없음'} · 상태: {fmt(availability?.reason)}
+            모델: {availability?.model_ready ? '결과 준비' : '결과 확인 필요'} · 데이터셋: {availability?.dataset_active ? '사용 가능' : '사용 불가'} · 상태: {apiReasonLabel(availability?.reason)}
             {tokenLimit !== undefined ? ` · 인증 정보 ${activeTokens}/${tokenLimit}` : ''}
           </p>
       </div>
@@ -144,7 +145,7 @@ print(response.json())`
         <button className="btn-primary" type="button" disabled={loading || !availability?.available || tokenLimitReached} onClick={createToken}>
           <KeyRound size={15} /> API 인증 정보 만들기
         </button>
-        <CopyButton value={endpoint} label="엔드포인트 복사" />
+        <CopyButton value={endpoint} label="API 주소 복사" />
       </div>
       {tokenLimitReached && (
         <p style={{ margin: 0, fontSize: 13, color: '#b45309' }}>

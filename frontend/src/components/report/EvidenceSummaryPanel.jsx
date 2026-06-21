@@ -1,7 +1,7 @@
 import { FileText } from 'lucide-react'
 
 const fmt = value => {
-  if (value === null || value === undefined || value === '') return '-'
+  if (value === null || value === undefined || value === '') return '확인 필요'
   if (typeof value === 'number') return Number.isInteger(value) ? value : value.toFixed(4)
   return value
 }
@@ -21,10 +21,10 @@ export default function EvidenceSummaryPanel({ summary, models, primaryMetric, f
   ].slice(0, 3)
 
   const items = [
-    ['선택 타깃', dataset.target_col || '-'],
+    ['예측 대상', dataset.target_col || '예측값 확인 필요'],
     ['예측 유형', taskLabel(dataset.task_type)],
-    ['최고 모델', summary?.model_selection?.best_model || '-'],
-    ['대표 지표', primaryMetric ? `${primaryMetric}: ${fmt(top[primaryMetric])}` : '-'],
+    ['추천 모델', summary?.model_selection?.best_model || '모델 결과를 불러올 수 없습니다'],
+    ['성능 지표', primaryMetric ? `${primaryMetric}: ${fmt(top[primaryMetric])}` : '성능 지표 확인 필요'],
     ['추천 다음 행동', business.next_actions?.[0] || business.recommended_decision || '이유 보기와 새 데이터 예측으로 이어가세요.'],
   ]
 
@@ -52,7 +52,7 @@ export default function EvidenceSummaryPanel({ summary, models, primaryMetric, f
           <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 900 }}>주요 변수</p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {(features || []).slice(0, 5).map(item => <span key={item.feature} className="badge badge-cyan">{item.feature}</span>)}
-            {!features?.length && <span style={{ fontSize: 12, color: 'var(--text-2)' }}>설명 근거가 아직 없습니다.</span>}
+            {!features?.length && <span style={{ fontSize: 12, color: 'var(--text-2)' }}>중요 요인 정보가 없습니다. 분석을 다시 실행해 주세요.</span>}
           </div>
         </div>
         <div>

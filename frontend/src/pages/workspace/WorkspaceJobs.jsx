@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { CopyButton, LoadingState, StatusBadge, WorkspacePageHeader } from '../../components/workspace-shell/WorkspaceStates'
 import { asArray, fmt, loadWorkspaceJobs } from './workspaceData'
+import { workflowStepLabel } from '../../utils/userCopy'
 
 function isFailed(job) {
   return job?.status === 'failed' || job?.error_type || job?.error_message
@@ -108,7 +109,7 @@ export default function WorkspaceJobs() {
                 </td>
                 <td>{job.project?.id ? <Link to={`/projects/${job.project.id}`}>{job.project?.name || job.project.id}</Link> : '-'}</td>
                 <td><StatusBadge status={job.status} /></td>
-                <td>{fmt(job.current_step || job.progress_message)}</td>
+                <td>{job.current_step ? workflowStepLabel(job.current_step) : fmt(job.progress_message)}</td>
                 <td>{fmt(job.started_at || job.created_at)}</td>
                 <td>{fmt(job.finished_at || job.completed_at || job.failed_at)}</td>
                 <td style={{ minWidth: 240 }}>

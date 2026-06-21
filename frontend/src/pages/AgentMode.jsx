@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { AlertTriangle, CheckCircle2, Clock3, Database, ListChecks, ShieldAlert, Upload } from 'lucide-react'
 import api from '../api'
 import { goalContext, goalTargetReason } from '../utils/goalContext'
+import { workflowStepLabel } from '../utils/userCopy'
 
 const STALE_CHURN_GOAL = '이 CSV로 고객 이탈 가능성을 예측하고 중요한 요인을 보고서로 정리해줘.'
 
@@ -11,9 +12,9 @@ function statusLabel(status) {
   if (status === 'limited') return '제한적 지원'
   if (status === 'unsupported') return '지원 범위 밖'
   if (['completed', 'succeeded', 'success'].includes(status)) return '분석 완료'
-  if (status === 'waiting_for_review') return '확인 필요'
+  if (status === 'waiting_for_review') return '분석 완료 · 검토 필요'
   if (status === 'running') return '분석 중'
-  if (status === 'failed') return '실패'
+  if (status === 'failed') return '분석 실패'
   if (status === 'blocked') return '사용자 확인 필요'
   if (status === 'planned') return '실행 예정'
   return '확인 필요'
@@ -209,8 +210,8 @@ function ScopePanel({ interpreted }) {
       {interpreted.unsupported_reason && <p style={{ color: 'var(--text-2)', lineHeight: 1.6 }}>{interpreted.unsupported_reason}</p>}
       {interpreted.planner && (
         <p style={{ color: 'var(--text-label)', fontSize: 12, marginBottom: 0 }}>
-          계획 방식: {interpreted.planner.planner_type === 'llm_assisted' ? 'LLM 보조' : '기본 규칙 기반'}
-          {interpreted.planner.fallback_reason ? ` · fallback: ${interpreted.planner.fallback_reason}` : ''}
+          계획 방식: {interpreted.planner.planner_type === 'llm_assisted' ? 'AI 보조' : '기본 규칙 기반'}
+          {interpreted.planner.fallback_reason ? ' · 기본 계획으로 안전하게 전환했습니다.' : ''}
         </p>
       )}
       {interpreted.warnings?.length > 0 && (
@@ -231,11 +232,11 @@ function PlanPreview({ plan }) {
         {plan.steps.map(step => (
           <div key={step.plan_step_id || step.order} className="card-compact" style={{ display: 'grid', gap: 6 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
-              <strong>{step.order}. {step.name}</strong>
+              <strong>{step.order}. {workflowStepLabel(step.name)}</strong>
               <span className="status-pill">{statusLabel(step.status || 'planned')}</span>
             </div>
             <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.55 }}>{step.purpose}</p>
-            <span style={{ color: 'var(--text-label)', fontSize: 12 }}>사용 도구: {step.tool_name || '미정'}</span>
+            <span style={{ color: 'var(--text-label)', fontSize: 12 }}>예정 작업: {workflowStepLabel(step.tool_name || step.name)}</span>
           </div>
         ))}
       </div>

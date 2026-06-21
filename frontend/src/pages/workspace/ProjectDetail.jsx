@@ -249,7 +249,7 @@ function RunsTab({ project, jobs, onRerun }) {
 }
 
 function ReportTab({ project, report }) {
-  if (!report) return <EmptyState title="아직 생성된 보고서가 없습니다." description="분석이 완료되면 보고서 요약과 export 동선을 여기에서 다시 열 수 있습니다." action={<Link className="btn-primary" to="/report">현재 보고서 화면 열기</Link>} />
+  if (!report) return <EmptyState title="생성된 보고서가 없습니다." description="모델 비교를 완료하면 보고서 요약과 내보내기 기능을 이용할 수 있습니다." action={<Link className="btn-primary" to="/report">보고서 화면 열기</Link>} />
   return (
     <section className="card" style={{ display: 'grid', gap: 12 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
@@ -269,7 +269,7 @@ function ReportTab({ project, report }) {
 function ApiTab({ data, onCreate }) {
   const availability = data.tokens?.availability
   const tokens = data.tokens?.tokens || []
-  const disabledReason = availability?.dataset_active === false ? '연결된 데이터셋이 삭제되어 예측 API를 사용할 수 없습니다.' : availability?.model_ready === false ? '모델이 아직 준비되지 않았습니다.' : fmt(availability?.reason)
+  const disabledReason = availability?.dataset_active === false ? '연결된 데이터셋이 삭제되어 예측 API를 사용할 수 없습니다.' : availability?.model_ready === false ? '모델 결과를 확인한 뒤 API를 연결할 수 있습니다.' : '검토 후 API 연결 가능'
   return (
     <section className="card" style={{ display: 'grid', gap: 12 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>

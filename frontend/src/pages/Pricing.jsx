@@ -18,7 +18,7 @@ const plans = [
     price: '$19-29/month',
     note: '파일럿 예정',
     planValue: 'pro_pilot',
-    items: ['더 큰 CSV 한도', '보고서 export', '더 많은 프로젝트', '더 많은 예측 API 호출', '프로젝트 재실행', '고급 evidence summary'],
+    items: ['더 큰 CSV 한도', '보고서 내보내기', '더 많은 프로젝트', '더 많은 예측 API 호출', '프로젝트 재실행', '고급 근거 요약'],
     highlight: true,
   },
   {

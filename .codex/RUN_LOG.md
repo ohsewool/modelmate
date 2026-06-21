@@ -2026,3 +2026,36 @@ Milestones:
   - Generic report cache is process-local `STATE`, consistent with the current application persistence model, not a distributed cache.
 - Next step:
   - Commit, push, let Railway redeploy, then verify enabled and disabled report states with production environment variables.
+
+## 2026-06-21 KST - PR-11 Korean UX Wording Polish
+
+- Status: completed
+- Branch: `main`
+- Scope:
+  - Clean user-facing Korean copy, status labels, empty-state guidance, report fallbacks, Prediction API wording, and Agent Mode plan labels without changing analysis behavior.
+- Files changed:
+  - `frontend/src/utils/userCopy.js`
+  - shared workspace status and recovery components
+  - report summary, evidence, trace, and side-panel components
+  - Agent Mode and Agent Run Detail pages
+  - Prediction API workspace/project panels
+  - pricing and workspace report/job pages
+  - generated frontend dist bundle
+- Implementation:
+  - Added centralized Korean labels for analysis statuses and workflow step identifiers so raw enum values are not rendered in default UI.
+  - Replaced `target`, `evidence`, `export`, `Endpoint`, `Request JSON`, `Response JSON`, and token-oriented user copy with consistent Korean terms.
+  - Replaced empty metric/model/feature placeholders with actionable fallback text and removed raw report API errors from the report empty state.
+  - Kept raw API field names, authentication header examples, internal variables, and real Agent trace records only where technically required.
+  - Updated optional AI summary failure text to the deterministic Korean fallback notice.
+- Verification:
+  - `python -m compileall backend`: passed.
+  - `python scripts/run_llm_foundation_qa.py`: passed.
+  - `python scripts/run_llm_report_writer_qa.py`: passed.
+  - `cd frontend && npm run build`: npm was unavailable on PATH; equivalent bundled Node/Vite production build passed (2,338 modules).
+  - Source and built-output user-copy scan: no user-visible `report export`, `evidence summary`, `model not ready`, raw Endpoint/Request/Response headings, or token error copy remained.
+  - `git diff --check`: passed.
+- Known limitations:
+  - Technical identifiers remain in API code samples, internal state keys, and the explicitly advanced Agent trace section by design.
+  - Browser-level authenticated scenario QA still requires the deployed Railway environment and representative saved projects.
+- Next step:
+  - Deploy the frontend bundle and verify dashboard, report, Prediction API, and Agent Mode copy against saved production data.
