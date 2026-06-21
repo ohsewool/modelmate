@@ -4,7 +4,7 @@ def clear_dataset_dependent_state_for_upload():
         "target_col", "drop_cols", "auto_drop_cols", "auto_drop_reasons",
         "cat_cols", "num_cols", "encoders", "target_encoder", "task_type",
         "n_unique_target", "col_labels", "optuna_result", "shap_values",
-        "shap_sample_idx", "current_dataset",
+        "shap_sample_idx", "current_dataset", "analysis_mode",
     ]:
         STATE.pop(key, None)
 
@@ -75,6 +75,7 @@ async def upload(file: UploadFile = File(...), user=Depends(get_current_user)):
         raise HTTPException(400, detail)
     clear_dataset_dependent_state_for_upload()
     STATE["df"] = df
+    STATE["analysis_mode"] = "new_analysis"
 
     cat_cols = df.select_dtypes(include=["object", "category"]).columns.tolist()
     num_cols = df.select_dtypes(include=["number"]).columns.tolist()

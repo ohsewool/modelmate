@@ -79,6 +79,7 @@ async def start_quick_analysis(body: QuickAnalysisBody, user=Depends(get_current
 
     clear_dataset_dependent_state_for_upload()
     STATE["df"] = df
+    STATE["analysis_mode"] = "quick_auto_analysis"
 
     default_target = infer_default_target(df)
     target_quality = infer_target_quality(df, default_target)

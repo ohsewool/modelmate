@@ -15,6 +15,7 @@ def _record_workspace_analysis_result(user, history_id, history_payload, best_na
         "metric_value": metric.get("value"),
         "model_count": len(results or []),
         "analysis_status": {"status": "succeeded", "current_step": "analysis_completed"},
+        "run_type": history_payload.get("analysis_mode") or "new_analysis",
     }
     analysis_run_id = f"experiment-{history_id}" if history_id else None
     try:
@@ -93,6 +94,7 @@ async def run_cv(user=Depends(get_current_user)):
                            "data_shape": list(X.shape), "target": STATE["target_col"],
                            "best_model": best_name, "results": results, "optuna_applied": False,
                            "dataset_ref": STATE.get("current_dataset"),
+                           "analysis_mode": STATE.get("analysis_mode") or "new_analysis",
                            "reuse_config": experiment_reuse_config(best_name, results, target_info),
                            "drop_cols": STATE.get("drop_cols", []),
                            "auto_drop_cols": STATE.get("auto_drop_cols", []),
@@ -174,6 +176,7 @@ async def run_cv(user=Depends(get_current_user)):
                        "data_shape": list(X.shape), "target": STATE["target_col"],
                        "best_model": best_name, "results": results, "optuna_applied": False,
                        "dataset_ref": STATE.get("current_dataset"),
+                       "analysis_mode": STATE.get("analysis_mode") or "new_analysis",
                        "reuse_config": experiment_reuse_config(best_name, results, target_info),
                        "drop_cols": STATE.get("drop_cols", []),
                        "auto_drop_cols": STATE.get("auto_drop_cols", []),

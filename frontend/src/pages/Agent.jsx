@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import api from '../api'
 import { Button } from '../components/ui/button'
 import { STARTER_PACKS } from '../data/starterPacks'
@@ -188,6 +188,8 @@ export default function Agent() {
   const [pendingRequest, setPendingRequest] = useState(null)
   const fileRef = useRef(null)
   const nav = useNavigate()
+  const [searchParams] = useSearchParams()
+  const requestedDatasetId = searchParams.get('dataset_id') || ''
 
   useEffect(() => {
     api.get('/datasets')
@@ -195,7 +197,11 @@ export default function Agent() {
       .catch(() => setDatasets([]))
   }, [])
 
-  const recentDatasets = useMemo(() => datasets.filter(item => !item.deleted_at).slice(0, 6), [datasets])
+  const recentDatasets = useMemo(() => datasets
+    .filter(item => !item.deleted_at)
+    .sort((a, b) => Number(String(b.id || b.dataset_id) === requestedDatasetId) - Number(String(a.id || a.dataset_id) === requestedDatasetId))
+    .slice(0, 6), [datasets, requestedDatasetId])
+  const requestedDataset = recentDatasets.find(item => String(item.id || item.dataset_id) === requestedDatasetId)
 
   async function startQuick(payload, stage = 'CSV 확인') {
     setError('')
@@ -297,6 +303,13 @@ export default function Agent() {
               <p className="section-title">최근 데이터셋으로 시작</p>
               <p style={{ margin: '4px 0 0', color: 'var(--text-2)', fontSize: 13 }}>최근 업로드한 CSV를 선택해 빠르게 분석합니다.</p>
             </div>
+            {requestedDataset && (
+              <div className="banner-info" style={{ display: 'grid', gap: 8 }}>
+                <strong>{requestedDataset.original_filename || requestedDataset.filename}을 선택했습니다.</strong>
+                <span style={{ color: 'var(--text-2)', fontSize: 13 }}>아래 버튼을 누르면 이 데이터셋으로 빠른 자동 분석을 시작합니다.</span>
+                <div><Button onClick={() => startQuick({ dataset_id: requestedDataset.id || requestedDataset.dataset_id, confirm_target: false }, 'CSV 확인')}>이 데이터셋으로 분석 시작</Button></div>
+              </div>
+            )}
             {recentDatasets.length ? (
               <div style={{ display: 'grid', gap: 10 }}>
                 {recentDatasets.map(dataset => (

@@ -444,6 +444,12 @@ async def list_workspace_jobs(user=Depends(get_current_user)):
 @app.post("/api/training/jobs/{job_id}/rerun")
 async def rerun_training_job(job_id: str, background_tasks: BackgroundTasks, user=Depends(get_current_user)):
     job = _get_training_job_owned(user, job_id)
+    if not job.get("dataset_id"):
+        raise HTTPException(409, {
+            "error_type": "job_dataset_reference_missing",
+            "user_friendly_message": "이 작업에 연결된 원본 데이터셋을 확인할 수 없어 안전하게 다시 실행할 수 없습니다.",
+            "recommended_next_action": "CSV를 다시 업로드하거나 데이터셋이 연결된 프로젝트 실행 기록을 선택해 주세요.",
+        })
     body = TrainingJobBody(
         project_id=job.get("project_id"),
         dataset_id=job.get("dataset_id"),
@@ -468,9 +474,20 @@ async def rerun_project_run(project_id: str, analysis_run_id: str, background_ta
         runs = _project_runs(conn, project_id, project["user_id"])
     finally:
         conn.close()
-    if not any(row.get("analysis_run_id") == analysis_run_id for row in runs):
+    source_run = next((row for row in runs if row.get("analysis_run_id") == analysis_run_id), None)
+    if not source_run:
         _resource_not_found()
-    body = TrainingJobBody(project_id=project_id, analysis_run_id=analysis_run_id)
+    if not source_run.get("dataset_id"):
+        raise HTTPException(409, {
+            "error_type": "run_dataset_reference_missing",
+            "user_friendly_message": "이 분석 기록에 연결된 원본 데이터셋을 확인할 수 없어 안전하게 다시 실행할 수 없습니다.",
+            "recommended_next_action": "CSV를 다시 업로드하거나 데이터셋이 연결된 최신 분석 기록을 선택해 주세요.",
+        })
+    body = TrainingJobBody(
+        project_id=project_id,
+        dataset_id=source_run.get("dataset_id"),
+        analysis_run_id=analysis_run_id,
+    )
     return _create_training_job_record(
         user,
         background_tasks,

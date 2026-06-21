@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import DemoDatasetGuide from '../../components/upload/DemoDatasetGuide'
 import { EmptyState, LoadingState, StatusBadge } from '../../components/workspace-shell/WorkspaceStates'
-import { asArray, fmt, loadWorkspaceOverview, primaryMetric, projectDatasetName, projectTarget } from './workspaceData'
+import { asArray, datasetDisplayName, fmt, formatTimestamp, loadWorkspaceOverview, primaryMetric, projectDatasetName, projectTarget, taskTypeLabel } from './workspaceData'
 
 function MetricCard({ label, value, sub }) {
   return <div className="metric-card"><p className="section-title">{label}</p><strong>{value}</strong><p style={{ margin: 0, color: 'var(--text-2)', fontSize: 12 }}>{sub}</p></div>
@@ -84,6 +84,44 @@ function RecommendedNextAction({ data, latestRun, nav }) {
   )
 }
 
+function DatasetList({ datasets, jobs, nav }) {
+  const latestJob = dataset => jobs.find(job => String(job.dataset_id || '') === String(dataset.id || dataset.dataset_id || ''))
+  return (
+    <section className="card workspace-section">
+      <div className="workspace-section-head">
+        <div><h2>최근 데이터셋</h2><p>업로드한 CSV를 다시 선택해 새 분석이나 빠른 분석을 시작할 수 있습니다.</p></div>
+        <button className="btn-secondary" onClick={() => nav('/upload')}>CSV 업로드</button>
+      </div>
+      <div className="table-scroll">
+        <table className="data-table">
+          <thead><tr><th>데이터셋</th><th>크기</th><th>최근 분석</th><th>최근 예측값</th><th>업로드</th><th>작업</th></tr></thead>
+          <tbody>{datasets.slice(0, 8).map(dataset => {
+            const datasetId = dataset.id || dataset.dataset_id
+            const job = latestJob(dataset)
+            const summary = job?.result_summary || {}
+            const projectId = dataset.project_id
+            return (
+              <tr key={datasetId}>
+                <td><strong>{datasetDisplayName(dataset)}</strong>{dataset.is_demo_dataset && <><br /><span className="badge badge-blue">샘플 데이터</span></>}</td>
+                <td>{fmt(dataset.row_count || dataset.rows)}행 · {fmt(dataset.column_count || dataset.columns)}열</td>
+                <td>{job ? <StatusBadge status={job.status} /> : <span style={{ color: 'var(--text-2)' }}>아직 분석하지 않음</span>}</td>
+                <td>{summary.target || dataset.target_col || '선택 전'}{summary.task_type && <><br /><span style={{ color: 'var(--text-label)' }}>{taskTypeLabel(summary.task_type)}</span></>}</td>
+                <td>{formatTimestamp(dataset.created_at)}</td>
+                <td><div className="table-actions">
+                  <button className="btn-secondary" onClick={() => nav('/upload')}>새 분석 시작</button>
+                  <button className="btn-secondary" onClick={() => nav(`/agent?dataset_id=${encodeURIComponent(datasetId)}`)}>빠른 자동 분석</button>
+                  <button className="btn-secondary" onClick={() => nav(`/agent-mode?dataset_id=${encodeURIComponent(datasetId)}${projectId ? `&project_id=${encodeURIComponent(projectId)}` : ''}`)}>목표 기반 분석</button>
+                  {projectId && <button className="btn-secondary" onClick={() => nav(`/projects/${projectId}?tab=runs`)}>분석 기록 보기</button>}
+                </div></td>
+              </tr>
+            )
+          })}</tbody>
+        </table>
+      </div>
+    </section>
+  )
+}
+
 export default function WorkspaceDashboard() {
   const nav = useNavigate()
   const [data, setData] = useState(null)
@@ -101,9 +139,19 @@ export default function WorkspaceDashboard() {
   const jobs = asArray(data.jobs).filter(Boolean)
   const history = asArray(data.history).filter(Boolean)
   const deployed = asArray(data.deployed).filter(Boolean)
+  const reports = asArray(data.reports).filter(Boolean)
   const recentProjects = projects.slice(0, 5)
   const activeJobs = jobs.filter(job => ['created', 'queued', 'running'].includes(job.status)).slice(0, 4)
-  const failedJobs = jobs.filter(job => job.status === 'failed' || job.error_type || job.error_message).slice(0, 4)
+  const allFailedJobs = jobs.filter(job => job.status === 'failed' || job.error_type || job.error_message)
+  const failedJobs = allFailedJobs.slice(0, 4)
+  const completedCount = Math.max(
+    jobs.filter(job => ['succeeded', 'success', 'completed'].includes(job.status)).length,
+    history.filter(run => ['succeeded', 'success', 'completed'].includes(run.status)).length,
+  )
+  const reviewCount = Math.max(
+    jobs.filter(job => job.status === 'needs_review').length,
+    history.filter(run => run.status === 'needs_review').length,
+  )
   const latestRun = history[0]
 
   return (
@@ -113,11 +161,19 @@ export default function WorkspaceDashboard() {
         onQuick={() => nav('/agent')}
         onGoal={() => nav('/agent-mode')}
       />
-      {projects.length === 0 ? (
+      <div className="workspace-summary-grid" style={{ marginBottom: 18 }}>
+        <MetricCard label="데이터셋" value={datasets.length} sub="업로드된 CSV" />
+        <MetricCard label="완료된 분석" value={completedCount} sub="저장된 실행 결과" />
+        <MetricCard label="생성된 보고서" value={reports.length} sub="확인 가능한 결과" />
+        <MetricCard label="예측 API" value={deployed.length} sub="연결된 모델" />
+        <MetricCard label="검토 필요" value={reviewCount} sub="사용자 확인 항목" />
+        <MetricCard label="분석 실패" value={allFailedJobs.length} sub="복구 확인 항목" />
+      </div>
+      {datasets.length === 0 ? (
         <div style={{ display: 'grid', gap: 14 }}>
           <EmptyState
-            title="아직 분석할 데이터가 없어요."
-            description="CSV를 올려 첫 분석을 시작하세요."
+            title="아직 업로드된 CSV가 없습니다."
+            description="CSV를 업로드하고 첫 분석을 시작해 주세요."
             action={<div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
               <button className="btn-primary" onClick={() => nav('/new')}>CSV 업로드</button>
               <button className="btn-secondary" onClick={() => nav('/agent')}>빠른 자동 분석</button>
@@ -128,12 +184,7 @@ export default function WorkspaceDashboard() {
         </div>
       ) : (
         <div style={{ display: 'grid', gap: 18 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 12 }} className="admin-stat-grid">
-            <MetricCard label="프로젝트" value={projects.length} sub="저장된 분석 공간" />
-            <MetricCard label="데이터셋" value={datasets.length} sub="활성 업로드" />
-            <MetricCard label="오늘 작업" value={data.usage?.usage?.jobs_today ?? 0} sub={data.usage?.plan_label || (data.usage?.plan === 'free' ? 'Free 플랜' : `${data.usage?.plan || 'Free'} 플랜`)} />
-            <MetricCard label="예측 API" value={deployed.length} sub="공유 모델 기록" />
-          </div>
+          <DatasetList datasets={datasets} jobs={jobs} nav={nav} />
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }} className="admin-detail-grid">
             <section className="card">

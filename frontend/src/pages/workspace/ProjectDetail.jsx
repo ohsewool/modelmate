@@ -3,10 +3,11 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { AlertTriangle, FileText, KeyRound, RefreshCw, Trash2 } from 'lucide-react'
 import api from '../../api'
 import { CopyButton, EmptyState, ErrorState, LoadingState, StatusBadge, WorkspacePageHeader } from '../../components/workspace-shell/WorkspaceStates'
-import { fmt, projectDatasetName, projectTarget } from './workspaceData'
+import { datasetDisplayName, fmt, formatTimestamp, projectDatasetName, projectTarget, runTypeLabel, taskTypeLabel } from './workspaceData'
 import {
   PROJECT_TABS,
   activeDataset,
+  datasetForRun,
   latestReport,
   latestRun,
   loadProjectDetail,
@@ -15,6 +16,7 @@ import {
   projectPrimaryAction,
   projectSummaryText,
   runMetric,
+  runIdentityWarning,
 } from './projectDetailData'
 
 function Stat({ label, value }) {
@@ -58,7 +60,7 @@ function Timeline({ items }) {
 }
 
 function FailurePanel({ run, project, onRerun }) {
-  const dataset = activeDataset(project)
+  const dataset = datasetForRun(project, run)
   const deleted = dataset?.deleted_at || dataset?.delete_status === 'deleted'
   if (!run || (run.status !== 'failed' && !deleted)) return null
   const title = deleted ? '연결된 데이터셋이 삭제되어 다시 실행할 수 없습니다.' : '분석을 완료하지 못했습니다.'
@@ -92,6 +94,7 @@ export default function ProjectDetail() {
   const [state, setState] = useState({ loading: true, error: '', data: null })
   const [message, setMessage] = useState('')
   const tab = search.get('tab') || 'overview'
+  const requestedRunId = search.get('run_id') || ''
 
   async function reload() {
     setState({ loading: true, error: '', data: null })
@@ -110,7 +113,9 @@ export default function ProjectDetail() {
   const project = data?.project
   const dataset = project ? activeDataset(project) : null
   const run = project ? latestRun(project) : null
-  const report = project ? latestReport(project) : null
+  const report = project
+    ? (requestedRunId ? (project.available_reports || []).find(item => item.analysis_run_id === requestedRunId) : latestReport(project))
+    : null
   const action = project ? projectPrimaryAction(project) : null
   const timeline = useMemo(() => run && project ? makeRunTimeline(run, project, data.jobs) : [], [run, project, data])
 
@@ -159,12 +164,12 @@ export default function ProjectDetail() {
     }
   }
 
-  if (state.loading) return <div style={{ padding: 24 }}><LoadingState label="프로젝트 정보를 불러오는 중입니다." /></div>
-  if (state.error) return <div style={{ padding: 24 }}><ErrorState message={state.error} /></div>
-  if (!project) return <div style={{ padding: 24 }}><EmptyState title="프로젝트가 없습니다." description="프로젝트 목록으로 돌아가 다시 선택하세요." action={<Link className="btn-primary" to="/projects">프로젝트 목록</Link>} /></div>
+  if (state.loading) return <div className="workspace-page"><LoadingState label="프로젝트 정보를 불러오는 중입니다." /></div>
+  if (state.error) return <div className="workspace-page"><ErrorState message={state.error} /></div>
+  if (!project) return <div className="workspace-page"><EmptyState title="프로젝트가 없습니다." description="프로젝트 목록으로 돌아가 다시 선택하세요." action={<Link className="btn-primary" to="/projects">프로젝트 목록</Link>} /></div>
 
   return (
-    <div className="animate-fade-in" style={{ padding: 24, maxWidth: 1180 }}>
+    <div className="workspace-page animate-fade-in">
       <WorkspacePageHeader
         eyebrow="프로젝트"
         title={project.name}
@@ -177,9 +182,9 @@ export default function ProjectDetail() {
       {message && <div className="banner-warning" style={{ marginBottom: 14 }}><p style={{ margin: 0, fontSize: 13 }}>{message}</p></div>}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, minmax(0, 1fr))', gap: 10, marginBottom: 18 }} className="admin-stat-grid">
         <Stat label="타깃" value={projectTarget(project)} />
-        <Stat label="작업 유형" value={project.last_task_type} />
+        <Stat label="작업 유형" value={taskTypeLabel(project.last_task_type)} />
         <Stat label="데이터셋" value={projectDatasetName(project)} />
-        <Stat label="최근 실행" value={project.last_run_id || project.last_job_id} />
+        <Stat label="마지막 업데이트" value={formatTimestamp(project.updated_at || project.created_at)} />
         <Stat label="추천 모델" value={project.last_best_model} />
         <Stat label="주요 지표" value={projectMetric(project)} />
       </div>
@@ -224,25 +229,29 @@ function RunsTab({ project, jobs, onRerun }) {
   const runs = project.analysis_runs || []
   if (!runs.length) return <EmptyState title="아직 실행 기록이 없습니다." description="분석을 시작하면 실행 기록이 이 프로젝트에 저장됩니다." action={<Link className="btn-primary" to="/new">분석 시작</Link>} />
   return (
-    <section className="card" style={{ overflowX: 'auto' }}>
+    <section className="card workspace-section">
+      <div className="workspace-section-head"><div><h2>분석 실행 기록</h2><p>각 실행은 당시 연결된 CSV와 결과를 기준으로 별도 보관됩니다.</p></div></div>
+      <div className="table-scroll">
       <table className="data-table">
-        <thead><tr><th>Run</th><th>상태</th><th>시작</th><th>모델</th><th>지표</th><th>경고</th><th>작업</th></tr></thead>
-        <tbody>{runs.map(run => (
-          <tr key={run.analysis_run_id}>
-            <td><strong>{run.analysis_run_id}</strong><br /><span style={{ color: 'var(--text-label)' }}>{run.source}</span></td>
+        <thead><tr><th>데이터셋 / 분석 유형</th><th>목표</th><th>상태</th><th>업데이트</th><th>모델 / 지표</th><th>작업</th></tr></thead>
+        <tbody>{runs.map(run => {
+          const runDataset = datasetForRun(project, run)
+          const identityWarning = runIdentityWarning(project, run)
+          return <tr key={run.analysis_run_id}>
+            <td><strong>{runDataset ? datasetDisplayName(runDataset) : '데이터셋 참조 확인 필요'}</strong><br /><span style={{ color: 'var(--text-label)' }}>{runTypeLabel(run)}</span></td>
+            <td><strong>{run.target || '예측값 확인 필요'}</strong><br /><span style={{ color: 'var(--text-label)' }}>{run.goal || taskTypeLabel(run.task_type)}</span></td>
             <td><StatusBadge status={run.status} /></td>
-            <td>{fmt(run.created_at)}</td>
-            <td>{fmt(run.best_model)}</td>
-            <td>{runMetric(run)}</td>
-            <td>{run.warnings_count || 0}</td>
-            <td style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <Link to={`/projects/${project.id}/runs/${run.analysis_run_id}`}>상세 보기</Link>
-              {run.report_id && <Link to={`/projects/${project.id}?tab=report`}>보고서</Link>}
-              <button className="btn-secondary" type="button" disabled={!run.can_rerun} onClick={() => onRerun(run.analysis_run_id)}>다시 실행</button>
-            </td>
+            <td>{formatTimestamp(run.updated_at || run.created_at)}</td>
+            <td><strong>{fmt(run.best_model)}</strong><br /><span style={{ color: 'var(--text-label)' }}>{runMetric(run)}</span></td>
+            <td><div className="table-actions">
+              <Link className="btn-primary" to={`/projects/${project.id}/runs/${run.analysis_run_id}`}>결과 보기</Link>
+              {run.report_id && <Link className="btn-secondary" to={`/projects/${project.id}?tab=report&run_id=${encodeURIComponent(run.analysis_run_id)}`}>보고서 보기</Link>}
+              <button className="btn-secondary" type="button" disabled={!run.can_rerun || !!identityWarning || !runDataset} onClick={() => onRerun(run.analysis_run_id)}>다시 실행</button>
+            </div>{identityWarning && <p style={{ margin: '6px 0 0', color: '#b45309', fontSize: 12 }}>{identityWarning}</p>}</td>
           </tr>
-        ))}</tbody>
+        })}</tbody>
       </table>
+      </div>
       {!!jobs.length && <p style={{ margin: '12px 0 0', color: 'var(--text-label)', fontSize: 12 }}>최근 job {jobs.length}개가 연결되어 있습니다.</p>}
     </section>
   )
@@ -259,8 +268,7 @@ function ReportTab({ project, report }) {
       <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.6 }}>추천 모델: {fmt(project.last_best_model)} / 주요 지표: {projectMetric(project)}</p>
       <p style={{ margin: 0, color: 'var(--text-label)', fontSize: 12 }}>{report.message || '보고서는 업로드된 데이터와 현재 검증 결과를 기반으로 합니다.'}</p>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        <Link className="btn-primary" to="/report"><FileText size={15} /> 전체 보고서 보기</Link>
-        <Link className="btn-secondary" to={`/projects/${project.id}/runs/${report.analysis_run_id}`}>관련 실행 보기</Link>
+        <Link className="btn-primary" to={`/projects/${project.id}/runs/${report.analysis_run_id}`}><FileText size={15} /> 관련 실행 보기</Link>
       </div>
     </section>
   )

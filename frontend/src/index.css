@@ -162,6 +162,23 @@ html.dark {
     line-height: 1.15;
     overflow-wrap: anywhere;
   }
+  .workspace-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+    gap: 12px;
+  }
+  .table-actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    min-width: 250px;
+  }
+  .table-actions .btn-secondary,
+  .table-actions .btn-primary {
+    min-height: 34px;
+    padding: 7px 10px;
+    font-size: 12px;
+  }
   .table-scroll {
     width: 100%;
     overflow-x: auto;

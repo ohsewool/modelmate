@@ -2090,3 +2090,36 @@ Milestones:
   - The existing frontend bundle remains larger than Vite's 500 kB advisory threshold; code splitting was outside this visual-polish scope.
 - Next step:
   - Commit and push, allow Railway to redeploy, then visually verify desktop and mobile widths with representative empty and populated accounts.
+
+## 2026-06-21 KST - PR-13 Workspace, Projects, and Analysis History
+
+- Status: completed
+- Branch: `main`
+- Scope:
+  - Improve the authenticated workspace overview, dataset/project history, run detail, filtering, and safe rerun behavior using persisted project, dataset, run, report, job, and Prediction API records.
+- Files changed:
+  - backend upload, analysis run, workspace project, training job, and quick-analysis route parts
+  - workspace dashboard, projects, jobs, project detail, run detail, shared data helpers, Agent entry page, and shared CSS
+  - generated frontend dist bundle
+- Implementation:
+  - Added persisted dataset and project identity fields to run history and Agent run summaries, including dataset name, row/column counts, run type, target, task type, and timestamps.
+  - Fixed report history to resolve the dataset attached to each source run instead of attaching the project's newest dataset.
+  - Added project summary counts for datasets, reports, and Prediction APIs and exposed recent real datasets and analysis history on the dashboard.
+  - Added Korean status/type filters, latest-first ordering, dataset and target context, model/metric summaries, and safe actions to project and job history.
+  - Added exact run-to-dataset identity checks to project/run detail views. Legacy runs without an unambiguous dataset reference show a warning and do not expose unsafe result or rerun actions.
+  - Rerun endpoints now require the persisted source dataset reference and return a friendly conflict response instead of falling back to process-global or newer dataset state.
+  - Kept new analysis, quick automatic analysis, goal-based analysis, and rerun labels distinct while preserving existing upload and analysis routes.
+- Verification:
+  - Bundled Python `-m compileall backend`: passed.
+  - Direct syntax compilation of backend route parts: passed.
+  - Bundled Node/Vite production build: passed (2,339 modules).
+  - Static contract checks for dashboard datasets/summaries, job filters, run identity, safe rerun, and auth guard: passed.
+  - Unsafe route scan: no `/undefined`, `/agent-mode/undefined`, `/reports/undefined`, or `/prediction-apis/undefined` references found.
+  - `git diff --check`: passed apart from existing line-ending conversion notices.
+  - Full FastAPI integration QA could not run in the available Python runtimes because `fastapi` is not installed (`ModuleNotFoundError`). No dependency was added for this PR.
+- Known limitations:
+  - Legacy runs that never persisted a dataset reference are intentionally blocked from rerun when identity cannot be proven.
+  - Authenticated multi-user browser verification with populated production history remains a post-deploy Railway check.
+  - The existing frontend bundle remains above Vite's 500 kB advisory threshold; code splitting is outside this PR.
+- Next step:
+  - Commit and push, allow Railway to redeploy, then verify a saved dataset, project history, exact run detail, report link, Prediction API link, and same-dataset rerun with an authenticated production account.

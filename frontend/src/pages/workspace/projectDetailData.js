@@ -29,6 +29,23 @@ export function activeDataset(project) {
   return (project?.datasets || []).find(item => !item.deleted_at && item.delete_status !== 'deleted') || project?.dataset_summary || null
 }
 
+export function datasetForRun(project, run) {
+  const datasets = (project?.datasets || []).filter(Boolean)
+  if (run?.dataset_id) {
+    return datasets.find(item => String(item.dataset_id || item.id) === String(run.dataset_id)) || null
+  }
+  return datasets.length === 1 ? datasets[0] : null
+}
+
+export function runIdentityWarning(project, run) {
+  if (!run) return '분석 실행 정보를 찾을 수 없습니다.'
+  const dataset = datasetForRun(project, run)
+  if (!run.dataset_id && (project?.datasets || []).length > 1) return '이전 분석에 사용한 데이터셋 참조가 없어 현재 프로젝트의 다른 결과와 섞이지 않도록 상세 결과를 제한합니다.'
+  if (run.dataset_id && !dataset) return '현재 분석 기록과 일치하지 않는 결과는 표시하지 않습니다.'
+  if (run.project_id && String(run.project_id) !== String(project?.id || project?.project_id)) return '현재 분석 기록과 일치하지 않는 결과는 표시하지 않습니다.'
+  return ''
+}
+
 export function latestRun(project) {
   return (project?.analysis_runs || [])[0] || null
 }
@@ -41,7 +58,12 @@ export function projectPrimaryAction(project) {
   const dataset = activeDataset(project)
   if (!dataset) return { label: '데이터로 분석', path: '/new', disabled: false }
   if (dataset.deleted_at || dataset.delete_status === 'deleted') return { label: '삭제된 데이터셋', path: null, disabled: true }
-  if (project.last_run_id) return { label: '같은 설정으로 재실행', runId: project.last_run_id, disabled: false }
+  if (project.last_run_id) {
+    const run = latestRun(project)
+    const runDataset = datasetForRun(project, run)
+    if (!runDataset || runIdentityWarning(project, run)) return { label: '실행 기록 확인', path: `/projects/${project.id}?tab=runs`, disabled: false }
+    return { label: '같은 설정으로 재실행', runId: project.last_run_id, disabled: false }
+  }
   return { label: '분석 시작', path: '/new', disabled: false }
 }
 
@@ -54,7 +76,7 @@ export function projectSummaryText(project) {
 
 export function runMetric(run) {
   return run?.metric_value === undefined || run?.metric_value === null
-    ? '-'
+    ? '성능 지표 확인 필요'
     : `${run.metric_name || 'metric'}: ${Number(run.metric_value).toFixed(4)}`
 }
 
@@ -67,6 +89,7 @@ export function runFromProject(project, runId) {
 }
 
 export function makeRunTimeline(run, project, jobs = []) {
+  const runDataset = datasetForRun(project, run)
   const job = jobs.find(item => item.analysis_run_id === run?.analysis_run_id || item.source_run_id === run?.analysis_run_id)
   const status = run?.status || job?.status || 'unknown'
   const failed = status === 'failed'
@@ -81,9 +104,9 @@ export function makeRunTimeline(run, project, jobs = []) {
     },
     {
       name: '데이터 구조 분석',
-      status: project?.dataset_summary ? 'succeeded' : 'unknown',
-      observation: project?.dataset_summary ? `${fmt(project.dataset_summary.rows || project.dataset_summary.row_count)}행 / ${fmt(project.dataset_summary.columns || project.dataset_summary.column_count)}열` : unavailable,
-      decision: project?.dataset_summary?.deleted_at ? '데이터셋 삭제로 재실행 제한' : '학습 가능한 데이터셋으로 기록됨',
+      status: runDataset ? 'succeeded' : 'unknown',
+      observation: runDataset ? `${runDataset.original_filename || runDataset.filename} · ${fmt(runDataset.rows || runDataset.row_count)}행 / ${fmt(runDataset.columns || runDataset.column_count)}열` : unavailable,
+      decision: runDataset?.deleted_at ? '데이터셋 삭제로 재실행 제한' : (runDataset ? '이 실행에 연결된 데이터셋 확인' : '데이터셋 참조 확인 필요'),
     },
     {
       name: '스키마 검증',
@@ -139,7 +162,7 @@ export function makeRunTimeline(run, project, jobs = []) {
 }
 
 export function failureMessage(run, project) {
-  const dataset = activeDataset(project)
+  const dataset = datasetForRun(project, run)
   if (dataset?.deleted_at || dataset?.delete_status === 'deleted') {
     return {
       title: '데이터셋이 삭제되어 다시 실행할 수 없습니다.',
