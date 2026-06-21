@@ -2207,3 +2207,31 @@ Milestones:
   - Static Korean-copy scanning intentionally targets critical raw enum exposure and does not replace human wording review.
 - Next step:
   - Fill `.codex/FINAL_QA_TEMPLATE.md` during the next release candidate and attach browser evidence for the remaining manual checks.
+
+## 2026-06-22 KST - Hotfix-01 Final QA Sweep
+
+- Status: completed with one minimal stabilization fix
+- Branch: `main`
+- Concrete issue found:
+  - `AgentRunDetail.collectTopFeatures()` accepted feature names when trace dataset column metadata was absent because `isKnownDatasetColumn()` treats unknown column lists as compatible for general route recovery.
+  - That behavior could expose a stale fallback feature such as `BMI`, `Glucose`, or `Age` in an unrelated run when old trace text remained available.
+- Fix:
+  - Added a strict `isVerifiedDatasetColumn()` check for important-feature rendering only.
+  - Explicit and fallback feature names now render only when present in the attached trace dataset column list.
+  - Added the rule to `scripts/check_frontend_qa_contracts.py`.
+- Verification:
+  - Backend compile: passed.
+  - Backend import/start: not verified in bundled Python because `fastapi` is not installed (`ModuleNotFoundError`). Production `/api/health` passed through remote smoke.
+  - Target recommendation QA: 7/7 passed.
+  - Frontend QA contracts: passed.
+  - LLM foundation and report-writer fallback QA: passed.
+  - Local sample CSV gate: 10 passed, remote portion skipped without URL.
+  - Remote product smoke: 15/15 passed with training intentionally skipped.
+  - Remote sample CSV gate: 20/20 passed; all download routes returned valid `text/csv`.
+  - Frontend production build: passed (2,339 modules); existing bundle-size advisory remains non-blocking.
+- Manual checks remaining:
+  - Logged-in browser navigation for all protected routes.
+  - Dataset A -> B visual state isolation across report/API/history.
+  - Full model training and final report/API UX were not run in this sweep.
+- Next step:
+  - Deploy the new frontend bundle and verify an Agent Run with missing legacy column metadata shows no unverified important-feature names.

@@ -19,6 +19,7 @@ def main() -> int:
     home = (SRC / "pages" / "Home.jsx").read_text(encoding="utf-8")
     login = (SRC / "pages" / "Login.jsx").read_text(encoding="utf-8")
     upload = (SRC / "pages" / "Upload.jsx").read_text(encoding="utf-8")
+    agent_run_detail = (SRC / "pages" / "AgentRunDetail.jsx").read_text(encoding="utf-8")
 
     require(app, "function RequireAuth", "protected route guard")
     require(app, "encodeURIComponent(redirect)", "original route redirect")
@@ -40,6 +41,13 @@ def main() -> int:
         "setModelResult(null)",
     ):
         require(upload, setter, f"dataset-dependent state reset: {setter}")
+
+    require(agent_run_detail, "function isVerifiedDatasetColumn", "verified trace feature columns")
+    require(
+        agent_run_detail,
+        "explicit.filter(name => isVerifiedDatasetColumn(trace, name))",
+        "trace features filtered by current dataset columns",
+    )
 
     source_files = list(SRC.rglob("*.jsx")) + list(SRC.rglob("*.js"))
     undefined_routes: list[str] = []

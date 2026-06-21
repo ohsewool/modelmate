@@ -148,6 +148,11 @@ function isKnownDatasetColumn(trace, column) {
   return columns.includes(String(column))
 }
 
+function isVerifiedDatasetColumn(trace, column) {
+  const columns = traceDatasetColumns(trace)
+  return Boolean(column && columns.length && columns.includes(String(column)))
+}
+
 function traceInvariantWarning(run, trace) {
   const dataset = trace?.dataset || trace?.dataset_info || {}
   const runDatasetId = run?.dataset_id
@@ -286,9 +291,9 @@ function collectTopFeatures(trace) {
     Object.values(value).forEach(visit)
   }
   visit(trace)
-  if (explicit.length) return explicit.filter(name => isKnownDatasetColumn(trace, name))
+  if (explicit.length) return explicit.filter(name => isVerifiedDatasetColumn(trace, name))
   const fallback = ['BMI', 'Glucose', 'Age', 'tenure', 'monthly_fee', 'price', 'demand', 'revenue']
-  return fallback.filter(name => text.includes(name.toLowerCase()) && isKnownDatasetColumn(trace, name)).slice(0, 3)
+  return fallback.filter(name => text.includes(name.toLowerCase()) && isVerifiedDatasetColumn(trace, name)).slice(0, 3)
 }
 
 function detectGoalDatasetMismatch(run, trace) {
