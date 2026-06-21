@@ -161,10 +161,12 @@ def ensure_agent_trace_schema(conn: sqlite3.Connection) -> None:
             title TEXT NOT NULL,
             route TEXT,
             status TEXT NOT NULL,
+            payload_json TEXT,
             created_at TEXT NOT NULL,
             FOREIGN KEY (analysis_run_id) REFERENCES analysis_runs(id)
         )
     """)
+    _add_column_once(conn, "artifacts", "payload_json", "TEXT")
     conn.execute("""
         CREATE TABLE IF NOT EXISTS human_review_requests (
             id TEXT PRIMARY KEY,
@@ -725,6 +727,7 @@ def create_artifact(
     project_id: str | None = None,
     run_id: str | None = None,
     route: str | None = None,
+    payload: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     ensure_agent_trace_schema(conn)
     row = {
@@ -736,13 +739,14 @@ def create_artifact(
         "title": title,
         "route": route,
         "status": status,
+        "payload": payload or {},
         "created_at": _now_iso(),
     }
     conn.execute(
         """
         INSERT INTO artifacts
-            (id, analysis_run_id, project_id, run_id, artifact_type, title, route, status, created_at)
-        VALUES (?,?,?,?,?,?,?,?,?)
+            (id, analysis_run_id, project_id, run_id, artifact_type, title, route, status, payload_json, created_at)
+        VALUES (?,?,?,?,?,?,?,?,?,?)
         """,
         (
             row["id"],
@@ -753,6 +757,7 @@ def create_artifact(
             row["title"],
             row["route"],
             row["status"],
+            _json(row["payload"]),
             row["created_at"],
         ),
     )
@@ -912,7 +917,7 @@ def get_analysis_timeline(conn: sqlite3.Connection, analysis_run_id: str) -> dic
         "observations": [_decode_json_row(row, "evidence_json", "evidence") for row in observations],
         "decisions": [_decode_decision(row) for row in decisions],
         "validations": [_decode_validation(row) for row in validations],
-        "artifacts": [dict(row) for row in artifacts],
+        "artifacts": [_decode_json_row(row, "payload_json", "payload") for row in artifacts],
         "human_reviews": [_decode_review(row) for row in reviews],
         "timeline": _merge_timeline(steps, tool_calls, observations, decisions, validations, artifacts, reviews),
     }

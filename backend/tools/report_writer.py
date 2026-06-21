@@ -1,13 +1,11 @@
-"""Grounded report writer tool for PR-10.
-
-The report is generated only from supplied evidence. It does not call an LLM.
-"""
+"""Grounded report writer with optional LLM-enhanced wording."""
 
 from __future__ import annotations
 
 from typing import Any
 
 from backend.tools.report_center import build_temporary_report_id
+from backend.services.llm_service import fallback_summary, generate_structured_summary, is_llm_available
 
 
 LIMITATION_TEXT = "모델 성능과 설명은 업로드된 데이터와 현재 검증 결과에 기반합니다."
@@ -53,6 +51,37 @@ def report_writer_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     if tone != "confident":
         summary += " 일부 evidence가 부족하므로 신중한 해석이 필요합니다."
 
+    model_summary = evidence.get("model_summary") or {}
+    best_model = model_summary.get("best_model") if isinstance(model_summary, dict) else None
+    valid_result = bool(target and (best_model or metric_summary))
+    llm_payload = {
+        "user_goal": evidence.get("user_goal"),
+        "goal_category": evidence.get("goal_category"),
+        "dataset_name": evidence.get("dataset_name"),
+        "row_count": evidence.get("row_count"),
+        "column_count": evidence.get("column_count"),
+        "target_column": target,
+        "problem_type": task,
+        "target_recommendation_reason": evidence.get("target_recommendation_reason"),
+        "confidence_level": evidence.get("confidence_level"),
+        "best_model": best_model or evidence.get("best_model"),
+        "metrics": metric_summary,
+        "compared_models": model_summary.get("models", []) if isinstance(model_summary, dict) else [],
+        "important_features": evidence.get("top_features") or [],
+        "review_status": validation.get("validation_status") or evidence.get("review_status"),
+        "api_readiness_status": evidence.get("api_readiness_status") or evidence.get("deployment_status"),
+        "warning_flags": [
+            *list(evidence.get("data_quality_warnings") or []),
+            *list(evidence.get("leakage_warnings") or []),
+            *list(evidence.get("limitations") or []),
+        ],
+    }
+    if valid_result and is_llm_available():
+        llm_summary = generate_structured_summary(llm_payload)
+    else:
+        reason = "insufficient_analysis_result" if not valid_result else "unavailable"
+        llm_summary = fallback_summary(reason, summary)
+
     sections = [
         _section("분석 목표", _text(evidence.get("user_goal"), "사용자 목표 evidence 없음"), ["user_goal"]),
         _section("데이터 개요", _text(evidence.get("data_summary"), "데이터 개요 evidence 없음"), ["data_summary"]),
@@ -67,6 +96,18 @@ def report_writer_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     ]
 
     markdown = "\n\n".join([f"# {title}", summary] + [f"## {row['title']}\n{row['content']}" for row in sections])
+    if llm_summary.get("used_llm"):
+        enhanced_sections = [
+            _section("AI 분석 요약", llm_summary["summary"], ["llm_summary"]),
+            _section("목표 기반 해석", llm_summary["goal_interpretation"], ["user_goal", "llm_summary"]),
+            _section("모델 결과 해석", llm_summary["model_interpretation"], ["model_summary", "metric_summary", "llm_summary"]),
+            _section("중요 요인 설명", llm_summary["important_factor_explanation"], ["top_features", "llm_summary"]),
+            _section("다음 행동 제안", "\n".join(f"- {item}" for item in llm_summary["next_actions"]), ["llm_summary"]),
+            _section("주의사항", "\n".join(f"- {item}" for item in llm_summary["cautions"]), ["llm_summary"]),
+            _section("검토 및 API 안내", "\n".join(filter(None, [llm_summary["review_note"], llm_summary["api_note"]])), ["validation_result", "llm_summary"]),
+        ]
+        sections = enhanced_sections + sections
+        markdown = "\n\n".join([f"# {title}", summary] + [f"## {row['title']}\n{row['content']}" for row in sections])
     report_id = build_temporary_report_id(evidence)
     return {
         "success": validation.get("validation_status") != "invalid",
@@ -74,6 +115,7 @@ def report_writer_tool(arguments: dict[str, Any]) -> dict[str, Any]:
         "report_format": "markdown",
         "title": title,
         "summary": summary,
+        "llm_summary": llm_summary,
         "sections": sections,
         "markdown": markdown,
         "limitations": limitations,

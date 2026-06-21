@@ -25,18 +25,24 @@ ANALYSIS_SUMMARY_SCHEMA: dict[str, Any] = {
     "properties": {
         "summary": {"type": "string"},
         "goal_interpretation": {"type": "string"},
+        "model_interpretation": {"type": "string"},
         "important_factor_explanation": {"type": "string"},
         "next_actions": {"type": "array", "items": {"type": "string"}},
         "cautions": {"type": "array", "items": {"type": "string"}},
         "confidence_note": {"type": "string"},
+        "review_note": {"type": "string"},
+        "api_note": {"type": "string"},
     },
     "required": [
         "summary",
         "goal_interpretation",
+        "model_interpretation",
         "important_factor_explanation",
         "next_actions",
         "cautions",
         "confidence_note",
+        "review_note",
+        "api_note",
     ],
 }
 
@@ -102,18 +108,41 @@ def build_analysis_context(run_result: dict[str, Any] | None) -> dict[str, Any]:
         elif isinstance(item, str):
             safe_features.append({"name": item, "score": None})
 
+    compared_models = []
+    for item in source.get("compared_models", [])[:10] if isinstance(source.get("compared_models"), list) else []:
+        if isinstance(item, dict):
+            compared_models.append({
+                str(key): value
+                for key, value in item.items()
+                if key in {"model", "name", "accuracy", "f1", "roc_auc", "r2", "rmse", "mae"}
+                and isinstance(value, (str, int, float, bool))
+            })
+    metrics_source = source.get("metrics") if isinstance(source.get("metrics"), dict) else metric
+    safe_metrics = {
+        str(key): value
+        for key, value in metrics_source.items()
+        if isinstance(value, (str, int, float, bool))
+    }
+    best_model = source.get("best_model") or model.get("name")
+    if isinstance(best_model, dict):
+        best_model = best_model.get("name") or best_model.get("model")
     context = {
         "user_goal": source.get("user_goal"),
+        "goal_category": source.get("goal_category"),
         "dataset_name": source.get("dataset_name") or dataset.get("filename") or dataset.get("name"),
         "row_count": source.get("row_count") if source.get("row_count") is not None else dataset.get("row_count"),
         "column_count": source.get("column_count") if source.get("column_count") is not None else dataset.get("column_count"),
         "target_column": source.get("target_column") or dataset.get("target_column") or dataset.get("target_col"),
         "problem_type": source.get("problem_type") or source.get("task_type"),
-        "best_model": source.get("best_model") or model.get("name"),
-        "metrics": source.get("metrics") if isinstance(source.get("metrics"), dict) else metric,
+        "best_model": best_model,
+        "target_recommendation_reason": source.get("target_recommendation_reason"),
+        "confidence_level": source.get("confidence_level"),
+        "metrics": safe_metrics,
+        "compared_models": compared_models,
         "important_features": safe_features,
         "review_status": source.get("review_status") or source.get("status"),
-        "warning_flags": source.get("warning_flags") if isinstance(source.get("warning_flags"), list) else [],
+        "api_readiness_status": source.get("api_readiness_status"),
+        "warning_flags": [str(item)[:500] for item in source.get("warning_flags", [])[:20]] if isinstance(source.get("warning_flags"), list) else [],
     }
     compact = {key: value for key, value in context.items() if value not in (None, "", [], {})}
     max_chars = _env_int("LLM_MAX_INPUT_CHARS", DEFAULT_MAX_INPUT_CHARS)
@@ -127,6 +156,7 @@ def build_analysis_context(run_result: dict[str, Any] | None) -> dict[str, Any]:
         "problem_type": compact.get("problem_type"),
         "best_model": compact.get("best_model"),
         "metrics": compact.get("metrics", {}),
+        "compared_models": compared_models[:5],
         "important_features": safe_features[:5],
         "review_status": compact.get("review_status"),
         "warning_flags": compact.get("warning_flags", [])[:10],
@@ -146,6 +176,9 @@ def fallback_summary(reason: str = "unavailable", fallback_text: str | None = No
         "next_actions": [],
         "cautions": ["AI 설명 기능은 현재 비활성화되어 있습니다."],
         "confidence_note": "기존 규칙 기반 분석 결과를 확인해 주세요.",
+        "model_interpretation": "",
+        "review_note": "",
+        "api_note": "",
     }
 
 
@@ -153,7 +186,15 @@ def validate_structured_summary(value: Any) -> dict[str, Any] | None:
     if not isinstance(value, dict):
         return None
     normalized: dict[str, Any] = {}
-    for field in ("summary", "goal_interpretation", "important_factor_explanation", "confidence_note"):
+    for field in (
+        "summary",
+        "goal_interpretation",
+        "model_interpretation",
+        "important_factor_explanation",
+        "confidence_note",
+        "review_note",
+        "api_note",
+    ):
         if not isinstance(value.get(field), str):
             return None
         normalized[field] = value[field].strip()
@@ -165,7 +206,7 @@ def validate_structured_summary(value: Any) -> dict[str, Any] | None:
     return normalized
 
 
-def call_llm_json(prompt: str, schema: dict[str, Any]) -> dict[str, Any]:
+def call_llm_json(prompt: str, schema: dict[str, Any], instructions: str | None = None) -> dict[str, Any]:
     status = get_llm_status()
     if not status["available"]:
         return fallback_summary(status["reason"] or "unavailable")
@@ -177,6 +218,7 @@ def call_llm_json(prompt: str, schema: dict[str, Any]) -> dict[str, Any]:
         )
         response = client.responses.create(
             model=status["model"],
+            instructions=instructions,
             input=prompt,
             text={
                 "format": {
@@ -203,12 +245,14 @@ def call_llm_json(prompt: str, schema: dict[str, Any]) -> dict[str, Any]:
 
 def generate_structured_summary(input_payload: dict[str, Any]) -> dict[str, Any]:
     context = build_analysis_context(input_payload)
-    prompt = (
-        "다음은 CSV 예측 분석의 요약 메타데이터입니다. 원본 행을 추측하거나 근거 없는 사실을 추가하지 말고, "
-        "제공된 값만 사용해 한국어 분석 요약을 JSON schema에 맞춰 작성하세요.\n"
-        + json.dumps(context, ensure_ascii=False, default=str)
+    prompt = "분석 메타데이터:\n" + json.dumps(context, ensure_ascii=False, default=str)
+    instructions = (
+        "당신은 CSV 예측 분석 보고서 작성 보조자입니다. 반드시 한국어로 간결하게 작성하고, 제공된 구조화 메타데이터만 사용하세요. "
+        "모델명, 예측값, 성능 지표, 중요 요인을 만들거나 추측하지 마세요. 비전문가도 이해할 수 있게 설명하되 예측을 보장하거나 "
+        "운영 준비가 완료되었다고 과장하지 마세요. review_status가 검토 필요이면 사용 전 검토 항목을 review_note에 명시하고, "
+        "api_readiness_status에 따라 API 사용 가능 여부를 api_note에 정확히 설명하세요. 목표와 데이터가 맞지 않는 경고가 있으면 이를 숨기지 마세요."
     )
-    return call_llm_json(prompt, ANALYSIS_SUMMARY_SCHEMA)
+    return call_llm_json(prompt, ANALYSIS_SUMMARY_SCHEMA, instructions=instructions)
 
 
 def _safe_error_reason(exc: Exception) -> str:

@@ -353,6 +353,65 @@ function GoalBasedReportContext({ run }) {
   )
 }
 
+function extractAgentLlmSummary(trace) {
+  const reportArtifact = (trace?.artifacts || []).find(item => item.artifact_type === 'report' && item.payload?.llm_summary)
+  return reportArtifact?.payload?.llm_summary || null
+}
+
+function AiReportSummary({ data }) {
+  if (!data) return null
+  if (!data.used_llm) {
+    return (
+      <div className="banner-warning">
+        <AlertCircle size={16} />
+        <p style={{ margin: 0 }}>AI 요약을 사용할 수 없어 기본 분석 요약을 표시하고 있습니다.</p>
+      </div>
+    )
+  }
+  const sections = [
+    ['분석 목표 해석', data.goal_interpretation],
+    ['모델 결과 해석', data.model_interpretation],
+    ['중요 요인 설명', data.important_factor_explanation],
+    ['검토 안내', data.review_note],
+    ['API 연결 안내', data.api_note],
+  ].filter(([, value]) => value)
+  return (
+    <section className="card" style={{ display: 'grid', gap: 14, borderColor: 'rgba(37,99,235,0.22)' }}>
+      <div>
+        <p className="section-title" style={{ color: '#2563eb' }}>AI 분석 요약</p>
+        <p style={{ margin: '8px 0 0', color: 'var(--text-2)', lineHeight: 1.7 }}>{data.summary}</p>
+      </div>
+      <div className="workspace-grid two-columns" style={{ alignItems: 'start' }}>
+        {sections.map(([title, content]) => (
+          <div key={title} className="card-compact" style={{ display: 'grid', gap: 6 }}>
+            <strong>{title}</strong>
+            <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.6 }}>{content}</p>
+          </div>
+        ))}
+      </div>
+      {!!data.next_actions?.length && (
+        <div>
+          <strong>다음 행동 제안</strong>
+          <ul style={{ margin: '8px 0 0', paddingLeft: 20, color: 'var(--text-2)', lineHeight: 1.7 }}>
+            {data.next_actions.map(item => <li key={item}>{item}</li>)}
+          </ul>
+        </div>
+      )}
+      {!!data.cautions?.length && (
+        <div className="banner-warning" style={{ alignItems: 'flex-start' }}>
+          <AlertCircle size={16} />
+          <div>
+            <strong>주의사항</strong>
+            <ul style={{ margin: '6px 0 0', paddingLeft: 18, lineHeight: 1.6 }}>
+              {data.cautions.map(item => <li key={item}>{item}</li>)}
+            </ul>
+          </div>
+        </div>
+      )}
+    </section>
+  )
+}
+
 function featureName(item) {
   return item?.feature || item?.name || item?.column || ''
 }
@@ -371,6 +430,7 @@ export default function Report() {
   const location = useLocation()
   const historyReport = location.state?.historyReport
   const agentRun = location.state?.agentRun
+  const agentTrace = location.state?.agentTrace
   const [summary, setSummary] = useState(null)
   const [loading, setLoading] = useState(true)
   const [downloading, setDownloading] = useState(false)
@@ -422,6 +482,7 @@ export default function Report() {
   const dataset = summary?.dataset || {}
   const features = filterFeaturesForDataset(summary?.feature_evidence?.items || [], dataset)
   const business = summary?.business_summary
+  const llmSummary = extractAgentLlmSummary(agentTrace) || summary?.llm_summary
 
   if (loading) {
     return (
@@ -497,6 +558,7 @@ export default function Report() {
 
           <ReportConclusion summary={summary} dataset={dataset} opt={opt} />
           <GoalBasedReportContext run={agentRun} />
+          <AiReportSummary data={llmSummary} />
 
           <StatusRecoveryPanel status={summary.analysis_status} limits={summary.usage_limits} compact />
 

@@ -1985,3 +1985,44 @@ Milestones:
   - Official docs MCP installation/search was unavailable in this environment; implementation uses the Responses API JSON-schema request pattern with safe fallback if the installed SDK differs.
 - Next step:
   - Commit, push, configure Railway variables only when optional LLM testing is desired, and verify `/api/llm/status` after deploy.
+## 2026-06-21 KST - PR-10 LLM Report Writer
+
+- Status: completed
+- Branch: `main`
+- Scope:
+  - Use the optional PR-09 OpenAI service to enhance grounded report wording while preserving deterministic report output as the required fallback.
+- Files changed:
+  - `backend/services/llm_service.py`
+  - `backend/tools/report_writer.py`
+  - `backend/agents/persistence.py`
+  - `backend/agents/executor.py`
+  - `backend/main_parts/081_report_summary_api.part`
+  - `frontend/src/pages/AgentRunDetail.jsx`
+  - `frontend/src/pages/Report.jsx`
+  - `scripts/run_llm_report_writer_qa.py`
+  - generated frontend dist bundle
+  - `.codex/RUN_LOG.md`
+- Implementation:
+  - Expanded strict structured output with Korean summary, goal/model interpretation, important-factor explanation, next actions, cautions, review note, and API note.
+  - Added a grounded report instruction that prohibits invented metrics, targets, models, readiness claims, and guaranteed predictions.
+  - Agent `report_writer_tool` calls the LLM only when a valid result and available configuration exist; otherwise the original rule-based report remains unchanged.
+  - Report artifacts now persist `payload_json`, including the generated LLM summary, and are tied to the existing Agent Run/project/dataset trace.
+  - Normal/quick analysis report summaries use a dataset/target/model/config fingerprint cache in `STATE`, avoiding repeated calls on page reload.
+  - Report and Agent Run Detail show successful AI sections in Korean; unavailable output shows the existing report with a small fallback notice.
+- Security:
+  - Context remains allowlisted and bounded; compared models and metrics are scalar-only and important features are capped.
+  - Raw CSV rows, credentials, API keys, passwords, prompts, raw provider errors, and full database rows are not exposed to the UI.
+- Verification:
+  - `python scripts/run_llm_report_writer_qa.py`: passed for strict schema, valid mocked output, disabled fallback, safe context, and artifact payload schema.
+  - `python scripts/run_llm_foundation_qa.py`: passed.
+  - `python -m compileall backend`: passed.
+  - Report route source syntax: passed.
+  - `cd frontend && npm run build`: npm shim unavailable; equivalent Vite production build passed.
+  - AI report UI string verified in generated bundle.
+  - `git diff --check`: passed.
+- Known limitations:
+  - No paid/real OpenAI request was made because no valid API key is available in this environment.
+  - Agent summaries are generated once when the report writer step executes; explicit step retry can regenerate for the same run.
+  - Generic report cache is process-local `STATE`, consistent with the current application persistence model, not a distributed cache.
+- Next step:
+  - Commit, push, let Railway redeploy, then verify enabled and disabled report states with production environment variables.

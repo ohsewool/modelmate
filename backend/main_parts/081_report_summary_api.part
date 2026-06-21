@@ -1,3 +1,10 @@
+import asyncio as _llm_asyncio
+import hashlib as _llm_hashlib
+import json as _llm_json
+
+from backend.services.llm_service import fallback_summary, generate_structured_summary, get_llm_status
+
+
 @app.get("/api/report/summary")
 async def report_summary():
     df = STATE.get("df")
@@ -25,6 +32,43 @@ async def report_summary():
         top_feature = feature_evidence["items"][0].get("feature")
     opt_for_insights = optimization if optimization.get("status") else None
     agent_insights = build_agent_insights(best_model, best_score, opt_for_insights, top_feature, model_selection.get("models", []))
+    current_dataset = STATE.get("current_dataset") or {}
+    llm_status = get_llm_status()
+    llm_identity = {
+        "dataset_id": current_dataset.get("dataset_id") or current_dataset.get("id"),
+        "filename": current_dataset.get("filename") or current_dataset.get("original_filename"),
+        "target": STATE.get("target_col"),
+        "best_model": best_model,
+        "task_type": task_type,
+        "llm_available": llm_status.get("available"),
+        "llm_model": llm_status.get("model"),
+    }
+    llm_cache_key = _llm_hashlib.sha256(
+        _llm_json.dumps(llm_identity, sort_keys=True, ensure_ascii=False, default=str).encode("utf-8")
+    ).hexdigest()
+    llm_cache = STATE.get("llm_report_cache") or {}
+    llm_summary = llm_cache.get(llm_cache_key)
+    if llm_summary is None:
+        valid_result = bool(STATE.get("target_col") and best_model and model_selection.get("models"))
+        if valid_result:
+            llm_payload = {
+                "dataset_name": llm_identity["filename"],
+                "row_count": dataset.get("row_count") or dataset.get("rows"),
+                "column_count": dataset.get("column_count") or dataset.get("columns"),
+                "target_column": STATE.get("target_col"),
+                "problem_type": task_type,
+                "best_model": best_model,
+                "metrics": {primary_metric: best_score} if primary_metric and best_score is not None else {},
+                "compared_models": model_selection.get("models", []),
+                "important_features": feature_evidence.get("items", []),
+                "review_status": (STATE.get("analysis_status") or {}).get("status") if isinstance(STATE.get("analysis_status"), dict) else STATE.get("analysis_status"),
+                "api_readiness_status": "ready" if model is not None and STATE.get("target_col") else "not_ready",
+                "warning_flags": list(current_dataset.get("warnings") or []),
+            }
+            llm_summary = await _llm_asyncio.to_thread(generate_structured_summary, llm_payload)
+        else:
+            llm_summary = fallback_summary("insufficient_analysis_result")
+        STATE["llm_report_cache"] = {llm_cache_key: llm_summary}
 
     final_metrics = {}
     if model is not None and preds is not None and STATE.get("y") is not None:
@@ -93,6 +137,7 @@ async def report_summary():
             "risk_notes": agent_insights.get("risk_notes", []),
             "next_actions": agent_insights.get("next_actions", []),
         },
+        "llm_summary": llm_summary,
         "final_metrics": final_metrics,
         "feature_evidence": feature_evidence,
         "presentation_points": [

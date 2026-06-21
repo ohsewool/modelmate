@@ -520,6 +520,7 @@ def _persist_artifact_if_needed(conn, run: dict[str, Any], tool_name: str, outpu
         project_id=run.get("project_id"),
         run_id=output.get("experiment_run_id"),
         route=_artifact_route(tool_name, run.get("project_id")),
+        payload=output if tool_name == "report_writer_tool" else None,
     )
 
 

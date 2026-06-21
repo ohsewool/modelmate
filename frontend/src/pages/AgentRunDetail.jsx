@@ -662,6 +662,23 @@ function FinalResultSummary({ trace, run }) {
   )
 }
 
+function AgentLlmSummary({ trace }) {
+  const reportArtifact = (trace?.artifacts || []).find(item => item.artifact_type === 'report' && item.payload?.llm_summary?.used_llm)
+  const data = reportArtifact?.payload?.llm_summary
+  if (!data) return null
+  return (
+    <Section title="AI 분석 요약" icon={<FileText size={18} />}>
+      <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.7 }}>{data.summary}</p>
+      <div className="workspace-grid two-columns" style={{ alignItems: 'start' }}>
+        {data.goal_interpretation && <div className="card-compact"><strong>목표 기반 해석</strong><p style={{ color: 'var(--text-2)', lineHeight: 1.6 }}>{data.goal_interpretation}</p></div>}
+        {data.model_interpretation && <div className="card-compact"><strong>모델 결과 해석</strong><p style={{ color: 'var(--text-2)', lineHeight: 1.6 }}>{data.model_interpretation}</p></div>}
+        {data.important_factor_explanation && <div className="card-compact"><strong>중요 요인 설명</strong><p style={{ color: 'var(--text-2)', lineHeight: 1.6 }}>{data.important_factor_explanation}</p></div>}
+        {data.review_note && <div className="card-compact"><strong>검토 안내</strong><p style={{ color: 'var(--text-2)', lineHeight: 1.6 }}>{data.review_note}</p></div>}
+      </div>
+    </Section>
+  )
+}
+
 function PostPredictionGuidance({ trace, run, reviews, steps = [], onContinue, onRetry, onStop }) {
   const dataset = trace?.dataset || trace?.dataset_info || {}
   const target = run?.target_column || run?.target_col || run?.interpreted_goal?.target_preference || dataset.target_col
@@ -1127,6 +1144,7 @@ export default function AgentRunDetail() {
       <CoreResultCards trace={trace} run={run} />
 
       {complete && <FinalResultSummary trace={trace} run={run} />}
+      <AgentLlmSummary trace={trace} />
 
       <ReviewPanel
         reviews={reviews}
