@@ -2283,7 +2283,7 @@ Milestones:
 
 ## 2026-06-22 KST - Hotfix-03 Final Manual UX Stabilization
 
-- Status: implementation and local verification completed; Railway redeploy verification pending
+- Status: completed and verified on Railway
 - Branch: `main`
 - Concrete issues found:
   - A fresh authenticated user opening `/prediction-apis` hit a full-page error because `WorkspacePredictionApis` referenced the removed `availabilityStatus` helper.
@@ -2322,5 +2322,8 @@ Milestones:
   - A fresh post-deploy account opened all eight core workspace routes without full-page errors, raw enum text, or unsafe URLs.
   - `/prediction-apis` no longer raised `ReferenceError`; `/reports` showed its empty state with zero metric cards.
   - Railway volume persistence remains an operational blocker until `DB_PATH`, `MODELS_DIR`, and `DATASETS_DIR` point to a mounted volume.
+  - Railway served the final `index-Cd7zNDIy.js` bundle after the empty-project/API-copy correction.
+  - A new final QA account saw the honest Prediction API empty state with no API table, placeholder endpoint, or user-visible `token` wording.
+  - `/dashboard`, `/upload`, `/agent-mode`, `/projects`, `/jobs`, `/reports`, `/prediction-apis`, and `/settings` all rendered without full-page errors, unsafe URLs, raw internal enums, or console errors.
 - Next step:
   - Push the hotfix, confirm Railway serves the new bundle, then repeat `/prediction-apis`, `/reports`, protected-route, and sample-flow browser checks.
