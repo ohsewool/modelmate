@@ -82,14 +82,14 @@ export default function ProjectPredictionTokensPanel({ models = [] }) {
   }
 
   const curlExample = `curl -X POST "${endpoint}" \\
-  -H "Authorization: Bearer <MODEL_MATE_TOKEN>" \\
+  -H "Authorization: Bearer <MODEL_MATE_API_AUTH>" \\
   -H "Content-Type: application/json" \\
   -d '{"rows":[{"feature_a":1,"feature_b":"value"}]}'`
   const pythonExample = `import requests
 
 response = requests.post(
     "${endpoint}",
-    headers={"Authorization": "Bearer <MODEL_MATE_TOKEN>"},
+    headers={"Authorization": "Bearer <MODEL_MATE_API_AUTH>"},
     json={"rows": [{"feature_a": 1, "feature_b": "value"}]},
 )
 print(response.json())`

@@ -2288,15 +2288,21 @@ Milestones:
 - Concrete issues found:
   - A fresh authenticated user opening `/prediction-apis` hit a full-page error because `WorkspacePredictionApis` referenced the removed `availabilityStatus` helper.
   - `/reports` rendered four summary cards containing `0` and `확인 필요` before its honest empty state, adding noise when no report existed.
+  - After the first deployment fix, an empty default project still appeared as an unavailable Prediction API and rendered placeholder request/response examples without a dataset or model.
+  - The pre-deploy QA account disappeared after Railway redeployment, confirming that the current SQLite path is not persisted across deploys without a mounted volume.
 - Files changed:
   - `frontend/src/pages/workspace/WorkspacePredictionApis.jsx`
   - `frontend/src/pages/workspace/WorkspaceReports.jsx`
+  - `frontend/src/components/deploy/ProjectPredictionTokensPanel.jsx`
+  - `frontend/src/pages/workspace/ProjectDetail.jsx`
   - `scripts/check_frontend_qa_contracts.py`
   - generated `frontend/dist` bundle
 - Fixes applied:
   - Removed the stale `availabilityStatus(row)` read and unused imports/helper so Prediction APIs render from the existing `apiReadiness()` result only.
   - Added a static regression contract that rejects the stale helper call.
   - Show report metric cards only when at least one report exists; report-less accounts now see the actionable empty state directly.
+  - Excluded projects without a dataset, target, model, or API authentication record from the Prediction API list and documentation preview.
+  - Replaced user-visible `token` placeholders in API examples with `MODEL_MATE_API_AUTH` while preserving the real Bearer authentication contract.
 - Browser verification before deployment:
   - Logged-out landing and direct `/dashboard` access redirected to login with the original path.
   - A fresh normal account opened `/dashboard`, `/upload`, `/agent-mode`, `/projects`, `/jobs`, `/reports`, and `/settings` without page errors or unsafe `/undefined` links.
@@ -2311,5 +2317,10 @@ Milestones:
 - Not verified:
   - Full AutoML training, completed report detail, and a live Prediction API call were not executed during this focused pass.
   - Post-fix Railway browser verification must wait for the new bundle to deploy.
+- Deployment evidence:
+  - Railway served the first Hotfix-03 bundle `index-BV-59IcL.js`.
+  - A fresh post-deploy account opened all eight core workspace routes without full-page errors, raw enum text, or unsafe URLs.
+  - `/prediction-apis` no longer raised `ReferenceError`; `/reports` showed its empty state with zero metric cards.
+  - Railway volume persistence remains an operational blocker until `DB_PATH`, `MODELS_DIR`, and `DATASETS_DIR` point to a mounted volume.
 - Next step:
   - Push the hotfix, confirm Railway serves the new bundle, then repeat `/prediction-apis`, `/reports`, protected-route, and sample-flow browser checks.

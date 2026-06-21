@@ -50,6 +50,7 @@ def main() -> int:
         "trace features filtered by current dataset columns",
     )
     assert "availabilityStatus(row)" not in prediction_apis, "Undefined API readiness helper must not be rendered"
+    require(prediction_apis, ".filter(hasPredictionApiContext)", "empty projects excluded from Prediction APIs")
 
     source_files = list(SRC.rglob("*.jsx")) + list(SRC.rglob("*.js"))
     undefined_routes: list[str] = []

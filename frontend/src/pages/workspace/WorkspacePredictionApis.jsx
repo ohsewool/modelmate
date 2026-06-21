@@ -99,6 +99,22 @@ function apiReadiness(row) {
   }
 }
 
+function hasPredictionApiContext(row) {
+  const availability = row?.availability || {}
+  const project = row?.project || {}
+  return Boolean(
+    asArray(row?.tokens).length
+    || availability.available
+    || availability.model_id
+    || project.last_best_model
+    || project.last_target
+    || project.dataset_name
+    || project.dataset_summary?.filename
+    || project.latest_dataset?.filename
+    || project.latest_run?.target
+  )
+}
+
 function readinessLabel(row) {
   return apiReadiness(row).label
 }
@@ -158,7 +174,7 @@ function ApiExamplePanel({ row }) {
     status: 'ok',
     prediction: { prediction: 'class_or_value', confidence: 0.87 },
   }, null, 2)
-  const curl = `curl -X POST "${endpoint}" \\\n  -H "Content-Type: application/json" \\\n  -H "Authorization: Bearer <prediction_api_token>" \\\n  -d '${payload.replace(/\n/g, '')}'`
+  const curl = `curl -X POST "${endpoint}" \\\n  -H "Content-Type: application/json" \\\n  -H "Authorization: Bearer <MODEL_MATE_API_AUTH>" \\\n  -d '${payload.replace(/\n/g, '')}'`
   return (
     <section className="card" style={{ display: 'grid', gap: 12 }}>
       <p className="section-title">API 문서 미리보기</p>
@@ -175,7 +191,7 @@ function ApiExamplePanel({ row }) {
         <div className="card-compact" style={{ display: 'grid', gap: 8 }}>
           <strong>API 인증 정보</strong>
           <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.55 }}>
-            <code>Authorization: Bearer &lt;prediction_api_token&gt;</code>
+            <code>Authorization: Bearer &lt;MODEL_MATE_API_AUTH&gt;</code>
           </p>
         </div>
       </div>
@@ -214,7 +230,7 @@ export default function WorkspacePredictionApis() {
 
   if (!rows) return <div className="workspace-page"><LoadingState label="예측 API 상태를 불러오는 중입니다." /></div>
 
-  const visible = asArray(rows).filter(row => row?.availability || asArray(row?.tokens).length)
+  const visible = asArray(rows).filter(hasPredictionApiContext)
   return (
     <div className="workspace-page animate-fade-in">
       <WorkspacePageHeader

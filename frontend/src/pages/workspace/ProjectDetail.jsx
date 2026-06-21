@@ -295,7 +295,7 @@ function ApiTab({ data, onCreate }) {
       )) : <p style={{ margin: 0, color: 'var(--text-2)' }}>아직 생성된 프로젝트 API 인증 정보가 없습니다.</p>}
       <details>
         <summary style={{ cursor: 'pointer', fontWeight: 800 }}>사용 예시 보기</summary>
-        <pre style={{ whiteSpace: 'pre-wrap', marginTop: 10, padding: 12, border: '1px solid var(--border)', borderRadius: 8, background: 'var(--surface-alt)' }}>{`curl -X POST "/api/predict/${data.project.id}" \\\n  -H "Authorization: Bearer <MODEL_MATE_TOKEN>" \\\n  -H "Content-Type: application/json" \\\n  -d '{"rows":[{"feature_a":1}]}'`}</pre>
+        <pre style={{ whiteSpace: 'pre-wrap', marginTop: 10, padding: 12, border: '1px solid var(--border)', borderRadius: 8, background: 'var(--surface-alt)' }}>{`curl -X POST "/api/predict/${data.project.id}" \\\n  -H "Authorization: Bearer <MODEL_MATE_API_AUTH>" \\\n  -H "Content-Type: application/json" \\\n  -d '{"rows":[{"feature_a":1}]}'`}</pre>
       </details>
     </section>
   )
