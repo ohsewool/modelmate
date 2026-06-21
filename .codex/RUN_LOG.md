@@ -2238,7 +2238,7 @@ Milestones:
 
 ## 2026-06-22 KST - Hotfix-02 Deployment and Runtime Stabilization
 
-- Status: completed locally; Railway redeploy verification pending
+- Status: completed and verified on Railway
 - Branch: `main`
 - Deployment shape:
   - One Railway service builds `frontend/dist` and starts FastAPI with `uvicorn backend.main:app --host 0.0.0.0 --port $PORT`.
@@ -2268,12 +2268,15 @@ Milestones:
   - Vite production build: passed (2,339 modules; existing bundle-size advisory only).
   - Generated frontend bundle secret scan: passed for known key/password literals.
   - `git diff --check`: passed apart from line-ending conversion notices.
+  - Railway served the new `index-DWtgbNGU.js` bundle after push.
+  - Deployed product smoke: 15/15 passed with AutoML training intentionally skipped.
+  - Deployed sample CSV gate: 20/20 passed; API and static routes returned valid `text/csv; charset=utf-8` content.
 - Not verified:
   - Local FastAPI import/start could not run because available local Python installations do not include `fastapi`; no dependency installation was added for this hotfix.
-  - The new commit has not yet been observed on Railway, so deployed CORS, persistence paths, protected-route refresh, and remote sample routes still require post-push verification.
+  - Railway volume persistence and separate-origin CORS were not exercised because the deployed service currently uses same-origin routing and its volume configuration is not visible from the repository.
 - Known limitations:
   - Railway persistence still requires a mounted volume and explicit `DB_PATH`, `MODELS_DIR`, and `DATASETS_DIR` values.
   - `JWT_SECRET` and bootstrap `ADMIN_PASSWORD` must be configured in Railway variables for a public authenticated deployment.
   - Separate-origin deployments must configure both build-time `VITE_API_URL` and runtime `ALLOWED_ORIGINS`; the current same-origin service does not need either override.
 - Next step:
-  - Push the hotfix, wait for Railway to serve the new frontend bundle, then run product and sample smoke checks against the deployed URL.
+  - Manually confirm Railway volume mounts and required auth secrets, then run a protected-route browser refresh and one full training flow before a public release.
