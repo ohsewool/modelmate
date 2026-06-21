@@ -2154,10 +2154,15 @@ Milestones:
   - Bundled Node/Vite production build: passed (2,339 modules).
   - `git diff --check`: passed apart from line-ending conversion notices.
   - `python scripts/run_usage_limits_smoke.py --base-url http://localhost:8000`: not verified because neither available Python runtime includes FastAPI/uvicorn and no repository virtual environment exists.
+  - Railway deployment bundle `index-DgHehRZG.js`: observed live at `https://web-production-5d6fa.up.railway.app/`.
+  - Deployed free-user API smoke: passed with isolated user `pr14-smoke-1782049184061@example.com`.
+    - `GET /api/me/usage`: `plan=free`, `plan_label=무료`, `limit_label=무료 플랜 한도 적용`, and no `admin_emails` field.
+    - Project limit: three projects created (`c33275b1`, `41f4bb59`, `ebcfc6b9`); the fourth returned HTTP 429 with `code=usage_limit_exceeded` and a Korean `user_friendly_message`.
 - Known limitations:
   - Real billing, automatic upgrades, account billing cycles, and public plan purchase are not implemented.
   - LLM summary generation is not separately metered; unavailable or failed LLM calls are not recorded as successful usage.
   - Report export retains its existing session-level foundation and is not newly blocked in this PR.
-  - Admin login/action bypass, free-user limit exhaustion, user isolation, and Settings rendering require post-deploy authenticated smoke verification.
+  - Admin login/action bypass still requires manual verification because production admin credentials are not available in this environment.
+  - Cross-user isolation and browser-rendered Settings states remain manual authenticated checks; the deployed free-user API and limit-exhaustion paths passed.
 - Next step:
   - Deploy to Railway, run `scripts/run_usage_limits_smoke.py` against the deployed URL, and manually verify Settings with one admin account and one normal free account.
