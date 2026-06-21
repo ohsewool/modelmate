@@ -1949,3 +1949,39 @@ Milestones:
   - Korean command-line literals are distorted by this PowerShell pipe environment; Korean rules are stored as UTF-8 source and the browser path remains UTF-8.
 - Next step:
   - Commit, push, and let Railway redeploy for production browser QA.
+## 2026-06-21 KST - PR-09 LLM Integration Foundation
+
+- Status: completed
+- Branch: `main`
+- Scope:
+  - Add an optional, server-side OpenAI Responses API foundation without replacing deterministic summaries or report generation.
+- Files changed:
+  - `backend/services/llm_service.py`
+  - `backend/services/__init__.py`
+  - `backend/main_parts/046_llm_status.part`
+  - `scripts/run_llm_foundation_qa.py`
+  - `.env.example`
+  - `.gitignore`
+  - `requirements.txt`
+  - `.codex/RUN_LOG.md`
+- Implementation:
+  - Added environment controls for `LLM_ENABLED`, `OPENAI_API_KEY`, `OPENAI_MODEL`, `LLM_TIMEOUT_SECONDS`, and `LLM_MAX_INPUT_CHARS`.
+  - Added optional SDK loading, availability checks, Responses API JSON-schema calls, normalized output validation, and deterministic fallback responses.
+  - Added an allowlisted analysis context builder that excludes raw CSV rows, passwords, API keys, and full database records.
+  - Added authenticated `GET /api/llm/status`; it returns only enabled/available/model/reason and never returns the API key.
+  - Added `.env` ignore rules and a non-secret `.env.example`.
+  - Existing report generation, AutoML training, Agent execution, and API readiness remain deterministic and unchanged.
+- Verification:
+  - `python scripts/run_llm_foundation_qa.py`: passed for disabled mode, missing key, context safety, invalid schema, and invalid JSON fallback.
+  - `python -m compileall backend`: passed.
+  - LLM route source syntax compile: passed.
+  - Frontend `OPENAI_API_KEY` scan: passed; no key reference exists in frontend source.
+  - `cd frontend && npm run build`: npm shim unavailable; equivalent Vite production build passed.
+  - `git diff --check`: passed.
+- Known limitations:
+  - No real OpenAI request was made because no valid API key is available in this environment.
+  - Full FastAPI app import could not run with the bundled Python runtime because FastAPI is not installed there; route syntax and service behavior were verified separately.
+  - LLM output is not connected to reports or user-facing analysis yet; that remains future PR scope.
+  - Official docs MCP installation/search was unavailable in this environment; implementation uses the Responses API JSON-schema request pattern with safe fallback if the installed SDK differs.
+- Next step:
+  - Commit, push, configure Railway variables only when optional LLM testing is desired, and verify `/api/llm/status` after deploy.

@@ -1,0 +1,7 @@
+from backend.services.llm_service import get_llm_status
+
+
+@app.get("/api/llm/status")
+async def llm_status(user=Depends(get_current_user)):
+    """Return only non-sensitive optional LLM readiness metadata."""
+    return get_llm_status()
