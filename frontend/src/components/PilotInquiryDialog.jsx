@@ -152,7 +152,7 @@ export default function PilotInquiryDialog({ open, onClose, initial = {} }) {
 
         {usage?.plan && (
           <p style={{ margin: 0, color: 'var(--text-label)', fontSize: 12 }}>
-            현재 플랜: {usage.plan} / 이 화면의 사용량 요약만 함께 전달됩니다.
+              현재 플랜: {usage.plan_label || (usage.plan === 'admin' ? '관리자' : '무료')} / 이 화면의 사용량 요약만 함께 전달됩니다.
           </p>
         )}
         {state.message && <div className="banner-success"><p style={{ margin: 0 }}>{state.message}</p></div>}

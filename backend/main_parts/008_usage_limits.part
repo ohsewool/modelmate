@@ -153,6 +153,14 @@ def get_plan_limits(user_or_plan):
         "max_rows_per_dataset": "MODELMATE_MAX_ROWS_PER_DATASET",
         "max_columns_per_dataset": "MODELMATE_MAX_COLUMNS_PER_DATASET",
     }
+    if plan == "free":
+        env_map.update({
+        "max_projects": "FREE_MAX_PROJECTS",
+        "max_datasets": "FREE_MAX_DATASETS",
+        "max_jobs_per_day": "FREE_MAX_ANALYSIS_RUNS",
+        "max_prediction_tokens_per_project": "FREE_MAX_PREDICTION_APIS",
+        "max_report_exports_per_day": "FREE_MAX_REPORTS",
+        })
     for key, env_name in env_map.items():
         if os.getenv(env_name):
             try:
@@ -253,6 +261,7 @@ def get_account_usage(user):
             "active_jobs": 0,
             "prediction_api_calls_today": 0,
             "report_exports_today": 0,
+            "prediction_tokens": 0,
         }
     conn = get_db()
     try:
@@ -268,6 +277,10 @@ def get_account_usage(user):
             "SELECT COUNT(*) FROM training_jobs WHERE user_id=? AND status IN ('created','queued','running')",
             (user_id,),
         ).fetchone()[0]
+        prediction_tokens = conn.execute(
+            "SELECT COUNT(*) FROM prediction_api_tokens WHERE owner_user_id=? AND status='active'",
+            (user_id,),
+        ).fetchone()[0]
         today = ensure_usage_day(conn, user_id)
         conn.commit()
         daily = conn.execute("SELECT * FROM user_usage_daily WHERE user_id=? AND usage_date=?", (user_id, today)).fetchone()
@@ -280,17 +293,21 @@ def get_account_usage(user):
         "active_jobs": active_jobs,
         "prediction_api_calls_today": daily["prediction_calls_count"] if daily else 0,
         "report_exports_today": daily["report_exports_count"] if daily else 0,
+        "prediction_tokens": prediction_tokens,
     }
 
 
 def usage_limit_error(limit_key, current, limit, plan, message=None):
+    user_message = message or "현재 플랜의 사용 한도에 도달했습니다."
     return HTTPException(429, {
         "code": "usage_limit_exceeded",
         "limit_key": limit_key,
         "current": current,
         "limit": limit,
         "plan": plan,
-        "message": message or f"{plan} plan limit reached for {limit_key}.",
+        "message": user_message,
+        "user_friendly_message": user_message,
+        "recommended_next_action": "기존 분석 결과를 확인하거나 추가 사용이 필요하면 관리자에게 문의해 주세요.",
         "upgrade_placeholder": "베타 기간에는 플랜 변경을 수동으로 처리합니다. 필요하면 관리자에게 문의하세요.",
     })
 
@@ -393,6 +410,13 @@ def build_usage_summary(user):
         }
     role = getUserRole(user)
     plan = get_user_plan(user)
+    plan_labels = {
+        "free": "무료",
+        "trial": "체험",
+        "pro": "Pro",
+        "pro_mock": "Pro",
+        "team_mock": "Team",
+    }
     limits = get_plan_limits(plan)
     usage = get_account_usage(user)
     if role == "admin":
@@ -403,7 +427,6 @@ def build_usage_summary(user):
             "plan_label": "관리자",
             "limit_label": "제한 없음",
             "is_admin": True,
-            "admin_emails": sorted(get_admin_emails()),
             "limits": limits,
             "usage": usage,
             "percent_used": {},
@@ -438,7 +461,7 @@ def build_usage_summary(user):
         if percent >= 0.8:
             warnings.append({
                 "limit_key": limit_key,
-                "message": f"{usage_key} 사용량이 한도에 가까워졌습니다.",
+                "message": "사용량이 현재 플랜의 한도에 가까워졌습니다.",
                 "current": current,
                 "limit": limit,
             })
@@ -446,8 +469,8 @@ def build_usage_summary(user):
         "mode": "authenticated",
         "role": role,
         "plan": plan,
-        "plan_label": "Free",
-        "limit_label": "제한 적용",
+        "plan_label": plan_labels.get(plan, "기본"),
+        "limit_label": f"{plan_labels.get(plan, '기본')} 플랜 한도 적용",
         "is_admin": False,
         "plan_status": "internal" if plan == "admin" else "active",
         "limits": limits,

@@ -30,15 +30,19 @@ async def auth_google(body: GoogleTokenBody):
 
     conn = get_db()
     existing = conn.execute("SELECT id, role FROM users WHERE id=?", (user_id,)).fetchone()
+    trusted_role = "admin" if is_admin_email(email) else "user"
     if not existing:
-        role = "admin" if email == os.getenv("ADMIN_EMAIL", "admin@modelmate.local") else "user"
+        role = trusted_role
         conn.execute(
-            "INSERT INTO users (id, email, name, picture, role, created_at) VALUES (?,?,?,?,?,?)",
-            (user_id, email, name, picture, role, datetime.now().isoformat())
+            "INSERT INTO users (id, email, name, picture, role, plan, created_at) VALUES (?,?,?,?,?,?,?)",
+            (user_id, email, name, picture, role, "admin" if role == "admin" else "free", datetime.now().isoformat())
         )
         conn.commit()
     else:
-        role = existing["role"] or "user"
+        role = "admin" if trusted_role == "admin" or existing["role"] == "admin" else "user"
+        if role == "admin" and existing["role"] != "admin":
+            conn.execute("UPDATE users SET role='admin', plan='admin' WHERE id=?", (user_id,))
+            conn.commit()
     conn.close()
 
     token = make_token(user_id, email, name, picture, role=role)

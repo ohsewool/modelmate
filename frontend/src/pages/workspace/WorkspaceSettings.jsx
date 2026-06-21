@@ -6,7 +6,8 @@ import FeedbackDialog from '../../components/FeedbackDialog'
 import PilotInquiryDialog from '../../components/PilotInquiryDialog'
 
 function usageState(current, limit) {
-  if (!limit) return { pct: 0, label: '제한 없음', status: 'active' }
+  if (limit === null) return { pct: 0, label: '제한 없음', status: 'active' }
+  if (limit === undefined) return { pct: 0, label: '한도 정보 없음', status: 'unknown' }
   const pct = Math.min(100, Math.round((Number(current || 0) / Number(limit)) * 100))
   if (pct >= 100) return { pct, label: '한도에 도달했습니다.', status: 'blocked' }
   if (pct >= 80) return { pct, label: '한도에 가까워지고 있습니다.', status: 'warning' }
@@ -19,7 +20,7 @@ function UsageRow({ label, current, limit }) {
     <div style={{ display: 'grid', gap: 7 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center', fontSize: 13 }}>
         <strong>{label}</strong>
-        <span style={{ color: 'var(--text-2)' }}>{current || 0} / {limit ?? '무제한'}</span>
+        <span style={{ color: 'var(--text-2)' }}>{current ?? 0} / {limit ?? '제한 없음'}</span>
       </div>
       <div className="progress-bar"><div className="progress-fill" style={{ width: `${state.pct}%`, background: state.status === 'blocked' ? '#dc2626' : state.status === 'warning' ? '#d97706' : '#059669' }} /></div>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
@@ -186,6 +187,7 @@ function PilotInquiryReviewPanel({ onOpenPilot }) {
 export default function WorkspaceSettings() {
   const { user } = useAuth()
   const [usage, setUsage] = useState(null)
+  const [loadError, setLoadError] = useState('')
   const [session, setSession] = useState(null)
   const [feedbackOpen, setFeedbackOpen] = useState(false)
   const [pilotOpen, setPilotOpen] = useState(false)
@@ -194,7 +196,11 @@ export default function WorkspaceSettings() {
     Promise.all([
       api.get('/me/usage').catch(() => ({ data: null })),
       api.get('/session').catch(() => ({ data: null })),
-    ]).then(([usageRes, sessionRes]) => { setUsage(usageRes.data); setSession(sessionRes.data) })
+    ]).then(([usageRes, sessionRes]) => {
+      setUsage(usageRes.data)
+      setSession(sessionRes.data)
+      setLoadError(usageRes.data ? '' : '계정 사용량을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.')
+    })
   }, [])
 
   const rows = useMemo(() => [
@@ -202,11 +208,20 @@ export default function WorkspaceSettings() {
     ['데이터셋', usage?.usage?.datasets, usage?.limits?.max_datasets],
     ['오늘 실행한 작업', usage?.usage?.jobs_today, usage?.limits?.max_jobs_per_day],
     ['예측 API 호출', usage?.usage?.prediction_api_calls_today, usage?.limits?.max_prediction_api_calls_per_day],
-    ['API 인증 정보', usage?.usage?.prediction_tokens, usage?.limits?.max_prediction_tokens],
+    ['오늘 보고서 내보내기', usage?.usage?.report_exports_today, usage?.limits?.max_report_exports_per_day],
   ], [usage])
   const isAdmin = usage?.is_admin || usage?.role === 'admin' || usage?.plan === 'admin'
 
-  if (!usage) return <div className="workspace-page"><LoadingState label="설정 정보를 불러오는 중입니다." /></div>
+  if (!usage && !loadError) return <div className="workspace-page"><LoadingState label="설정 정보를 불러오는 중입니다." /></div>
+  if (loadError) return (
+    <div className="workspace-page">
+      <section className="card empty-state-card">
+        <h2>설정 정보를 불러오지 못했습니다.</h2>
+        <p>{loadError}</p>
+        <button className="btn-primary" type="button" onClick={() => window.location.reload()}>다시 불러오기</button>
+      </section>
+    </div>
+  )
 
   return (
     <div className="workspace-page animate-fade-in">
@@ -219,11 +234,13 @@ export default function WorkspaceSettings() {
           <p className="section-title">계정</p>
           <p><strong>{user?.name || '게스트 데모'}</strong></p>
           <p style={{ color: 'var(--text-2)', fontSize: 13 }}>{user?.email || '임시 데모 세션'}</p>
+          <p style={{ color: 'var(--text-2)', fontSize: 13 }}>계정 역할: {isAdmin ? '관리자' : '일반 사용자'}</p>
           <p style={{ color: 'var(--text-2)', fontSize: 13 }}>세션: {session?.mode || '-'}</p>
         </section>
         <section className="card">
           <p className="section-title">현재 플랜</p>
-          <h2 style={{ margin: 0, fontSize: 24 }}>{isAdmin ? '관리자' : usage.plan}</h2>
+          <h2 style={{ margin: 0, fontSize: 24 }}>{usage.plan_label || (isAdmin ? '관리자' : '무료')}</h2>
+          <p style={{ margin: '8px 0 0', color: 'var(--text-2)', fontSize: 13 }}>사용량 제한: {usage.limit_label || (isAdmin ? '제한 없음' : '무료 플랜 한도 적용')}</p>
           <p style={{ color: 'var(--text-2)', fontSize: 13, lineHeight: 1.6 }}>
             {usage.upgrade?.message || '베타 기간에는 플랜 변경을 수동으로 처리합니다.'}
           </p>
@@ -241,9 +258,16 @@ export default function WorkspaceSettings() {
             <p style={{ margin: 0 }}>관리자 모드에서는 프로젝트, 데이터셋, 작업, 예측 API 사용량 한도가 적용되지 않습니다.</p>
           </div>
         ) : rows.map(([label, current, limit]) => <UsageRow key={label} label={label} current={current} limit={limit} />)}
+        {!isAdmin && (
+          <div className="card-compact" style={{ display: 'grid', gap: 6 }}>
+            <strong>활성 API 인증 정보</strong>
+            <span style={{ color: 'var(--text-2)', fontSize: 13 }}>{usage?.usage?.prediction_tokens ?? 0}개 사용 중 · 프로젝트당 최대 {usage?.limits?.max_prediction_tokens_per_project ?? 0}개</span>
+          </div>
+        )}
+        {!isAdmin && <p style={{ margin: 0, color: 'var(--text-label)', fontSize: 12 }}>일일 사용량은 매일 자정 기준으로 다시 계산됩니다.</p>}
       </section>
-      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr .8fr', gap: 18, marginTop: 18 }} className="admin-detail-grid">
-        <MonitoringPanel />
+      <div style={{ display: 'grid', gridTemplateColumns: isAdmin ? '1.2fr .8fr' : '1fr', gap: 18, marginTop: 18 }} className="admin-detail-grid">
+        {isAdmin && <MonitoringPanel />}
         <section className="card" style={{ display: 'grid', gap: 12 }}>
           <p className="section-title">지원 정보</p>
           <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.6 }}>
@@ -258,11 +282,17 @@ export default function WorkspaceSettings() {
         </section>
       </div>
       <div style={{ marginTop: 18 }}>
-        <FeedbackReviewPanel onOpenFeedback={() => setFeedbackOpen(true)} />
+        {isAdmin ? (
+          <FeedbackReviewPanel onOpenFeedback={() => setFeedbackOpen(true)} />
+        ) : (
+          <section className="card" style={{ display: 'grid', gap: 10 }}>
+            <p className="section-title">피드백</p>
+            <p style={{ margin: 0, color: 'var(--text-2)' }}>사용 중 불편한 점이나 개선 의견을 보내 주세요.</p>
+            <button className="btn-secondary" type="button" onClick={() => setFeedbackOpen(true)}>피드백 보내기</button>
+          </section>
+        )}
       </div>
-      <div style={{ marginTop: 18 }}>
-        <PilotInquiryReviewPanel onOpenPilot={() => setPilotOpen(true)} />
-      </div>
+      {isAdmin && <div style={{ marginTop: 18 }}><PilotInquiryReviewPanel onOpenPilot={() => setPilotOpen(true)} /></div>}
       <FeedbackDialog open={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
       <PilotInquiryDialog
         open={pilotOpen}

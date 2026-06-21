@@ -61,7 +61,16 @@ def run(base_url):
 
     usage = request("GET", join(base_url, "/api/me/usage"), token=token)
     usage_json = usage["json"] or {}
-    add(results, "usage summary returns free plan", usage["status"] == 200 and usage_json.get("plan") == "free", "GET /api/me/usage", usage["status"])
+    add(
+        results,
+        "usage summary returns Korean free plan metadata",
+        usage["status"] == 200
+        and usage_json.get("plan") == "free"
+        and usage_json.get("plan_label") == "무료"
+        and usage_json.get("limit_label") == "무료 플랜 한도 적용",
+        "GET /api/me/usage",
+        usage["status"],
+    )
     limits = usage_json.get("limits") or {}
     add(results, "usage summary includes project and token limits", "max_projects" in limits and "max_prediction_tokens_per_project" in limits, "limits keys", usage["status"])
 
@@ -87,7 +96,8 @@ def run(base_url):
     after_json = after["json"] or {}
     add(results, "usage summary updates project count", (after_json.get("usage") or {}).get("projects", 0) >= max_projects, "GET /api/me/usage after projects", after["status"])
 
-    admin_email = os.getenv("MODELMATE_ADMIN_EMAIL", "admin@modelmate.local")
+    configured_admins = os.getenv("ADMIN_EMAILS", "").split(",")
+    admin_email = os.getenv("MODELMATE_ADMIN_EMAIL") or next((item.strip() for item in configured_admins if item.strip()), "admin@modelmate.local")
     admin_password = os.getenv("MODELMATE_ADMIN_PASSWORD", os.getenv("ADMIN_PASSWORD", "admin1234"))
     admin_login = request("POST", join(base_url, "/api/auth/login"), payload={"email": admin_email, "password": admin_password})
     admin_token = (admin_login["json"] or {}).get("token")
@@ -110,6 +120,7 @@ def run(base_url):
             and admin_json.get("plan") == "admin"
             and admin_json.get("plan_label") == "관리자"
             and admin_json.get("limit_label") == "제한 없음"
+            and "admin_emails" not in admin_json
             and admin_unlimited,
             json.dumps({
                 "email": admin_email,

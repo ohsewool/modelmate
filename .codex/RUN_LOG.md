@@ -2123,3 +2123,41 @@ Milestones:
   - The existing frontend bundle remains above Vite's 500 kB advisory threshold; code splitting is outside this PR.
 - Next step:
   - Commit and push, allow Railway to redeploy, then verify a saved dataset, project history, exact run detail, report link, Prediction API link, and same-dataset rerun with an authenticated production account.
+
+## 2026-06-21 KST - PR-14 Admin, Plan, and Usage Limit Cleanup
+
+- Status: needs_manual_verification
+- Branch: `main`
+- Scope:
+  - Align trusted admin detection, plan labels, configurable free limits, backend enforcement metadata, and the authenticated settings/usage experience without adding billing.
+- Files changed:
+  - `.env.example`
+  - auth, usage-limit, and Agent Run backend route parts
+  - settings, usage-plan, pilot inquiry, and Agent Mode frontend components
+  - usage-limit smoke script and documentation
+  - generated frontend dist bundle
+- Implementation:
+  - Applied the shared `is_admin_email()` detector to Google login so comma-separated `ADMIN_EMAILS` entries receive the same trusted server-side admin role as email/password login.
+  - Removed configured admin email values from `/api/me/usage`; the frontend receives only safe role, plan label, limit label, capability, limit, and usage metadata.
+  - Added configurable free guardrails for projects, datasets, daily analysis runs, project-scoped Prediction APIs, report-export foundation, and existing CSV size/shape limits.
+  - Kept backend admin bypasses for project creation, upload, analysis jobs, Agent Run creation, Prediction API token creation/calls, and usage counter increments.
+  - Added goal-based Agent Run creation to the existing daily analysis counter and returns structured Korean `usage_limit_exceeded` errors with a recommended next action.
+  - Added user-scoped active Prediction API token counts and standardized plan labels (`관리자`, `무료`, `체험`, `Pro`, `Team`, `기본`).
+  - Updated Settings and sidebar usage cards to show safe Korean plan/role/limit labels, reset timing, real usage counters, and a local retry state instead of raw/null values.
+  - Hid monitoring, feedback-review, and pilot-inquiry review panels from non-admin users; their APIs remain server-protected. No role switcher or public admin toggle exists.
+  - Normalized structured usage-limit errors in Agent Mode so an error object cannot be rendered directly and crash the page.
+- Verification:
+  - Bundled Python `-m compileall backend`: passed.
+  - Direct syntax compilation of changed backend route parts: passed.
+  - Admin/usage behavior contract test: passed for comma-separated admin detection, unlimited admin limits, environment overrides, and structured 429 detail.
+  - Static security/contract checks: passed for admin email non-disclosure, backend Agent Run enforcement, safe plan labels, conditional admin panels, and structured frontend error handling.
+  - Bundled Node/Vite production build: passed (2,339 modules).
+  - `git diff --check`: passed apart from line-ending conversion notices.
+  - `python scripts/run_usage_limits_smoke.py --base-url http://localhost:8000`: not verified because neither available Python runtime includes FastAPI/uvicorn and no repository virtual environment exists.
+- Known limitations:
+  - Real billing, automatic upgrades, account billing cycles, and public plan purchase are not implemented.
+  - LLM summary generation is not separately metered; unavailable or failed LLM calls are not recorded as successful usage.
+  - Report export retains its existing session-level foundation and is not newly blocked in this PR.
+  - Admin login/action bypass, free-user limit exhaustion, user isolation, and Settings rendering require post-deploy authenticated smoke verification.
+- Next step:
+  - Deploy to Railway, run `scripts/run_usage_limits_smoke.py` against the deployed URL, and manually verify Settings with one admin account and one normal free account.

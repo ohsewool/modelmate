@@ -41,6 +41,24 @@ ADMIN_EMAILS=admin@modelmate.local,osw1217@gmail.com
 For admin users, `/api/me/usage` returns `role: admin`, `plan_label: 관리자`,
 and `limit_label: 제한 없음`. Admin users bypass project, dataset, daily job,
 prediction API, sample/demo, quick analysis, and goal-based analysis limits.
+The API does not return the configured admin email list to the frontend.
+
+Free-plan limits can be adjusted without changing source code:
+
+```text
+FREE_MAX_PROJECTS=3
+FREE_MAX_DATASETS=3
+FREE_MAX_ANALYSIS_RUNS=5
+FREE_MAX_PREDICTION_APIS=1
+FREE_MAX_REPORTS=10
+MODELMATE_MAX_FILE_SIZE_MB=10
+MODELMATE_MAX_ROWS_PER_DATASET=5000
+MODELMATE_MAX_COLUMNS_PER_DATASET=100
+```
+
+`FREE_MAX_PREDICTION_APIS` is the active prediction-token limit per project.
+`FREE_MAX_REPORTS` currently configures the report-export counter exposed by
+the usage foundation; the session-level export flow is not blocked yet.
 
 ## Usage Summary Endpoint
 
@@ -75,6 +93,8 @@ Example:
     "limit": 3,
     "plan": "free",
     "message": "현재 플랜에서 만들 수 있는 프로젝트 수를 모두 사용했습니다.",
+    "user_friendly_message": "현재 플랜에서 만들 수 있는 프로젝트 수를 모두 사용했습니다.",
+    "recommended_next_action": "기존 분석 결과를 확인하거나 추가 사용이 필요하면 관리자에게 문의해 주세요.",
     "upgrade_placeholder": "베타 기간에는 플랜 변경을 수동으로 처리합니다. 필요하면 관리자에게 문의하세요."
   }
 }
@@ -89,6 +109,7 @@ PR-19 applies soft checks to:
 - parsed dataset row/column limits
 - saved dataset count
 - background training job daily limit
+- goal-based Agent Run creation daily limit
 - concurrent training job limit
 - project prediction token creation
 - project prediction API daily calls
@@ -119,6 +140,8 @@ distributed quota service.
 - No team billing or seat management.
 - Plan changes are manual/admin/dev work for now.
 - Usage limits are MVP guardrails for beta testing and demo stability.
+- LLM summary generation is not separately metered yet; unavailable or failed
+  LLM calls are not presented as successful usage.
 
 ## QA
 

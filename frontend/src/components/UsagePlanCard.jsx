@@ -3,7 +3,9 @@ import api from '../api'
 import PilotInquiryDialog from './PilotInquiryDialog'
 
 function usageLine(label, current, limit) {
-  if (current === undefined || limit === undefined) return `${label}: -`
+  if (current === undefined) return `${label}: 확인할 수 없음`
+  if (limit === null) return `${label}: ${current} / 제한 없음`
+  if (limit === undefined) return `${label}: ${current}`
   return `${label}: ${current} / ${limit}`
 }
 
@@ -50,13 +52,14 @@ export default function UsagePlanCard() {
     <div style={{ margin: '0 10px 8px', borderRadius: 12, border: '1px solid var(--border)', padding: 12, background: 'var(--surface-alt)', display: 'grid', gap: 8 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
         <p style={{ margin: 0, fontSize: 10, fontWeight: 800, color: 'var(--text-label)', textTransform: 'uppercase' }}>현재 플랜</p>
-        <span style={{ fontSize: 10, fontWeight: 800, color: '#2563eb' }}>{summary.plan}</span>
+          <span style={{ fontSize: 10, fontWeight: 800, color: '#2563eb' }}>{summary.plan_label || '무료'}</span>
       </div>
       <div style={{ display: 'grid', gap: 4, fontSize: 11, color: 'var(--text-2)' }}>
         <span>{usageLine('프로젝트', usage.projects, limits.max_projects)}</span>
         <span>{usageLine('데이터셋', usage.datasets, limits.max_datasets)}</span>
         <span>{usageLine('오늘 분석', usage.jobs_today, limits.max_jobs_per_day)}</span>
         <span>{usageLine('예측 API', usage.prediction_api_calls_today, limits.max_prediction_api_calls_per_day)}</span>
+        <span>{usageLine('활성 API 인증 정보', usage.prediction_tokens)}</span>
       </div>
       {warning && (
         <p style={{ margin: 0, fontSize: 11, color: '#b45309', lineHeight: 1.4 }}>

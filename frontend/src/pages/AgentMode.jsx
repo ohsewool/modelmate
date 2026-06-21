@@ -7,6 +7,12 @@ import { workflowStepLabel } from '../utils/userCopy'
 
 const STALE_CHURN_GOAL = '이 CSV로 고객 이탈 가능성을 예측하고 중요한 요인을 보고서로 정리해줘.'
 
+function friendlyApiError(error, fallback) {
+  const detail = error?.response?.data?.detail
+  if (typeof detail === 'string') return detail
+  return detail?.user_friendly_message || detail?.message || detail?.recommended_next_action || fallback
+}
+
 function statusLabel(status) {
   if (status === 'supported') return '지원 가능'
   if (status === 'limited') return '제한적 지원'
@@ -598,7 +604,7 @@ export default function AgentMode() {
       const response = await api.get('/agent-runs')
       setRuns(response.data?.runs || [])
     } catch (err) {
-      setError(err.response?.data?.detail || '분석 실행 목록을 불러오지 못했습니다.')
+      setError(friendlyApiError(err, '분석 실행 목록을 불러오지 못했습니다.'))
     } finally {
       setLoading(false)
     }
@@ -654,7 +660,7 @@ export default function AgentMode() {
       setSelectedRun(normalizeAgentRun(response.data, null, selectedDataset))
       await loadRuns()
     } catch (err) {
-      setError(err.response?.data?.detail || '분석 실행 생성에 실패했습니다.')
+      setError(friendlyApiError(err, '분석 실행 생성에 실패했습니다.'))
     } finally {
       setCreating(false)
     }
@@ -696,7 +702,7 @@ export default function AgentMode() {
       setSelectedRun(normalizeAgentRun(response.data, run, selectedDataset))
       await loadRuns()
     } catch (err) {
-      setError(err.response?.data?.detail || '분석 실행에 실패했습니다.')
+      setError(friendlyApiError(err, '분석 실행에 실패했습니다.'))
     } finally {
       setExecuting(false)
     }

@@ -117,6 +117,8 @@ async def create_goal_first_agent_run_api(
 ):
     require_current_user(user)
     assert_project_and_dataset_access(user, body.project_id, body.dataset_id)
+    if "enforce_training_job_limits" in globals():
+        enforce_training_job_limits(user)
     goal_text = (body.goal_text or "").strip()
     if not goal_text:
         raise HTTPException(400, "분석 목표를 입력해 주세요.")
@@ -152,6 +154,8 @@ async def create_goal_first_agent_run_api(
             )
     finally:
         conn.close()
+    if "increment_daily_usage" in globals():
+        increment_daily_usage(user.get("sub"), "jobs_today")
     agent_run = result.get("agent_run") or {}
     return {
         **result,
