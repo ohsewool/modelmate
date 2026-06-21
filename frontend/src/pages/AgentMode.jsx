@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AlertTriangle, CheckCircle2, Clock3, Database, ListChecks, ShieldAlert, Upload } from 'lucide-react'
 import api from '../api'
+import { goalContext, goalTargetReason } from '../utils/goalContext'
 
 const STALE_CHURN_GOAL = '이 CSV로 고객 이탈 가능성을 예측하고 중요한 요인을 보고서로 정리해줘.'
 
@@ -305,7 +306,7 @@ function SelectedCsvSummary({ dataset }) {
   )
 }
 
-function TargetRecommendationPanel({ dataset, onFocusGoal, onUseCandidate }) {
+function TargetRecommendationPanel({ dataset, goalText, onFocusGoal, onUseCandidate }) {
   const quality = datasetTargetQuality(dataset)
   const target = datasetTarget(dataset)
   const recommended = quality?.recommended || (target ? { column_name: target, suitability: 'good', usefulness_explanation: 'CSV 구조를 기준으로 추천된 예측값입니다.' } : null)
@@ -319,6 +320,7 @@ function TargetRecommendationPanel({ dataset, onFocusGoal, onUseCandidate }) {
   const noMeaningfulTarget = quality?.has_meaningful_target === false || quality?.confidence === 'low' || (!target && dataset)
   const optionalCandidateRaw = quality?.optional_prediction_candidate || quality?.recommended
   const optionalCandidate = candidateBelongsToDataset(optionalCandidateRaw, dataset) ? optionalCandidateRaw : null
+  const context = goalContext(goalText)
 
   if (!dataset) return null
 
@@ -327,13 +329,13 @@ function TargetRecommendationPanel({ dataset, onFocusGoal, onUseCandidate }) {
       <div>
         <p className="section-title" style={{ marginBottom: 6 }}>예측할 값 확인</p>
         <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.6 }}>
-          이 CSV에서 가장 먼저 검토할 예측값입니다.
+          입력한 목표를 <strong>{context.label}</strong>으로 이해하고 CSV에서 연결 가능한 예측값을 검토했습니다.
         </p>
       </div>
       {noMeaningfulTarget ? (
         <div className="alert alert-warning" style={{ display: 'grid', gap: 10, margin: 0 }}>
           <strong>바로 예측할 만한 명확한 값을 찾기 어렵습니다.</strong>
-          <span>{quality?.message || '예측보다 요약 보고서가 먼저일 수 있습니다.'}</span>
+          <span>{quality?.message || goalTargetReason(goalText, '', false)}</span>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <Link className="btn btn-secondary" to="/reports">요약 보고서 만들기</Link>
             {optionalCandidate?.column_name && optionalCandidate?.inferred_task_type !== 'unsuitable' && (
@@ -354,7 +356,7 @@ function TargetRecommendationPanel({ dataset, onFocusGoal, onUseCandidate }) {
                 <span className="status-pill">{targetUsefulnessLabel(candidate)}</span>
               </div>
               <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.55 }}>
-                {candidate.usefulness_explanation || candidate.reason || '예측 목적과 데이터 구조를 기준으로 검토한 후보입니다.'}
+                {candidate.goal_recommendation_reason || goalTargetReason(goalText, candidate.column_name, candidate.goal_match !== false)} {candidate.usefulness_explanation || candidate.reason || ''}
               </p>
             </div>
           ))}
@@ -788,7 +790,7 @@ export default function AgentMode() {
 
       {selectedDataset && setupVisible && (
         <div className="workspace-grid two-columns">
-          <TargetRecommendationPanel dataset={selectedDataset} onFocusGoal={editGoal} onUseCandidate={usePredictionCandidate} />
+          <TargetRecommendationPanel dataset={selectedDataset} goalText={goalText} onFocusGoal={editGoal} onUseCandidate={usePredictionCandidate} />
           <AnalysisGoalCard
             goalText={goalText}
             setGoalText={updateGoalText}

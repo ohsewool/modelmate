@@ -13,12 +13,38 @@ CLASSIFICATION_METRICS = ["ROC-AUC", "F1", "precision", "recall"]
 REGRESSION_METRICS = ["MAE", "RMSE", "R2"]
 
 
+GOAL_CATEGORY_KEYWORDS = {
+    "equipment_failure": ["고장", "설비", "장비", "정비", "예방", "failure", "machine", "maintenance", "fault", "defect"],
+    "customer_churn": ["고객 이탈", "이탈", "유지", "고객", "churn", "retention"],
+    "sales_demand": ["매출", "수요", "판매", "재고", "revenue", "sales", "demand"],
+    "student_result": ["합격", "성적", "학생", "시험", "passed", "exam", "score"],
+}
+
+
+GOAL_NEXT_ACTIONS = {
+    "equipment_failure": ["센서와 상태 컬럼의 변화를 우선 확인하세요.", "고장 가능성이 높은 조건을 정비 우선순위에 참고하세요.", "운영 적용 전 성능 지표와 주요 요인을 검토하세요."],
+    "customer_churn": ["이탈 가능성이 높은 고객군의 공통 특성을 확인하세요.", "주요 요인을 고객 유지 전략에 활용하세요.", "캠페인 적용 전 성능과 편향 가능성을 검토하세요."],
+    "sales_demand": ["수요와 매출에 영향을 주는 주요 요인을 확인하세요.", "예측 결과를 재고와 운영 계획의 참고 자료로 사용하세요.", "기간이 달라질 때 성능을 다시 검증하세요."],
+    "student_result": ["학습, 출석, 평가 관련 주요 요인을 확인하세요.", "지원이 필요한 대상을 찾는 참고 자료로 사용하세요.", "학생에 대한 단독 의사결정 근거로 사용하지 마세요."],
+    "general_prediction": ["추천 예측값과 주요 요인을 확인하세요.", "성능 지표와 데이터 품질을 함께 검토하세요.", "목표와 맞지 않으면 예측값을 조정해 다시 분석하세요."],
+}
+
+
+def detect_goal_category(goal_text: str) -> str:
+    lower = (goal_text or "").lower()
+    for category, keywords in GOAL_CATEGORY_KEYWORDS.items():
+        if _contains_any(lower, keywords):
+            return category
+    return "general_prediction"
+
+
 def interpret_goal(goal_text: str, target_preference: str | None = None) -> dict[str, Any]:
     text = (goal_text or "").strip()
     lower = text.lower()
     flags: list[str] = []
     warnings: list[str] = []
     target_candidates: list[str] = []
+    goal_category = detect_goal_category(text)
 
     unsupported = _contains_any(lower, ["rag", "document", "문서", "챗봇", "chatbot", "클러스터", "clustering", "군집", "anomaly", "이상탐지"])
     multi_target = _contains_any(lower, ["multi-target", "다중 타깃", "여러 타깃"])
@@ -83,6 +109,8 @@ def interpret_goal(goal_text: str, target_preference: str | None = None) -> dict
         "review_flags": flags,
         "warnings": warnings,
         "target_preference": target_preference,
+        "goal_category": goal_category,
+        "goal_next_actions": GOAL_NEXT_ACTIONS[goal_category],
     }
 
 

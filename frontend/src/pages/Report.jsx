@@ -9,6 +9,7 @@ import AnalysisTracePanel from '../components/report/AnalysisTracePanel'
 import TrustSummaryPanel from '../components/report/TrustSummaryPanel'
 import EvidenceSummaryPanel from '../components/report/EvidenceSummaryPanel'
 import StatusRecoveryPanel from '../components/StatusRecoveryPanel'
+import { goalContext } from '../utils/goalContext'
 
 const fmt = value => {
   if (value === null || value === undefined || value === '') return '-'
@@ -332,6 +333,26 @@ function ReportNextSteps({ nav, noTarget }) {
   )
 }
 
+function GoalBasedReportContext({ run }) {
+  if (!run) return null
+  const goal = run.user_goal || run.interpreted_goal?.goal_text
+  if (!goal) return null
+  const context = goalContext(goal)
+  return (
+    <section className="card" style={{ display: 'grid', gap: 10 }}>
+      <p className="section-title">분석 목표</p>
+      <strong>{goal}</strong>
+      <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.65 }}>{context.interpretation}</p>
+      <div>
+        <p style={{ margin: '0 0 6px', fontWeight: 800 }}>다음 행동 제안</p>
+        <ul style={{ margin: 0, paddingLeft: 20, color: 'var(--text-2)', lineHeight: 1.7 }}>
+          {context.actions.map(action => <li key={action}>{action}</li>)}
+        </ul>
+      </div>
+    </section>
+  )
+}
+
 function featureName(item) {
   return item?.feature || item?.name || item?.column || ''
 }
@@ -349,6 +370,7 @@ export default function Report() {
   const nav = useNavigate()
   const location = useLocation()
   const historyReport = location.state?.historyReport
+  const agentRun = location.state?.agentRun
   const [summary, setSummary] = useState(null)
   const [loading, setLoading] = useState(true)
   const [downloading, setDownloading] = useState(false)
@@ -474,6 +496,7 @@ export default function Report() {
           )}
 
           <ReportConclusion summary={summary} dataset={dataset} opt={opt} />
+          <GoalBasedReportContext run={agentRun} />
 
           <StatusRecoveryPanel status={summary.analysis_status} limits={summary.usage_limits} compact />
 

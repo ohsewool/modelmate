@@ -12,6 +12,20 @@ from typing import Any
 from backend.tools.data_profile import data_profile_tool
 from backend.tools.schema_validation import schema_validation_tool
 from backend.tools.target_quality import COUNT_RE, _is_public_aggregate, infer_domain_from_columns, score_target_stats
+from backend.agents.goal_first import detect_goal_category
+
+
+GOAL_TARGET_KEYWORDS = {
+    "equipment_failure": ["failure", "fault", "defect", "breakdown", "고장", "불량"],
+    "customer_churn": ["churn", "retention", "cancel", "이탈", "해지"],
+    "sales_demand": ["sales", "revenue", "demand", "amount", "매출", "수요", "판매"],
+    "student_result": ["passed", "result", "score", "grade", "합격", "성적", "점수"],
+}
+
+
+def _goal_target_match(column: str, category: str) -> bool:
+    name = (column or "").lower()
+    return any(keyword in name for keyword in GOAL_TARGET_KEYWORDS.get(category, []))
 
 
 def _ratio(unique_count: int, row_count: int) -> float:
@@ -79,6 +93,9 @@ def recommend_targets(
     columns = [str(col) for col in profile.get("columns", []) if str(col) not in excluded]
     domain = infer_domain_from_columns(columns)
     candidates = [_candidate_summary(col, profile) for col in columns]
+    goal_category = detect_goal_category(user_goal or "")
+    for candidate in candidates:
+        candidate["goal_match"] = _goal_target_match(candidate["column_name"], goal_category)
     public_aggregate = _is_public_aggregate(columns)
     accepted = [
         item for item in candidates
@@ -92,6 +109,7 @@ def recommend_targets(
     accepted.sort(
         key=lambda item: (
             confidence_rank.get(item.get("confidence_level"), 0),
+            1 if item.get("goal_match") else 0,
             item["confidence_score"],
             item.get("outcome_priority", 0.0),
             item["usefulness_score"],
@@ -122,6 +140,15 @@ def recommend_targets(
             if COUNT_RE.search(item["column_name"]) and item["inferred_task_type"] == "regression"
         ] or weak
     recommended = accepted[0] if accepted else None
+    if recommended:
+        if recommended.get("goal_match"):
+            recommended["goal_recommendation_reason"] = (
+                f"사용자 목표를 {goal_category} 유형으로 이해했고, '{recommended['column_name']}' 컬럼이 목표와 직접 연결됩니다."
+            )
+        else:
+            recommended["goal_recommendation_reason"] = (
+                f"사용자 목표를 {goal_category} 유형으로 이해했지만 직접 일치하는 컬럼이 없어 데이터 구조와 품질을 우선해 추천했습니다."
+            )
     suitability = (
         "clear_regression_prediction" if recommended and recommended["inferred_task_type"] == "regression"
         else "clear_classification_prediction" if recommended
@@ -153,6 +180,8 @@ def recommend_targets(
         "dataset_domain": domain.get("dataset_domain"),
         "prediction_purpose": domain.get("prediction_purpose"),
         "user_goal": user_goal,
+        "goal_category": goal_category,
+        "goal_target_match": bool(recommended and recommended.get("goal_match")),
         "validation_status": (validation or {}).get("validation_status"),
         "candidate_targets": accepted,
         "weak_candidate_targets": weak,

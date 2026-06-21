@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { AlertTriangle, Box, CheckCircle2, Database, FileText, ListChecks } from 'lucide-react'
 import api from '../api'
 import { EmptyState, ErrorState, LoadingState, StatusBadge } from '../components/workspace-shell/WorkspaceStates'
+import { goalContext, goalTargetReason } from '../utils/goalContext'
 
 const STATUS_LABELS = {
   supported: '지원 가능',
@@ -456,13 +457,13 @@ function SummaryHero({ run, trace, reviews, steps, onContinue, actionLoading }) 
         <Link className="btn btn-secondary" to="/agent-mode">목표 기반 분석으로 돌아가기</Link>
         {state.reviewAfterComplete && (
           <>
-            <Link className="btn btn-primary" to="/reports">검토 완료하고 결과 보기</Link>
+            <Link className="btn btn-primary" to="/reports" state={{ agentRun: run, agentTrace: trace }}>검토 완료하고 결과 보기</Link>
             <a className="btn btn-secondary" href="#advanced-trace">상세 실행 기록 보기</a>
           </>
         )}
         {!state.reviewAfterComplete && complete && (
           <>
-            <Link className="btn btn-primary" to="/reports">결과 보고서 보기</Link>
+            <Link className="btn btn-primary" to="/reports" state={{ agentRun: run, agentTrace: trace }}>결과 보고서 보기</Link>
             <Link className="btn btn-secondary" to="/prediction-apis">예측 API 만들기</Link>
           </>
         )}
@@ -616,6 +617,8 @@ function FinalResultSummary({ trace, run }) {
   const rows = dataset.row_count ?? dataset.rows ?? run?.row_count
   const cols = dataset.column_count ?? dataset.columns ?? run?.column_count
   const quality = targetQualityInfo(run, trace)
+  const goal = run?.user_goal || run?.interpreted_goal?.goal_text || ''
+  const context = goalContext(goal)
   const outputs = [
     '데이터 구조를 확인했습니다.',
     '예측할 값 후보를 찾았습니다.',
@@ -628,6 +631,11 @@ function FinalResultSummary({ trace, run }) {
       <div className="alert alert-success" style={{ margin: 0 }}>
         이 CSV에 대해 {targetText} 예측 분석이 완료되었습니다.
       </div>
+      <div className="card-compact" style={{ display: 'grid', gap: 6 }}>
+        <strong>분석 목표</strong>
+        <p style={{ margin: 0, color: 'var(--text-2)' }}>{goal || 'CSV에서 의미 있는 예측 목표와 주요 요인을 확인합니다.'}</p>
+        <p style={{ margin: 0, color: 'var(--text-label)', fontSize: 12 }}>{context.label} · {context.interpretation}</p>
+      </div>
       <div className="workspace-grid four-columns">
         <MetricBox label="CSV" value={filename} />
         <MetricBox label="데이터 행" value={infoValue(rows)} />
@@ -638,7 +646,7 @@ function FinalResultSummary({ trace, run }) {
         {outputs.map(item => <li key={item}>{item}</li>)}
       </ul>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        <Link className="btn btn-primary" to="/reports">결과 보고서 보기</Link>
+        <Link className="btn btn-primary" to="/reports" state={{ agentRun: run, agentTrace: trace }}>결과 보고서 보기</Link>
         {quality.apiReady ? (
           <Link className="btn btn-secondary" to="/prediction-apis">예측 API 만들기</Link>
         ) : (
@@ -667,6 +675,8 @@ function PostPredictionGuidance({ trace, run, reviews, steps = [], onContinue, o
   const reviewAfterComplete = workflowComplete && reviewNeeded
   const complete = workflowComplete
   const topFeatures = collectTopFeatures(trace)
+  const goal = run?.user_goal || run?.interpreted_goal?.goal_text || ''
+  const goalInfo = goalContext(goal)
 
   let interpretation = '모델이 데이터 안에서 예측에 쓸 수 있는 패턴을 찾았습니다.'
   if (quality.noMeaningfulTarget) {
@@ -684,7 +694,7 @@ function PostPredictionGuidance({ trace, run, reviews, steps = [], onContinue, o
   const actions = []
   if (reviewAfterComplete) {
     actions.push(
-      <Link key="report" className="btn btn-primary" to="/reports">검토 완료하고 결과 보기</Link>,
+      <Link key="report" className="btn btn-primary" to="/reports" state={{ agentRun: run, agentTrace: trace }}>검토 완료하고 결과 보기</Link>,
       <a key="trace" className="btn btn-secondary" href="#advanced-trace">상세 실행 기록 보기</a>,
       <Link key="goal" className="btn btn-secondary" to="/agent-mode">목표 기반 분석으로 돌아가기</Link>,
       <button key="api-disabled" className="btn btn-secondary" type="button" disabled title="예측 API를 만들기 전에 결과 검토가 필요합니다.">예측 API는 검토 후 사용</button>,
@@ -698,7 +708,7 @@ function PostPredictionGuidance({ trace, run, reviews, steps = [], onContinue, o
     )
   } else if (quality.noMeaningfulTarget) {
     actions.push(
-      <Link key="report" className="btn btn-primary" to="/reports">데이터 요약 보고서 보기</Link>,
+      <Link key="report" className="btn btn-primary" to="/reports" state={{ agentRun: run, agentTrace: trace }}>데이터 요약 보고서 보기</Link>,
       <Link key="target" className="btn btn-secondary" to="/agent-mode">예측값 다시 선택하기</Link>,
       <Link key="upload" className="btn btn-secondary" to="/upload?returnTo=agent-mode">다른 CSV로 다시 분석하기</Link>,
     )
@@ -707,17 +717,17 @@ function PostPredictionGuidance({ trace, run, reviews, steps = [], onContinue, o
       <Link key="quality" className="btn btn-primary" to="/projects">데이터 품질 확인하기</Link>,
       <Link key="target" className="btn btn-secondary" to="/agent-mode">예측값 다시 선택하기</Link>,
       <button key="retry" className="btn btn-secondary" type="button" onClick={onRetry}>다른 모델로 재시도</button>,
-      <Link key="report" className="btn btn-secondary" to="/reports">보고서만 보기</Link>,
+      <Link key="report" className="btn btn-secondary" to="/reports" state={{ agentRun: run, agentTrace: trace }}>보고서만 보기</Link>,
     )
   } else if (apiRisk) {
     actions.push(
       <Link key="api-check" className="btn btn-primary" to="/prediction-apis">API 배포 전 확인하기</Link>,
-      <Link key="report" className="btn btn-secondary" to="/reports">보고서만 생성하기</Link>,
+      <Link key="report" className="btn btn-secondary" to="/reports" state={{ agentRun: run, agentTrace: trace }}>보고서만 생성하기</Link>,
       <button key="retry" className="btn btn-secondary" type="button" onClick={onRetry}>모델 재학습하기</button>,
     )
   } else {
     actions.push(
-      <Link key="report" className="btn btn-primary" to="/reports">결과 보고서 보기</Link>,
+      <Link key="report" className="btn btn-primary" to="/reports" state={{ agentRun: run, agentTrace: trace }}>결과 보고서 보기</Link>,
       <a key="factors" className="btn btn-secondary" href="#important-factors">중요 요인 확인하기</a>,
       <Link key="predict" className="btn btn-secondary" to="/predict">새 데이터 예측하기</Link>,
       quality.apiReady
@@ -735,6 +745,11 @@ function PostPredictionGuidance({ trace, run, reviews, steps = [], onContinue, o
 
       <div className="workspace-grid two-columns" style={{ alignItems: 'start' }}>
         <div className="card-compact" style={{ display: 'grid', gap: 8 }}>
+          <strong>목표 기반 결과 해석</strong>
+          <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.65 }}>{goalInfo.interpretation}</p>
+          <p style={{ margin: 0, color: 'var(--text-label)', fontSize: 12 }}>{goalTargetReason(goal, quality.target || target, !quality.noMeaningfulTarget)}</p>
+        </div>
+        <div className="card-compact" style={{ display: 'grid', gap: 8 }}>
           <strong>예측 결과 활용 방법</strong>
           <p style={{ margin: 0, color: 'var(--text-2)', lineHeight: 1.65 }}>{usage.use}</p>
           <p style={{ margin: 0, color: '#92400e', lineHeight: 1.65 }}>{usage.caution}</p>
@@ -748,6 +763,13 @@ function PostPredictionGuidance({ trace, run, reviews, steps = [], onContinue, o
           </p>
           <p style={{ margin: 0, color: 'var(--text-label)', fontSize: 12 }}>성능과 주요 요인을 함께 확인하세요.</p>
         </div>
+      </div>
+
+      <div className="card-compact" style={{ display: 'grid', gap: 8 }}>
+        <strong>{goalInfo.label} 다음 행동</strong>
+        <ul style={{ margin: 0, paddingLeft: 20, color: 'var(--text-2)', lineHeight: 1.7 }}>
+          {goalInfo.actions.map(action => <li key={action}>{action}</li>)}
+        </ul>
       </div>
 
       <div className="card-compact" style={{ display: 'grid', gap: 8 }}>

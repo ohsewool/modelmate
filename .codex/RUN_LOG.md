@@ -1912,3 +1912,40 @@ Milestones:
   - Advanced model tuning remains available on `/model-lab`; PR-05 only adds the stable default model-comparison handoff on `/upload`.
 - Next step:
   - Commit, push, and let Railway redeploy.
+## 2026-06-21 KST - PR-08 Goal-Based Analysis Result Quality
+
+- Status: completed
+- Branch: `main`
+- Scope:
+  - Persist and reuse deterministic goal context across Agent Run planning, execution arguments, target recommendation, result guidance, and report handoff.
+  - Keep existing model training and PR-07 API readiness gates unchanged.
+- Files changed:
+  - `backend/agents/goal_first.py`
+  - `backend/agents/executor.py`
+  - `backend/tools/target_recommendation.py`
+  - `frontend/src/utils/goalContext.js`
+  - `frontend/src/pages/AgentMode.jsx`
+  - `frontend/src/pages/AgentRunDetail.jsx`
+  - `frontend/src/pages/Report.jsx`
+  - generated frontend dist bundle
+  - `.codex/RUN_LOG.md`
+- Fixes applied:
+  - Added deterministic goal categories for equipment failure, customer churn, sales/demand, student results, and general prediction using Korean and English keywords.
+  - Persisted `goal_category` and rule-based `goal_next_actions` inside the existing `interpreted_goal` JSON stored with each Agent Run.
+  - Passed goal category and next actions through real tool execution arguments without changing AutoML training behavior.
+  - Added goal-match metadata to target recommendations; matching goals influence ranking only among technically acceptable candidates and cannot force an unsuitable target.
+  - Added goal-aware target reasoning, result interpretation, next actions, and review-safe report handoff.
+  - Report navigation now carries the current Agent Run context so the report can show the original user goal and category-specific actions.
+  - Existing dataset/run identity checks, real trace records, and API review gates remain intact.
+- Verification:
+  - Goal category checks for all five categories: passed.
+  - Built-in equipment failure, churn, and demand CSV target checks: passed (`failure_risk`, `churn`, `demand`).
+  - `python -m compileall backend`: passed.
+  - `cd frontend && npm run build`: npm shim unavailable; equivalent Vite production build passed and generated `frontend/dist/index.html`.
+  - `git diff --check`: passed.
+- Known limitations:
+  - Goal interpretation is deterministic keyword matching, not semantic LLM interpretation.
+  - Full browser QA and Railway verification are still needed for review-required report handoff and dataset switching.
+  - Korean command-line literals are distorted by this PowerShell pipe environment; Korean rules are stored as UTF-8 source and the browser path remains UTF-8.
+- Next step:
+  - Commit, push, and let Railway redeploy for production browser QA.

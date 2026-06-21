@@ -37,6 +37,8 @@ def execute_agent_run(conn, analysis_run_id: str) -> dict[str, Any]:
         "task_type": run.get("task_type"),
         "task_family": run.get("task_family"),
         "target_column": (run.get("interpreted_goal") or {}).get("target_preference"),
+        "goal_category": (run.get("interpreted_goal") or {}).get("goal_category") or "general_prediction",
+        "goal_next_actions": (run.get("interpreted_goal") or {}).get("goal_next_actions") or [],
     }
     registry = build_pr04_mock_registry()
 
@@ -190,6 +192,8 @@ def _tool_arguments(tool_name: str, context: dict[str, Any]) -> dict[str, Any]:
         "project_id": context.get("project_id"),
         "dataset_id": context.get("dataset_id"),
         "user_goal": context.get("user_goal"),
+        "goal_category": context.get("goal_category"),
+        "goal_next_actions": context.get("goal_next_actions"),
         "task_type": context.get("task_type"),
         "target_column": context.get("target_column"),
         "profile": context.get("profile"),
