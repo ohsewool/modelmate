@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -42,6 +43,14 @@ def run_step(name, args, timeout=300, cwd=ROOT):
         }
 
 
+def run_steps(steps):
+    results = []
+    for step in steps:
+        name, command, timeout, *cwd = step
+        results.append(run_step(name, command, timeout, cwd[0] if cwd else ROOT))
+    return results
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--base-url", help="Optional base URL for product smoke test.")
@@ -51,16 +60,26 @@ def main():
     steps = [
         ("backend_compile", [sys.executable, "-m", "compileall", "backend"], 120),
         ("sample_csv_gate_local", [sys.executable, str(ROOT / "scripts" / "run_sample_csv_gate.py")], 60),
+        ("target_recommendation_qa", [sys.executable, str(ROOT / "scripts" / "qa_target_recommendation.py")], 120),
+        ("frontend_contracts", [sys.executable, str(ROOT / "scripts" / "check_frontend_qa_contracts.py")], 60),
+        ("llm_foundation_qa", [sys.executable, str(ROOT / "scripts" / "run_llm_foundation_qa.py")], 120),
+        ("llm_report_writer_qa", [sys.executable, str(ROOT / "scripts" / "run_llm_report_writer_qa.py")], 120),
         ("starter_pack_smoke", [sys.executable, str(ROOT / "scripts" / "run_starter_pack_smoke.py")], 60),
         ("upload_validation_qa", [sys.executable, str(ROOT / "scripts" / "run_upload_validation_qa.py")], 180),
         ("full_qa_skip_slow", [sys.executable, str(ROOT / "scripts" / "run_full_qa.py"), "--skip-slow"], 360),
     ]
+    npm = shutil.which("npm")
+    if npm:
+        steps.append(("frontend_build", [npm, "run", "build"], 240, ROOT / "frontend"))
     if args.skip_training:
-        results = [run_step(name, cmd, timeout) for name, cmd, timeout in steps]
+        results = run_steps(steps)
         results.append({"name": "training_benchmark", "status": "skipped", "reason": "--skip-training"})
     else:
         steps.append(("training_benchmark", [sys.executable, str(ROOT / "scripts" / "run_training_benchmark.py")], 480))
-        results = [run_step(name, cmd, timeout) for name, cmd, timeout in steps]
+        results = run_steps(steps)
+
+    if not npm:
+        results.append({"name": "frontend_build", "status": "skipped", "reason": "npm not found; run cd frontend && npm run build manually"})
 
     if args.base_url:
         sample_gate_cmd = [sys.executable, str(ROOT / "scripts" / "run_sample_csv_gate.py"), "--base-url", args.base_url]

@@ -1,0 +1,13 @@
+region,category,value_a,value_b
+North,A,10,20
+South,B,11,21
+East,A,12,22
+West,B,13,23
+North,A,14,24
+South,B,15,25
+East,A,16,26
+West,B,17,27
+North,A,18,28
+South,B,19,29
+East,A,20,30
+West,B,21,31

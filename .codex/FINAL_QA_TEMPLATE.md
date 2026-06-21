@@ -1,5 +1,12 @@
 # QA Report
 
+## Change Scope
+
+- What changed:
+- Touched routes:
+- Touched backend endpoints:
+- Out-of-scope items intentionally left unchanged:
+
 ## Build Checks
 
 - Backend compile:
@@ -19,6 +26,20 @@
 - Manual CSV upload:
 - Sample CSV download:
 - Sample CSV upload:
+- Datasets tested:
+- Dataset A -> B switch:
+- Stale column check:
+
+## Required Coverage
+
+- Auth tested: yes / no / not verified
+- Dataset switch tested: yes / no / not verified
+- Target recommendation tested: yes / no / not verified
+- Quick/new/goal analysis tested: yes / no / not verified
+- Report/API tested: yes / no / not verified
+- LLM fallback tested: yes / no / not verified
+- Admin usage tested: yes / no / not verified
+- Korean copy safety tested: yes / no / not verified
 
 ## Agent Tests
 
@@ -51,3 +72,15 @@
 ## Remaining Limitations
 
 -
+
+## Risks and Rollback
+
+- Known risks:
+- Rollback commit/deployment:
+- Manual follow-up owner:
+
+## Screenshots
+
+- Route/state:
+- Screenshot or recording reference:
+- Secret/token/raw data exposure checked: yes / no

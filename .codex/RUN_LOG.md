@@ -2166,3 +2166,44 @@ Milestones:
   - Cross-user isolation and browser-rendered Settings states remain manual authenticated checks; the deployed free-user API and limit-exhaustion paths passed.
 - Next step:
   - Deploy to Railway, run `scripts/run_usage_limits_smoke.py` against the deployed URL, and manually verify Settings with one admin account and one normal free account.
+
+## 2026-06-22 KST - PR-15 QA Gate and Test Automation
+
+- Status: completed
+- Branch: `main`
+- Scope:
+  - Add repeatable QA documentation, deterministic target recommendation coverage, sample CSV fixtures, frontend safety contracts, and release QA integration without changing product behavior.
+- Files changed:
+  - `.codex/QA_GATE.md`, `.codex/FINAL_QA_TEMPLATE.md`
+  - `docs/qa-automation.md`
+  - `sample_data/qa/*.csv`
+  - `scripts/qa_target_recommendation.py`
+  - `scripts/check_frontend_qa_contracts.py`
+  - `scripts/run_release_qa.py`
+- Automated coverage:
+  - Equipment failure -> `Machine failure`, classification; failure indicator columns excluded.
+  - Titanic-like -> `Survived`, classification; `Pclass` and `PassengerId` excluded.
+  - Churn, student result, and sales demand target/problem-type contracts.
+  - Public summary does not finalize a target; ambiguous data requires `confirm_target` and does not auto-run.
+  - Protected route/login redirect, landing CTA, safe post-login redirect, dataset-dependent state reset, unsafe undefined routes, and raw internal UI enum checks.
+  - Optional LLM disabled, missing-key, invalid-response fallback and safe context filtering.
+  - Local and deployed sample CSV validity, header, target, MIME type, and HTML fallback prevention.
+- Verification:
+  - Bundled Python `-m compileall backend`: passed.
+  - `scripts/qa_target_recommendation.py`: 7/7 passed.
+  - `scripts/check_frontend_qa_contracts.py`: passed.
+  - `scripts/run_llm_foundation_qa.py`: passed.
+  - `scripts/run_llm_report_writer_qa.py`: passed.
+  - `scripts/run_sample_csv_gate.py`: local public/dist sample checks passed; remote omitted in local-only run.
+  - Bundled Node/Vite production build: passed (2,339 modules, bundle-size advisory only).
+  - Deployed sample CSV gate: 20/20 passed at `https://web-production-5d6fa.up.railway.app`; all remote samples returned `text/csv; charset=utf-8`.
+  - Deployed auth smoke: 9/9 passed.
+  - Deployed usage/admin smoke: 9/9 passed, including free-project limit and configured admin unlimited plan.
+- Not run:
+  - The full `run_release_qa.py` wrapper was not executed end-to-end because existing uncommitted QA result files (`FULL_QA_RESULTS.md`, `full_qa_results.json`, `workspace_flow_qa_results.json`) may be overwritten by legacy scripts. The wrapper syntax and each newly integrated PR-15 check were verified independently.
+- Known limitations:
+  - Browser-level dataset A -> B state isolation across dashboard/report/API/history remains a required manual check.
+  - Quick/new/goal analysis final-screen UX and report/API navigation remain browser-level manual checks.
+  - Static Korean-copy scanning intentionally targets critical raw enum exposure and does not replace human wording review.
+- Next step:
+  - Fill `.codex/FINAL_QA_TEMPLATE.md` during the next release candidate and attach browser evidence for the remaining manual checks.
