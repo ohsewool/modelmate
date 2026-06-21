@@ -37,19 +37,33 @@ pip install -r requirements.txt && cd frontend && npm ci && npm run build && cd 
 
 ## Environment Variables
 
-Current MVP deployments may use:
+Required for a public authenticated deployment:
 
-- `GOOGLE_CLIENT_ID` or frontend OAuth client configuration when auth is enabled
-- optional LLM/provider keys only if a feature explicitly needs them
+- `JWT_SECRET`: long random value, stored only in Railway variables
+- `ADMIN_PASSWORD`: set only when the configured bootstrap admin uses email/password login
+
+Deployment-dependent variables:
+
+- `ADMIN_EMAILS`: comma-separated trusted admin emails; an empty value keeps normal-user flows available
+- `ALLOWED_ORIGINS`: comma-separated frontend origins when frontend and backend are hosted separately
+- `VITE_API_URL`: backend origin or backend `/api` URL for a separately hosted frontend; leave empty for the current same-origin Railway service
+- `DB_PATH`, `MODELS_DIR`, `DATASETS_DIR`: point these to a mounted Railway volume when persistence across redeploys is required
+- `GOOGLE_CLIENT_ID`: OAuth client configuration when Google login is used
+- `LLM_ENABLED`, `OPENAI_API_KEY`, `OPENAI_MODEL`: optional; reports use deterministic fallback when disabled or unavailable
+- free-plan usage limit variables documented in `.env.example`
 - Railway-provided `PORT`
+
+The current deployment is a single same-origin service: Railway builds `frontend/dist`, then FastAPI serves both `/api/*` and the SPA. `VITE_API_URL` and cross-origin CORS are not required for this shape.
 
 Never commit API keys, OAuth secrets, tokens, passwords, or database credentials.
 
 ## Health Check / Smoke Check
 
-There is no dedicated `/health` endpoint yet. Use these smoke checks:
+Use these smoke checks:
 
+- `python scripts/check_runtime_config.py` should pass before deployment.
 - `GET /` should return the frontend app.
+- `GET /api/health` should return HTTP 200 and an `X-Request-ID` header.
 - `GET /api/state` should return app state JSON.
 - `GET /api/report/summary` should return a report summary after an analysis run.
 
@@ -66,6 +80,9 @@ There is no dedicated `/health` endpoint yet. Use these smoke checks:
 8. Open result/report and verify `/api/report/html`.
 9. Create or view a shared model and check the documented prediction endpoint:
    `POST /api/v2/{model_id}/predict`.
+10. Refresh `/dashboard`, `/upload`, `/agent-mode`, `/reports`, and `/prediction-apis` directly and confirm SPA fallback works.
+11. Run `python scripts/run_product_smoke.py --base-url <URL> --skip-training`.
+12. Run `python scripts/run_sample_csv_gate.py --base-url <URL>`.
 
 ## Common Deployment Failures
 
@@ -75,6 +92,8 @@ There is no dedicated `/health` endpoint yet. Use these smoke checks:
 - Node install failure: retry build or verify `npm ci` can run in `frontend`.
 - Large bundle warning: currently a warning, not a build blocker.
 - Missing model artifact: shared prediction API depends on saved model files.
+- Lost data after redeploy: Railway filesystem is ephemeral unless `DB_PATH`, `MODELS_DIR`, and `DATASETS_DIR` point to a mounted volume.
+- Cross-origin API failure: set `VITE_API_URL` at frontend build time and add the exact frontend origin to `ALLOWED_ORIGINS`.
 - Secrets exposed in source: rotate the secret and remove it from history before
   public use.
 

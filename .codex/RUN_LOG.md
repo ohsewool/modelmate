@@ -2235,3 +2235,45 @@ Milestones:
   - Full model training and final report/API UX were not run in this sweep.
 - Next step:
   - Deploy the new frontend bundle and verify an Agent Run with missing legacy column metadata shows no unverified important-feature names.
+
+## 2026-06-22 KST - Hotfix-02 Deployment and Runtime Stabilization
+
+- Status: completed locally; Railway redeploy verification pending
+- Branch: `main`
+- Deployment shape:
+  - One Railway service builds `frontend/dist` and starts FastAPI with `uvicorn backend.main:app --host 0.0.0.0 --port $PORT`.
+  - FastAPI serves `/api/*`, built assets, sample CSV files, and the SPA fallback from the same origin.
+- Files changed:
+  - `.env.example`
+  - `backend/main_parts/001_imports_db.part`
+  - `backend/main_parts/002_auth_integrations.part`
+  - `docs/deployment-checklist.md`
+  - `frontend/src/api.js`
+  - `scripts/check_runtime_config.py`
+  - `scripts/run_release_qa.py`
+  - generated `frontend/dist` bundle
+- Fixes applied:
+  - Replaced hardcoded wildcard CORS with configurable `ALLOWED_ORIGINS` and safe local defaults.
+  - Added configurable `DB_PATH`, `MODELS_DIR`, and `DATASETS_DIR` with parent-directory creation.
+  - Normalized `VITE_API_URL` so backend origins and full `/api` URLs both produce one valid API base path.
+  - Documented public deployment secrets, optional LLM settings, same-origin behavior, volume paths, health checks, and post-deploy smoke commands.
+  - Added static runtime configuration contracts and integrated them into release QA.
+- Verification:
+  - Combined backend source syntax compilation: passed.
+  - `python -m compileall backend`: passed with the bundled Python runtime.
+  - `scripts/check_runtime_config.py`: passed.
+  - `scripts/check_frontend_qa_contracts.py`: passed.
+  - `scripts/run_sample_csv_gate.py`: 10 local public/dist samples passed; remote routes not verified without a post-deploy URL run.
+  - LLM foundation and report-writer fallback QA: passed.
+  - Vite production build: passed (2,339 modules; existing bundle-size advisory only).
+  - Generated frontend bundle secret scan: passed for known key/password literals.
+  - `git diff --check`: passed apart from line-ending conversion notices.
+- Not verified:
+  - Local FastAPI import/start could not run because available local Python installations do not include `fastapi`; no dependency installation was added for this hotfix.
+  - The new commit has not yet been observed on Railway, so deployed CORS, persistence paths, protected-route refresh, and remote sample routes still require post-push verification.
+- Known limitations:
+  - Railway persistence still requires a mounted volume and explicit `DB_PATH`, `MODELS_DIR`, and `DATASETS_DIR` values.
+  - `JWT_SECRET` and bootstrap `ADMIN_PASSWORD` must be configured in Railway variables for a public authenticated deployment.
+  - Separate-origin deployments must configure both build-time `VITE_API_URL` and runtime `ALLOWED_ORIGINS`; the current same-origin service does not need either override.
+- Next step:
+  - Push the hotfix, wait for Railway to serve the new frontend bundle, then run product and sample smoke checks against the deployed URL.

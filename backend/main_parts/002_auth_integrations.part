@@ -111,8 +111,13 @@ async def ask_gemini(prompt: str, demo: bool = False) -> str:
     return await asyncio.to_thread(_call_gemini_sync, prompt)
 
 app = FastAPI(title="ModelMate API")
-app.add_middleware(CORSMiddleware, allow_origins=["*"],
-                   allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=get_allowed_origins(),
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 init_db()
 

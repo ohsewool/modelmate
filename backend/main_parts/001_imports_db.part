@@ -49,11 +49,20 @@ JWT_SECRET = os.getenv("JWT_SECRET", "modelmate-secret-key-change-in-prod")
 JWT_ALGORITHM = "HS256"
 security = HTTPBearer(auto_error=False)
 
-DB_PATH    = os.getenv("DB_PATH", os.path.join(os.path.dirname(__file__), "..", "modelmate.db"))
-MODELS_DIR = os.path.join(os.path.dirname(__file__), "..", "deployed_models")
-DATASETS_DIR = os.getenv("DATASETS_DIR", os.path.join(os.path.dirname(__file__), "..", "uploaded_datasets"))
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+DB_PATH = os.getenv("DB_PATH", "").strip() or os.path.join(REPO_ROOT, "modelmate.db")
+MODELS_DIR = os.getenv("MODELS_DIR", "").strip() or os.path.join(REPO_ROOT, "deployed_models")
+DATASETS_DIR = os.getenv("DATASETS_DIR", "").strip() or os.path.join(REPO_ROOT, "uploaded_datasets")
+if DB_PATH != ":memory:":
+    os.makedirs(os.path.dirname(os.path.abspath(DB_PATH)), exist_ok=True)
 os.makedirs(MODELS_DIR, exist_ok=True)
 os.makedirs(DATASETS_DIR, exist_ok=True)
+
+def get_allowed_origins():
+    configured = os.getenv("ALLOWED_ORIGINS", "")
+    if configured.strip():
+        return [origin.strip().rstrip("/") for origin in configured.split(",") if origin.strip()]
+    return ["http://localhost:3000", "http://127.0.0.1:3000"]
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)

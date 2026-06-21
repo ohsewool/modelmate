@@ -12,9 +12,12 @@ if (presenterMode && urlParams.get('demo') === '1') localStorage.setItem('mm_dem
 if (urlParams.get('demo') === '0') localStorage.removeItem('mm_demo_mode')
 if (!presenterMode) localStorage.removeItem('mm_demo_mode')
 
-const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL + '/api' : '/api'
-})
+const configuredApiUrl = String(import.meta.env.VITE_API_URL || '').trim().replace(/\/+$/, '')
+const apiBaseUrl = configuredApiUrl
+  ? (configuredApiUrl.endsWith('/api') ? configuredApiUrl : `${configuredApiUrl}/api`)
+  : '/api'
+
+const api = axios.create({ baseURL: apiBaseUrl })
 
 const GUEST_SESSION_KEY = 'mm_guest_session'
 const AUTH_TOKEN_KEY = 'mm_token'

@@ -62,6 +62,7 @@ def main():
         ("sample_csv_gate_local", [sys.executable, str(ROOT / "scripts" / "run_sample_csv_gate.py")], 60),
         ("target_recommendation_qa", [sys.executable, str(ROOT / "scripts" / "qa_target_recommendation.py")], 120),
         ("frontend_contracts", [sys.executable, str(ROOT / "scripts" / "check_frontend_qa_contracts.py")], 60),
+        ("runtime_config_contracts", [sys.executable, str(ROOT / "scripts" / "check_runtime_config.py")], 60),
         ("llm_foundation_qa", [sys.executable, str(ROOT / "scripts" / "run_llm_foundation_qa.py")], 120),
         ("llm_report_writer_qa", [sys.executable, str(ROOT / "scripts" / "run_llm_report_writer_qa.py")], 120),
         ("starter_pack_smoke", [sys.executable, str(ROOT / "scripts" / "run_starter_pack_smoke.py")], 60),
