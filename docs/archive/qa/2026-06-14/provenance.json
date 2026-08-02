@@ -1,0 +1,50 @@
+{
+  "recorded_run_timestamp": "2026-06-14T13:07:45",
+  "timezone_status": "unknown",
+  "source_workspace_path": "C:\\Users\\82105\\Documents\\Codex\\2026-06-02\\https-web-production-5d6fa-up-railway\\work\\github-repo\\frontend",
+  "source_commit_status": "not_recorded",
+  "nearest_preceding_commit": "83d400556a1341c40c1f94c62ebbc75d806c5196",
+  "current_preservation_commit_parent": "f19f7b9b8303b1139bce846207d3358779894507",
+  "application_code_revision": "afff0e442cdf0bbff616b9e18fd78e179fa251b9",
+  "source_files": [
+    {
+      "name": "FULL_QA_RESULTS.md",
+      "sha256": "542aece1646d7815ac110453a74dc6bc3061c503d046fb2acbcaee2a6faba35f",
+      "size_bytes": 2573,
+      "last_modified_timestamp": "2026-06-14T19:24:46.4301389+09:00"
+    },
+    {
+      "name": "full_qa_results.json",
+      "sha256": "c46f267a23f3fb35fcd7fce8ff9045d864a3b0a2555ad567486b1015ee2cac72",
+      "size_bytes": 20039,
+      "last_modified_timestamp": "2026-06-14T19:24:46.4301389+09:00"
+    },
+    {
+      "name": "workspace_flow_qa_results.json",
+      "sha256": "f301254657d92921b0b23f302e71e6fade2f9860e2134d7e00b5cf89e1650c6c",
+      "size_bytes": 410,
+      "last_modified_timestamp": "2026-06-14T19:24:46.4301389+09:00"
+    }
+  ],
+  "passed_stages": [
+    "domain",
+    "upload_matrix",
+    "workspace_flow",
+    "frontend_build"
+  ],
+  "failed_stages": [],
+  "skipped_stages": [
+    {
+      "name": "training",
+      "reason": "skip-slow option"
+    }
+  ],
+  "untested_areas": [
+    "deployment",
+    "complete HTTP API and authentication prediction flow",
+    "current runtime behavior",
+    "current security controls",
+    "current quality state"
+  ],
+  "authoritative": false
+}
