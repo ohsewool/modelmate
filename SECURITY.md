@@ -35,6 +35,26 @@
 - 쓰지 않는 SDK 의존성을 남기지 않는다 — `google-generativeai`와 `google-auth`가 import하는 코드 없이 `requirements.txt`에 남아 있었고, 그 상태는 "이 프로젝트는 Gemini를 쓴다"는 잘못된 인상을 준다.
 - 공개 전 시크릿 스캔을 거친다.
 
+## 공개 전 점검 (2026-08)
+
+전체 이력을 8종 크리덴셜 패턴으로 훑었다. `scripts/scan_secrets.py`가 그 도구다.
+
+| 결과 | 내용 |
+|---|---|
+| Google API key | 4개 — `backend/main.py`, `backend/main_parts/002_auth_integrations.py`의 과거 커밋에만. HEAD에는 없음 |
+| OpenAI key | **0개.** 최초 스캔이 175개 파일을 지목했으나 전부 오탐이었다 |
+| 그 외 6종 | 0개 |
+
+`sk-[A-Za-z0-9_-]{20,}`가 minified 번들의 `sk-image-linear-from-pos` 같은 Tailwind CSS 변수명(`--tw-mask-image-…`의 뒷부분)을 전부 잡았다. 실제 키는 접두사 뒤에 하이픈이 없어서, 패턴을 `sk-(proj-)?[A-Za-z0-9]{32,}`로 조이자 0건이 됐다.
+
+느슨한 패턴은 안전한 쪽으로 틀리지 않는다. 175건짜리 경고는 읽히지 않고, 안 읽히는 경고 속에서 진짜 하나가 사라진다.
+
+스캐너는 **양성 대조** 없이는 결과를 신뢰하지 않는다 — 있다고 아는 키를 못 찾으면 중단한다. 이 장치가 필요한 이유는 실제로 당했기 때문이다: 초기 버전이 `git grep -E`에 PCRE 문법 `(?:...)`을 넘겼고, git이 매번 에러로 끝났으며, 그 빈 출력이 "시크릿 없음"으로 읽혀 **키 4개가 든 저장소를 포함해 5개 전부 깨끗하다고 보고했다.**
+
+```bash
+python3 scripts/scan_secrets.py <repo>... --control modelmate:401f4fa
+```
+
 ## 취약점 신고
 
 보안 문제를 발견하면 이슈로 공개하지 말고 저장소 소유자에게 직접 연락 바란다.

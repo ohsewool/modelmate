@@ -155,3 +155,7 @@ Future possibilities:
 - audit logs
 
 이 항목들은 현재 구현 완료 기능이 아니라 향후 상용화 가능성입니다.
+
+## 라이선스
+
+Apache License 2.0. [`LICENSE`](LICENSE) 참조.
