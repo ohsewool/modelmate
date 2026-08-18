@@ -14,6 +14,7 @@ python3 -m pytest tests/ -q
 | `evaluation_policy` | 약한 모델이 `continue` 판정을 받지 않는 것 |
 | `schema_validation` | 학습해도 소용없는 데이터가 학습 단계로 넘어가지 않는 것 |
 | `target_recommendation` | 식별자·날짜처럼 예측 대상이 될 수 없는 컬럼이 타깃으로 제안되지 않는 것 |
+| `data_profile` | 위 셋이 전부 신뢰하는 입력 — 컬럼 타입·결측·고유값 분류와 JSON 안전성 |
 
 ## 이 과정에서 고친 결함
 
