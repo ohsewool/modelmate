@@ -18,6 +18,7 @@ python3 -m pytest tests/ -q
 | `planner_interface` | LLM 제안이 결정론적 판단의 범위를 넓히지 못하는 것 |
 | `target_quality` | 타깃 추천이 근거로 삼는 점수 — 식별자·날짜·상수가 좋은 타깃으로 오르지 않는 것 |
 | `deployment_check` | 증거가 빠진 모델이 실사용자에게 나가지 않는 것 (마지막 게이트) |
+| `report_writer` | LLM 요약이 근거 섹션과 한계 고지를 밀어내지 못하는 것 |
 
 ## 이 과정에서 고친 결함
 
