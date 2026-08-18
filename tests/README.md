@@ -16,6 +16,8 @@ python3 -m pytest tests/ -q
 | `target_recommendation` | 식별자·날짜처럼 예측 대상이 될 수 없는 컬럼이 타깃으로 제안되지 않는 것 |
 | `data_profile` | 위 셋이 전부 신뢰하는 입력 — 컬럼 타입·결측·고유값 분류와 JSON 안전성 |
 | `planner_interface` | LLM 제안이 결정론적 판단의 범위를 넓히지 못하는 것 |
+| `target_quality` | 타깃 추천이 근거로 삼는 점수 — 식별자·날짜·상수가 좋은 타깃으로 오르지 않는 것 |
+| `deployment_check` | 증거가 빠진 모델이 실사용자에게 나가지 않는 것 (마지막 게이트) |
 
 ## 이 과정에서 고친 결함
 
