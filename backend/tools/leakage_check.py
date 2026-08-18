@@ -25,6 +25,34 @@ def _name_similarity(a: str, b: str) -> float:
     return SequenceMatcher(None, a.lower(), b.lower()).ratio()
 
 
+def _name_tokens(value: str) -> set[str]:
+    return {token for token in re.split(r"[^0-9a-zA-Z가-힣]+", value.lower()) if token}
+
+
+def _derived_from_target(column: str, target: str) -> bool:
+    """Does this column's name look like it was built from the target's name?
+
+    ``churn_label`` beside a ``churn`` target is the textbook leak, but string
+    similarity misses it: the extra token drags the ratio below any useful
+    threshold (``churn_label`` scores 0.63 against ``churn``). Token containment
+    catches the family - churn_label, churn_result, final_churn - that similarity
+    alone does not.
+    """
+    if len(target) < 3:
+        return False  # two-letter targets match too much to be evidence
+    column_tokens = _name_tokens(column)
+    target_tokens = _name_tokens(target)
+    if not target_tokens or not column_tokens:
+        return False
+    if target_tokens <= column_tokens and column_tokens != target_tokens:
+        return True
+    # Unsplittable names: churnlabel, churnflag
+    compact_target = "".join(sorted(target_tokens))
+    return any(
+        token != compact_target and compact_target in token for token in column_tokens
+    )
+
+
 def _suspicion(column: str, target: str, profile: dict[str, Any]) -> dict[str, Any] | None:
     reasons: list[str] = []
     score = 0.0
@@ -32,9 +60,13 @@ def _suspicion(column: str, target: str, profile: dict[str, Any]) -> dict[str, A
     row_count = int(profile.get("row_count") or 0)
     unique_ratio = round(unique_count / row_count, 6) if row_count else 0.0
 
+    derived = _derived_from_target(column, target)
     if _name_similarity(column, target) >= 0.72:
         score += 0.45
         reasons.append("타깃 컬럼명과 매우 비슷합니다.")
+    elif derived:
+        score += 0.45
+        reasons.append("타깃 컬럼명을 그대로 포함하는 파생 이름입니다.")
     if RESULT_NAME_RE.search(column):
         score += 0.4
         reasons.append("결과나 라벨을 뜻하는 이름입니다.")
