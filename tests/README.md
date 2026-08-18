@@ -8,6 +8,8 @@ python3 -m pytest tests/ -q
 
 학습 실행 없이 검증 가능한 **안전 게이트**부터 덮었다. 이 도구들이 잘못 판단하면 학습이 성공해도 결과를 신뢰할 수 없기 때문이다.
 
+체인 전체가 덮여 있다 — 데이터가 들어오는 지점(`data_profile`)부터, 쓸 만한지(`schema_validation`), 무엇을 예측할지(`target_quality`·`target_recommendation`), 답이 새지 않았는지(`leakage_check`), 결과를 통과시킬지(`evaluation_policy`), 그 증거로 무슨 어조를 쓸지(`validation`), 무엇을 쓸지(`report_writer`), 내보낼지(`deployment_check`)까지.
+
 | 대상 | 무엇을 지키는가 |
 |---|---|
 | `leakage_check` | 타깃 누수 컬럼이 특징 집합에 남지 않는 것 |
@@ -19,6 +21,7 @@ python3 -m pytest tests/ -q
 | `target_quality` | 타깃 추천이 근거로 삼는 점수 — 식별자·날짜·상수가 좋은 타깃으로 오르지 않는 것 |
 | `deployment_check` | 증거가 빠진 모델이 실사용자에게 나가지 않는 것 (마지막 게이트) |
 | `report_writer` | LLM 요약이 근거 섹션과 한계 고지를 밀어내지 못하는 것 |
+| `validation` | 약한 증거가 자신 있는 어조로 서술되지 않는 것 (보고서 톤의 근거) |
 
 ## 이 과정에서 고친 결함
 
