@@ -10,7 +10,6 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 DB_PATH = ROOT / "tmp_workspace_flow_qa.db"
 os.environ["DB_PATH"] = str(DB_PATH)
-os.environ["MODEL_MATE_DISABLE_GEMINI"] = "1"
 sys.path.insert(0, str(ROOT))
 import backend.main as m  # noqa: E402
 
