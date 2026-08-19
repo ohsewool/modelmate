@@ -156,6 +156,14 @@ Future possibilities:
 
 이 항목들은 현재 구현 완료 기능이 아니라 향후 상용화 가능성입니다.
 
+## 데모 데이터
+
+```bash
+python3 scripts/make_demo_data.py
+```
+
+라이선스가 얽히지 않도록 외부 데이터셋을 넣지 않고 합성한다. 그중 하나에는 서로 다른 방식으로 새는 컬럼 셋이 의도적으로 심어져 있어, 누출 검사가 실제로 작동하는 것을 볼 수 있다. 이 데이터를 만드는 과정에서 검사기의 결함 세 가지가 드러났고 그 경위는 [`docs/DEMO_DATA.md`](docs/DEMO_DATA.md)에 있다.
+
 ## 라이선스
 
 Apache License 2.0. [`LICENSE`](LICENSE) 참조.
