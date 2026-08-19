@@ -38,8 +38,11 @@ def _fallback_from_state(modelmate, limit: int) -> tuple[str, list[dict[str, Any
     values = getattr(model, "feature_importances_", None)
     source = "feature_importance"
     if values is None and hasattr(model, "coef_"):
+        # Only reached when backend.main is unavailable; the real path is
+        # global_explanation_source in main_parts/032, where the standardisation
+        # lives. Duplicating that logic here would guarantee the two drift.
         coef = abs(model.coef_)
-        values = coef.mean(axis=0) if getattr(coef, "ndim", 1) > 1 else coef
+        values = coef.mean(axis=0) if getattr(coef, "ndim", 1) > 1 else coef.ravel()
         source = "model_coefficient"
     if values is None:
         raise ValueError("Model does not expose feature_importances_ or coef_.")
@@ -60,7 +63,9 @@ def shap_explainer_tool(arguments: dict[str, Any]) -> dict[str, Any]:
         local = []
         if hasattr(modelmate, "local_explanation_items") and len(modelmate.STATE.get("X", [])):
             local = [modelmate.local_explanation_items(0, min(8, limit))]
-        explanation_type = "shap" if source == "shap" else source or "fallback"
+        # Never claim SHAP for something that is not SHAP: the name is what a
+        # reader uses to decide how much weight to give the explanation.
+        explanation_type = source or "fallback"
         summary = (
             f"{top_features[0]['feature']} is the strongest available explanation signal."
             if top_features else "No feature-level explanation signal was found."
@@ -69,6 +74,11 @@ def shap_explainer_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "Feature importance indicates model signal strength, not guaranteed causality.",
             "Fallback explanations are approximations when SHAP values are unavailable.",
         ]
+        if source == "standardized_coefficient":
+            limitations.append(
+                "계수는 특징의 표준편차로 정규화했습니다. 단위가 다른 특징의 계수를 "
+                "그대로 비교하면 중요도가 아니라 측정 단위를 비교하게 됩니다."
+            )
         result = {
             "success": True,
             "status": "explained",

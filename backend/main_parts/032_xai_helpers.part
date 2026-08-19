@@ -36,7 +36,20 @@ def global_explanation_source(model, X, y):
         return "feature_importance", np.asarray(model.feature_importances_, dtype=float)
     coef = coefficient_importance(model)
     if coef is not None:
-        return "model_coefficient", np.asarray(coef, dtype=float)
+        # A coefficient is "effect per one unit of this column", and the units are
+        # not comparable across columns. Ranking by raw magnitude therefore ranks
+        # features by what they happen to be measured in. On the demo dataset this
+        # put support_tickets (range 0-6) first and tenure_months (range 1-71)
+        # third; the data generator gives tenure roughly three times the influence
+        # across its observed range, and the model had learned coefficients
+        # matching the generator almost exactly. The model was right and the
+        # explanation was reading it wrong.
+        #
+        # Multiplying by each column's standard deviation asks the comparable
+        # question - how much the outcome moves for a typical change in this
+        # column - which is the standardised coefficient.
+        spread = np.asarray([float(X[col].std()) or 1.0 for col in X.columns], dtype=float)
+        return "standardized_coefficient", np.asarray(coef, dtype=float) * spread
     return "target_correlation", correlation_importance(X, y)
 
 
