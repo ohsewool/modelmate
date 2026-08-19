@@ -30,6 +30,31 @@ def evaluation_tool(arguments: dict[str, Any]) -> dict[str, Any]:
         warnings.append("Metric is usable but below the pass threshold.")
     if status == "fail":
         warnings.append("Metric is below the minimum acceptable threshold.")
+
+    # Two safety mechanisms in this product used to contradict each other. The
+    # leakage check tells a user to drop the columns that reproduce the target;
+    # doing so takes the demo dataset from AUC 1.000 to 0.778, which crosses
+    # from `pass` to `warning`. So following the advice produced a worse verdict
+    # than ignoring it, and the gate that exists to catch bad models was
+    # rewarding the leak.
+    #
+    # The fix is not a lower number - that would be another figure with nothing
+    # behind it. A metric is only as meaningful as the features it was earned
+    # on, so a high score sitting on high leakage risk is evidence against the
+    # model rather than for it. This reads the severity the leakage check
+    # already computed instead of inventing a "suspiciously high" threshold.
+    leakage_risk = str(
+        arguments.get("leakage_risk")
+        or (arguments.get("leakage_result") or {}).get("leakage_risk")
+        or ""
+    ).lower()
+    if leakage_risk == "high" and status == "pass":
+        status = "warning"
+        warnings.append(
+            "높은 누수 위험이 남아 있는 상태의 지표입니다. 점수가 높은 것이 "
+            "모델이 좋다는 근거가 되지 못합니다 — 누수 컬럼을 제외한 뒤 다시 평가하세요."
+        )
+
     decision_payload = decision(status, success)
     observation = {
         "severity": "error" if not success or status == "fail" else "warning" if status in ("warning", "unknown") else "info",

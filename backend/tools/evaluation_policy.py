@@ -5,6 +5,18 @@ from __future__ import annotations
 from typing import Any
 
 
+# Defaults, not standards. There is no universal bar: 0.75 ROC-AUC can be a
+# valuable churn model and an unusable clinical one, and nothing in this file
+# knows which problem it is looking at. These numbers are a starting point for
+# someone who has not yet said what "good enough" means for their decision.
+#
+# They are deliberately not tuned to make this project's own demo pass. The
+# clean demo dataset scores 0.778 and lands in `warning`, which is the correct
+# reading of a model that is useful and not yet proven - and lowering the bar to
+# 0.75 so the example looked better would be fitting the standard to the sample.
+#
+# `threshold_config` overrides them per call, and a deployment that cares about
+# this answer should set it rather than inherit a number chosen by a stranger.
 DEFAULT_THRESHOLDS = {
     "classification": {"pass": 0.80, "warning": 0.65},
     "regression": {"pass": 0.70, "warning": 0.40},

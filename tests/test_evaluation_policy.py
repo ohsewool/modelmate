@@ -147,3 +147,68 @@ class TestEndToEndGate:
         status, _ = threshold_status(metric, value, outcome["task_type"], {})
         assert status == "unknown"
         assert decision(status, success=True)["decision_type"] == "needs_review"
+
+
+class TestAHighScoreOnLeakageIsNotAPass:
+    """Two gates in this product used to contradict each other.
+
+    The leakage check tells a user to drop the columns that reproduce the
+    target. On the demo dataset that takes AUC from 1.000 to 0.778, which
+    crosses from `pass` to `warning` - so following the advice produced a worse
+    verdict than ignoring it, and the gate meant to catch bad models was
+    rewarding the leak.
+    """
+
+    def evaluate(self, auc, **extra):
+        from backend.tools.evaluation import evaluation_tool
+        return evaluation_tool({
+            "automl_training_result": {
+                "success": True, "task_type": "classification",
+                "leaderboard": [{"model": "m", "roc_auc": auc}],
+                "best_model": {"name": "m"},
+            },
+            "task_type": "classification", **extra,
+        })
+
+    def test_a_perfect_score_on_high_leakage_does_not_pass(self):
+        assert self.evaluate(1.0, leakage_risk="high")["threshold_status"] == "warning"
+
+    def test_the_reason_says_why_the_score_is_not_evidence(self):
+        warnings = self.evaluate(1.0, leakage_risk="high")["warnings"]
+        assert any("누수" in text for text in warnings)
+
+    def test_the_same_score_without_leakage_still_passes(self):
+        """The check must not punish a genuinely good model."""
+        assert self.evaluate(1.0, leakage_risk="low")["threshold_status"] == "pass"
+
+    def test_leakage_findings_can_arrive_nested(self):
+        result = self.evaluate(1.0, leakage_result={"leakage_risk": "high"})
+        assert result["threshold_status"] == "warning"
+
+    def test_a_low_score_is_unaffected_by_the_rule(self):
+        """It was already below the bar; leakage does not change that reading."""
+        assert self.evaluate(0.60, leakage_risk="high")["threshold_status"] == \
+               self.evaluate(0.60, leakage_risk="low")["threshold_status"]
+
+    def test_no_leakage_information_leaves_the_verdict_alone(self):
+        assert self.evaluate(1.0)["threshold_status"] == "pass"
+
+
+class TestTheDefaultsAreNotFittedToThisProject:
+    def test_the_clean_demo_dataset_does_not_pass(self):
+        """0.778 is what the honest model scores, and it reads as `warning`.
+
+        Lowering the bar to 0.75 so the project's own example looked better
+        would be fitting the standard to the sample.
+        """
+        from backend.tools.evaluation_policy import DEFAULT_THRESHOLDS, threshold_status
+        status, _ = threshold_status("roc_auc", 0.778, "classification", DEFAULT_THRESHOLDS)
+        assert status == "warning"
+
+    def test_a_caller_can_state_their_own_bar(self):
+        """A deployment that cares should set this rather than inherit it."""
+        from backend.tools.evaluation_policy import threshold_status
+        status, _ = threshold_status(
+            "roc_auc", 0.778, "classification",
+            {"classification": {"pass": 0.75, "warning": 0.60}})
+        assert status == "pass"

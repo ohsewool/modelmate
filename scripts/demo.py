@@ -90,7 +90,19 @@ def main() -> int:
     if best["metric"]["value"] >= 0.99:
         print("\n  ⚠ 완벽에 가까운 점수는 대개 실력이 아니라 누출이다.")
 
-    rule("4. 증거 검증 — 무엇을 확신해도 되는지")
+    rule("4. 평가 — 누출 위에 앉은 점수는 근거가 아니다")
+    from backend.tools.evaluation import evaluation_tool
+
+    evaluated = evaluation_tool({
+        "automl_training_result": trained,
+        "task_type": trained["task_type"],
+        "leakage_risk": leakage["leakage_risk"],
+    })
+    print(f"  판정 {evaluated['threshold_status']} · 모델 품질 {evaluated['model_quality']}")
+    for text in evaluated["warnings"]:
+        print(f"    · {text}")
+
+    rule("5. 증거 검증 — 무엇을 확신해도 되는지")
     evidence = {
         "selected_target": args.target,
         "task_type": trained["task_type"],
@@ -98,7 +110,7 @@ def main() -> int:
         "metric_summary": {"evaluated_metric": best["metric"]["label"],
                            "best_metric_value": best["metric"]["value"]},
         "explanation_summary": f"상위 특징: {', '.join(trained['used_features'][:3])}",
-        "threshold_status": "pass",
+        "threshold_status": evaluated["threshold_status"],
         "training_success": True,
         # The structured findings, not their prose. Flattening these to strings
         # is what let a high-severity column past the validation gate here.
@@ -118,7 +130,7 @@ def main() -> int:
         print(f"  차단 사유: {validation['blocking_issues']}")
     print(f"  다음 행동: {validation['recommended_next_action']}")
 
-    rule("5. 보고서 — 검증 결과가 서술 톤을 정한다")
+    rule("6. 보고서 — 검증 결과가 서술 톤을 정한다")
     report = report_writer_tool({"evidence_bundle": evidence, "validation_result": validation})
     print(f"  {report['title']}")
     print(f"  요약: {report['summary'][:150]}")
