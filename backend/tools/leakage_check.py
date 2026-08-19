@@ -165,9 +165,21 @@ def _suspicion(column: str, target: str, profile: dict[str, Any],
         score += 0.08
         reasons.append("날짜/시간 컬럼은 시점 누수를 확인해야 합니다.")
 
-    # Measured, not guessed. Weighted to stand on its own: a column that alone
-    # reproduces the target is a leak whatever it is called, and a name-based
-    # score of 0 must not keep it below the exclusion threshold.
+    # The two thresholds are measured rather than picked. Across synthetic data
+    # from `scripts/make_demo_data.py`'s generator, swept over sample sizes 200
+    # to 3000 and signal strengths 0.5x to 3x, planted leaks always separate at
+    # 1.000 and the strongest *genuine* feature reaches 0.909. The gap never
+    # closes; it narrows to 0.091 when the real signal is strongest.
+    #
+    # So the two tiers do different jobs. 0.90 catches anything a person should
+    # look at, and it does catch strong legitimate features - which is why it
+    # only warns. 0.97 sits above every genuine feature observed, so exclusion
+    # is reserved for columns that reproduce the target outright. Warning on a
+    # real predictor costs a glance; excluding one costs the model its best
+    # feature, and a check that does that is a check people switch off.
+    #
+    # Measured on one generator family, which is a real limit: these numbers
+    # describe how that data behaves, not a universal boundary.
     if separation is not None and separation >= 0.90:
         score += 0.75 if separation >= 0.97 else 0.5
         reasons.append(

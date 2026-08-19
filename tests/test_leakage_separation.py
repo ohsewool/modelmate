@@ -21,7 +21,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from backend.tools.leakage_check import _separation_power, leakage_check_tool
+from backend.tools.leakage_check import _separation_power, _suspicion, leakage_check_tool
 
 ROWS = 400
 SEED = 7
@@ -171,3 +171,63 @@ class TestFailureIsNotAnAllClear:
     def test_a_categorical_leak_is_caught(self, frame):
         frame["exit_bucket"] = np.where(frame["churn"] == "yes", "left", "stayed")
         assert verdict(check(frame), "exit_bucket")["severity"] == "high"
+
+
+class TestTheThresholdsAreWhereMeasurementPutThem:
+    """0.90 and 0.97 are measured, and the measurement is repeated here.
+
+    Sweeping the demo generator over sample sizes and signal strengths: planted
+    leaks separate at 1.000, and the strongest genuine feature reaches 0.909.
+    Both tiers earn their place from that gap - 0.90 catches everything worth a
+    look, and 0.97 sits above every genuine feature seen, so exclusion is
+    reserved for columns that reproduce the target outright.
+
+    A check that excludes a real predictor is a check people switch off, which
+    is why the tiers are not collapsed into one.
+    """
+
+    def _generate(self, rows, strength, seed):
+        rng = np.random.default_rng(seed)
+        tenure = rng.integers(1, 72, rows)
+        tickets = rng.poisson(1.4, rows)
+        fee = rng.normal(45, 15, rows)
+        logit = (-2.9 + strength * (-0.045 * tenure + 0.30 * tickets + 0.022 * fee)
+                 + rng.normal(0, 0.5, rows))
+        churned = rng.random(rows) < 1 / (1 + np.exp(-logit))
+        target = pd.Series(np.where(churned, "yes", "no"))
+        genuine = pd.DataFrame({"tenure": tenure, "tickets": tickets, "fee": fee})
+        leak = pd.Series(np.where(churned, rng.normal(2, 0.6, rows),
+                                  rng.normal(8, 0.6, rows)))
+        return genuine, leak, target
+
+    @pytest.mark.parametrize("rows", [200, 1200])
+    @pytest.mark.parametrize("strength", [0.5, 1.0, 3.0])
+    def test_a_planted_leak_always_clears_the_exclusion_tier(self, rows, strength):
+        genuine, leak, target = self._generate(rows, strength, seed=1)
+        assert _separation_power(leak, target) >= 0.97
+
+    @pytest.mark.parametrize("rows", [200, 1200])
+    @pytest.mark.parametrize("strength", [0.5, 1.0, 3.0])
+    def test_no_genuine_feature_reaches_the_exclusion_tier(self, rows, strength):
+        """The number that matters. Exclusion must not take a real predictor."""
+        genuine, _, target = self._generate(rows, strength, seed=1)
+        for column in genuine.columns:
+            power = _separation_power(genuine[column], target)
+            if power is not None:
+                assert power < 0.97, f"{column} at {power:.3f} would be excluded"
+
+    def test_a_very_strong_genuine_feature_is_warned_not_excluded(self):
+        """It does cross 0.90, and that tier only warns - which is the point of
+        having two."""
+        profile = {"row_count": 1200, "unique_count": {},
+                   "possible_id_like_columns": [], "datetime_like_columns": []}
+        warned = _suspicion("strong_feature", "churn", profile, 0.909)
+        assert warned["suggested_action"] == "warn"
+
+        excluded = _suspicion("copies_the_target", "churn", profile, 1.0)
+        assert excluded["suggested_action"] == "exclude"
+
+    def test_below_the_warning_tier_nothing_is_raised(self):
+        profile = {"row_count": 1200, "unique_count": {},
+                   "possible_id_like_columns": [], "datetime_like_columns": []}
+        assert _suspicion("ordinary", "churn", profile, 0.88) is None
