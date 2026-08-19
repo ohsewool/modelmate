@@ -17,7 +17,7 @@ from backend.agents.persistence import (
     update_plan_step_status,
     update_tool_call,
 )
-from backend.tools import build_pr04_mock_registry
+from backend.tools import build_registry
 
 
 BLOCKING_TOOL_STATUSES = {"fail", "failed", "no_input"}
@@ -40,7 +40,7 @@ def execute_agent_run(conn, analysis_run_id: str) -> dict[str, Any]:
         "goal_category": (run.get("interpreted_goal") or {}).get("goal_category") or "general_prediction",
         "goal_next_actions": (run.get("interpreted_goal") or {}).get("goal_next_actions") or [],
     }
-    registry = build_pr04_mock_registry()
+    registry = build_registry()
 
     if run.get("supported_status") == "unsupported":
         create_validation_result(

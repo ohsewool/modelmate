@@ -31,4 +31,5 @@ python3 -m pytest tests/ -q
 
 - 학습 파이프라인(`automl_training`) — 실제 학습 실행과 데이터셋이 필요하다. FULL_QA에서 training이 skipped로 남은 부분이 여기다.
 - API 계층(`main_parts` 조립) — 조립 방식(`exec`)상 부분 단위 테스트가 어렵고, 별도 리팩터링이 선행되어야 한다.
-- 에이전트 실행 경로 — `executor`/`mock_runner`는 여전히 mock 기반이다. 계획 단계(`planner_interface`)의 안전 경계는 덮었지만 실행 단계는 아니다.
+- 에이전트 실행 경로 — **이 항목은 틀렸었다.** `executor`는 mock이 아니다. 레지스트리 이름이 `build_pr04_mock_registry`였을 뿐, 모든 항목이 실제 핸들러를 바인딩하고 executor는 `handler`를 호출한다. 즉 에이전트 실행은 처음부터 직접 호출과 같은 누출 검사·학습·검증을 지나고 있었다. 아무도 확인하지 않았고 이름이 대신 주장하고 있었다. `build_registry`로 고치고 `tests/test_agent_tool_registry.py`가 실제 동작을 고정한다.
+- `mock_runner`는 여전히 mock이다 — LLM 없이 plan→tool call→observation→decision 형태만 증명하는 별도 경로이며, 그 목적에는 맞다.

@@ -1,6 +1,16 @@
-"""Mock tool registry for PR-04.
+"""The tool registry the agent executor dispatches through.
 
-Future PRs will wrap existing ModelMate functions as tool adapters here.
+Named "mock" from the scaffolding phase, and it stopped being one: every entry
+below binds a real handler - leakage_check_tool, automl_training_tool,
+validation_tool - and the executor calls `handler`, not `mock_response`.
+
+The stale name cost something. `tests/README.md` recorded the agent execution
+path as mock-based and unverified on that basis, and the roadmap carried it as
+an open gap for weeks. Nobody had checked; the name was doing the asserting.
+
+`mock_response` survives as a description of shape for callers that want the
+schema without running anything. `build_registry` is the name to use; the two
+`build_pr*_mock_registry` functions remain as aliases because callers exist.
 """
 
 from __future__ import annotations
@@ -65,7 +75,7 @@ def _mock_handler(arguments: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def build_pr01_mock_registry() -> ToolRegistry:
+def build_registry() -> ToolRegistry:
     registry = ToolRegistry()
     for name, description, mock_response, handler in [
         (
@@ -188,5 +198,11 @@ def build_pr01_mock_registry() -> ToolRegistry:
     return registry
 
 
+def build_pr01_mock_registry() -> ToolRegistry:
+    """Kept for callers written before the name was corrected."""
+    return build_registry()
+
+
 def build_pr04_mock_registry() -> ToolRegistry:
-    return build_pr01_mock_registry()
+    """Kept for callers written before the name was corrected."""
+    return build_registry()
