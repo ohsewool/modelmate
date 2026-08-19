@@ -6,11 +6,13 @@ ModelMate는 CSV 데이터를 업로드하면 데이터 구조 분석, 예측 �
 
 English summary: ModelMate turns CSV data into explainable predictions, grounded reports, and reusable APIs through a guided AI analyst workflow.
 
-## Live Demo
+## 배포 이력
 
-- Railway: https://web-production-5d6fa.up.railway.app/
-- GitHub: https://github.com/ohsewool/-
-- Branch: `main`
+Railway에 배포해 운영했다. 그 인스턴스는 **무료 플랜 만료로 지금은 내려가 있고**, 링크를 남겨두면 방문자가 `Application not found`를 만나므로 지웠다 — 죽은 링크는 없는 링크보다 나쁘다.
+
+배포 설정 자체는 저장소에 남아 있어 다시 띄울 수 있다: [`railway.toml`](railway.toml), [`Procfile`](Procfile), [`nixpacks.toml`](nixpacks.toml).
+
+로컬 실행은 아래 **Local Setup** 참조. 저장소는 `github.com/ohsewool/modelmate`이며, 예전 주소 `ohsewool/-`는 이름을 바꾼 것이라 리다이렉트된다.
 
 ## What It Does
 
@@ -74,7 +76,7 @@ Agent Mode는 “완전 자율 데이터 과학자”를 의미하지 않습니�
 - Frontend: React, Vite, JavaScript
 - Backend: FastAPI, Python
 - Data/ML: pandas, scikit-learn 기반 pipeline adapters
-- Deployment: Railway
+- Deployment: Railway (설정은 유지, 인스턴스는 만료로 종료)
 - QA: Python smoke scripts, Vite build
 
 ## Local Setup
