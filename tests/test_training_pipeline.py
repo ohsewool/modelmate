@@ -241,3 +241,86 @@ class TestRequestIsolation:
             "file_path": str(CLEAN), "target_column": "no_such_column",
         })
         assert result["success"] is False
+
+
+class TestFollowingTheAdviceChangesTheVerdict:
+    """Advice that cannot change the outcome is not advice.
+
+    The leakage risk the downstream gates read was computed over the whole
+    dataset - a fact about the file, not about the model. So a user who excluded
+    every flagged column still reached `invalid` and `blocked`, the same verdict
+    as ignoring the advice entirely.
+
+    Training now re-checks against the features the model actually used, which
+    is the question the gates are really asking: is *this model* resting on a
+    leak.
+    """
+
+    def _train(self, path, excluded):
+        from backend.tools.automl_training import automl_training_tool
+        return automl_training_tool({
+            "file_path": str(path), "target_column": "churn",
+            "excluded_columns": list(excluded),
+        })
+
+    def test_ignoring_the_advice_leaves_the_risk_high(self, recommended_exclusions):
+        _require_generated_data()
+        assert self._train(LEAKY, ["customer_id"])["leakage_risk"] == "high"
+
+    def test_following_the_advice_lowers_it(self, recommended_exclusions):
+        _require_generated_data()
+        trained = self._train(LEAKY, ["customer_id"] + recommended_exclusions)
+        assert trained["leakage_risk"] == "low"
+
+    def test_the_risk_is_scoped_to_the_features_used(self, recommended_exclusions):
+        """Labelled, so a reader knows which question was answered."""
+        _require_generated_data()
+        trained = self._train(LEAKY, ["customer_id"] + recommended_exclusions)
+        assert trained["leakage_scope"] == "used_features"
+        assert not set(trained["used_features"]) & set(recommended_exclusions)
+
+    def test_a_filtered_leaky_run_matches_the_clean_run(self, recommended_exclusions):
+        """Once the planted columns are gone the two are the same problem."""
+        _require_generated_data()
+        filtered = self._train(LEAKY, ["customer_id"] + recommended_exclusions)
+        clean = self._train(CLEAN, ["customer_id"])
+        assert filtered["leakage_risk"] == clean["leakage_risk"]
+
+    def test_the_whole_chain_agrees_after_the_advice_is_taken(self, recommended_exclusions):
+        """End to end: evaluation, validation and deployment must all move."""
+        _require_generated_data()
+        from backend.tools.deployment_check import deployment_check_tool
+        from backend.tools.evaluation import evaluation_tool
+        from backend.tools.validation import validation_tool
+
+        def run(excluded):
+            trained = self._train(LEAKY, excluded)
+            risk = trained["leakage_risk"]
+            evaluated = evaluation_tool({"automl_training_result": trained,
+                                         "task_type": trained["task_type"],
+                                         "leakage_risk": risk})
+            bundle = {
+                "selected_target": "churn", "task_type": trained["task_type"],
+                "model_summary": {"best_model": trained["best_model"]["name"]},
+                "metric_summary": {"evaluated_metric": evaluated["evaluated_metric"],
+                                   "best_metric_value": evaluated["best_metric_value"]},
+                "explanation_summary": "…",
+                "threshold_status": evaluated["threshold_status"],
+                "training_success": True,
+                "suspicious_columns": trained.get("suspicious_columns", []),
+                "leakage_risk": risk, "limitations": ["…"],
+                "source_tool_calls": ["data_profile_tool", "schema_validation_tool",
+                                      "leakage_check_tool"],
+            }
+            validated = validation_tool({"evidence_bundle": bundle})
+            deployment = deployment_check_tool({"evidence_bundle": bundle,
+                                                "validation_result": validated})
+            return validated["validation_status"], str(
+                deployment.get("deployment_status") or deployment.get("status"))
+
+        ignored = run(["customer_id"])
+        followed = run(["customer_id"] + recommended_exclusions)
+
+        assert ignored == ("invalid", "blocked")
+        assert followed[0] == "grounded"
+        assert followed[1] != "blocked"

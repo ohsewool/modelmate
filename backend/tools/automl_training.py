@@ -73,13 +73,41 @@ def automl_training_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "col_labels": arguments.get("column_labels", {}),
         }))
         cv_result = _run_async(lambda: modelmate.run_cv(user=None))
-        return training_success(
+        outcome = training_success(
             cv_result=cv_result,
             set_result=set_result,
             state=modelmate.STATE,
             target=target,
             excluded=excluded,
         )
+
+        # The leakage risk downstream gates read was the one computed over the
+        # whole dataset, which describes the file rather than the model. So a
+        # user who followed the advice and excluded every flagged column still
+        # arrived at `invalid` and `blocked` - the same verdict as ignoring it,
+        # which makes the advice unfollowable.
+        #
+        # Re-checking against the features the model actually used answers the
+        # question the gates are really asking: is *this model* resting on a
+        # leak. On the demo dataset that is `high` before exclusions and `low`
+        # after, which is the difference the whole chain exists to produce.
+        try:
+            from backend.tools.leakage_check import leakage_check_tool
+
+            used = outcome.get("used_features") or []
+            if used:
+                recheck = leakage_check_tool({
+                    **arguments, "target_column": target, "feature_columns": used,
+                })
+                outcome["leakage_risk"] = recheck.get("leakage_risk")
+                outcome["suspicious_columns"] = recheck.get("suspicious_columns", [])
+                outcome["leakage_scope"] = "used_features"
+        except Exception:
+            # A failed re-check must not read as "no leakage": leaving the field
+            # absent makes downstream gates fall back to the dataset-wide
+            # figure, which is the cautious direction.
+            pass
+        return outcome
     except Exception as exc:
         return training_failure(exc, "training")
     finally:
