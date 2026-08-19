@@ -124,3 +124,43 @@ class TestTheRegistryIsComplete:
             "validation_tool", "report_writer_tool", "deployment_check_tool",
         }
         assert chain <= registered, f"missing: {sorted(chain - registered)}"
+
+
+class TestNoMockTextReachesAResult:
+    """mock_runner merges these entries under real output.
+
+    `{**mock_response, **handler(...)}` means any key the handler does not
+    produce survives into the result. That is fine while the surviving keys are
+    accurate descriptions, and a disaster the moment one of them asserts
+    something about what did or did not run - a `_mock_handler` here used to
+    return "No existing AutoML logic was called", which would have been false
+    attached to any of these tools.
+    """
+
+    def test_no_entry_claims_nothing_was_computed(self, registry):
+        forbidden = ("mock tool only", "no existing automl", "not called", "mocked")
+        for name in registry.names():
+            text = str(registry.get(name).mock_response).lower()
+            for phrase in forbidden:
+                assert phrase not in text, f"{name} carries {phrase!r}"
+
+    def test_surviving_keys_are_descriptive_only(self, registry):
+        """Whatever outlives a real call must be a description, not a claim.
+
+        Checked by name rather than by content: `risk` and `summary` describe
+        the tool, and a new key appearing here should force someone to think
+        about whether it can be true alongside a real result.
+        """
+        allowed = {"risk", "summary", "status"}
+        for name in registry.names():
+            assert set(registry.get(name).mock_response) <= allowed, name
+
+    def test_a_real_result_wins_every_shared_key(self, registry):
+        if not LEAKY.exists():
+            pytest.skip("run scripts/make_demo_data.py first")
+        tool = registry.get("leakage_check_tool")
+        real = tool.handler({"file_path": str(LEAKY), "target_column": "churn"})
+        merged = {**tool.mock_response, **real}
+        for key in real:
+            assert merged[key] == real[key]
+        assert merged["leakage_risk"] == "high"

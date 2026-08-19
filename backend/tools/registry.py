@@ -11,6 +11,20 @@ an open gap for weeks. Nobody had checked; the name was doing the asserting.
 `mock_response` survives as a description of shape for callers that want the
 schema without running anything. `build_registry` is the name to use; the two
 `build_pr*_mock_registry` functions remain as aliases because callers exist.
+
+Two things checked while correcting the name, both worth recording because the
+answer was "no harm" and that is only knowable by looking.
+
+`mock_runner` merges these entries under the real output as
+`{**mock_response, **handler(...)}`, so any key the handler does not produce
+survives into the result. Every surviving key was checked across all eleven
+tools: they are `risk` and generic `summary` strings, all accurate. No mock text
+reaches a caller claiming a real result was not computed.
+
+A `_mock_handler` did exist here returning
+`"PR-04 mock tool only. No existing AutoML logic was called."` - a sentence that
+would have been false attached to any of these tools. Nothing referenced it. It
+is deleted rather than left for someone to wire up in good faith.
 """
 
 from __future__ import annotations
@@ -65,14 +79,6 @@ class ToolRegistry:
             }
             for tool in sorted(self._tools.values(), key=lambda item: item.name)
         ]
-
-
-def _mock_handler(arguments: dict[str, Any]) -> dict[str, Any]:
-    return {
-        "status": "mocked",
-        "message": "PR-04 mock tool only. No existing AutoML logic was called.",
-        "arguments": arguments,
-    }
 
 
 def build_registry() -> ToolRegistry:
