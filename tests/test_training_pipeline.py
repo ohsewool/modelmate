@@ -177,50 +177,63 @@ class TestFailureIsReportedAsFailure:
         assert result["recommended_next_action"]
 
 
-class TestSharedGlobalState:
-    """Analysis state is one module-level dict, shared by every caller.
+class TestRequestIsolation:
+    """One person's upload must not become the next person's analysis.
 
-    `STATE: dict = {}` is declared once in main_parts/002 and written directly
-    by the upload endpoint (`STATE["df"] = df`) with no user, session or
-    workspace key. Deployed behind a login, that means the dataset one person
-    uploaded is the dataset the next request analyses if that request does not
-    bring its own.
+    It used to. `STATE` was a single module-level dict written by the upload
+    endpoint with no user, session or workspace key, so a request arriving
+    without a dataset analysed whatever the previous request had left behind.
+    Behind a login that is a data isolation failure.
 
-    Reusing the last upload is deliberate for a single-user session - the error
-    message for a missing dataset even says "or use an existing uploaded
-    dataset". The defect is the scope, not the reuse.
-
-    These tests pin the behaviour as it is. They are not an endorsement of it;
-    fixing it means threading a scope key through every STATE access across
-    roughly twenty .part files, which is a change to make deliberately rather
-    than in passing. See ROADMAP.
+    Reusing the last upload within a session stays deliberate - the error for a
+    missing dataset tells the caller to upload one "or use an existing uploaded
+    dataset". The defect was the scope of "existing", not the reuse.
     """
 
-    def test_a_request_without_data_inherits_the_previous_upload(self):
-        """The reproduction. Rewrite this test when the scope is fixed.
-
-        Calls the tool directly rather than through the memoising `train`
-        fixture: a cached result would not repopulate STATE, and this test is
-        entirely about what STATE holds afterwards.
-        """
+    def _train_in(self, scope, **arguments):
+        from backend.scoped_state import reset_scope, scope_for_user, set_scope
         from backend.tools.automl_training import automl_training_tool
 
-        automl_training_tool({                          # someone uploads
-            "file_path": str(CLEAN), "target_column": "churn",
-            "excluded_columns": ["customer_id"],
-        })
-        result = automl_training_tool({"target_column": "churn"})  # someone else asks
-        assert result["success"] is True, (
-            "if this now fails, request isolation was fixed - update this test"
-        )
+        token = set_scope(scope_for_user({"sub": scope}))
+        try:
+            return automl_training_tool({"target_column": "churn", **arguments})
+        finally:
+            reset_scope(token)
+
+    def test_one_caller_cannot_reach_anothers_upload(self):
+        """The original reproduction, now asserting the opposite outcome."""
+        self._train_in("user-A", file_path=str(CLEAN), excluded_columns=["customer_id"])
+        result = self._train_in("user-B")
+        assert result["success"] is False
+        assert result["failed_stage"] == "load_dataset"
+
+    def test_a_caller_still_reuses_their_own_upload(self):
+        """Isolation must not cost the behaviour the reuse exists for."""
+        self._train_in("user-C", file_path=str(CLEAN), excluded_columns=["customer_id"])
+        result = self._train_in("user-C")
+        assert result["success"] is True
         assert "tenure_months" in result["used_features"]
 
-    def test_state_is_a_single_unscoped_dict(self):
-        import backend.main as backend
-        assert isinstance(backend.STATE, dict)
-        assert not any(
-            key in backend.STATE for key in ("users", "sessions", "workspaces")
-        ), "STATE gained a scoping layer - update TestSharedGlobalState"
+    def test_a_guest_session_is_its_own_scope(self):
+        from backend.scoped_state import scope_for_user
+        first = scope_for_user({"sub": "guest:abc", "is_guest": True})
+        second = scope_for_user({"sub": "guest:xyz", "is_guest": True})
+        assert first != second
+
+    def test_an_unidentified_request_falls_back_rather_than_failing(self):
+        """Installing scoping must not break a path that has no identity."""
+        from backend.scoped_state import DEFAULT_SCOPE, scope_for_user
+        assert scope_for_user(None) == DEFAULT_SCOPE
+        assert scope_for_user({}) == DEFAULT_SCOPE
+
+    def test_the_scope_is_not_something_a_caller_names(self):
+        """A client that could choose its scope could choose someone else's.
+
+        The key comes from `sub`, which the server resolves from a signed token
+        or the guest header; there is no parameter for it.
+        """
+        from backend.scoped_state import scope_for_user
+        assert scope_for_user({"sub": "user-A", "scope": "user-B"}) == "user-A"
 
     def test_an_unknown_target_fails_rather_than_guessing(self, train):
         from backend.tools.automl_training import automl_training_tool

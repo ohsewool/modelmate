@@ -123,7 +123,40 @@ init_db()
 
 HISTORY_FILE = "experiment_history.json"
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")
-STATE: dict = {}
+# One dict shared by every request meant an upload from one person was the
+# dataset the next request analysed. ScopedState keeps the same mapping
+# interface - all 232 uses below are unchanged - and decides which bucket
+# "current" refers to from a context variable the middleware sets per request.
+# With no scope set it behaves exactly as the plain dict did.
+from backend.scoped_state import ScopedState, reset_scope, scope_for_user, set_scope  # noqa: E402
+
+STATE = ScopedState()
+
+
+@app.middleware("http")
+async def _scope_state_to_the_caller(request, call_next):
+    """Bind analysis state to whoever is asking.
+
+    The scope comes from the identity `get_current_user` already resolves, so a
+    client cannot ask to be placed in another caller's state - it never names a
+    scope. Anything unauthenticated falls into the shared default, which is what
+    the process did before scoping existed.
+    """
+    user = None
+    try:
+        credentials = await security(request)
+    except Exception:
+        credentials = None
+    try:
+        user = get_current_user(credentials, request.headers.get("x-modelmate-guest-session"))
+    except Exception:
+        user = None
+
+    token = set_scope(scope_for_user(user))
+    try:
+        return await call_next(request)
+    finally:
+        reset_scope(token)
 
 MODELS = {
     "Random Forest":       lambda: RandomForestClassifier(n_estimators=100, random_state=42),
