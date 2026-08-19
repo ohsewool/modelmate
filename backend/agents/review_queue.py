@@ -6,6 +6,8 @@ queue, async worker, frontend queue, or blocking workflow.
 
 from __future__ import annotations
 
+import hashlib
+import json
 from typing import Any
 
 from backend.agents.state import utc_now_iso
@@ -13,16 +15,40 @@ from backend.agents.state import utc_now_iso
 
 REVIEW_ACTIONS = {"needs_review", "hold", "blocked", "retry_recommended"}
 
+# Actions that carry on with the analysis and need nobody's attention. This is
+# an allow-list on purpose. It used to be the other way round - REVIEW_ACTIONS
+# was consulted as a deny-list, so anything not named in it produced no review
+# at all, and `block_execution` (which the executor really emits) and
+# `abort_and_delete_dataset` both went past unseen.
+#
+# A queue whose job is to catch what should not proceed cannot be built from a
+# list of things that should not proceed, because the dangerous case is always
+# the one nobody thought to add. An unfamiliar action is exactly what a person
+# should look at, so anything not listed here escalates.
+#
+# The cost of being wrong in this direction is a reviewer seeing an item that
+# turned out to be routine. The cost in the other direction is a destructive
+# action passing unseen.
+PROCEEDING_ACTIONS = {
+    "proceed", "continue", "start", "started", "complete", "completed",
+    "next_action", "next_step", "ok", "success", "succeeded", "pass", "passed",
+    "continue_with_reviewer_context", "clarify_resolution", "collect_resolution",
+}
+
 
 def should_create_review_item(decision: dict[str, Any], observation: dict[str, Any] | None = None) -> bool:
     action = str(decision.get("action") or decision.get("deployment_status") or "").lower()
     status = str(decision.get("validation_status") or "").lower()
     severity = str((observation or {}).get("severity") or "").lower()
-    if action in REVIEW_ACTIONS or status in {"weak", "invalid"}:
+    if status in {"weak", "invalid"}:
         return True
     if severity in {"warning", "error", "critical"}:
         return True
-    return False
+    if not action:
+        # A decision that does not say what it decided is not a decision that
+        # can be waved through.
+        return True
+    return action not in PROCEEDING_ACTIONS
 
 
 def build_review_item(
@@ -37,7 +63,20 @@ def build_review_item(
     recommended_action: str = "Review the issue and choose dismiss or resolve.",
 ) -> dict[str, Any]:
     created_at = utc_now_iso()
-    review_id = f"review-{analysis_run_id or 'draft'}-{step_id or 'step'}-{reason_code}"
+    # The id used to be run+step+reason alone, so two different problems at the
+    # same step collapsed onto one identifier: a `critical` observation and an
+    # `error` one produced the same review_id, and anything keyed by id would
+    # keep one of them.
+    #
+    # A digest of what the review is actually about separates them, while
+    # keeping the property that re-processing the same decision produces the
+    # same id - so a retry does not fill the queue with duplicates of one issue.
+    fingerprint = hashlib.sha256(
+        json.dumps({"decision": source_decision, "observation": source_observation or {}},
+                   ensure_ascii=False, sort_keys=True, default=str).encode("utf-8")
+    ).hexdigest()[:8]
+    review_id = (f"review-{analysis_run_id or 'draft'}-{step_id or 'step'}"
+                 f"-{reason_code}-{fingerprint}")
     return {
         "review_id": review_id,
         "analysis_run_id": analysis_run_id,
