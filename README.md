@@ -1,5 +1,7 @@
 # ModelMate
 
+[![tests](https://github.com/ohsewool/modelmate/actions/workflows/tests.yml/badge.svg)](https://github.com/ohsewool/modelmate/actions/workflows/tests.yml)
+
 ModelMate는 CSV 데이터를 업로드하면 데이터 구조 분석, 예측 타깃 추천, 모델 비교, 근거 기반 보고서, 예측 API 준비도까지 하나의 흐름으로 제공하는 Korean-first Agentic AutoML SaaS MVP입니다.
 
 English summary: ModelMate turns CSV data into explainable predictions, grounded reports, and reusable APIs through a guided AI analyst workflow.
