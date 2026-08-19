@@ -28,6 +28,41 @@ def _has_metric(metric_summary: dict[str, Any]) -> bool:
     return any(metric_summary.get(key) is not None for key in ("best_metric", "evaluated_metric", "best_metric_value"))
 
 
+def _has_high_leakage(leakage_warnings, evidence) -> bool:
+    """Is there a high-severity leakage finding?
+
+    This used to be `"high" in str(item).lower()` over the warning strings,
+    which is wrong in both directions. It misses a real finding whose message
+    does not happen to contain the English word - the leakage check writes its
+    reasons in Korean, so a genuinely high-risk column sailed through this gate
+    in the demo. And it fires on any warning mentioning "high cardinality",
+    blocking a report over something that is not leakage at all.
+
+    A severity is a value the upstream check already computes. Reading it back
+    out of prose was the mistake; the structured field is preferred, and the
+    string scan is kept only for callers that still pass plain messages.
+    """
+    columns = evidence.get("suspicious_columns")
+    if isinstance(columns, list) and columns:
+        return any(
+            isinstance(item, dict) and str(item.get("severity", "")).lower() == "high"
+            for item in columns
+        )
+    if evidence.get("leakage_risk"):
+        return str(evidence["leakage_risk"]).lower() == "high"
+    for item in leakage_warnings:
+        if isinstance(item, dict):
+            if str(item.get("severity", "")).lower() == "high":
+                return True
+            continue
+        text = str(item).lower()
+        # Narrower than before: the phrase the checker actually emits, not the
+        # bare word wherever it appears.
+        if "leakage risk: high" in text or "high leakage" in text:
+            return True
+    return False
+
+
 def validation_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     evidence = _bundle(arguments)
     metric_summary = evidence.get("metric_summary") or {}
@@ -54,7 +89,7 @@ def validation_tool(arguments: dict[str, Any]) -> dict[str, Any]:
 
     if threshold == "fail":
         blocking.append("Metric threshold failed.")
-    if any("high" in str(item).lower() for item in leakage_warnings):
+    if _has_high_leakage(leakage_warnings, evidence):
         blocking.append("High leakage risk needs review before reporting.")
     if evidence.get("training_success") is False:
         blocking.append("Training failed, so a success report cannot be grounded.")
@@ -77,7 +112,15 @@ def validation_tool(arguments: dict[str, Any]) -> dict[str, Any]:
         "missing_evidence": sorted(set(missing)),
         "unsupported_claims": unsupported,
         "recommended_tone": tone,
-        "recommended_next_action": "Generate a cautious report from available evidence." if status != "invalid" else "Fix blocking issues before writing a report.",
+        # The action has to agree with the tone. It previously said "cautious"
+        # for every non-invalid status, so a fully grounded result was told to
+        # hedge while `recommended_tone` said confident - two fields of one
+        # answer contradicting each other.
+        "recommended_next_action": (
+            "Fix blocking issues before writing a report." if status == "invalid"
+            else "Generate a cautious report from available evidence." if status == "weak"
+            else "Generate a report from the grounded evidence."
+        ),
         "observation": {
             "severity": "error" if status == "invalid" else "warning" if status == "weak" else "info",
             "message": f"Evidence validation status: {status}",

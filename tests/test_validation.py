@@ -142,3 +142,75 @@ class TestInputHandling:
     def test_no_claim_is_marked_unsupported_without_a_basis(self):
         """The field exists; it must not be populated speculatively."""
         assert validate()["unsupported_claims"] == []
+
+
+class TestHighLeakageIsDetectedBySeverityNotByWording:
+    """Reading a severity back out of prose was the mistake.
+
+    The gate was `"high" in str(warning).lower()`, which is wrong twice over: it
+    misses a real high-severity finding whose message is written in Korean - as
+    the leakage check's are, so a genuinely high-risk column passed this gate in
+    the demo - and it fires on "high cardinality", blocking a report over
+    something that is not leakage.
+    """
+
+    def test_a_structured_high_severity_column_blocks(self):
+        result = validation_tool({"evidence_bundle": complete(
+            suspicious_columns=[{"column_name": "exit_survey_score", "severity": "high"}],
+        )})
+        assert result["validation_status"] == "invalid"
+
+    def test_a_korean_reason_at_high_severity_blocks(self):
+        """The reason the checker actually writes contains no English."""
+        result = validation_tool({"evidence_bundle": complete(
+            leakage_warnings=[{"severity": "high",
+                               "reason": "이 컬럼 하나만으로 타깃이 거의 그대로 재현됩니다."}],
+        )})
+        assert result["validation_status"] == "invalid"
+
+    def test_a_leakage_risk_field_of_high_blocks(self):
+        result = validation_tool({"evidence_bundle": complete(leakage_risk="high")})
+        assert result["validation_status"] == "invalid"
+
+    def test_high_cardinality_is_not_leakage(self):
+        """The word appearing somewhere is not a finding."""
+        result = validation_tool({"evidence_bundle": complete(
+            leakage_warnings=["customer_id has high cardinality"],
+        )})
+        assert result["validation_status"] != "invalid"
+
+    def test_medium_severity_does_not_block(self):
+        result = validation_tool({"evidence_bundle": complete(
+            suspicious_columns=[{"column_name": "customer_id", "severity": "medium"}],
+        )})
+        assert result["validation_status"] != "invalid"
+
+    def test_the_original_english_phrasing_still_blocks(self):
+        """Callers passing plain messages must not silently lose the gate."""
+        result = validation_tool({"evidence_bundle": complete(
+            leakage_warnings=["Leakage risk: HIGH on churn_label"],
+        )})
+        assert result["validation_status"] == "invalid"
+
+
+class TestTheActionAgreesWithTheTone:
+    """Two fields of one answer must not contradict each other.
+
+    The action said "cautious" for every non-invalid status, so a fully grounded
+    result was told to hedge while recommended_tone said confident.
+    """
+
+    def test_grounded_evidence_is_not_told_to_hedge(self):
+        result = validate()
+        assert result["recommended_tone"] == "confident"
+        assert "cautious" not in result["recommended_next_action"]
+        assert "grounded evidence" in result["recommended_next_action"]
+
+    def test_weak_evidence_is_told_to_be_cautious(self):
+        result = validate(explanation_summary=None)
+        assert result["recommended_tone"] == "cautious"
+        assert "cautious report" in result["recommended_next_action"]
+
+    def test_invalid_evidence_is_told_to_fix_rather_than_report(self):
+        result = validate(threshold_status="fail")
+        assert "Fix blocking issues" in result["recommended_next_action"]
