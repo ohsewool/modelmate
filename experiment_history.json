@@ -768,5 +768,311 @@
     "optuna_applied": false,
     "agent_run": true,
     "task_type": "classification"
+  },
+  {
+    "timestamp": "2026-08-19 22:37:16",
+    "status": "succeeded",
+    "current_step": "automl_training",
+    "data_shape": [
+      15,
+      5
+    ],
+    "target": "churn",
+    "best_model": "Random Forest",
+    "results": [
+      {
+        "model": "Random Forest",
+        "status": "ok",
+        "accuracy": 1.0,
+        "f1": 1.0,
+        "roc_auc": 1.0
+      },
+      {
+        "model": "Gradient Boosting",
+        "status": "ok",
+        "accuracy": 1.0,
+        "f1": 1.0,
+        "roc_auc": 1.0
+      },
+      {
+        "model": "Logistic Regression",
+        "status": "ok",
+        "accuracy": 1.0,
+        "f1": 1.0,
+        "roc_auc": 1.0
+      },
+      {
+        "model": "Decision Tree",
+        "status": "ok",
+        "accuracy": 1.0,
+        "f1": 1.0,
+        "roc_auc": 1.0
+      },
+      {
+        "model": "XGBoost",
+        "status": "ok",
+        "accuracy": 0.9333,
+        "f1": 0.9333,
+        "roc_auc": 0.9444
+      },
+      {
+        "model": "LightGBM",
+        "status": "ok",
+        "accuracy": 0.5333,
+        "f1": 0.3762,
+        "roc_auc": 0.5
+      }
+    ],
+    "optuna_applied": false,
+    "dataset_ref": {
+      "id": null,
+      "project_id": null,
+      "project_name": null,
+      "filename": "customer_churn_demo.csv",
+      "target_col": "churn",
+      "rows": 15,
+      "columns": 7,
+      "domain": "보안/이상 탐지"
+    },
+    "analysis_mode": "new_analysis",
+    "reuse_config": {
+      "dataset_id": null,
+      "filename": "customer_churn_demo.csv",
+      "target_col": "churn",
+      "drop_cols": [
+        "customer_id"
+      ],
+      "auto_drop_cols": [],
+      "active_features": [
+        "tenure_months",
+        "monthly_fee",
+        "support_tickets",
+        "contract_type",
+        "last_login_days"
+      ],
+      "data_shape": [
+        15,
+        5
+      ],
+      "dataset_domain": "보안/이상 탐지",
+      "target_category": "보안 이상 탐지",
+      "task_type": "classification",
+      "best_model": "Random Forest",
+      "metric": {
+        "label": "ROC-AUC",
+        "value": 1.0
+      }
+    },
+    "drop_cols": [
+      "customer_id"
+    ],
+    "auto_drop_cols": [],
+    "dataset_domain": "보안/이상 탐지",
+    "target_category": "보안 이상 탐지",
+    "task_type": "classification"
+  },
+  {
+    "timestamp": "2026-08-19 22:37:31",
+    "status": "succeeded",
+    "current_step": "automl_training",
+    "data_shape": [
+      15,
+      5
+    ],
+    "target": "churn",
+    "best_model": "Random Forest",
+    "results": [
+      {
+        "model": "Random Forest",
+        "status": "ok",
+        "accuracy": 1.0,
+        "f1": 1.0,
+        "roc_auc": 1.0
+      },
+      {
+        "model": "Gradient Boosting",
+        "status": "ok",
+        "accuracy": 1.0,
+        "f1": 1.0,
+        "roc_auc": 1.0
+      },
+      {
+        "model": "Logistic Regression",
+        "status": "ok",
+        "accuracy": 1.0,
+        "f1": 1.0,
+        "roc_auc": 1.0
+      },
+      {
+        "model": "Decision Tree",
+        "status": "ok",
+        "accuracy": 1.0,
+        "f1": 1.0,
+        "roc_auc": 1.0
+      },
+      {
+        "model": "XGBoost",
+        "status": "ok",
+        "accuracy": 0.9333,
+        "f1": 0.9333,
+        "roc_auc": 0.9444
+      },
+      {
+        "model": "LightGBM",
+        "status": "ok",
+        "accuracy": 0.5333,
+        "f1": 0.3762,
+        "roc_auc": 0.5
+      }
+    ],
+    "optuna_applied": false,
+    "dataset_ref": {
+      "id": null,
+      "project_id": null,
+      "project_name": null,
+      "filename": "customer_churn_demo.csv",
+      "target_col": "churn",
+      "rows": 15,
+      "columns": 7,
+      "domain": "보안/이상 탐지"
+    },
+    "analysis_mode": "new_analysis",
+    "reuse_config": {
+      "dataset_id": null,
+      "filename": "customer_churn_demo.csv",
+      "target_col": "churn",
+      "drop_cols": [
+        "customer_id"
+      ],
+      "auto_drop_cols": [],
+      "active_features": [
+        "tenure_months",
+        "monthly_fee",
+        "support_tickets",
+        "contract_type",
+        "last_login_days"
+      ],
+      "data_shape": [
+        15,
+        5
+      ],
+      "dataset_domain": "보안/이상 탐지",
+      "target_category": "보안 이상 탐지",
+      "task_type": "classification",
+      "best_model": "Random Forest",
+      "metric": {
+        "label": "ROC-AUC",
+        "value": 1.0
+      }
+    },
+    "drop_cols": [
+      "customer_id"
+    ],
+    "auto_drop_cols": [],
+    "dataset_domain": "보안/이상 탐지",
+    "target_category": "보안 이상 탐지",
+    "task_type": "classification"
+  },
+  {
+    "timestamp": "2026-08-19 22:38:12",
+    "status": "succeeded",
+    "current_step": "automl_training",
+    "data_shape": [
+      15,
+      5
+    ],
+    "target": "churn",
+    "best_model": "Random Forest",
+    "results": [
+      {
+        "model": "Random Forest",
+        "status": "ok",
+        "accuracy": 1.0,
+        "f1": 1.0,
+        "roc_auc": 1.0
+      },
+      {
+        "model": "Gradient Boosting",
+        "status": "ok",
+        "accuracy": 1.0,
+        "f1": 1.0,
+        "roc_auc": 1.0
+      },
+      {
+        "model": "Logistic Regression",
+        "status": "ok",
+        "accuracy": 1.0,
+        "f1": 1.0,
+        "roc_auc": 1.0
+      },
+      {
+        "model": "Decision Tree",
+        "status": "ok",
+        "accuracy": 1.0,
+        "f1": 1.0,
+        "roc_auc": 1.0
+      },
+      {
+        "model": "XGBoost",
+        "status": "ok",
+        "accuracy": 0.9333,
+        "f1": 0.9333,
+        "roc_auc": 0.9444
+      },
+      {
+        "model": "LightGBM",
+        "status": "ok",
+        "accuracy": 0.5333,
+        "f1": 0.3762,
+        "roc_auc": 0.5
+      }
+    ],
+    "optuna_applied": false,
+    "dataset_ref": {
+      "id": null,
+      "project_id": null,
+      "project_name": null,
+      "filename": "customer_churn_demo.csv",
+      "target_col": "churn",
+      "rows": 15,
+      "columns": 7,
+      "domain": "보안/이상 탐지"
+    },
+    "analysis_mode": "new_analysis",
+    "reuse_config": {
+      "dataset_id": null,
+      "filename": "customer_churn_demo.csv",
+      "target_col": "churn",
+      "drop_cols": [
+        "customer_id"
+      ],
+      "auto_drop_cols": [],
+      "active_features": [
+        "tenure_months",
+        "monthly_fee",
+        "support_tickets",
+        "contract_type",
+        "last_login_days"
+      ],
+      "data_shape": [
+        15,
+        5
+      ],
+      "dataset_domain": "보안/이상 탐지",
+      "target_category": "보안 이상 탐지",
+      "task_type": "classification",
+      "best_model": "Random Forest",
+      "metric": {
+        "label": "ROC-AUC",
+        "value": 1.0
+      }
+    },
+    "drop_cols": [
+      "customer_id"
+    ],
+    "auto_drop_cols": [],
+    "dataset_domain": "보안/이상 탐지",
+    "target_category": "보안 이상 탐지",
+    "task_type": "classification"
   }
 ]

@@ -1,0 +1,77 @@
+# The README leads with an application, and CI only ever ran the unit tests.
+#
+# `uvicorn backend.main:app` and `scripts/run_product_smoke.py` are the two
+# commands a reader is told to run, and nothing had ever run them anywhere but
+# on one machine by hand. A suite passing says the functions behave; it does not
+# say the app boots. `backend/main.py` assembles itself from `main_parts/*.part`
+# at import time, so a part that fails to concatenate is invisible to every test
+# that imports a module directly.
+#
+# The smoke script exits non-zero when any check fails - verified by pointing it
+# at a port with nothing listening, where it reports 15 of 16 failed and exits
+# 1. Without that, this job would be decoration.
+
+name: product
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install
+        run: pip install -r requirements.txt
+
+      - name: The app must import at all
+        # Separated from booting it: an import error and a bind failure need
+        # different responses, and the assembled-from-parts main.py is where an
+        # import error would come from.
+        run: python -c "from backend.main import app; print(len(app.routes), 'routes')"
+
+      - name: Boot the server
+        run: |
+          python -m uvicorn backend.main:app --port 8000 --log-level warning \
+            > /tmp/uvicorn.log 2>&1 &
+          echo $! > /tmp/uvicorn.pid
+          for attempt in $(seq 1 60); do
+            if curl -sf http://127.0.0.1:8000/api/health > /dev/null; then
+              echo "up after ${attempt}s"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "::error::the server never became ready"
+          cat /tmp/uvicorn.log
+          exit 1
+
+      - name: The smoke script must be able to fail
+        # A checker that cannot report failure is worse than no checker: it
+        # manufactures confidence. This repository has already shipped one - a
+        # secret scanner whose regex errored on every call, whose empty output
+        # read as "clean". So the script is pointed at a dead port first, and
+        # this job only trusts the real run if the control run failed.
+        run: |
+          if python scripts/run_product_smoke.py --base-url http://127.0.0.1:9 > /dev/null 2>&1; then
+            echo "::error::the smoke script reported success against a dead port."
+            exit 1
+          fi
+          echo "control passed: it fails when the server is not there"
+
+      - name: Product smoke
+        run: python scripts/run_product_smoke.py --base-url http://127.0.0.1:8000
+
+      - name: Server log
+        if: always()
+        run: cat /tmp/uvicorn.log || true

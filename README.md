@@ -86,7 +86,10 @@ Backend:
 ```bash
 python -m compileall backend
 uvicorn backend.main:app --reload
+python scripts/run_product_smoke.py --base-url http://127.0.0.1:8000   # 16개 검사
 ```
+
+`backend/main.py`는 `main_parts/*.part`를 import 시점에 조립한다. 테스트는 모듈을 직접 import하므로 조립이 깨져도 알 수 없다 — **스위트가 통과한다는 것과 앱이 뜬다는 것은 다른 주장이다.** 그래서 [product 워크플로](.github/workflows/product.yml)가 매 push마다 서버를 띄우고 이 스모크를 돌린다. 스모크가 **실패할 줄 아는지** 먼저 확인한 뒤에 신뢰한다 — 아무것도 듣고 있지 않은 포트를 향해 한 번 돌려 실패하는 것을 보고, 그 다음에 진짜 서버를 친다.
 
 Frontend:
 
