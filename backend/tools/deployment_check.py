@@ -25,13 +25,47 @@ def _metric_available(metric_summary: dict[str, Any]) -> bool:
     return any(metric_summary.get(key) is not None for key in ("best_metric", "evaluated_metric", "best_metric_value"))
 
 
-def _risk_from_warnings(warnings: list[Any]) -> str:
+def _risk_from_warnings(warnings: list[Any], evidence: dict[str, Any] | None = None) -> str:
+    """How bad the leakage findings are, from the severities upstream computed.
+
+    This scanned the warning text for the word "high", which is wrong in both
+    directions and was wrong here at the last gate before a model is exposed as
+    an API. The leakage check writes its reasons in Korean, so a column it had
+    rated high came back `medium`; and "customer_id has high cardinality" - not
+    leakage at all - came back `high`.
+
+    The same defect was found and fixed in validation.py. The sweep afterwards
+    missed this one because it searched for `"literal" in variable` and this
+    line reads `word in text`, with the variable first. A pattern narrow enough
+    to miss the second instance of a bug is a pattern that has not finished.
+
+    Severity is a value the leakage check already returns. Reading it back out
+    of prose was the mistake; the structured field is preferred, and the string
+    scan is kept for callers still passing plain messages.
+    """
+    evidence = evidence or {}
+    columns = evidence.get("suspicious_columns")
+    if isinstance(columns, list) and columns:
+        severities = {str(item.get("severity", "")).lower()
+                      for item in columns if isinstance(item, dict)}
+        if "high" in severities:
+            return "high"
+        if severities & {"medium", "low"}:
+            return "medium"
+    if evidence.get("leakage_risk"):
+        risk = str(evidence["leakage_risk"]).lower()
+        if risk in ("high", "medium", "low"):
+            return risk
+
+    for item in warnings:
+        if isinstance(item, dict) and str(item.get("severity", "")).lower() == "high":
+            return "high"
     text = " ".join(str(item).lower() for item in warnings)
-    if any(word in text for word in ("high", "severe", "critical", "leakage risk: high")):
+    # Narrower than the bare word: the phrases the checker actually emits.
+    if any(phrase in text for phrase in
+           ("leakage risk: high", "high leakage", "severe", "critical")):
         return "high"
-    if warnings:
-        return "medium"
-    return "low"
+    return "medium" if warnings else "low"
 
 
 def _check(name: str, passed: bool, detail: str, severity: str = "info") -> dict[str, Any]:
@@ -49,7 +83,7 @@ def deployment_check_tool(arguments: dict[str, Any]) -> dict[str, Any]:
 
     validation_status = validation.get("validation_status") or data.get("validation_status") or "unknown"
     threshold = data.get("threshold_status") or "unknown"
-    leakage_risk = data.get("leakage_risk") or _risk_from_warnings(leakage_warnings)
+    leakage_risk = _risk_from_warnings(leakage_warnings, data)
     explanation = data.get("explanation_summary") or data.get("explanation_result")
     intended_use = data.get("intended_use") or data.get("user_goal")
     report_success = report.get("success", True)

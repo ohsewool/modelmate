@@ -170,3 +170,63 @@ class TestReportedShape:
 
     def test_the_advice_is_identifiable(self):
         assert deployment_check_tool(ready())["deployment_advice_id"]
+
+
+class TestLeakageRiskComesFromSeverityNotProse:
+    """The last gate before a model is exposed as an API.
+
+    `_risk_from_warnings` scanned the warning text for the word "high". The
+    leakage check writes its reasons in Korean, so a column it had rated high
+    came back `medium` here; and "customer_id has high cardinality" - not
+    leakage at all - came back `high`.
+
+    The same defect was fixed in validation.py earlier. The sweep afterwards
+    searched for `"literal" in variable` and missed this line, which reads
+    `word in text` with the variable first. A pattern narrow enough to miss the
+    second instance of a bug has not finished running.
+    """
+
+    def test_a_structured_high_severity_sets_high_risk(self):
+        from backend.tools.deployment_check import _risk_from_warnings
+        assert _risk_from_warnings(
+            ["이 컬럼 하나만으로 타깃이 재현됩니다."],
+            {"suspicious_columns": [{"column_name": "exit_survey_score",
+                                     "severity": "high"}]},
+        ) == "high"
+
+    def test_a_leakage_risk_field_is_used_when_present(self):
+        from backend.tools.deployment_check import _risk_from_warnings
+        assert _risk_from_warnings(["한국어 사유"], {"leakage_risk": "high"}) == "high"
+
+    def test_high_cardinality_is_not_high_leakage(self):
+        from backend.tools.deployment_check import _risk_from_warnings
+        assert _risk_from_warnings(["customer_id has high cardinality"], {}) != "high"
+
+    def test_the_english_phrasing_still_reads_as_high(self):
+        """Callers passing plain messages must not lose the gate."""
+        from backend.tools.deployment_check import _risk_from_warnings
+        assert _risk_from_warnings(["Leakage risk: HIGH on churn_label"], {}) == "high"
+
+    def test_no_warnings_is_low(self):
+        from backend.tools.deployment_check import _risk_from_warnings
+        assert _risk_from_warnings([], {}) == "low"
+
+    def test_medium_severity_does_not_escalate_to_high(self):
+        from backend.tools.deployment_check import _risk_from_warnings
+        assert _risk_from_warnings(
+            [], {"suspicious_columns": [{"severity": "medium"}]}) == "medium"
+
+    def test_the_real_checker_output_flows_through(self):
+        """End to end rather than on a hand-built bundle: what the leakage check
+        actually produces must reach this gate as high."""
+        from pathlib import Path
+
+        leaky = Path(__file__).resolve().parents[1] / "sample_data" / "generated" / "customer_churn_leaky.csv"
+        if not leaky.exists():
+            pytest.skip("run scripts/make_demo_data.py first")
+
+        from backend.tools.deployment_check import _risk_from_warnings
+        from backend.tools.leakage_check import leakage_check_tool
+
+        found = leakage_check_tool({"file_path": str(leaky), "target_column": "churn"})
+        assert _risk_from_warnings([], found) == "high"
