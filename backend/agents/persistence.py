@@ -30,6 +30,25 @@ AGENT_TRACE_TABLES = (
 
 
 def ensure_agent_trace_schema(conn: sqlite3.Connection) -> None:
+    """Create the trace tables, and turn on the constraints they declare.
+
+    SQLite ignores FOREIGN KEY clauses unless `PRAGMA foreign_keys` is on, and
+    it defaults to off. Every table below declared its references and none of
+    them were enforced: a decision could name an observation that did not exist,
+    and a decision could hang off an analysis run that had never been created.
+    Both were demonstrated before this line was added.
+
+    That matters more here than in an ordinary database. These tables are the
+    record of what the agent saw and why it acted, and a record whose citations
+    can point at nothing is a record that reads as evidence and is not. The
+    constraint was written down; only the enforcement was missing - the same
+    shape as a control that is defined and never wired up.
+
+    Set per connection because the pragma is per connection, not stored in the
+    file, so a caller opening its own connection gets it from here.
+    """
+    conn.execute("PRAGMA foreign_keys = ON")
+
     conn.execute("""
         CREATE TABLE IF NOT EXISTS analysis_runs (
             id TEXT PRIMARY KEY,
