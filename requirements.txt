@@ -2,6 +2,8 @@ fastapi
 uvicorn[standard]
 pandas
 numpy
+joblib
+pydantic
 scikit-learn
 shap
 optuna
@@ -10,3 +12,5 @@ python-jose[cryptography]
 xgboost
 lightgbm
 openai
+google-generativeai
+google-auth

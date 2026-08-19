@@ -12,7 +12,7 @@
 | 무효화 주체 | Google. 응답 메시지가 "Your API key was reported as leaked" |
 | 현재 HEAD | 키 없음 |
 | 현재 이력 | 키 없음 — 405개 커밋 전체에서 제거됨(2026-08) |
-| 현재 코드의 Gemini 사용 | 없음. LLM 호출은 `OPENAI_API_KEY` 하나만 사용한다 |
+| 현재 코드의 Gemini 사용 | **있다.** `main_parts/040_agent_a.part`가 에이전트 코멘트에 `ask_gemini`를 사용한다 |
 
 ### 무효화가 확인된 방식, 그리고 확인되지 않은 것
 
@@ -43,8 +43,19 @@
 ### 이 일에서 바뀐 것
 
 - 키를 코드에 두지 않는다. 환경변수로만 주입한다.
-- 쓰지 않는 SDK 의존성을 남기지 않는다 — `google-generativeai`와 `google-auth`가 import하는 코드 없이 `requirements.txt`에 남아 있었고, 그 상태는 "이 프로젝트는 Gemini를 쓴다"는 잘못된 인상을 준다.
 - 공개 전 시크릿 스캔을 거친다.
+
+### 정정 (2026-08-19)
+
+이 문서는 한때 "현재 코드는 Gemini를 쓰지 않는다"고 적고 있었다. **틀렸다.**
+
+근거로 삼은 검사가 `*.py`만 훑었는데, 이 백엔드는 import 시점에 `backend/main_parts/*.part`를 조립해 만들어진다. 즉 실제로 Google 라이브러리를 import하는 두 파일이 검색 범위 밖에 있었다. `001_imports_db.part`가 Google 로그인용 `id_token`을, `040_agent_a.part`가 `ask_gemini`를 네 곳에서 쓴다.
+
+그 잘못된 결론으로 `google-generativeai`와 `google-auth`를 "안 쓰는 의존성"이라며 `requirements.txt`에서 지웠고, `MODEL_MATE_DISABLE_GEMINI`를 설정하는 줄도 "아무도 안 읽는다"며 지웠다. 셋 다 복구했다.
+
+로컬에서는 아무것도 깨지지 않았다. 이 환경엔 두 패키지가 애초에 없어서 `backend.main`이 이미 import되지 않는 상태였기 때문이다. **다음 배포의 의존성 설치 단계에서, 원인이 된 커밋과 멀리 떨어진 곳에서 드러났을 것이다.**
+
+그래서 규칙을 기억에 맡기지 않고 강제한다 — `tests/test_declared_dependencies.py`가 `.part`를 포함해 백엔드가 실제로 조립되는 모든 파일에서 import를 모으고, 서드파티 각각이 선언돼 있는지 확인한다. grep은 `.part`를 잊을 수 있지만 이 테스트는 못 잊는다. 첫 실행에서 미선언 의존성 두 개(`joblib`, `pydantic`)를 더 찾아냈다 — scikit-learn과 fastapi가 끌어와 우연히 동작하던 것들이다.
 
 ## 공개 전 점검 (2026-08)
 

@@ -1,6 +1,9 @@
 import asyncio
 import json
 import os
+
+# main_parts/002 reads this at import time to keep QA off the real API.
+os.environ["MODEL_MATE_DISABLE_GEMINI"] = "1"
 import sys
 from pathlib import Path
 
