@@ -1,5 +1,15 @@
 # QA Checklist
 
+<!-- historical: 2026년 11월 발표 준비 시점 -->
+> **이 문서는 기록이다.** 발표 전에 손으로 훑던 점검표다.
+>
+> 그 뒤로 달라진 것: `tmp_datasets/*.csv`는 발표 준비 중 내려받아 쓰던 파일이라 저장소에 없다. 지금 QA는 `scripts/run_release_qa.py`(26개 검사)와 CI의 `product` 워크플로가 대신한다.
+>
+> 지금의 안내는 [README](README.md)와 [SECURITY](SECURITY.md)에 있다. 여기 적힌
+> 경로·URL은 당시의 것이라 지금은 맞지 않을 수 있고, 그래서 문서 링크 검사
+> (`scripts/check_doc_paths.py`)는 이 문서를 건너뛴다. **낡았다는 것이 선언이면
+> 기록이고, 선언이 아니면 사고다.**
+
 ## 발표 전 필수 확인
 
 - [ ] 일반 공개 URL에서는 `데모 모드` 토글이 보이지 않고 `정상 작동`만 보인다.

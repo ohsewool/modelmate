@@ -1,5 +1,15 @@
 # ModelMate Demo Playbook
 
+<!-- historical: 2026년 11월 발표 준비 시점 -->
+> **이 문서는 기록이다.** 발표에서 쓸 데이터셋을 고르던 기록이다.
+>
+> 그 뒤로 달라진 것: `tmp_datasets/*.csv`는 저장소에 없다. 지금 데모 데이터는 `scripts/make_demo_data.py`가 만들고 `sample_data/`에 들어 있다.
+>
+> 지금의 안내는 [README](README.md)와 [SECURITY](SECURITY.md)에 있다. 여기 적힌
+> 경로·URL은 당시의 것이라 지금은 맞지 않을 수 있고, 그래서 문서 링크 검사
+> (`scripts/check_doc_paths.py`)는 이 문서를 건너뛴다. **낡았다는 것이 선언이면
+> 기록이고, 선언이 아니면 사고다.**
+
 ## 목적
 
 11월 발표의 기본 전략은 고정된 샘플만 보여주는 것이 아니라, 즉석 CSV도 처리할 수 있는 범용 AutoML 흐름을 보여주는 것이다. 검증된 데이터셋은 발표 중 문제가 생겼을 때 사용하는 백업 카드로 둔다.

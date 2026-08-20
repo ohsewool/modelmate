@@ -1,5 +1,15 @@
 # ModelMate 3-Person Development Split
 
+<!-- historical: 2026-06-11 이전 -->
+> **이 문서는 기록이다.** 백엔드를 파트로 나눌 당시의 작업 분담표다.
+>
+> 그 뒤로 달라진 것: `09a1116`(2026-06-11)이 `backend/main_parts/*.py`를 `*.part`로 바꿨다. 여기 적힌 `.py` 경로 16개는 그래서 지금 존재하지 않는다.
+>
+> 지금의 안내는 [README](README.md)와 [SECURITY](SECURITY.md)에 있다. 여기 적힌
+> 경로·URL은 당시의 것이라 지금은 맞지 않을 수 있고, 그래서 문서 링크 검사
+> (`scripts/check_doc_paths.py`)는 이 문서를 건너뛴다. **낡았다는 것이 선언이면
+> 기록이고, 선언이 아니면 사고다.**
+
 ## Current Split Status
 
 The backend entry file has been split so each editable backend part stays under 100 lines.

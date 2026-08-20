@@ -54,5 +54,13 @@ jobs:
             exit 1
           fi
 
+      - name: Refuse a document that points at a file which is not there
+        # `backend/main_parts/*.py` became `*.part` in 09a1116 and eighteen
+        # references across four documents kept pointing at the old names for
+        # two months. Nobody clicked them, so nobody knew. A document that
+        # declares itself a record with `<!-- historical: ... -->` is skipped:
+        # stale-by-declaration is a record, stale-by-accident is a defect.
+        run: python scripts/check_doc_paths.py
+
       - name: Run the suite
         run: python -m pytest -q -rs   # -rs names every skip and why

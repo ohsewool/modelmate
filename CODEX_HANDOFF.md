@@ -1,5 +1,15 @@
 # ModelMate Codex Handoff
 
+<!-- historical: 2026-06-11 이전 -->
+> **이 문서는 기록이다.** 다른 에이전트에게 넘길 때 쓴 인수인계 메모다.
+>
+> 그 뒤로 달라진 것: `main_parts/*.py`가 `*.part`가 됐고, 적혀 있는 Railway URL은 무료 플랜 만료로 내려갔으며, 저장소 이름 `ohsewool/-`는 `ohsewool/modelmate`로 바뀌었다.
+>
+> 지금의 안내는 [README](README.md)와 [SECURITY](SECURITY.md)에 있다. 여기 적힌
+> 경로·URL은 당시의 것이라 지금은 맞지 않을 수 있고, 그래서 문서 링크 검사
+> (`scripts/check_doc_paths.py`)는 이 문서를 건너뛴다. **낡았다는 것이 선언이면
+> 기록이고, 선언이 아니면 사고다.**
+
 ## 현재 기준
 
 - 배포 URL: https://web-production-5d6fa.up.railway.app/

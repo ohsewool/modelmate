@@ -12,7 +12,7 @@
 | 무효화 주체 | Google. 응답 메시지가 "Your API key was reported as leaked" |
 | 현재 HEAD | 키 없음 |
 | 현재 이력 | 키 없음 — 405개 커밋 전체에서 제거됨(2026-08) |
-| 현재 코드의 Gemini 사용 | **있다.** `main_parts/040_agent_a.part`가 에이전트 코멘트에 `ask_gemini`를 사용한다 |
+| 현재 코드의 Gemini 사용 | **있다.** `backend/main_parts/040_agent_a.part`가 에이전트 코멘트에 `ask_gemini`를 사용한다 |
 
 ### 무효화가 확인된 방식, 그리고 확인되지 않은 것
 
@@ -63,7 +63,7 @@
 
 | 결과 | 내용 |
 |---|---|
-| Google API key | 4개 — `backend/main.py`, `backend/main_parts/002_auth_integrations.py`의 과거 커밋. **이후 이력에서 제거됨** |
+| Google API key | 4개 — `backend/main.py`와 `backend/main_parts/`에서 당시 `002_auth_integrations.py`라는 이름이던 파일의 과거 커밋(`09a1116`이 파트 파일을 `.part`로 바꾸기 전이다). **이후 이력에서 제거됨** |
 | OpenAI key | **0개.** 최초 스캔이 175개 파일을 지목했으나 전부 오탐이었다 |
 | 그 외 6종 | 0개 |
 
