@@ -1,39 +1,45 @@
 {
-  "generated_at": "2026-06-05T01:36:35",
+  "generated_at": "2026-08-19T22:48:28",
   "domain": {
     "script": "run_domain_benchmark.py",
     "status": "pass",
     "returncode": 0,
-    "stdout_tail": "livery_delay\",\n      \"domain\": \"물류/배송\",\n      \"purpose\": \"배송 지연 여부\",\n      \"domain_pass\": true,\n      \"purpose_pass\": true\n    },\n    {\n      \"name\": \"security_fraud\",\n      \"target\": \"fraud\",\n      \"domain\": \"보안/이상 탐지\",\n      \"purpose\": \"사기/이상 여부\",\n      \"domain_pass\": true,\n      \"purpose_pass\": true\n    },\n    {\n      \"name\": \"unknown_table\",\n      \"target\": \"gamma\",\n      \"domain\": \"도메인 확인 필요\",\n      \"purpose\": \"두 값 분류\",\n      \"domain_pass\": true,\n      \"purpose_pass\": true\n    },\n    {\n      \"name\": \"ch2025.csv\",\n      \"target\": \"S3\",\n      \"shape\": [\n        450,\n        9\n      ],\n      \"domain\": \"수면/건강 라이프로그\",\n      \"purpose\": \"수면/건강 상태 분류\"\n    },\n    {\n      \"name\": \"pima.csv\",\n      \"target\": \"diabetes\",\n      \"shape\": [\n        768,\n        9\n      ],\n      \"domain\": \"의료/건강 진단\",\n      \"purpose\": \"당뇨 여부\"\n    },\n    {\n      \"name\": \"playground.csv\",\n      \"target\": \"의무시설여부코드명\",\n      \"shape\": [\n        4804,\n        16\n      ],\n      \"domain\": \"공공시설/안전 관리\",\n      \"purpose\": \"시설 상태/여부 분류\"\n    },\n    {\n      \"name\": \"seoul_bike.csv\",\n      \"target\": \"가입건수\",\n      \"shape\": [\n        96,\n        5\n      ],\n      \"domain\": \"공공교통/이용자 통계\",\n      \"purpose\": \"가입자 수 예측\"\n    }\n  ]\n}\n",
-    "stderr_tail": ""
+    "stdout_tail": "     \"purpose\": \"부동산 가격 예측\",\n      \"domain_pass\": true,\n      \"purpose_pass\": true\n    },\n    {\n      \"name\": \"marketing_conversion\",\n      \"target\": \"purchase\",\n      \"domain\": \"마케팅/구매 전환\",\n      \"purpose\": \"구매/전환 여부\",\n      \"domain_pass\": true,\n      \"purpose_pass\": true\n    },\n    {\n      \"name\": \"hr_attrition\",\n      \"target\": \"attrition\",\n      \"domain\": \"인사/HR\",\n      \"purpose\": \"퇴사/이직 여부\",\n      \"domain_pass\": true,\n      \"purpose_pass\": true\n    },\n    {\n      \"name\": \"weather_environment\",\n      \"target\": \"rainfall\",\n      \"domain\": \"날씨/환경\",\n      \"purpose\": \"환경 지표 예측\",\n      \"domain_pass\": true,\n      \"purpose_pass\": true\n    },\n    {\n      \"name\": \"logistics_delay\",\n      \"target\": \"delivery_delay\",\n      \"domain\": \"물류/배송\",\n      \"purpose\": \"배송 지연 여부\",\n      \"domain_pass\": true,\n      \"purpose_pass\": true\n    },\n    {\n      \"name\": \"security_fraud\",\n      \"target\": \"fraud\",\n      \"domain\": \"보안/이상 탐지\",\n      \"purpose\": \"사기/이상 여부\",\n      \"domain_pass\": true,\n      \"purpose_pass\": true\n    },\n    {\n      \"name\": \"unknown_table\",\n      \"target\": \"gamma\",\n      \"domain\": \"도메인 확인 필요\",\n      \"purpose\": \"두 값 분류\",\n      \"domain_pass\": true,\n      \"purpose_pass\": true\n    }\n  ]\n}\n",
+    "stderr_tail": "/home/jovyan/work/modelmate/backend/main_parts:250: FutureWarning: \n\nAll support for the `google.generativeai` package has ended. It will no longer be receiving \nupdates or bug fixes. Please switch to the `google.genai` package as soon as possible.\nSee README for more details:\n\nhttps://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md\n\n"
   },
   "training": {
     "script": "run_training_benchmark.py",
-    "status": "pass_cached",
-    "returncode": null,
-    "stdout_tail": "",
-    "stderr_tail": "Timed out after 240 seconds. Cached passing result used when available."
+    "status": "pass",
+    "returncode": 0,
+    "stdout_tail": "s\"\n    },\n    {\n      \"name\": \"sk_diabetes_regression\",\n      \"shape\": [\n        442,\n        11\n      ],\n      \"target\": \"target\",\n      \"domain\": \"의료/건강 진단\",\n      \"purpose\": \"건강 지표 예측\",\n      \"task_type\": \"regression\",\n      \"best_model\": \"Random Forest\",\n      \"score\": 0.4125,\n      \"status\": \"pass\"\n    },\n    {\n      \"name\": \"sk_linnerud_weight\",\n      \"shape\": [\n        20,\n        4\n      ],\n      \"target\": \"Weight\",\n      \"domain\": \"도메인 확인 필요\",\n      \"purpose\": \"연속값 예측\",\n      \"task_type\": \"regression\",\n      \"best_model\": \"LightGBM\",\n      \"score\": -0.0281,\n      \"status\": \"pass\"\n    },\n    {\n      \"name\": \"synthetic_fault\",\n      \"shape\": [\n        180,\n        9\n      ],\n      \"target\": \"failure\",\n      \"domain\": \"제조/설비 품질\",\n      \"purpose\": \"고장 여부\",\n      \"task_type\": \"classification\",\n      \"best_model\": \"Logistic Regression\",\n      \"score\": 0.9378,\n      \"status\": \"pass\"\n    },\n    {\n      \"name\": \"synthetic_sales\",\n      \"shape\": [\n        180,\n        7\n      ],\n      \"target\": \"sales\",\n      \"domain\": \"금액/매출\",\n      \"purpose\": \"금액 예측\",\n      \"task_type\": \"regression\",\n      \"best_model\": \"Ridge Regression\",\n      \"score\": 0.9914,\n      \"status\": \"pass\"\n    }\n  ]\n}\n",
+    "stderr_tail": "/home/jovyan/work/modelmate/backend/main_parts:250: FutureWarning: \n\nAll support for the `google.generativeai` package has ended. It will no longer be receiving \nupdates or bug fixes. Please switch to the `google.genai` package as soon as possible.\nSee README for more details:\n\nhttps://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md\n\n"
   },
   "workspace_flow": {
     "script": "run_workspace_flow_qa.py",
     "status": "pass",
     "returncode": 0,
-    "stdout_tail": "{\n  \"status\": \"pass\",\n  \"result\": {\n    \"dataset_id\": \"1bb0340b\",\n    \"history_dataset_id\": \"1bb0340b\",\n    \"model_id\": \"b830d60e\",\n    \"version_label\": \"v1\",\n    \"storage_status\": \"사용 가능\"\n  }\n}\n",
-    "stderr_tail": ""
+    "stdout_tail": "{\n  \"status\": \"pass\",\n  \"result\": {\n    \"dataset_id\": \"ca8e246d\",\n    \"history_dataset_id\": \"ca8e246d\",\n    \"reuse_target\": \"defect\",\n    \"reuse_model\": \"Random Forest\",\n    \"model_id\": \"9de16568\",\n    \"version_label\": \"v1\",\n    \"storage_status\": \"사용 가능\",\n    \"lifecycle_status\": \"사용 가능\",\n    \"feature_count\": 3,\n    \"predict_status\": \"ok\",\n    \"prediction_label\": \"normal\"\n  }\n}\n",
+    "stderr_tail": "/home/jovyan/work/modelmate/backend/main_parts:250: FutureWarning: \n\nAll support for the `google.generativeai` package has ended. It will no longer be receiving \nupdates or bug fixes. Please switch to the `google.genai` package as soon as possible.\nSee README for more details:\n\nhttps://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md\n\n"
   },
   "workspace_flow_result": {
     "status": "pass",
     "result": {
-      "dataset_id": "1bb0340b",
-      "history_dataset_id": "1bb0340b",
-      "model_id": "b830d60e",
+      "dataset_id": "ca8e246d",
+      "history_dataset_id": "ca8e246d",
+      "reuse_target": "defect",
+      "reuse_model": "Random Forest",
+      "model_id": "9de16568",
       "version_label": "v1",
-      "storage_status": "사용 가능"
+      "storage_status": "사용 가능",
+      "lifecycle_status": "사용 가능",
+      "feature_count": 3,
+      "predict_status": "ok",
+      "prediction_label": "normal"
     }
   },
   "upload_validation": {
-    "total": 8,
-    "passed": 8,
+    "total": 5,
+    "passed": 5,
     "failed": 0,
     "results": [
       {
@@ -62,6 +68,12 @@
             "열이 2개 미만",
             "값이 있는 열이 2개 미만",
             "변화가 있는 열이 2개 미만"
+          ],
+          "readiness_label": "검토 권장",
+          "readiness_guide": "분석은 가능하지만 맞힐 값과 제외 열을 한 번 확인하는 것이 좋습니다.",
+          "warnings": [
+            "행 수가 적어 점수 변동이 클 수 있습니다.",
+            "변화 있는 열이 적어 모델이 배울 패턴이 제한적입니다."
           ]
         }
       },
@@ -82,6 +94,12 @@
           "score": 80,
           "reasons": [
             "변화가 있는 열이 2개 미만"
+          ],
+          "readiness_label": "검토 권장",
+          "readiness_guide": "분석은 가능하지만 맞힐 값과 제외 열을 한 번 확인하는 것이 좋습니다.",
+          "warnings": [
+            "행 수가 적어 점수 변동이 클 수 있습니다.",
+            "변화 있는 열이 적어 모델이 배울 패턴이 제한적입니다."
           ]
         }
       },
@@ -102,52 +120,41 @@
           "score": 80,
           "reasons": [
             "변화가 있는 열이 2개 미만"
+          ],
+          "readiness_label": "주의 필요",
+          "readiness_guide": "업로드는 가능하지만 발표에서는 데이터 의미와 한계를 먼저 설명하세요.",
+          "warnings": [
+            "행 수가 적어 점수 변동이 클 수 있습니다.",
+            "숫자 정보가 없어 분류는 가능하지만 근거가 약할 수 있습니다.",
+            "변화 있는 열이 적어 모델이 배울 패턴이 제한적입니다."
           ]
         }
       },
       {
-        "name": "ch2025.csv",
-        "expected": "accept",
+        "name": "multi_note_text",
+        "expected": "reject",
         "status": "pass",
-        "shape": [
-          450,
-          9
-        ],
-        "message": "업로드 가능한 데이터셋입니다.",
-        "score": 100
-      },
-      {
-        "name": "pima.csv",
-        "expected": "accept",
-        "status": "pass",
-        "shape": [
-          768,
-          9
-        ],
-        "message": "업로드 가능한 데이터셋입니다.",
-        "score": 100
-      },
-      {
-        "name": "playground.csv",
-        "expected": "accept",
-        "status": "pass",
-        "shape": [
-          4804,
-          16
-        ],
-        "message": "업로드 가능한 데이터셋입니다.",
-        "score": 100
-      },
-      {
-        "name": "seoul_bike.csv",
-        "expected": "accept",
-        "status": "pass",
-        "shape": [
-          96,
-          5
-        ],
-        "message": "업로드 가능한 데이터셋입니다.",
-        "score": 100
+        "message": "데이터셋으로 보기 어렵습니다: 긴 설명 열이 대부분. 행/열이 있는 CSV 데이터셋을 올려주세요.",
+        "quality": {
+          "rows": 8,
+          "columns": 4,
+          "non_empty_columns": 4,
+          "varying_columns": 3,
+          "numeric_columns": 0,
+          "text_columns": 4,
+          "avg_text_length": 38.0,
+          "long_text_ratio": 0.0,
+          "score": 80,
+          "reasons": [
+            "긴 설명 열이 대부분"
+          ],
+          "readiness_label": "검토 권장",
+          "readiness_guide": "분석은 가능하지만 맞힐 값과 제외 열을 한 번 확인하는 것이 좋습니다.",
+          "warnings": [
+            "행 수가 적어 점수 변동이 클 수 있습니다.",
+            "숫자 정보가 없어 분류는 가능하지만 근거가 약할 수 있습니다."
+          ]
+        }
       }
     ]
   }

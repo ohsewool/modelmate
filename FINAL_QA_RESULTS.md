@@ -1,19 +1,19 @@
 # Final QA Results
 
-Generated: `2026-06-05T01:36:35`
+Generated: `2026-08-19T22:48:28`
 
 ## Summary
 
 - Domain benchmark: pass
-- Training benchmark: pass_cached
+- Training benchmark: pass
 - Workspace flow: pass
-- Upload validation: 8 / 8 pass
+- Upload validation: 5 / 5 pass
 
 ## Workspace Flow
 
 | Check | Result |
 |---|---|
-| Dataset linked to history | 1bb0340b |
+| Dataset linked to history | ca8e246d |
 | Saved model version | v1 |
 | Saved model storage | 사용 가능 |
 
@@ -25,7 +25,4 @@ Generated: `2026-06-05T01:36:35`
 | one_column | reject | pass | 데이터셋으로 보기 어렵습니다: 열이 2개 미만, 값이 있는 열이 2개 미만, 변화가 있는 열이 2개 미만. 행/열이 있는 CSV 데이터셋을 올려주세요. |
 | constant_values | reject | pass | 데이터셋으로 보기 어렵습니다: 변화가 있는 열이 2개 미만. 행/열이 있는 CSV 데이터셋을 올려주세요. |
 | chat_text | reject | pass | 데이터셋으로 보기 어렵습니다: 변화가 있는 열이 2개 미만. 행/열이 있는 CSV 데이터셋을 올려주세요. |
-| ch2025.csv | accept | pass | 업로드 가능한 데이터셋입니다. |
-| pima.csv | accept | pass | 업로드 가능한 데이터셋입니다. |
-| playground.csv | accept | pass | 업로드 가능한 데이터셋입니다. |
-| seoul_bike.csv | accept | pass | 업로드 가능한 데이터셋입니다. |
+| multi_note_text | reject | pass | 데이터셋으로 보기 어렵습니다: 긴 설명 열이 대부분. 행/열이 있는 CSV 데이터셋을 올려주세요. |

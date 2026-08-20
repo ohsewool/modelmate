@@ -15,9 +15,9 @@
       "score": 100,
       "readiness_label": "검토 권장",
       "reasons": [],
-      "target": "join_count",
-      "domain": "공공교통/이용자 통계",
-      "purpose": "가입자 수 예측"
+      "target": null,
+      "domain": null,
+      "purpose": null
     },
     {
       "name": "valid_health",
@@ -43,9 +43,9 @@
       "score": 100,
       "readiness_label": "검토 권장",
       "reasons": [],
-      "target": "loan_default",
+      "target": "income",
       "domain": "금융/신용 리스크",
-      "purpose": "대출/연체 위험 판단"
+      "purpose": "신용 리스크 예측"
     },
     {
       "name": "valid_hr_customer",

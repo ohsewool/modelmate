@@ -56,9 +56,29 @@ def node_executable():
 
 
 def run_frontend_build():
+    """Build the frontend, or say why it could not be attempted.
+
+    "The build is broken" and "nobody has run `npm install` here" were both
+    reported as `fail`, with a `MODULE_NOT_FOUND` stack trace as the only clue.
+    They call for opposite responses - one is a defect, the other is a checkout
+    that is not set up - and a release gate that cannot tell them apart is a
+    gate that can never be green on a fresh machine, while a genuine build
+    failure looks exactly like a missing prerequisite.
+
+    "Could not check" is not "checked and it is wrong". Skipping says so, names
+    the command that would fix it, and `main` counts skips separately so a run
+    where everything skipped cannot read as a pass.
+    """
     node = node_executable()
     if not node:
-        return {"name": "frontend_build", "status": "fail", "stderr_tail": "Node.js executable not found."}
+        return {"name": "frontend_build", "status": "skipped",
+                "reason": "Node.js is not installed; the frontend build was not attempted.",
+                "remedy": "install Node.js, then `npm install` in frontend/"}
+    vite = ROOT / "frontend" / "node_modules" / "vite" / "bin" / "vite.js"
+    if not vite.exists():
+        return {"name": "frontend_build", "status": "skipped",
+                "reason": "frontend dependencies are not installed.",
+                "remedy": "npm install --prefix frontend"}
     args = [node, "node_modules/vite/bin/vite.js", "build"]
     result = run_cmd("frontend_build", args, 180, cwd=ROOT / "frontend")
     result["cwd"] = str(ROOT / "frontend")

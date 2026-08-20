@@ -84,10 +84,28 @@ async def run_flow():
 
 
 def cleanup(model_id=None):
+    """Remove what this run created. All of it, not most of it.
+
+    The model pickle and the database were cleaned up and the uploaded CSV was
+    not, so every run left a file under `uploaded_datasets/qa-user/`. Three of
+    them had been committed by someone running QA and then `git add`-ing, where
+    they sat looking like fixtures - nothing references them, and this function
+    is what produced them.
+
+    `uploaded_datasets/` is now ignored, but ignoring the mess is not the same
+    as not making it: a QA script that grows the working tree every time it
+    runs will eventually be run somewhere that notices.
+    """
     if model_id:
         fp = Path(m.MODELS_DIR) / f"{model_id}.pkl"
         if fp.exists():
             fp.unlink()
+    uploads = Path(m.DATASETS_DIR) / USER["sub"]
+    if uploads.exists():
+        for item in uploads.glob("*_qa_manufacturing.csv"):
+            item.unlink()
+        if not any(uploads.iterdir()):
+            uploads.rmdir()
     if DB_PATH.exists():
         DB_PATH.unlink()
 

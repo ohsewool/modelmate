@@ -1,4 +1,4 @@
-from fastapi import BackgroundTasks
+﻿from fastapi import BackgroundTasks
 
 
 class TrainingJobBody(BaseModel):
@@ -48,13 +48,46 @@ def _job_now():
     return datetime.now().isoformat(timespec="seconds")
 
 
+RERUN_READY_STATUSES = ("failed", "succeeded", "cancelled", "needs_review")
+
+
+def _rerun_blocker(item):
+    """Why this job cannot be rerun, or None if it can.
+
+    `can_rerun` was a status check while the rerun endpoint separately required
+    a dataset reference, so the API advertised `can_rerun: true` on a job it
+    then refused with 409 - the UI showed the button, the user pressed it, and
+    got an error. Two rules for one question with nothing comparing them.
+
+    One function now answers it and both the flag and the endpoint read this,
+    so they cannot drift apart again. The blocked reason travels with the flag
+    rather than only appearing at the moment of refusal: "you cannot rerun this,
+    and here is why" is what the screen needs to say before anyone clicks.
+    """
+    if item.get("status") not in RERUN_READY_STATUSES:
+        return {
+            "error_type": "job_not_in_a_rerunnable_state",
+            "user_friendly_message": "아직 진행 중인 작업은 다시 실행할 수 없습니다.",
+            "recommended_next_action": "작업이 끝난 뒤에 다시 시도해 주세요.",
+        }
+    if not item.get("dataset_id"):
+        return {
+            "error_type": "job_dataset_reference_missing",
+            "user_friendly_message": "이 작업에 연결된 원본 데이터셋을 확인할 수 없어 안전하게 다시 실행할 수 없습니다.",
+            "recommended_next_action": "CSV를 다시 업로드하거나 데이터셋이 연결된 프로젝트 실행 기록을 선택해 주세요.",
+        }
+    return None
+
+
 def _job_row_to_dict(row):
     if not row:
         return None
     item = dict(row)
     item["result_summary"] = _safe_json(item.get("result_summary"), {}) or {}
     item["artifact_refs"] = _safe_json(item.get("artifact_refs"), {}) or {}
-    item["can_rerun"] = item.get("status") in ("failed", "succeeded", "cancelled", "needs_review")
+    blocker = _rerun_blocker(item)
+    item["can_rerun"] = blocker is None
+    item["rerun_blocked_reason"] = blocker["error_type"] if blocker else None
     item["rerun_source_run_id"] = item.get("source_run_id") or item.get("rerun_of")
     item["duplicate_guard"] = False
     return item
@@ -444,12 +477,11 @@ async def list_workspace_jobs(user=Depends(get_current_user)):
 @app.post("/api/training/jobs/{job_id}/rerun")
 async def rerun_training_job(job_id: str, background_tasks: BackgroundTasks, user=Depends(get_current_user)):
     job = _get_training_job_owned(user, job_id)
-    if not job.get("dataset_id"):
-        raise HTTPException(409, {
-            "error_type": "job_dataset_reference_missing",
-            "user_friendly_message": "이 작업에 연결된 원본 데이터셋을 확인할 수 없어 안전하게 다시 실행할 수 없습니다.",
-            "recommended_next_action": "CSV를 다시 업로드하거나 데이터셋이 연결된 프로젝트 실행 기록을 선택해 주세요.",
-        })
+    blocker = _rerun_blocker(job)
+    if blocker:
+        # The same function that decided `can_rerun`, so a job the API said
+        # could be rerun is never refused here.
+        raise HTTPException(409, blocker)
     body = TrainingJobBody(
         project_id=job.get("project_id"),
         dataset_id=job.get("dataset_id"),

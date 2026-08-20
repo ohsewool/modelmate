@@ -23,3 +23,6 @@ tmp_public_downloads/
 
 # OS
 .DS_Store
+
+# QA/스모크 스크립트가 만드는 업로드 산출물
+uploaded_datasets/

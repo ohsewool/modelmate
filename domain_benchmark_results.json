@@ -108,46 +108,6 @@
       "purpose": "두 값 분류",
       "domain_pass": true,
       "purpose_pass": true
-    },
-    {
-      "name": "ch2025.csv",
-      "target": "S3",
-      "shape": [
-        450,
-        9
-      ],
-      "domain": "수면/건강 라이프로그",
-      "purpose": "수면/건강 상태 분류"
-    },
-    {
-      "name": "pima.csv",
-      "target": "diabetes",
-      "shape": [
-        768,
-        9
-      ],
-      "domain": "의료/건강 진단",
-      "purpose": "당뇨 여부"
-    },
-    {
-      "name": "playground.csv",
-      "target": "의무시설여부코드명",
-      "shape": [
-        4804,
-        16
-      ],
-      "domain": "공공시설/안전 관리",
-      "purpose": "시설 상태/여부 분류"
-    },
-    {
-      "name": "seoul_bike.csv",
-      "target": "가입건수",
-      "shape": [
-        96,
-        5
-      ],
-      "domain": "공공교통/이용자 통계",
-      "purpose": "가입자 수 예측"
     }
   ]
 }
