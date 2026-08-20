@@ -53,14 +53,26 @@ def living_documents() -> list[Path]:
             if not HISTORICAL.search(path.read_text(encoding="utf-8", errors="replace"))]
 
 
-@pytest.mark.parametrize("path", living_documents(),
-                         ids=lambda p: str(p.relative_to(ROOT)))
-def test_no_living_document_points_at_a_retired_deployment(path):
-    text = path.read_text(encoding="utf-8", errors="replace")
-    found = [host for host in RETIRED_HOSTS if host in text]
-    assert not found, (
-        f"{path.relative_to(ROOT)}가 내려간 배포 {found}를 가리킨다. "
-        f"현재 안내라면 주소를 고치고, 과거 기록이라면 <!-- historical: 시점 -->으로 선언하라."
+def test_no_living_document_points_at_a_retired_deployment():
+    """문서 하나당 테스트 하나가 아니라, 한 성질에 테스트 하나다.
+
+    처음에는 문서마다 파라미터를 걸었다 - 어느 문서가 걸렸는지 pytest가 이름으로
+    알려주니까. 그랬더니 이 파일 하나가 88개를 만들었고 저장소 합계가 427에서
+    515로 뛰었다. **테스트 수가 뜻을 갖도록 CI까지 만들어놓고 그 숫자를 내가
+    부풀린 셈이다.** 검사하는 성질은 하나뿐인데 문서가 늘면 숫자가 늘었다.
+
+    지금은 전부 모아 한 번에 보고한다. 어느 문서인지는 실패 메시지가 말한다 -
+    파라미터 이름이 해주던 일이고, 그것 때문에 개수를 왜곡할 이유는 없다.
+    """
+    offenders = []
+    for path in living_documents():
+        text = path.read_text(encoding="utf-8", errors="replace")
+        found = [host for host in RETIRED_HOSTS if host in text]
+        if found:
+            offenders.append(f"{path.relative_to(ROOT)} → {', '.join(found)}")
+    assert not offenders, (
+        "내려간 배포를 가리키는 문서:\n  " + "\n  ".join(offenders)
+        + "\n현재 안내라면 주소를 고치고, 과거 기록이라면 <!-- historical: 시점 -->으로 선언하라."
     )
 
 
