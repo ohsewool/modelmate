@@ -71,7 +71,7 @@ Use these smoke checks:
 
 1. Push to GitHub `main`.
 2. Wait for Railway to build and redeploy.
-3. Open `https://web-production-5d6fa.up.railway.app/`.
+3. Open the URL Railway assigns to the service. (The previous instance expired; no live URL is recorded here on purpose.)
 4. Confirm the served JS bundle in `index.html` matches the latest `frontend/dist`
    build.
 5. Open `/pricing`.

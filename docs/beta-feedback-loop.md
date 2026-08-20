@@ -138,7 +138,7 @@ Run feedback smoke against a local or deployed app:
 
 ```bash
 python scripts/run_feedback_smoke.py --base-url http://localhost:8000
-python scripts/run_feedback_smoke.py --base-url https://web-production-5d6fa.up.railway.app
+python scripts/run_feedback_smoke.py --base-url http://127.0.0.1:8000
 ```
 
 The smoke script checks:

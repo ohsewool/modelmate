@@ -12,6 +12,8 @@ Railway에 배포해 운영했다. 그 인스턴스는 **무료 플랜 만료로
 
 배포 설정 자체는 저장소에 남아 있어 다시 띄울 수 있다: [`railway.toml`](railway.toml), [`Procfile`](Procfile), [`nixpacks.toml`](nixpacks.toml).
 
+문서 안 링크도 같이 정리했다. `docs/` 일곱 문서가 그 죽은 주소를 그대로 들고 있었다 — **한 파일에서 원칙을 말하고 일곱 파일에서 어기고 있었다.** 따라 하라고 적힌 QA 명령은 로컬 주소로 바꿔 지금 실제로 동작하고, 과거 실행 보고서는 기록으로 선언했다. `tests/test_no_dead_deployment_links.py`가 다시 들어오는 것을 막는다 — 네트워크를 쓰지 않는다. 인터넷이 끊긴 CI에서 조용히 통과하는 검사는 검사가 아니다.
+
 로컬 실행은 아래 **Local Setup** 참조. 저장소는 `github.com/ohsewool/modelmate`이며, 예전 주소 `ohsewool/-`는 이름을 바꾼 것이라 리다이렉트된다.
 
 ## What It Does
@@ -249,7 +251,7 @@ python3 scripts/demo.py --leaky --ignore-leakage   # 권고를 무시하면
 ## 누출 검사가 실제로 모델을 바꾼다
 
 ```bash
-python3 -m pytest tests/ -q          # 427 tests
+python3 -m pytest tests/ -q          # 515 tests
 ```
 
 게이트를 하나씩 검증하는 것과 그 권고가 모델에 도달하는지는 다른 문제다. 무시되는 권고는 안전이 아니라 서류다. 같은 데이터를 두 번 학습해 실측했다.

@@ -1,5 +1,15 @@
 # Final QA Report
 
+<!-- historical: 2026-06 -->
+> **이 문서는 기록이다.** PR-32 시점에 실제로 돌린 QA 결과다.
+>
+> 그 뒤로 달라진 것: 여기 적힌 Railway 인스턴스는 무료 플랜 만료로 내려갔다.
+> 그래서 `https://web-production-5d6fa.up.railway.app` 기준으로 통과했다는 문장은 **당시의 사실**이고, 지금 따라가면
+> 404가 난다. 지금의 QA는 `scripts/run_release_qa.py`(26개 검사)와 CI의 `product`
+> 워크플로가 대신하며, [README](../README.md)에 있다.
+>
+> 낡았다는 것이 선언이면 기록이고, 선언이 아니면 사고다.
+
 ## PR-32 Agentic Portfolio QA Addendum
 
 PR-32는 새 제품 기능을 추가하지 않고, Agentic AutoML roadmap 이후의 문서, 포트폴리오 설명, 데모 경로, QA 체크리스트를 정리하는 작업입니다.

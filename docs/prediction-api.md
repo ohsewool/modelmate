@@ -124,7 +124,7 @@ Single-record compatibility form:
 ## cURL Example
 
 ```bash
-curl -X POST "https://web-production-5d6fa.up.railway.app/api/predict/<project_id>" \
+curl -X POST "http://127.0.0.1:8000/api/predict/<project_id>" \
   -H "Authorization: Bearer <MODEL_MATE_TOKEN>" \
   -H "Content-Type: application/json" \
   -d '{"rows":[{"tenure_months":12,"monthly_fee":49.9,"support_tickets":2,"contract_type":"monthly"}]}'
@@ -136,7 +136,7 @@ curl -X POST "https://web-production-5d6fa.up.railway.app/api/predict/<project_i
 import requests
 
 response = requests.post(
-    "https://web-production-5d6fa.up.railway.app/api/predict/<project_id>",
+    "http://127.0.0.1:8000/api/predict/<project_id>",
     headers={"Authorization": "Bearer <MODEL_MATE_TOKEN>"},
     json={
         "rows": [

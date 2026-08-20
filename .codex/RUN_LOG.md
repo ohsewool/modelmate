@@ -1,5 +1,12 @@
 # ModelMate Codex Run Log
 
+<!-- historical: 2026-06 -->
+> **이 문서는 기록이다.** 에이전트가 각 PR을 진행하며 남긴 작업 로그다.
+>
+> 여기 적힌 Railway 주소·파일 경로·커밋 해시는 **그때의 것**이고, 지금 따라가면
+> 맞지 않는다. 배포는 무료 플랜 만료로 내려갔고 `backend/main_parts/*.py`는
+> `*.part`가 됐다. 지금의 안내는 [README](../README.md)에 있다.
+
 Purpose:
 This file records Codex automation progress so the roadmap can resume safely if a session stops, runs out of context, or is interrupted.
 

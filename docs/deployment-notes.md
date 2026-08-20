@@ -8,7 +8,7 @@ ModelMate의 현재 Railway 배포 기준을 정리합니다.
 - Backend: FastAPI app served by `uvicorn backend.main:app`
 - Frontend: Vite build output served with the backend deployment
 - Branch: `main`
-- Public demo: https://web-production-5d6fa.up.railway.app/
+- Public demo: 없음 — 무료 플랜 만료로 내려갔다. 죽은 링크는 없는 링크보다 나쁘므로 주소를 남기지 않는다. 다시 띄우는 방법은 아래 그대로 유효하다.
 
 ## Build Assumptions
 
@@ -59,7 +59,7 @@ After deploy:
 11. Run deployed smoke test if practical
 
 ```bash
-python scripts/run_product_smoke.py --base-url https://web-production-5d6fa.up.railway.app --skip-training
+python scripts/run_product_smoke.py --base-url http://127.0.0.1:8000 --skip-training
 ```
 
 ## Common Issues

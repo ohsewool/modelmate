@@ -43,7 +43,7 @@ python scripts/run_sample_csv_gate.py
 Run against Railway or a local server:
 
 ```bash
-python scripts/run_sample_csv_gate.py --base-url https://web-production-5d6fa.up.railway.app
+python scripts/run_sample_csv_gate.py --base-url http://127.0.0.1:8000
 ```
 
 This checks each demo CSV download for:
@@ -63,13 +63,13 @@ python scripts/run_product_smoke.py --base-url http://localhost:8000
 Run against Railway:
 
 ```bash
-python scripts/run_product_smoke.py --base-url https://web-production-5d6fa.up.railway.app
+python scripts/run_product_smoke.py --base-url http://127.0.0.1:8000
 ```
 
 For faster deployed checks, skip the training endpoint:
 
 ```bash
-python scripts/run_product_smoke.py --base-url https://web-production-5d6fa.up.railway.app --skip-training
+python scripts/run_product_smoke.py --base-url http://127.0.0.1:8000 --skip-training
 ```
 
 ## Monitoring Smoke Test
@@ -83,7 +83,7 @@ python scripts/run_monitoring_smoke.py --base-url http://localhost:8000
 Run against Railway:
 
 ```bash
-python scripts/run_monitoring_smoke.py --base-url https://web-production-5d6fa.up.railway.app
+python scripts/run_monitoring_smoke.py --base-url http://127.0.0.1:8000
 ```
 
 This checks `/api/health`, `X-Request-ID`, friendly error objects, sanitized
@@ -101,7 +101,7 @@ python scripts/run_feedback_smoke.py --base-url http://localhost:8000
 Run against Railway:
 
 ```bash
-python scripts/run_feedback_smoke.py --base-url https://web-production-5d6fa.up.railway.app
+python scripts/run_feedback_smoke.py --base-url http://127.0.0.1:8000
 ```
 
 This checks authenticated feedback submission, guest feedback submission,
@@ -113,13 +113,13 @@ endpoint protection.
 Run the standard release checks:
 
 ```bash
-python scripts/run_release_qa.py --base-url https://web-production-5d6fa.up.railway.app
+python scripts/run_release_qa.py --base-url http://127.0.0.1:8000
 ```
 
 Skip slower training checks when needed:
 
 ```bash
-python scripts/run_release_qa.py --base-url https://web-production-5d6fa.up.railway.app --skip-training
+python scripts/run_release_qa.py --base-url http://127.0.0.1:8000 --skip-training
 ```
 
 ## What Is Checked Automatically
