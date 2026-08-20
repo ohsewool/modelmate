@@ -72,6 +72,26 @@ jobs:
       - name: Product smoke
         run: python scripts/run_product_smoke.py --base-url http://127.0.0.1:8000
 
+      - name: Failure-recovery smoke
+        # Where the can_rerun/409 disagreement was found. It had been failing
+        # three checks for as long as it existed, because nothing ran it: a
+        # script in the repository that nobody executes is documentation, not a
+        # check.
+        run: python scripts/run_failure_recovery_smoke.py --base-url http://127.0.0.1:8000
+
+      - name: Workspace flow QA leaves nothing behind
+        # It uploads a CSV and used to leave it there; three such files had been
+        # committed by accident. `git status` is the assertion.
+        run: |
+          python scripts/run_workspace_flow_qa.py > /dev/null
+          leftover=$(git status --porcelain --untracked-files=all uploaded_datasets | wc -l)
+          if [ "$leftover" != "0" ]; then
+            echo "::error::the QA run left $leftover file(s) under uploaded_datasets/"
+            git status --porcelain --untracked-files=all uploaded_datasets
+            exit 1
+          fi
+          echo "nothing left behind"
+
       - name: Server log
         if: always()
         run: cat /tmp/uvicorn.log || true
