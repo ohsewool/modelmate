@@ -313,6 +313,33 @@ This is MVP dataset deletion and delete-impact handling. It is not complete data
 governance, audit logging, automatic retention enforcement, or enterprise
 compliance.
 
+**The app used to tell users otherwise (2026-08-22).** The delete-impact response
+carried `Historical summaries may remain for up to 30 days in this MVP foundation`,
+shown verbatim in two screens. A reader takes "up to 30 days" to mean the data is gone
+after thirty days. Nothing removes anything on any schedule - which is exactly what the
+paragraph above already said. The application and this file disagreed about the same
+fact, and the application was the one people read.
+
+Two knobs produced that number and did nothing else. `DATASET_RETENTION_DAYS` appeared
+**only on the line that defined it** - read from the environment, never used again.
+`DELETED_ARTIFACT_RETENTION_DAYS` was used solely to render that sentence. Both were
+removed rather than wired: a retention policy is a data-governance feature and it
+arrives with the code that actually deletes, not before it.
+
+Measured, not inferred: an uploaded file was deleted through the API (HTTP 200) and the
+file was still in `DATASETS_DIR`; a project was deleted and both the dataset CSV and the
+deployed model's `.pkl` were still on disk.
+
+What the responses say now:
+
+- dataset deletion: `will_delete_dataset_file: False`, and the note states the file is
+  kept and that there is no automatic retention job. The flag was already there and
+  already honest; the sentence beside it was not.
+- project deletion: the same two flags plus `will_delete_model_file: False`. That path
+  said nothing at all about files before.
+- both notes point at `DELETE /api/deployed/{model_id}`, which is the one path in this
+  application that really removes a file from storage.
+
 ## Paid Pilot Inquiry Security Notes
 
 Commercialization PR-23 adds a lightweight pilot inquiry flow. It is protected

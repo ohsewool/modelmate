@@ -1,10 +1,21 @@
-class ProjectBody(BaseModel):
+﻿class ProjectBody(BaseModel):
     name: str = "기본 프로젝트"
     description: str = ""
 
 
-DATASET_RETENTION_DAYS = int(os.getenv("DATASET_RETENTION_DAYS", "30"))
-DELETED_ARTIFACT_RETENTION_DAYS = int(os.getenv("DELETED_ARTIFACT_RETENTION_DAYS", "30"))
+# 보존 기간 손잡이 둘이 여기 있었다. `DATASET_RETENTION_DAYS`는 **정의된 줄
+# 말고는 파일 어디에도 나오지 않았고**, `DELETED_ARTIFACT_RETENTION_DAYS`는
+# 사용자에게 보여주는 문장 안에서 "최대 30일"이라는 숫자로만 쓰였다.
+#
+# 지우는 코드는 없다. 삭제는 소프트 삭제이고(`retention_status='deleted_retained'`)
+# 업로드된 CSV는 디스크에 그대로 남는다 — 2026-08-22에 올리고 지우고 디렉터리를
+# 확인했다. `docs/security-notes.md`도 "automatic retention enforcement"는 이
+# MVP에 없다고 선언하고 있었다.
+#
+# 그러니 화면에 나가던 "최대 30일간 남을 수 있다"는 **아무것도 뒷받침하지 않는
+# 기한**이었다. 읽는 사람에게는 30일 뒤 사라진다는 뜻으로 읽힌다. 숫자를 없애고
+# 사실을 적는다. 보존 정책은 실제로 지우는 무언가가 생길 때 그 코드와 함께 온다.
+
 
 
 def _safe_json(raw, fallback=None):
@@ -184,7 +195,9 @@ def _dataset_impact(conn, dataset, user_id):
         "linked_models": linked_models,
         "linked_prediction_apis": linked_prediction_apis,
         "will_revoke_prediction_api": linked_prediction_apis > 0,
-        "retention_note": f"Dataset metadata is soft-deleted. Historical summaries may remain for up to {DELETED_ARTIFACT_RETENTION_DAYS} days in this MVP foundation.",
+        "retention_note": ("Dataset metadata is soft-deleted and the uploaded file is kept. "
+                           "This MVP has no automatic retention job, so nothing is removed on a "
+                           "schedule - the file stays until someone deletes it from storage."),
     }
 
 
@@ -719,7 +732,17 @@ async def get_project_delete_impact(project_id: str, user=Depends(get_current_us
         "linked_models": len(prediction_meta),
         "linked_prediction_apis": len(prediction_meta),
         "active_jobs": [{"job_id": row["job_id"], "status": row["status"]} for row in active_jobs],
-        "retention_note": "Project deletion is implemented as MVP archive/soft delete. Historical summaries may remain.",
+        # 데이터셋 삭제 쪽은 `will_delete_dataset_file: False`로 파일이 남는다는 것을
+        # 밝히는데, 여기에는 파일에 대한 언급이 아예 없었다. 같은 사실을 한쪽만
+        # 말하고 있었다 — 2026-08-22에 프로젝트를 지우고 `MODELS_DIR`과
+        # `DATASETS_DIR`을 확인하니 pkl과 CSV가 그대로 남아 있었다.
+        "will_delete_dataset_file": False,
+        "will_delete_model_file": False,
+        "retention_note": ("Project deletion is an MVP archive/soft delete. Datasets are "
+                           "soft-deleted and their uploaded files are kept, and a deployed "
+                           "model's file is kept too. There is no automatic retention job. "
+                           "Deleting a deployed model from its own page is what removes its "
+                           "file from storage."),
     }
 
 
