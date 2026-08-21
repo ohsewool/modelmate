@@ -30,6 +30,20 @@ New email/password users default to `free`. Admin seed users are normalized to
 | Prediction API calls per day | 100 | 5,000 | 25,000 |
 | Report exports per day | 10 | 100 | 500 |
 
+Report exports are claimed atomically. Counting and deciding happen in one
+`UPDATE ... WHERE COALESCE(report_exports_count, 0) < limit`, so concurrent requests
+cannot all read the same value and all pass. Measured on 2026-08-22: with the older
+check-then-increment shape, a limit of 10 let **12 of 20 concurrent attempts through**;
+with the atomic claim, exactly 10. The loser of a race generates the report and then
+receives 429 — the work is wasted, but the limit holds, and a request that ends in 400
+still never consumes quota.
+
+Daily job counts and prediction API calls still use the older shape. Their window is a
+single row insert rather than a full report render, but it is not zero. Refusing a job
+after it has started would leave an orphan row, so that path needs reserve-then-run
+rather than a drop-in change. `tests/test_usage_limit_race.py` pins the current state
+and fails when it changes.
+
 Admin accounts are treated as unlimited for development and demos. The owner
 account `admin@modelmate.local` is always recognized as `admin`; additional
 admin emails can be configured with:

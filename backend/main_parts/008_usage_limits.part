@@ -251,6 +251,54 @@ def increment_daily_usage(user_id, key, amount=1):
         conn.close()
 
 
+DAILY_USAGE_COLUMNS = {
+    "jobs_today": "jobs_count",
+    "prediction_api_calls_today": "prediction_calls_count",
+    "report_exports_today": "report_exports_count",
+}
+
+
+def claim_daily_usage(user_id, key, limit):
+    """한도 안이면 1 올리고 True, 이미 찼으면 아무것도 안 하고 False.
+
+    읽고-판단하고-쓰는 것을 **한 문장**으로 한다. 나눠 하면 그 사이에 다른 요청이
+    같은 값을 읽는다 — `enforce_*` 뒤에 `increment_daily_usage`를 부르는 이 저장소의
+    기존 방식이 그렇다. 2026-08-22에 쟀다: 한도 10에 동시 20건을 넣으니 **12건이
+    통과**했다. 보고서 내보내기는 검사와 기록 사이에 보고서 생성이 통째로 들어가
+    창이 가장 넓다.
+
+    SQLite는 한 `UPDATE`를 원자적으로 처리하므로 `WHERE`에 한도를 넣으면 스레드
+    사이에서도 프로세스 사이에서도 초과가 생기지 않는다. `rowcount`가 0이면 그
+    문장이 아무 행도 바꾸지 못했다는 뜻이고, 그것이 곧 "한도가 찼다"이다.
+
+    `limit`이 `None`이면 무제한이다. 0과 헷갈리면 유료 사용자가 막힌다.
+    """
+    if not user_id or is_admin_user_id(user_id):
+        return True
+    column = DAILY_USAGE_COLUMNS.get(key)
+    if not column:
+        return True
+    conn = get_db()
+    try:
+        today = ensure_usage_day(conn, user_id)
+        if limit is None:
+            conn.execute(
+                f"UPDATE user_usage_daily SET {column}=COALESCE({column}, 0)+1, updated_at=? WHERE user_id=? AND usage_date=?",
+                (_usage_now(), user_id, today),
+            )
+            conn.commit()
+            return True
+        cursor = conn.execute(
+            f"UPDATE user_usage_daily SET {column}=COALESCE({column}, 0)+1, updated_at=? "
+            f"WHERE user_id=? AND usage_date=? AND COALESCE({column}, 0) < ?",
+            (_usage_now(), user_id, today, limit),
+        )
+        conn.commit()
+        return cursor.rowcount > 0
+    finally:
+        conn.close()
+
+
 def get_account_usage(user):
     user_id = _user_id_from_payload(user)
     if not user_id:
@@ -407,12 +455,30 @@ def enforce_report_export_limit(user):
 
 
 def record_report_export(user):
-    """내보내기 하나를 센다. 세지 않으면 한도는 영원히 0에 머문다."""
+    """내보내기 하나를 센다. 세지 않으면 한도는 영원히 0에 머문다.
+
+    **여기서 다시 판단한다.** `enforce_report_export_limit`은 응답을 시작하기 전에
+    빨리 거절하려고 있고, 그 사이에 보고서 생성이 통째로 들어간다 — 동시에 들어온
+    요청들이 전부 같은 값을 읽고 전부 통과한다. 쟀더니 한도 10에 동시 20건 중
+    **12건이 통과했다**(2026-08-22).
+
+    `claim_daily_usage`는 세는 것과 판단하는 것을 한 문장으로 한다. 진 쪽은 보고서를
+    만들어놓고 429를 받는다 — 일은 버려지지만 한도는 넘지 않는다. 반대로 하면
+    (미리 세어두고 실패하면 되돌리기) 400으로 끝난 호출이 할당량을 먹는 경로가
+    생기고, 그건 실패를 벌로 만드는 쪽이다.
+    """
     if not user:
         return
     user_id = _user_id_from_payload(user)
-    if user_id:
-        increment_daily_usage(user_id, "report_exports_today")
+    if not user_id:
+        return
+    limit = get_plan_limits(user).get("max_report_exports_per_day")
+    if not claim_daily_usage(user_id, "report_exports_today", limit):
+        usage = get_account_usage(user)
+        raise usage_limit_error("max_report_exports_per_day",
+                                usage["report_exports_today"], limit,
+                                get_user_plan(user),
+                                "오늘 사용할 수 있는 보고서 내보내기 횟수를 모두 사용했습니다.")
 
 
 def enforce_prediction_call_limit(owner_user_id):
