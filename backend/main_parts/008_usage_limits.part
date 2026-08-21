@@ -1,4 +1,4 @@
-PLAN_LIMITS = {
+﻿PLAN_LIMITS = {
     "free": {
         "max_projects": 3,
         "max_datasets": 3,
@@ -376,6 +376,43 @@ def enforce_prediction_token_limit(user, project_id):
         conn.close()
     if count >= limit:
         raise usage_limit_error("max_prediction_tokens_per_project", count, limit, plan, "이 프로젝트에서 만들 수 있는 API 토큰 수를 모두 사용했습니다.")
+
+
+def enforce_report_export_limit(user):
+    """보고서 내보내기 한도. **선언만 되고 강제되지 않았다.**
+
+    `PLAN_LIMITS`의 모든 요금제가 `max_report_exports_per_day`를 갖고 있고
+    (free 10, pro 100, team 500), 사용량 테이블에 `report_exports_count` 열이
+    있고, `checkQuota`가 `report_export` 액션을 그 한도에 매핑한다. `docs/pricing.md`도
+    보고서 내보내기를 요금제 항목으로 싣는다.
+
+    **그런데 세는 곳도 막는 곳도 없었다.** `increment_daily_usage`는
+    `jobs_today`와 `prediction_api_calls_today`로만 불렸고, `enforce_limit`은
+    이 키로 한 번도 불리지 않았다. 한도 표·DB 열·요금제 문서까지 다 있는데
+    강제만 빠진, 이 프로젝트가 반복해서 만나는 "정의만 되고 배선 안 된 통제"다.
+
+    `checkQuota` 자체도 아무도 부르지 않는다 - 같은 질문에 답하는 구현이 둘인데
+    하나만 배선돼 있고, 배선된 쪽이 이 액션을 모르고 있었다.
+
+    다른 `enforce_*`와 같은 규칙을 따른다: 신원이 없으면(게스트·미인증) 통과시킨다.
+    그쪽은 계정 사용량이라는 개념 자체가 없고, 여기서 막으면 데모 경로가 깨진다.
+    """
+    if not user:
+        return
+    if isAdminUser(user):
+        return
+    usage = get_account_usage(user)
+    enforce_limit(user, "max_report_exports_per_day", usage["report_exports_today"],
+                  "오늘 사용할 수 있는 보고서 내보내기 횟수를 모두 사용했습니다.")
+
+
+def record_report_export(user):
+    """내보내기 하나를 센다. 세지 않으면 한도는 영원히 0에 머문다."""
+    if not user:
+        return
+    user_id = _user_id_from_payload(user)
+    if user_id:
+        increment_daily_usage(user_id, "report_exports_today")
 
 
 def enforce_prediction_call_limit(owner_user_id):

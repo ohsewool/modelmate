@@ -1,4 +1,4 @@
-    return {"key_length": len(key), "key_prefix": key[:8] if key else "", "gemini_ok": GEMINI_OK, "gemini_error": _GEMINI_ERROR, "env_count": len(all_keys), "gemini_related_keys": gemini_keys, "all_env_keys": all_keys}
+﻿    return {"key_length": len(key), "key_prefix": key[:8] if key else "", "gemini_ok": GEMINI_OK, "gemini_error": _GEMINI_ERROR, "env_count": len(all_keys), "gemini_related_keys": gemini_keys, "all_env_keys": all_keys}
 
 @app.get("/api/state")
 async def get_state():
@@ -32,7 +32,14 @@ async def get_state():
 
 # ── HTML 리포트 (PDF 인쇄 지원) ──────────────────────────
 @app.get("/api/report/html", response_class=HTMLResponse)
-async def html_report(autoprint: bool = False):
+async def html_report(autoprint: bool = False, user=Depends(get_current_user)):
+    # 요금제마다 `max_report_exports_per_day`가 걸려 있고 사용량 테이블에
+    # `report_exports_count` 열이 있는데, **세는 곳도 막는 곳도 없었다.**
+    # 한도 표·DB 열·요금제 문서까지 다 갖춰두고 강제만 빠진 상태였다.
+    #
+    # 신원이 있을 때만 적용한다. 게스트·미인증 경로는 계정 사용량이라는 개념이
+    # 없고, 여기서 막으면 데모가 깨진다 - 다른 `enforce_*`와 같은 규칙이다.
+    enforce_report_export_limit(user)
     cv = STATE.get("cv_results"); name = STATE.get("best_model_name")
     opt = STATE.get("optuna_result"); X = STATE.get("X"); y = STATE.get("y")
     preds = STATE.get("predictions"); cat_cols = STATE.get("cat_cols", [])

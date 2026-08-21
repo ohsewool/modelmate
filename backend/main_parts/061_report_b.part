@@ -1,9 +1,13 @@
-
+﻿
     # 인코딩 섹션
     enc_html = (f"<h2>🔤 자동 인코딩 컬럼</h2><p style='font-size:.85rem;color:#475569'>"
                 + ", ".join(f"<code>{c}</code>" for c in cat_cols) + "</p>") if cat_cols else ""
 
     autoprint_script = "<script>window.onload=()=>{window.print();}</script>" if autoprint else ""
+
+    # 여기서 센다 - 응답이 실제로 나갈 때다. 위쪽에서 세면 `cv is None`으로
+    # 400이 나는 호출까지 한도를 깎는다. 한도는 받은 것에 대해서만 매겨야 한다.
+    record_report_export(user)
 
     return f"""<!DOCTYPE html><html lang="ko"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
