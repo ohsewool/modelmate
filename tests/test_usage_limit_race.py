@@ -16,11 +16,15 @@
 반대로 하면(미리 세어두고 실패하면 되돌리기) 400으로 끝난 호출이 할당량을 먹는 경로가
 생기고, 그건 실패를 벌로 만든다.
 
-**나머지 한도는 아직 이 모양이 아니다.** 분석 작업·예측 API 호출은 여전히
-`enforce_limit` 뒤에 `increment_daily_usage`를 부른다. 창은 훨씬 좁지만(행 하나
-INSERT) 0은 아니다. 작업 쪽은 시작한 뒤에 거절하면 고아 작업이 남아서, 예약-후-실행
-으로 바꾸는 것이 맞고 그건 작업 수명주기를 건드리는 별도 작업이다. 상태는
-`work/ROADMAP.md`와 아래 `TestTheOtherCountersStillHaveTheGap`에 적어둔다.
+**2026-08-22에 나머지도 옮겼다.** 분석 작업과 예측 API 호출도 `claim_analysis_job`·
+`claim_prediction_api_call`을 거친다 — 세는 자리가 곧 판단하는 자리다. 입구의
+`enforce_*`는 남는다: 권위는 아니고, **비싼 일을 시작하기 전에** 거절하기 위한
+빠른 검사다. 없으면 한도에 걸린 사용자가 모델 비교를 끝까지 돌린 뒤 429를 받는다.
+
+옮기면서 더 큰 것이 나왔다. **`/api/run-cv`는 어떤 `enforce_*`도 부르지 않았다.**
+세기는 하는데 막지는 않았다 — 무료 플랜 한도 5에 **8회를 연속으로 200**으로
+통과시키는 것을 확인했고, 카운터만 8까지 올라갔다. 모델을 실제로 학습·비교하는,
+한도가 존재하는 이유인 바로 그 엔드포인트다. 고친 뒤 정확히 5회 200, 6회부터 429.
 """
 
 import concurrent.futures
@@ -160,18 +164,34 @@ class TestTheTestCanActuallySeeAnOverrun:
         )
 
 
-class TestTheOtherCountersStillHaveTheGap:
-    """아직 안 고친 것을 적어둔다. 고치는 날 이 테스트가 실패하고, 그때 위 문서와
-    `work/ROADMAP.md`를 함께 고치게 된다."""
+class TestEveryCounterClaimsInsteadOfIncrementing:
+    """이 파일의 앞 판은 **아직 안 고친 것**을 고정하고 있었다 — 분석 작업과 예측
+    API 호출이 나눠 세는 상태다. 2026-08-22에 옮기면서 그 테스트가 설계대로 실패했고,
+    이 클래스로 바뀌었다. 적어둔 대로다: 고치는 날 실패하고 문서도 함께 고치게 된다.
+    """
 
-    def test_jobs_and_prediction_calls_still_increment_separately(self):
+    def test_no_part_increments_outside_the_helper(self):
+        """`increment_daily_usage`를 그대로 부르는 곳이 남으면 그 경로는 다시
+        세기만 하고 판단하지 않는다."""
         callers = sorted(
             path.name for path in PARTS.glob("*.part")
             if "increment_daily_usage(" in path.read_text(encoding="utf-8-sig")
             and "def increment_daily_usage" not in path.read_text(encoding="utf-8-sig")
         )
-        assert callers == ["045_agent_runs.part", "055_training_jobs.part",
-                           "088_prediction_tokens.part"], callers
+        assert callers == [], callers
+
+    def test_the_claim_helpers_exist_and_refuse(self):
+        assert callable(modelmate.claim_analysis_job)
+        assert callable(modelmate.claim_prediction_api_call)
+
+    def test_the_expensive_endpoint_checks_before_it_starts(self):
+        """`/api/run-cv`는 어떤 한도 검사도 부르지 않았다. 세는 자리가 권위지만,
+        입구 검사가 없으면 한도에 걸린 사용자가 모델 비교를 끝까지 돌린 뒤에
+        거절당한다."""
+        source = (PARTS / "020_run_cv.part").read_text(encoding="utf-8-sig")
+        entry = source[source.index('@app.post("/api/run-cv")'):]
+        entry = entry[:entry.index("STATE.get(\"X\")")]
+        assert "enforce_training_job_limits" in entry
 
     def test_report_export_no_longer_does(self):
         source = (PARTS / "008_usage_limits.part").read_text(encoding="utf-8-sig")

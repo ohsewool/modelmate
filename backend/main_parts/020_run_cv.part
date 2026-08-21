@@ -1,4 +1,4 @@
-def _record_workspace_analysis_result(user, history_id, history_payload, best_name, results, task_type):
+﻿def _record_workspace_analysis_result(user, history_id, history_payload, best_name, results, task_type):
     if not user:
         return
     dataset_ref = history_payload.get("dataset_ref") or {}
@@ -43,6 +43,16 @@ def _record_workspace_analysis_result(user, history_id, history_payload, best_na
 
 @app.post("/api/run-cv")
 async def run_cv(user=Depends(get_current_user)):
+    # 이 엔드포인트는 **어떤 한도 검사도 부르지 않았다.** 세기는 했다 -
+    # `_record_workspace_analysis_result`가 `record_sync_training_job`을 거쳐
+    # `jobs_today`를 올린다 - 그런데 막는 것이 없었다. 2026-08-22에 무료 플랜
+    # 한도 5에 8회를 연속으로 200으로 통과시키는 것을 확인했다. 모델을 실제로
+    # 학습·비교하는, 한도가 존재하는 이유인 바로 그 엔드포인트다.
+    #
+    # 세는 자리(`claim_analysis_job`)가 권위이고, 이 검사는 비싼 일을 시작하기
+    # 전의 빠른 거절이다.
+    if "enforce_training_job_limits" in globals():
+        enforce_training_job_limits(user)
     X, y = STATE.get("X"), STATE.get("y")
     set_analysis_status("running", "automl_training", "여러 모델을 같은 기준으로 학습하고 비교하는 중입니다.")
     if X is None:

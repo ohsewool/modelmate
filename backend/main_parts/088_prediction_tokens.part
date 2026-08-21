@@ -1,4 +1,4 @@
-PREDICTION_TOKEN_STATUSES = {"active", "revoked", "disabled"}
+﻿PREDICTION_TOKEN_STATUSES = {"active", "revoked", "disabled"}
 
 
 def ensure_prediction_token_table():
@@ -350,8 +350,8 @@ async def predict_with_project_token(
             "UPDATE prediction_api_tokens SET usage_count=COALESCE(usage_count, 0)+1, last_used_at=? WHERE token_id=?",
             (now, token_row["token_id"]),
         )
-        if "increment_daily_usage" in globals():
-            increment_daily_usage(token_row["owner_user_id"], "prediction_api_calls_today")
+        if "claim_prediction_api_call" in globals():
+            claim_prediction_api_call(token_row["owner_user_id"])
         conn.commit()
         return {
             "status": "ok",

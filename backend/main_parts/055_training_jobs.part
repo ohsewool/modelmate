@@ -250,8 +250,8 @@ def record_sync_training_job(user, *, project_id=None, dataset_id=None, analysis
     )
     conn.commit()
     conn.close()
-    if "increment_daily_usage" in globals():
-        increment_daily_usage(user["sub"], "jobs_today")
+    if "claim_analysis_job" in globals():
+        claim_analysis_job(user)
     return _get_training_job_owned(user, job_id)
 
 
@@ -394,8 +394,8 @@ def _create_training_job_record(user, background_tasks, body, *, rerun_of=None, 
         )
         conn.commit()
         conn.close()
-        if "increment_daily_usage" in globals():
-            increment_daily_usage(user["sub"], "jobs_today")
+        if "claim_analysis_job" in globals():
+            claim_analysis_job(user)
         return _get_training_job_owned(user, job_id)
     import uuid
     now = _job_now()
@@ -428,8 +428,8 @@ def _create_training_job_record(user, background_tasks, body, *, rerun_of=None, 
     )
     conn.commit()
     conn.close()
-    if "increment_daily_usage" in globals():
-        increment_daily_usage(user["sub"], "jobs_today")
+    if "claim_analysis_job" in globals():
+        claim_analysis_job(user)
     background_tasks.add_task(_execute_training_job, job_id, dict(user))
     return _get_training_job_owned(user, job_id)
 

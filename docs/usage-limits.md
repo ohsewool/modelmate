@@ -38,11 +38,20 @@ with the atomic claim, exactly 10. The loser of a race generates the report and 
 receives 429 — the work is wasted, but the limit holds, and a request that ends in 400
 still never consumes quota.
 
-Daily job counts and prediction API calls still use the older shape. Their window is a
-single row insert rather than a full report render, but it is not zero. Refusing a job
-after it has started would leave an orphan row, so that path needs reserve-then-run
-rather than a drop-in change. `tests/test_usage_limit_race.py` pins the current state
-and fails when it changes.
+Daily job counts and prediction API calls were moved to the same shape on 2026-08-22
+(`claim_analysis_job`, `claim_prediction_api_call`). Counting and deciding happen in one
+statement; the `enforce_*` call at the entry to each handler stays as a fast refusal so
+that a user over the limit is turned away before a model comparison runs, not after.
+
+Moving them surfaced a larger gap. **`/api/run-cv` called no limit check at all.** It
+counted - `_record_workspace_analysis_result` reaches `record_sync_training_job`, which
+raised `jobs_today` - but nothing refused. Measured with a free-plan account whose limit
+is 5: eight consecutive calls all returned 200 and the counter climbed to 8. The usage
+screen showed the limit exceeded while the endpoint kept training models. That endpoint
+is the one that actually fits and compares models, which is the reason the limit exists.
+After the fix the same sequence gives five 200s and then 429 with
+`limit_key: max_jobs_per_day`. `tests/test_every_analysis_route_is_bounded.py` checks
+that every route which starts an analysis calls an enforcer before touching the data.
 
 Admin accounts are treated as unlimited for development and demos. The owner
 account `admin@modelmate.local` is always recognized as `admin`; additional

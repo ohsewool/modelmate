@@ -402,11 +402,71 @@ def enforce_dataset_upload_limits(user, file_size_bytes, rows, columns):
 
 
 def enforce_training_job_limits(user):
+    """작업을 시작하기 전의 빠른 거절.
+
+    권위는 아니다 — 여기서 통과해도 실제로 세는 것은 `claim_analysis_job`이고,
+    그 사이에 다른 요청이 마지막 자리를 가져갈 수 있다. 이 함수가 있는 이유는
+    **비싼 일을 시작하기 전에** 거절하기 위해서다. 없애면 한도에 걸린 사용자가
+    모델 비교를 끝까지 돌린 뒤에 429를 받는다.
+    """
     if isAdminUser(user):
         return
     usage = get_account_usage(user)
     enforce_limit(user, "max_jobs_per_day", usage["jobs_today"], "오늘 실행 가능한 분석 작업 수를 모두 사용했습니다.")
     enforce_limit(user, "max_concurrent_jobs", usage["active_jobs"], "동시에 실행 가능한 분석 작업 수를 모두 사용했습니다.")
+
+
+def claim_analysis_job(user_or_id):
+    """분석 작업 하나를 센다. 한도가 찼으면 429로 거절한다.
+
+    예전에는 `increment_daily_usage(user_id, "jobs_today")`였다 — **세기만 하고
+    판단하지 않았다.** 판단은 엔드포인트 입구의 `enforce_training_job_limits`가
+    따로 했고, 그 사이에 분석이 통째로 들어간다. 2026-08-22에 보고서 내보내기에서
+    같은 모양을 쟀다: 한도 10에 동시 20건 중 12건 통과.
+
+    그리고 더 큰 것이 옆에 있었다. **`/api/run-cv`는 어떤 `enforce_*`도 부르지
+    않았다.** 세기는 하는데(이 경로를 통해) 막지는 않았다 — 무료 플랜 한도 5에
+    8회를 연속으로 200으로 통과시키는 것을 확인했다. 모델을 실제로 학습·비교하는,
+    한도가 존재하는 이유인 바로 그 엔드포인트다.
+
+    이제 세는 자리가 곧 판단하는 자리다. 입구 검사는 빠른 거절로 남는다.
+    """
+    user_id = user_or_id if isinstance(user_or_id, str) else _user_id_from_payload(user_or_id)
+    if not user_id or is_admin_user_id(user_id):
+        return
+    user = user_or_id if not isinstance(user_or_id, str) else {"sub": user_id}
+    limit = get_plan_limits(user).get("max_jobs_per_day")
+    if not claim_daily_usage(user_id, "jobs_today", limit):
+        usage = get_daily_usage(user_id)
+        raise usage_limit_error("max_jobs_per_day", usage["jobs_today"], limit,
+                                get_user_plan(user),
+                                "오늘 실행 가능한 분석 작업 수를 모두 사용했습니다.")
+
+
+def claim_prediction_api_call(owner_user_id):
+    """예측 API 호출 하나를 센다. 한도가 찼으면 429.
+
+    `enforce_prediction_call_limit`은 입구에 남는다 — 호출을 넘기기 전에 거절하는
+    편이 낫다. 권위는 여기다.
+    """
+    if not owner_user_id or is_admin_user_id(owner_user_id):
+        return
+    user = {"sub": owner_user_id}
+    conn = get_db()
+    try:
+        row = conn.execute("SELECT plan, role FROM users WHERE id=?", (owner_user_id,)).fetchone()
+    finally:
+        conn.close()
+    if row:
+        user["plan"] = row["plan"]
+        user["role"] = row["role"]
+    limit = get_plan_limits(user).get("max_prediction_api_calls_per_day")
+    if not claim_daily_usage(owner_user_id, "prediction_api_calls_today", limit):
+        usage = get_daily_usage(owner_user_id)
+        raise usage_limit_error("max_prediction_api_calls_per_day",
+                                usage["prediction_api_calls_today"], limit,
+                                get_user_plan(user),
+                                "오늘 예측 API 호출 한도에 도달했습니다.")
 
 
 def enforce_prediction_token_limit(user, project_id):

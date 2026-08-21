@@ -1,4 +1,4 @@
-
+﻿
 # Agentic AutoML mock planner endpoints (PR-03)
 from backend.agents import SupervisorPlanner
 from backend.agents.executor import execute_agent_run
@@ -154,8 +154,8 @@ async def create_goal_first_agent_run_api(
             )
     finally:
         conn.close()
-    if "increment_daily_usage" in globals():
-        increment_daily_usage(user.get("sub"), "jobs_today")
+    if "claim_analysis_job" in globals():
+        claim_analysis_job(user)
     agent_run = result.get("agent_run") or {}
     return {
         **result,
