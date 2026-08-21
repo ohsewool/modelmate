@@ -79,6 +79,21 @@ python3 scripts/scan_secrets.py <repo>... --control <시크릿이_있다고_아�
 
 이 저장소에는 이제 알려진 시크릿이 없으므로, 대조군은 별도로 만들어야 한다 — 가짜 키 한 줄을 커밋한 임시 저장소면 충분하다. 대조 없이 나온 "clean"은 스캐너 자신이 경고하듯 검증되지 않은 결과다.
 
+## 공개된 기본 비밀값 (2026-08-22)
+
+`JWT_SECRET`의 기본값 `modelmate-secret-key-change-in-prod`와 `ADMIN_PASSWORD`의
+기본값 `admin1234`가 소스에 박혀 있었다. 위 API 키 노출과 달리 **유출이 아니라
+설계였다** — 저장소를 읽은 누구나 관리자 토큰을 서명할 수 있었고, 로컬 인스턴스에
+위조 토큰을 보내 `role: admin`으로 통과하는 것을 확인했다.
+
+배포에서는 `JWT_SECRET` 없이 부팅하지 않고, 로컬은 설치마다 다른 키를 만든다.
+`ADMIN_PASSWORD`가 없으면 관리자 계정은 비밀번호 없이 만들어진다. 경위와 근거는
+`docs/security-notes.md`의 `Published defaults (2026-08-22)`, 검사는
+`tests/test_no_published_default_secrets.py`.
+
+이 저장소의 과거 배포는 존재하지 않는다(무료 플랜 만료로 삭제). 노출된 기본값으로
+접근당할 수 있었던 실제 인스턴스는 확인되지 않았다.
+
 ## 취약점 신고
 
 보안 문제를 발견하면 이슈로 공개하지 말고 저장소 소유자에게 직접 연락 바란다.

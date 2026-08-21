@@ -89,6 +89,52 @@ item.
 This is an MVP access-control foundation, not enterprise-grade access control,
 SOC2 readiness, complete tenant isolation, or full RBAC.
 
+## Published defaults (2026-08-22)
+
+Two secrets had hardcoded fallbacks, and both fallbacks are visible in this public
+repository.
+
+`JWT_SECRET` fell back to `modelmate-secret-key-change-in-prod`. Any deployment that
+did not set the variable signed and accepted tokens with a key anyone can read. This
+was demonstrated, not inferred: a token carrying `{"role": "admin"}` signed with that
+constant was sent to a local instance, and `/api/auth/me` returned `200` with
+`role: admin` while `/api/me/usage` returned `limit_label: 제한 없음` and every limit
+`null`. No account and no password were involved.
+
+`.env.example` made it worse. It listed `JWT_SECRET=` with an empty value, and
+`os.getenv` treats an empty string as configured — following the example file signed
+tokens with an empty key. Two lines below, `DB_PATH` already used `.strip() or` and
+avoided the same trap.
+
+`ADMIN_PASSWORD` fell back to `admin1234`, which appears in no document. Because
+`admin@modelmate.local` is always an admin (below), every deployment carried that
+account. Following `.env.example` literally produced an admin whose password was the
+empty string.
+
+`docs/deployment-checklist.md` already said `JWT_SECRET` must be a long random value.
+Nothing checked that it was. That is the same shape as the report-export limit found
+the same day: declared in the table, in the database, and in the docs, enforced
+nowhere.
+
+Now:
+
+- `JWT_SECRET` unset on a hosted deployment (`RAILWAY_ENVIRONMENT_NAME` set, or
+  `ENVIRONMENT` in `production`/`prod`/`staging`) **refuses to boot**.
+- A local run generates a per-install key in `.jwt_secret` (mode `0600`, gitignored)
+  beside the database. It is stable across restarts and workers — a key regenerated
+  every boot logs everyone out on restart, and that is the kind of guard people turn off.
+- `ADMIN_PASSWORD` unset seeds the bootstrap admin **with no password**, and
+  `/api/auth/login` already refuses an account without one. Signing up as that email
+  is refused because the account exists.
+- A second seeding block that read `ADMIN_EMAIL` (singular) was removed. When
+  `ADMIN_EMAILS` (plural) was set, `get_admin_emails()` ignored the singular value,
+  but that block still created the account and granted it `admin` — an undocumented
+  second path into the admin role. `get_admin_emails()` is now the only authority.
+
+`tests/test_no_published_default_secrets.py` holds this. The forged-token check has a
+control: a token signed with the current key must still verify, otherwise the test
+would pass by refusing everything.
+
 ## Admin Role And Quota Bypass
 
 The owner account `admin@modelmate.local` is always treated as `admin`.

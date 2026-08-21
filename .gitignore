@@ -12,6 +12,7 @@ venv/
 .env.*
 !.env.example
 modelmate.db
+.jwt_secret
 tmp_datasets/
 tmp_public_downloads/
 

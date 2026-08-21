@@ -45,7 +45,6 @@ def verify_password(password: str, stored: str) -> bool:
         return False
 
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "373474705259-7b18amrkom84aqqt59n87lglhrgq1trj.apps.googleusercontent.com")
-JWT_SECRET = os.getenv("JWT_SECRET", "modelmate-secret-key-change-in-prod")
 JWT_ALGORITHM = "HS256"
 security = HTTPBearer(auto_error=False)
 
@@ -57,6 +56,64 @@ if DB_PATH != ":memory:":
     os.makedirs(os.path.dirname(os.path.abspath(DB_PATH)), exist_ok=True)
 os.makedirs(MODELS_DIR, exist_ok=True)
 os.makedirs(DATASETS_DIR, exist_ok=True)
+
+
+def is_hosted_deployment() -> bool:
+    """플랫폼 위에서 도는가. 로컬 데모와 배포를 같은 규칙으로 다루면 둘 중 하나가 틀린다."""
+    if os.getenv("RAILWAY_ENVIRONMENT_NAME", "").strip():
+        return True
+    return os.getenv("ENVIRONMENT", "").strip().lower() in {"production", "prod", "staging"}
+
+
+def resolve_jwt_secret() -> str:
+    """토큰 서명 키.
+
+    예전에는 `os.getenv("JWT_SECRET", "modelmate-secret-key-change-in-prod")`였다.
+    그 상수는 **공개 저장소에 그대로 적혀 있다.** 설정하지 않은 배포에서는 누구나
+    `{"role": "admin"}`을 서명해 관리자로 통과할 수 있다 — 계정이 없어도 된다.
+    2026-08-22에 실제로 해봤다: 위조 토큰으로 `/api/auth/me`가 200과 `role: admin`,
+    `/api/me/usage`가 `limit_label: 제한 없음`을 돌려줬다.
+
+    `.env.example`은 `JWT_SECRET=`(빈 값)으로 안내한다. `os.getenv`는 빈 문자열도
+    "설정됨"으로 보므로 그대로 따르면 **빈 키로 서명**한다 — 기본 상수보다 나쁘다.
+    바로 두 줄 아래 `DB_PATH`는 `.strip() or` 로 같은 함정을 이미 피하고 있었다.
+
+    배포에서는 부팅을 거부한다. 로컬에서는 설치마다 다른 키를 파일에 만든다 —
+    매번 새로 만들면 재시작이나 워커 추가에 토큰이 깨지고, 그건 사람들이 끄고 싶어
+    하는 종류의 안전장치다.
+    """
+    configured = os.getenv("JWT_SECRET", "").strip()
+    if configured:
+        return configured
+    if is_hosted_deployment():
+        raise RuntimeError(
+            "JWT_SECRET이 설정되지 않았다. 배포에서는 기본값으로 부팅하지 않는다 — "
+            "저장소에 적힌 값으로 서명하면 누구나 관리자 토큰을 만들 수 있다. "
+            "긴 난수를 JWT_SECRET에 넣어라 (`python3 -c \"import secrets;"
+            "print(secrets.token_urlsafe(48))\"`)."
+        )
+    base = REPO_ROOT if DB_PATH == ":memory:" else os.path.dirname(os.path.abspath(DB_PATH))
+    path = os.path.join(base, ".jwt_secret")
+    try:
+        with open(path, "r", encoding="utf-8") as handle:
+            existing = handle.read().strip()
+        if existing:
+            return existing
+    except OSError:
+        pass
+    generated = secrets.token_urlsafe(48)
+    try:
+        descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+            handle.write(generated + "\n")
+    except OSError:
+        # 읽기 전용 파일시스템 등. 프로세스 안에서만 유효한 키로 계속 간다 —
+        # 공개된 상수를 쓰는 것보다는 낫고, 배포 경로는 위에서 이미 막혔다.
+        pass
+    return generated
+
+
+JWT_SECRET = resolve_jwt_secret()
 
 def get_allowed_origins():
     configured = os.getenv("ALLOWED_ORIGINS", "")
@@ -93,31 +150,35 @@ def init_db():
     if "updated_at" not in cols:
         conn.execute("ALTER TABLE users ADD COLUMN updated_at TEXT")
 
-    # 기본 계정 자동 생성 (없을 때만)
-    admin_email = os.getenv("ADMIN_EMAIL", "admin@modelmate.local")
-    admin_pw    = os.getenv("ADMIN_PASSWORD", "admin1234")
-    exists = conn.execute("SELECT id, password_hash FROM users WHERE email=?", (admin_email,)).fetchone()
-    if not exists:
-        import uuid
-        conn.execute(
-            "INSERT INTO users (id, email, name, picture, password_hash, role, created_at) VALUES (?,?,?,?,?,?,?)",
-            (str(uuid.uuid4()), admin_email, "관리자", "", hash_password(admin_pw), "admin", datetime.now().isoformat())
-        )
-    else:
-        if not exists["password_hash"]:
-            conn.execute("UPDATE users SET password_hash=? WHERE email=?", (hash_password(admin_pw), admin_email))
-        conn.execute("UPDATE users SET role='admin', name=COALESCE(NULLIF(name, ''), '관리자') WHERE email=?", (admin_email,))
+    # 관리자 계정 자동 생성 (없을 때만).
+    #
+    # 비밀번호 기본값이 `admin1234`였다. 어느 문서에도 적혀 있지 않았고
+    # `.env.example`은 `ADMIN_PASSWORD=`(빈 값)으로 안내한다 — 그대로 따르면
+    # **빈 문자열이 비밀번호인 관리자 계정**이 만들어졌다. 그리고
+    # `get_admin_emails()`는 설정과 무관하게 `admin@modelmate.local`을 항상
+    # 관리자로 넣으므로(문서화된 동작), 그 계정은 어느 배포에나 존재했다.
+    #
+    # 이제 `ADMIN_PASSWORD`가 없으면 **비밀번호 없이** 만든다. `/api/auth/login`은
+    # `password_hash`가 비면 이미 거부한다 — 계정은 존재하되 비밀번호 로그인이
+    # 열리지 않는다. 여는 것은 운영자의 명시적 선택이어야 한다.
+    #
+    # 여기 있던 두 번째 자동 생성 블록은 지웠다. `ADMIN_EMAIL`(단수)을 따로 읽어
+    # 계정을 만들었는데, `ADMIN_EMAILS`(복수)가 설정되면 `get_admin_emails()`는
+    # 단수를 무시한다 — 문서화된 목록에 없는 이메일이 관리자가 되는 **두 번째
+    # 경로**였고 어느 문서에도 없었다. 이제 권위는 `get_admin_emails()` 하나다.
+    admin_pw = os.getenv("ADMIN_PASSWORD", "").strip()
+    admin_hash = hash_password(admin_pw) if admin_pw else None
     import uuid
     for configured_admin_email in sorted(get_admin_emails()):
         existing_admin = conn.execute("SELECT id, password_hash FROM users WHERE email=?", (configured_admin_email,)).fetchone()
         if not existing_admin:
             conn.execute(
                 "INSERT INTO users (id, email, name, picture, password_hash, role, created_at) VALUES (?,?,?,?,?,?,?)",
-                (str(uuid.uuid4()), configured_admin_email, "관리자", "", hash_password(admin_pw), "admin", datetime.now().isoformat())
+                (str(uuid.uuid4()), configured_admin_email, "관리자", "", admin_hash, "admin", datetime.now().isoformat())
             )
         else:
-            if not existing_admin["password_hash"]:
-                conn.execute("UPDATE users SET password_hash=? WHERE email=?", (hash_password(admin_pw), configured_admin_email))
+            if admin_hash and not existing_admin["password_hash"]:
+                conn.execute("UPDATE users SET password_hash=? WHERE email=?", (admin_hash, configured_admin_email))
             conn.execute(
                 "UPDATE users SET role='admin', plan='admin', name=COALESCE(NULLIF(name, ''), '관리자') WHERE email=?",
                 (configured_admin_email,),

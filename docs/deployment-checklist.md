@@ -39,8 +39,15 @@ pip install -r requirements.txt && cd frontend && npm ci && npm run build && cd 
 
 Required for a public authenticated deployment:
 
-- `JWT_SECRET`: long random value, stored only in Railway variables
-- `ADMIN_PASSWORD`: set only when the configured bootstrap admin uses email/password login
+- `JWT_SECRET`: long random value, stored only in Railway variables. **The app now
+  refuses to boot without it** when `RAILWAY_ENVIRONMENT_NAME` is set or
+  `ENVIRONMENT` is `production`/`staging`. It used to fall back to a constant that
+  is published in this repository — see `## Published defaults (2026-08-22)` in
+  `docs/security-notes.md`. A local run generates a per-install key in
+  `.jwt_secret` next to the database instead.
+- `ADMIN_PASSWORD`: set only when the configured bootstrap admin uses email/password
+  login. Leaving it unset now means the bootstrap admin account exists **with no
+  password**, and `/api/auth/login` refuses it. It used to default to `admin1234`.
 
 Deployment-dependent variables:
 

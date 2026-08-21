@@ -98,7 +98,14 @@ def run(base_url):
 
     configured_admins = os.getenv("ADMIN_EMAILS", "").split(",")
     admin_email = os.getenv("MODELMATE_ADMIN_EMAIL") or next((item.strip() for item in configured_admins if item.strip()), "admin@modelmate.local")
-    admin_password = os.getenv("MODELMATE_ADMIN_PASSWORD", os.getenv("ADMIN_PASSWORD", "admin1234"))
+    # 예전 기본값은 `admin1234`였다. 앱이 그 비밀번호로 관리자 계정을 자동 생성했기
+    # 때문에 통했다 - 그 자동 생성이 결함이었다(2026-08-22). 이제 앱은 비밀번호 없이
+    # 만들고, 이 스모크는 운영자가 설정한 값을 받아야 한다.
+    admin_password = os.getenv("MODELMATE_ADMIN_PASSWORD") or os.getenv("ADMIN_PASSWORD", "")
+    if not admin_password:
+        print("ADMIN_PASSWORD(또는 MODELMATE_ADMIN_PASSWORD)가 필요하다 — "
+              "앱을 띄울 때 쓴 값과 같아야 한다. 기본 비밀번호는 더 이상 없다.")
+        raise SystemExit(2)
     admin_login = request("POST", join(base_url, "/api/auth/login"), payload={"email": admin_email, "password": admin_password})
     admin_token = (admin_login["json"] or {}).get("token")
     add(results, "admin can login", admin_login["status"] == 200 and bool(admin_token), admin_email, admin_login["status"])

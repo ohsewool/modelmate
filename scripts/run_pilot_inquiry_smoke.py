@@ -48,8 +48,14 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--base-url", required=True)
     parser.add_argument("--admin-email", default=os.getenv("ADMIN_EMAIL", "admin@modelmate.local"))
-    parser.add_argument("--admin-password", default=os.getenv("ADMIN_PASSWORD", "admin1234"))
+    parser.add_argument("--admin-password", default=os.getenv("ADMIN_PASSWORD", ""))
     args = parser.parse_args()
+
+    # 기본 비밀번호 `admin1234`는 앱이 관리자 계정을 그 값으로 자동 생성했기 때문에
+    # 통했다. 그 자동 생성을 없앴다(2026-08-22) — 이제 운영자가 설정한 값을 받는다.
+    if not args.admin_password:
+        print("--admin-password 또는 ADMIN_PASSWORD가 필요하다. 기본값은 더 이상 없다.")
+        raise SystemExit(2)
 
     results = []
 
