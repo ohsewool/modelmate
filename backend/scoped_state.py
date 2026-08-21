@@ -127,9 +127,26 @@ def reset_scope(token) -> None:
 def scope_for_user(user: Any) -> str:
     """The bucket a request belongs to, derived from who is asking.
 
-    `sub` is what `get_current_user` returns for both cases - an account
-    identifier, or `guest:<session>` for the demo path - so the two are already
-    distinct and neither is supplied by the client as a scope.
+    `sub` is what `get_current_user` returns: a server-issued account
+    identifier, or `guest:<session>` for the demo path.
+
+    **The guest half is client-supplied.** The session id comes from the
+    `x-modelmate-guest-session` header, so saying "the client never names a
+    scope" - as this docstring did - is half true and the wrong half to be
+    confident about. What holds is narrower and worth stating exactly:
+
+    - a guest cannot reach an **account** bucket. The `guest:` prefix is added
+      here and the header is stripped of colons, so `guest:<anything>` can
+      never equal an account identifier.
+    - a guest cannot reach the **shared default** bucket, which is the one
+      per-request scoping exists to remove.
+
+    What is *not* guaranteed: two guests who send the same session id share a
+    bucket, and sanitising can make different headers collide (`a:b:c` and
+    `abc`). That is what a session identifier is - the same property a cookie
+    has - and it is recorded rather than hidden.
+
+    `tests/test_scope_is_not_client_choosable.py` pins all of it.
     """
     if not isinstance(user, dict):
         return DEFAULT_SCOPE
