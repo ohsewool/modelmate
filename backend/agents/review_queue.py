@@ -33,6 +33,17 @@ PROCEEDING_ACTIONS = {
     "proceed", "continue", "start", "started", "complete", "completed",
     "next_action", "next_step", "ok", "success", "succeeded", "pass", "passed",
     "continue_with_reviewer_context", "clarify_resolution", "collect_resolution",
+    # 위 셋과 함께 `resume.build_resume_recommendation`이 내는 계획 동작이다. 넷 중
+    # 셋만 여기 있었고 `prepare_replan_placeholder`가 빠져 있었다.
+    #
+    # 빠진 채로 두면 고리가 생긴다: 검토자가 `fix_required`로 해결한 항목에 대해
+    # 재개 계획이 "다시 계획하라"를 내놓고, 그 동작이 허용 목록에 없으니 검토
+    # 대기열이 **또 검토 항목을 만든다.** 해결된 것을 다시 검토하게 만드는 것은
+    # 검토를 무의미하게 만드는 가장 빠른 길이다.
+    #
+    # 오늘은 아무 영향이 없다 - `resume.py`는 아직 배선되지 않았고, 그래서 이
+    # 불일치가 조용히 남아 있었다. 배선하는 날 드러날 것을 지금 맞춰둔다.
+    "prepare_replan_placeholder",
 }
 
 

@@ -29,6 +29,8 @@ agent decision -> needs_review / hold / blocked -> review item -> reviewer resol
 
 `review_queue.py` can turn risky decision or observation payloads into
 JSON-compatible review items. `resume.py` can mark a review item as resolved and
+
+> **배선되지 않았다.** `resume.py`는 PR-12의 골격이고 백엔드 어디에서도 import하지 않는다 — 아래 예제는 직접 부르면 동작한다는 뜻이지 제품 경로라는 뜻이 아니다. 제품의 재개는 `POST /api/training/jobs/{id}/rerun`이 담당하며, 쓰지 않는 두 번째 경로를 배선하면 같은 질문에 답하는 장치가 둘이 된다. `tests/test_resume_recommendation.py`가 동작과 배선되지 않았다는 사실을 함께 고정한다.
 recommend the next action. This is a skeleton only: there is no DB queue, async
 worker, actual retraining, actual deployment, or LLM planner call.
 

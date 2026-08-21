@@ -251,6 +251,8 @@ PR-12 adds review and resume contracts for risky decisions. It introduces:
 - `ReviewItem` and `ResumeRecommendation` schemas
 - `review_queue.py` helpers that turn risky decisions into review items
 - `resume.py` helpers that recommend the next action after reviewer resolution
+
+> **배선되지 않았다.** `resume.py`는 PR-12의 골격이고 백엔드 어디에서도 import하지 않는다. 제품의 재개 경로는 `POST /api/training/jobs/{id}/rerun`이 담당하며, 쓰지 않는 두 번째 경로를 배선하면 같은 질문에 답하는 장치가 둘이 된다. 동작은 하고 `tests/test_resume_recommendation.py`가 고정한다.
 - `docs/demo-agentic-automl.md` for the current demo story
 - README cleanup with an honest claim about current limits
 
