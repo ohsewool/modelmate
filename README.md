@@ -331,6 +331,26 @@ python3 scripts/make_demo_data.py
 
 Apache License 2.0. [`LICENSE`](LICENSE) 참조.
 
+## 기록
+
+이 저장소는 6월에 팀 분할 단계를 거쳤고 그때의 문서 아홉 개가 루트에 남아 있었다.
+`codex/split-for-team` 브랜치와 "frontend teammates"를 가리키는 것들이라, 갓 클론한
+사람이 처음 보는 화면의 절반이 존재하지 않는 팀의 인수인계 메모였다.
+
+지우지 않고 [`docs/archive/2026-06-team-split/`](docs/archive/2026-06-team-split/README.md)
+으로 옮겼다. 그때 무엇을 알고 무엇을 정했는지가 거기 있다.
+
+- [2026-06 팀 분할 단계](docs/archive/2026-06-team-split/README.md) — API 계약 메모,
+  발표 런북, 11월 로드맵, 공개 데이터셋 1차 결과 등 아홉 건
+- [2026-08-21 QA 스냅숏](docs/archive/qa/2026-08-21/README.md) — 추적되고 있던
+  런타임 산출물
+- 루트에 남은 [`CODEX_HANDOFF.md`](CODEX_HANDOFF.md) · [`TEAM_SPLIT.md`](TEAM_SPLIT.md) ·
+  [`QA_CHECKLIST.md`](QA_CHECKLIST.md) · [`DEMO_DATASET_PLAYBOOK.md`](DEMO_DATASET_PLAYBOOK.md)
+  은 각자 `<!-- historical: -->`로 선언돼 있다
+
+**선언된 낡음은 기록이고, 선언되지 않은 낡음은 결함이다.** 이 저장소는 그 규칙을
+절반만 적용하고 있었다 — 넷은 선언돼 있었고 아홉은 아니었다.
+
 ## 함께 보기
 
 이 저장소는 다섯 개 중 하나다. 전체 지도와 각각이 무엇을 발견했는지는 [프로필](https://github.com/ohsewool)에 있다.

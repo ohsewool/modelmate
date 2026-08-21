@@ -18,7 +18,7 @@
 - 최신 확인 커밋: `0ec0ea0 chore: trigger Railway deploy for upload validation`
 - 최신 기능 커밋: `0bec359 test: expand upload validation coverage`
 - 최신 배포 번들 확인: JS `assets/index-CTAP3lKU.js`, CSS `assets/index-BLgYM24P.css`
-- 현재 임시 우선순위: 2026-06-08 월요일 발표 안정화. 11월 상용화 로드맵은 `AUTOMATION_CONTEXT.md`에 보존하고 잠시 중단한다.
+- 현재 임시 우선순위: 2026-06-08 월요일 발표 안정화. 11월 상용화 로드맵은 `docs/archive/2026-06-team-split/AUTOMATION_CONTEXT.md`에 보존하고 잠시 중단한다.
 - 11월 방향성: 고정 샘플 데모가 아니라, 사용자가 임의 CSV를 올리면 데이터 분야, 예측 목적, 맞힐 값, 제외 컬럼, 모델 선택, 위험 요소, 다음 행동, 저장/재사용, 공유/API까지 이어지는 범용 AutoML SaaS처럼 보이게 만든다.
 
 ## 발표용 핵심 흐름
@@ -84,11 +84,11 @@
 - `frontend/src/pages/Deploy.jsx`: 작업 기록에서 넘어온 선택 실험/API 공유 안내.
 - `scripts/run_upload_validation_qa.py`: 확장 업로드 검증 자동 QA.
 - `upload_validation_qa_results.json`: 최신 업로드 QA 결과.
-- `NOVEMBER_ROADMAP.md`: 11월까지의 우선순위 로드맵.
+- `docs/archive/2026-06-team-split/NOVEMBER_ROADMAP.md`: 11월까지의 우선순위 로드맵.
 
 ## 다음 우선순위
 
-1. 발표용 런북(`PRESENTATION_READY_RUNBOOK.md`) 기준으로 데모 동선을 고정한다.
+1. 발표용 런북(`docs/archive/2026-06-team-split/PRESENTATION_READY_RUNBOOK.md`) 기준으로 데모 동선을 고정한다.
 2. Railway 배포, 최신 GitHub `main`, production API 업로드 검증을 확인한다.
 3. 발표용 메인 데이터셋과 백업 데이터셋으로 업로드 → 모델 비교 → 에이전트 → 보고서 → 이유 보기 → 작업 기록 흐름을 리허설한다.
 4. 발표를 방해하는 오류, 문구, 동선 문제만 수정한다.

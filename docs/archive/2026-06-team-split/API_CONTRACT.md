@@ -1,4 +1,9 @@
 # ModelMate API Contract Notes
+<!-- historical: 2026-06 팀 분할 단계 -->
+> **이 문서는 기록이다.** `codex/split-for-team` 브랜치에서 팀에 나눠 주려고
+> 쓴 것이고, 그 분할은 존재하지 않는다. 경위와 그 뒤로 달라진 것은
+> [이 폴더의 README](README.md)에 있다. 지금의 안내는
+> [README](../../../README.md)와 [SECURITY](../../../SECURITY.md)에 있다.
 
 Branch: `codex/split-for-team`
 
