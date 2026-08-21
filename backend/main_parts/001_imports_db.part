@@ -22,14 +22,44 @@ from google.auth.transport import requests as grequests
 from jose import jwt as jose_jwt
 import hashlib, secrets
 
+def normalize_email(value):
+    """계정을 찾을 때 쓰는 단 하나의 이메일 형태.
+
+    이것이 없어서 **한 질문에 두 개의 동일성 기준**이 있었다. 가입의 중복 검사는
+    `WHERE email=?`로 SQLite 기본 비교(대소문자 구분)를 썼고, 관리자 판정은
+    `is_admin_email`이 소문자로 낮춰 비교했다. 엄격한 쪽이 계정 생성을 막고
+    느슨한 쪽이 권한을 줬다 — 최악의 짝이다.
+
+    2026-08-22에 확인: `ADMIN@modelmate.local`로 **자기 비밀번호를 정해 가입**하면
+    중복에 걸리지 않고(시딩된 행은 `admin@...`) `role: admin`, `plan: admin`,
+    `is_admin: true`, 한도 `제한 없음`을 받았다. 바로 앞 회차에 시딩된 관리자
+    계정을 **비밀번호 없이** 만들도록 고쳤는데, 이 경로는 그것을 통째로 지나간다.
+
+    이메일의 도메인부는 대소문자를 구분하지 않고, 로컬부는 규격상 구분할 수 있지만
+    실제 제공자는 구분하지 않는다. 여기서 중요한 것은 어느 쪽이 옳은가가 아니라
+    **모든 곳이 같은 답을 쓰는가**다.
+    """
+    return str(value or "").strip().lower()
+
+
 def get_admin_emails():
     configured = os.getenv("ADMIN_EMAILS") or os.getenv("ADMIN_EMAIL") or "admin@modelmate.local"
-    emails = {email.strip().lower() for email in configured.split(",") if email.strip()}
+    emails = {normalize_email(email) for email in configured.split(",") if email.strip()}
     emails.add("admin@modelmate.local")
     return emails
 
 def is_admin_email(email):
-    return bool(email and str(email).strip().lower() in get_admin_emails())
+    return bool(email and normalize_email(email) in get_admin_emails())
+
+
+def find_user_by_email(conn, email, columns="*"):
+    """이메일로 계정 하나를 찾는다. **모든 조회가 이 함수를 지나야 한다.**
+
+    `lower(email)`로 비교하므로 정규화 이전에 만들어진 대소문자 섞인 행도 찾는다.
+    """
+    return conn.execute(
+        f"SELECT {columns} FROM users WHERE lower(email)=?", (normalize_email(email),)
+    ).fetchone()
 
 def hash_password(password: str) -> str:
     salt = secrets.token_hex(16)
@@ -150,6 +180,24 @@ def init_db():
     if "updated_at" not in cols:
         conn.execute("ALTER TABLE users ADD COLUMN updated_at TEXT")
 
+    # 대소문자만 다른 두 계정을 DB가 직접 막는다. `email TEXT UNIQUE`는 SQLite의
+    # 기본 비교를 쓰므로 `admin@...`과 `ADMIN@...`을 서로 다른 값으로 본다 —
+    # 그 틈으로 관리자 계정이 하나 더 만들어졌다(2026-08-22).
+    #
+    # 앱 층에서도 막지만(`find_user_by_email`), **검사 하나에만 기대면 다음에
+    # 추가되는 경로가 그것을 부르지 않는다.** 이 저장소가 반복해서 만난 모양이라
+    # 여기서는 두 층 모두에 둔다.
+    #
+    # 이미 대소문자만 다른 행이 있는 DB에서는 인덱스 생성이 실패한다. 그때 부팅을
+    # 막으면 기존 배포가 죽으므로, 실패를 삼키지 않고 **남긴다** — 조용히 넘어가면
+    # 다음 사람은 인덱스가 있다고 믿는다.
+    try:
+        conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS users_email_ci ON users(lower(email))")
+    except Exception as exc:
+        print(f"[auth] users(lower(email)) 유니크 인덱스를 만들지 못했다: {exc}. "
+              f"대소문자만 다른 계정이 이미 있는지 확인하라 — "
+              f"SELECT lower(email), COUNT(*) FROM users GROUP BY 1 HAVING COUNT(*) > 1")
+
     # 관리자 계정 자동 생성 (없을 때만).
     #
     # 비밀번호 기본값이 `admin1234`였다. 어느 문서에도 적혀 있지 않았고
@@ -170,18 +218,25 @@ def init_db():
     admin_hash = hash_password(admin_pw) if admin_pw else None
     import uuid
     for configured_admin_email in sorted(get_admin_emails()):
-        existing_admin = conn.execute("SELECT id, password_hash FROM users WHERE email=?", (configured_admin_email,)).fetchone()
+        # `find_user_by_email`로 찾는다. 예전처럼 `WHERE email=?`로 찾으면 대소문자
+        # 섞인 옛 행(`Admin@Modelmate.Local`)을 못 찾고 INSERT로 넘어가는데, 위에서
+        # 만든 `users(lower(email))` 유니크 인덱스가 그것을 거절해 **부팅이 죽는다.**
+        # 인덱스를 넣으면서 이 줄을 같이 고치지 않으면 새 통제가 기존 배포를 깨뜨린다.
+        existing_admin = find_user_by_email(conn, configured_admin_email, "id, password_hash")
         if not existing_admin:
             conn.execute(
                 "INSERT INTO users (id, email, name, picture, password_hash, role, created_at) VALUES (?,?,?,?,?,?,?)",
                 (str(uuid.uuid4()), configured_admin_email, "관리자", "", admin_hash, "admin", datetime.now().isoformat())
             )
         else:
+            # 갱신은 `id`로 한다. 이메일로 다시 찾으면 방금 한 조회와 다른 기준을
+            # 쓰게 되고, 그 어긋남이 이 회차가 고친 결함 그 자체다.
             if admin_hash and not existing_admin["password_hash"]:
-                conn.execute("UPDATE users SET password_hash=? WHERE email=?", (admin_hash, configured_admin_email))
+                conn.execute("UPDATE users SET password_hash=? WHERE id=?",
+                             (admin_hash, existing_admin["id"]))
             conn.execute(
-                "UPDATE users SET role='admin', plan='admin', name=COALESCE(NULLIF(name, ''), '관리자') WHERE email=?",
-                (configured_admin_email,),
+                "UPDATE users SET role='admin', plan='admin', name=COALESCE(NULLIF(name, ''), '관리자') WHERE id=?",
+                (existing_admin["id"],),
             )
 
     conn.execute("""

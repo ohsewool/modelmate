@@ -135,6 +135,42 @@ Now:
 control: a token signed with the current key must still verify, otherwise the test
 would pass by refusing everything.
 
+## Case-only signup as the admin (2026-08-22)
+
+The account lookup and the admin check used **two different notions of the same
+email**. Signup's duplicate check ran `SELECT id FROM users WHERE email=?`, which uses
+SQLite's default case-sensitive comparison; the role decision ran `is_admin_email`,
+which lowercases. The strict one gated account creation and the loose one granted
+authority.
+
+Measured, not inferred. Signing up as `admin@modelmate.local` returned
+`400 이미 사용 중인 이메일입니다`. Signing up as `ADMIN@modelmate.local` returned `200`,
+and that token carried `role: admin`, `plan: admin`, `is_admin: true`, and
+`limit_label: 제한 없음` - with a password the caller chose.
+
+This walked straight around the fix recorded above under `Published defaults`. That
+change stopped the bootstrap admin from having a usable password; this path did not
+need one, because it created a second admin account instead.
+
+Now:
+
+- `normalize_email` is the single spelling used for storage, lookup and the admin
+  check. `find_user_by_email` compares on `lower(email)`, so rows written before the
+  change are still found and their owners are not locked out.
+- A unique index on `users(lower(email))` makes the database enforce it as well. An
+  application-level check alone is one that a future handler can forget to call.
+- The bootstrap seeding loop was changed in the same commit. It looked accounts up
+  with the old case-sensitive comparison, so on a database holding a legacy
+  `Admin@Modelmate.Local` row it would have missed it, tried to insert, hit the new
+  index and **failed to boot**. A new control that breaks existing deployments is not
+  a control.
+- If the index cannot be created because a database already holds case-duplicate
+  rows, the failure is printed with the query that finds them, and boot continues.
+  Swallowing it would leave the next reader believing the index exists.
+
+Ordinary users benefit too: `Person@Example.com` and `PERSON@EXAMPLE.COM` are now one
+account. `tests/test_email_identity_is_one_thing.py` holds all of this.
+
 ## Admin Role And Quota Bypass
 
 The owner account `admin@modelmate.local` is always treated as `admin`.

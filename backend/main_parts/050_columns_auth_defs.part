@@ -1,4 +1,4 @@
-
+﻿
 # ── 컬럼 목록 (부분 재실행용) ─────────────────────────────
 @app.get("/api/columns")
 async def get_columns():
@@ -24,7 +24,9 @@ async def auth_google(body: GoogleTokenBody):
         raise HTTPException(400, f"Google 토큰 검증 실패: {e}")
 
     user_id = info["sub"]
-    email   = info.get("email", "")
+    # 구글 계정도 같은 형태로 저장한다. 여기서만 원문을 넣으면 `users.email`에
+    # 대소문자만 다른 두 행이 생기고, 이메일로 찾는 모든 코드가 다시 갈라진다.
+    email   = normalize_email(info.get("email", ""))
     name    = info.get("name", "")
     picture = info.get("picture", "")
 
