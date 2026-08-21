@@ -84,6 +84,13 @@ def hash_password(password: str) -> str:
     hashed = hashlib.pbkdf2_hmac("sha256", password.encode(), salt.encode(), 260000)
     return f"{salt}${hashed.hex()}"
 
+# 계정이 없을 때도 같은 계산을 하기 위한 가짜 해시.
+#
+# `hash_password`로 만들지 않는다 — 그러면 부팅 때 pbkdf2 26만 회를 돌려 시작이
+# 0.25초 느려진다. 형식만 맞으면 `verify_password`가 같은 pbkdf2를 돌고 실패한다.
+DUMMY_PASSWORD_HASH = "0" * 32 + "$" + "0" * 64
+
+
 def verify_password(password: str, stored: str) -> bool:
     try:
         salt, hashed = stored.split("$")

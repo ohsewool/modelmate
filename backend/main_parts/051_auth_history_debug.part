@@ -46,7 +46,15 @@ async def auth_login(body: EmailAuthBody):
     # 그것이 이 회차에 고친 결함이고, 여기서 다시 갈라지면 원래대로 돌아간다.
     row = find_user_by_email(conn, body.email)
     conn.close()
+    # 두 갈래가 **같은 일을 해야 한다.** 메시지는 원래도 같았지만 시간이 달랐다:
+    # 계정이 없으면 즉시 400, 있으면 pbkdf2 26만 회를 돌고 400. 2026-08-22에 쟀다 —
+    # 중앙값 10ms 대 280ms, **27배**. 메시지를 같게 해두고 응답 시간이 답을 알려주는
+    # 상태였고, 270ms는 네트워크 잡음에 묻히지 않는다.
+    #
+    # 계정이 없을 때도 가짜 해시로 같은 계산을 돌린다. 버리는 계산이지만, 버리지
+    # 않으면 계정 목록이 새어 나간다.
     if not row or not row["password_hash"]:
+        verify_password(body.password, DUMMY_PASSWORD_HASH)
         raise HTTPException(400, "이메일 또는 비밀번호가 올바르지 않습니다")
     if not verify_password(body.password, row["password_hash"]):
         raise HTTPException(400, "이메일 또는 비밀번호가 올바르지 않습니다")

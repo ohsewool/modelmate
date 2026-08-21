@@ -135,6 +135,38 @@ Now:
 control: a token signed with the current key must still verify, otherwise the test
 would pass by refusing everything.
 
+## Login timing revealed which accounts exist (2026-08-22)
+
+`/api/auth/login` returned the same message for both failures - "이메일 또는 비밀번호가
+올바르지 않습니다" - and took very different amounts of time to say it. A missing
+account returned immediately; an existing one ran pbkdf2 260,000 times first. Measured
+over HTTP, 25 attempts each, medians:
+
+| case | median |
+|---|---|
+| existing account, wrong password | 280.3 ms |
+| no such account | 10.3 ms |
+
+270 ms does not disappear into network noise. The message was equalised and the clock
+answered anyway: enumerating accounts needed nothing but a stopwatch.
+
+The missing-account branch now verifies the supplied password against a fixed dummy
+hash, so both branches pay the same cost. Re-measured: 293.3 ms against 284.4 ms, a
+ratio of 1.03. **The residual 8.9 ms is the database read and does not go to zero this
+way.** 27× and 1.03× are different stories; saying where this stops is better than
+claiming zero.
+
+Signup is a different case and is left as it is. `/api/auth/signup` answers "이미 사용
+중인 이메일입니다", which states outright that an account exists. Hiding that requires
+finishing signup with a success response and telling the real owner by email, and this
+application sends no email. That is a chosen disclosure, not a leak, and enumeration
+through signup remains possible. `tests/test_login_does_not_leak_accounts.py` pins the
+login property and records this decision.
+
+Prediction API tokens were checked at the same time and need no change: the token is
+hashed and looked up with `WHERE token_hash=?`, so a caller cannot steer a partial
+match - they would have to control the preimage.
+
 ## Privilege grants were invisible (2026-08-22)
 
 The monitoring middleware persists a `monitoring_events` row only when a response is
