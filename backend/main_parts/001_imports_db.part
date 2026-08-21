@@ -1,4 +1,4 @@
-﻿from fastapi import FastAPI, UploadFile, File, HTTPException, Depends, Header
+﻿from fastapi import FastAPI, UploadFile, File, HTTPException, Depends, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -13,7 +13,7 @@ from sklearn.model_selection import cross_val_score, StratifiedKFold, KFold
 from sklearn.metrics import accuracy_score, f1_score, roc_auc_score, r2_score, mean_squared_error, mean_absolute_error
 from sklearn.preprocessing import LabelEncoder
 from pydantic import BaseModel
-import json, os, io, asyncio, sqlite3, joblib
+import json, os, io, asyncio, sqlite3, joblib, threading, time
 from datetime import datetime
 
 # ── Google OAuth ──────────────────────────────────────────

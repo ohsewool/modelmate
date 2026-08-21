@@ -1,5 +1,5 @@
 ﻿@app.post("/api/auth/signup")
-async def auth_signup(body: EmailAuthBody):
+async def auth_signup(body: EmailAuthBody, request: Request = None):
     """가입. 이메일은 **정규화한 형태 하나로** 저장하고 찾는다.
 
     예전에는 중복 검사가 `WHERE email=?`(대소문자 구분)였고 역할 판정은
@@ -7,6 +7,8 @@ async def auth_signup(body: EmailAuthBody):
     중복에 걸리지 않으면서 관리자 역할을 받았다 — 자기가 정한 비밀번호로.
     경위는 `normalize_email`의 설명에 있다.
     """
+    if request is not None and "enforce_auth_attempt_limit" in globals():
+        enforce_auth_attempt_limit(request)
     import uuid
     email = normalize_email(body.email)
     if not email or "@" not in email:
@@ -40,7 +42,11 @@ async def auth_register(body: EmailAuthBody):
     return await auth_signup(body)
 
 @app.post("/api/auth/login")
-async def auth_login(body: EmailAuthBody):
+async def auth_login(body: EmailAuthBody, request: Request = None):
+    # 인증 이전 경로의 유일한 한도다. 이 아래 `verify_password`는 계정이 있든
+    # 없든 pbkdf2 26만 회를 돈다 - 조이지 않으면 인증 없이 서버를 세울 수 있다.
+    if request is not None and "enforce_auth_attempt_limit" in globals():
+        enforce_auth_attempt_limit(request)
     conn = get_db()
     # 가입과 같은 동일성으로 찾는다. 대소문자만 다른 이메일이 다른 계정이 되면
     # 그것이 이 회차에 고친 결함이고, 여기서 다시 갈라지면 원래대로 돌아간다.

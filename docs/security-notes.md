@@ -135,6 +135,43 @@ Now:
 control: a token signed with the current key must still verify, otherwise the test
 would pass by refusing everything.
 
+## The pre-authentication routes had no limit (2026-08-22)
+
+Every other limit in this application is charged to an account. `/api/auth/login`,
+`/api/auth/signup` and `/api/auth/google` run before an account is known, and nothing
+bounded them.
+
+The equalisation recorded below made that worse, and it was my change. Before it, a
+login for an address that does not exist returned in about 10 ms; afterwards every
+attempt runs pbkdf2 260,000 times. The cost went from "you must know a real account" to
+"any string will do".
+
+Measured with sixty unauthenticated attempts at twelve at a time:
+
+| | `/api/state` median |
+|---|---|
+| idle | 3.1 ms |
+| during the attempts | **1,844.9 ms (603×)** |
+
+Sixty requests, and the application is effectively down.
+
+The timing equalisation was **not** reverted - that leak was real. What was missing is
+a throttle that should have been there from the start: attempts per minute per client
+address, `MODELMATE_AUTH_ATTEMPTS_PER_MINUTE`, default 10. Re-measured on the same
+sequence: 17.8 s → 3.4 s, 603× → **18.9×**, ten 400s and fifty 429s.
+
+The residual 18.9× is the ten attempts that are allowed to run; sustained load is bound
+to roughly 2.8 s of CPU per minute per address. That is a bound, not zero.
+
+Two limits are stated in the code and in
+`tests/test_pre_auth_throttle.py`:
+
+- **One process.** Several workers each keep their own counter. Counting across
+  processes needs shared storage and is separate work.
+- **`X-Forwarded-For` is not trusted.** It is filled in by the caller, so counting by it
+  would let anyone through by varying a header. Behind a proxy several users therefore
+  share one bucket; that direction of error tightens rather than loosens.
+
 ## Login timing revealed which accounts exist (2026-08-22)
 
 `/api/auth/login` returned the same message for both failures - "이메일 또는 비밀번호가
