@@ -41,6 +41,34 @@ and 3 × 429, with the counter stopping at 100. Models with no `user_id` - older
 demo deployments - answer as before. The claim sits after the 404 and 410 checks so a
 call for a missing or disabled model consumes nothing.
 
+The row and column limits have a wall-clock cost that the table does not show.
+Measured 2026-08-22 against `/api/run-cv`, which runs the model comparison synchronously:
+
+| dataset | `/api/run-cv` |
+|---|---|
+| 1,000 × 20 | 18.7 s |
+| 1,000 × 100 | 58.8 s |
+| 5,000 × 20 | 62.0 s |
+| **5,000 × 100 (the free limit)** | **253.5 s** |
+
+Time is roughly proportional to cell count - 25× the cells took 13.6× the time. A
+dataset at the free plan's own limit therefore occupies one synchronous request for over
+four minutes. Upload of the same file takes 5.3 s, `/api/analyze-columns` 3.6 s, and the
+report endpoints under 2 s, so the model comparison is the whole of it.
+
+Two consequences are worth stating rather than discovering:
+
+- The browser now waits with an explicit ceiling. `frontend/src/api.js` had **no**
+  timeout at all, which is axios's default of infinity - a dropped connection left the
+  page spinning forever. Ordinary calls now fail after 60 s and the analysis routes
+  after 15 minutes.
+- **The larger plan sizes have not been measured.** `pro_mock` sells 50,000 × 300 and
+  `team_mock` 100,000 × 500, which are 30× and 100× the free plan's cell count. Those
+  plans are declared mock in `docs/pricing.md`, and no measurement here says the
+  synchronous path can serve them. The repository already has an asynchronous job path
+  (`/api/training/jobs` with background execution), and moving the model comparison onto
+  it is the fix. That work is not done, so nothing here claims those sizes are served.
+
 Report exports are claimed atomically. Counting and deciding happen in one
 `UPDATE ... WHERE COALESCE(report_exports_count, 0) < limit`, so concurrent requests
 cannot all read the same value and all pass. Measured on 2026-08-22: with the older
