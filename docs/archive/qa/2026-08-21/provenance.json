@@ -1,0 +1,17 @@
+{
+  "recorded_run_timestamp": "2026-08-21",
+  "timezone_status": "UTC",
+  "source_workspace_path": "/home/jovyan/work/modelmate",
+  "source_commit": "030736b1d4cf2f9c5d7d7a9df963bddcc04e7af8",
+  "how_produced": "scripts/run_full_qa.py, run_release_qa.py and the smoke scripts, run against a locally started uvicorn during the documentation-currency audits",
+  "experiment_history_entries_total": 27,
+  "experiment_history_entries_from_audit_runs": 8,
+  "experiment_history_entries_by_day": {
+    "2026-05-04": 3,
+    "2026-06-04": 16,
+    "2026-08-19": 5,
+    "2026-08-20": 2,
+    "2026-08-21": 1
+  },
+  "caveat": "experiment_history.json is runtime state, not a curated record. 8 of its 27 entries were produced by audit runs against a local server, not by real analysis work. It is archived here because it was tracked in git until this commit; the live file is now ignored like modelmate.db."
+}

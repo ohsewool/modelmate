@@ -33,3 +33,22 @@ uploaded_datasets/
 .coverage
 .coverage.*
 htmlcov/
+
+# 실행이 만드는 산출물. `modelmate.db`·`uploaded_datasets/`와 같은 범주인데
+# 이것들만 추적되고 있었다 - 매 실행마다 바뀌어 읽을 수 있는 diff로 나타나지 않고,
+# 그래서 그때그때의 로컬 상태가 조용히 커밋에 따라 들어갔다.
+# `experiment_history.json`은 2.3KB에서 34.4KB로 자랐고 27건 중 8건이 감사 실행분이었다.
+# 추적을 끊기 전 상태는 docs/archive/qa/2026-08-21/ 에 보존했다.
+experiment_history.json
+full_qa_results.json
+final_qa_results.json
+domain_benchmark_results.json
+training_benchmark_results.json
+upload_validation_qa_results.json
+workspace_flow_qa_results.json
+FULL_QA_RESULTS.md
+FINAL_QA_RESULTS.md
+
+# 다만 보존한 스냅숏은 추적한다. 위 규칙은 파일명만 보므로 아카이브 안의
+# 같은 이름까지 삼킨다 - 보존하려고 만든 것이 커밋되지 않으면 아무 의미가 없다.
+!docs/archive/**
