@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import concurrent.futures
+import contextvars
 from typing import Any
 
 from backend.tools.automl_result import training_failure, training_success
@@ -15,12 +16,31 @@ from backend.tools.data_profile import dataframe_from_arguments
 
 
 def _run_async(factory):
+    """이미 도는 이벤트 루프 안에서도 코루틴을 돌린다 - **호출자의 문맥을 지고서.**
+
+    `ThreadPoolExecutor`가 만드는 스레드는 빈 문맥에서 시작한다. `ContextVar`는
+    스레드 경계를 넘지 않으므로, 문맥을 복사해 넘기지 않으면 이 안에서 도는
+    `set_target`/`run_cv`가 **요청의 스코프가 아니라 기본 스코프**에 쓴다.
+
+    실제로 그랬다. 에이전트 실행에서 학습은 "AutoML training completed"로 성공
+    관측을 남기고, 바로 다음 설명 도구가 "Run AutoML training before explanation."
+    으로 실패했다. 같은 요청 안에서 한쪽은 썼고 한쪽은 못 읽은 것이다.
+
+    조용한 쪽이 더 나쁘다. 학습 결과가 **공유 기본 버킷**에 쌓인다 - 요청별 격리를
+    도입한 이유가 정확히 그 버킷을 없애는 것이었고(A가 올린 데이터를 B의 다음
+    요청이 분석하던 문제), 이 경로만 그리로 되돌아가 있었다.
+
+    `copy_context()`는 스코프 이름을 읽을 수 있게 해준다. 안에서의 `ContextVar`
+    쓰기는 밖으로 나오지 않지만 상관없다 - 여기서 필요한 것은 읽기뿐이고,
+    `STATE`는 그 이름으로 버킷을 고른다.
+    """
     try:
         asyncio.get_running_loop()
     except RuntimeError:
         return asyncio.run(factory())
+    context = contextvars.copy_context()
     with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-        return pool.submit(lambda: asyncio.run(factory())).result()
+        return pool.submit(lambda: context.run(lambda: asyncio.run(factory()))).result()
 
 
 def automl_training_tool(arguments: dict[str, Any]) -> dict[str, Any]:

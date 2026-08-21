@@ -26,6 +26,20 @@ Railway에 배포해 운영했다. 그 인스턴스는 **무료 플랜 만료로
 실패 메시지가 말하게 했다 — 파라미터 이름이 해주던 일이고, 그것 때문에 개수를
 왜곡할 이유는 없다.
 
+### Agent Mode가 절반에서 멈춰 있었다
+
+README가 앞세우는 기능인데 **어떤 검사도 이 경로를 치지 않았다.** `backend/agents/executor.py`는 커버리지 9%였고, 앱을 띄워 스모크 13개를 전부 돌려도 움직이지 않았다 — 엔드포인트 12개가 있고 아무도 치지 않고 있었다.
+
+돌려보니 사슬이 절반에서 멈춘다. 학습은 `AutoML training completed`로 성공 관측을 남기고, **바로 다음 설명 도구가 "Run AutoML training before explanation."으로 실패**한다. 같은 요청 안에서 한쪽은 썼고 한쪽은 못 읽었다.
+
+원인은 스레드 경계였다. `automl_training_tool`은 이미 도는 이벤트 루프 안에서 호출되면 코루틴을 `ThreadPoolExecutor`로 넘기는데, **`ContextVar`는 스레드 경계를 넘지 않는다.** 새 스레드는 빈 문맥에서 시작해 기본 스코프를 읽고, 그래서 `set_target`과 `run_cv`가 **요청 버킷이 아니라 공유 기본 버킷**에 썼다.
+
+**조용한 쪽이 더 나쁘다.** 요청별 격리를 넣은 이유가 정확히 그 공유 버킷을 없애는 것이었다 — A가 올린 데이터를 B의 다음 요청이 분석하던 문제. 이 경로만 그리로 되돌아가 있었고, Agent Mode가 어디에서도 실행된 적이 없어 아무도 몰랐다.
+
+`contextvars.copy_context()`로 고쳤다. 고치기 전 7단계·설명 실패 → 고친 뒤 **10단계 전부 완료**(설명·검증·보고서·API 준비도까지).
+
+`scripts/run_agent_mode_smoke.py`가 이 경로를 지킨다. **보는 것은 "200이 왔다"가 아니라 "사슬이 끝까지 갔다"이다** — 200은 그때도 계속 오고 있었다. 수정 전 서버에 대고 돌리면 3건이 실패한다.
+
 로컬 실행은 아래 **Local Setup** 참조. 저장소는 `github.com/ohsewool/modelmate`이며, 예전 주소 `ohsewool/-`는 이름을 바꾼 것이라 리다이렉트된다.
 
 ## What It Does
@@ -267,7 +281,7 @@ python3 scripts/demo.py --leaky --ignore-leakage   # 권고를 무시하면
 ## 누출 검사가 실제로 모델을 바꾼다
 
 ```bash
-python3 -m pytest tests/ -q          # 466 tests
+python3 -m pytest tests/ -q          # 476 tests
 ```
 
 게이트를 하나씩 검증하는 것과 그 권고가 모델에 도달하는지는 다른 문제다. 무시되는 권고는 안전이 아니라 서류다. 같은 데이터를 두 번 학습해 실측했다.

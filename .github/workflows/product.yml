@@ -79,6 +79,17 @@ jobs:
         # check.
         run: python scripts/run_failure_recovery_smoke.py --base-url http://127.0.0.1:8000
 
+      - name: Agent Mode smoke
+        # README가 앞세우는 기능인데 어떤 검사도 이 경로를 치지 않았다.
+        # `backend/agents/executor.py`는 pytest 커버리지 9%였고 스모크 13개를
+        # 전부 돌려도 움직이지 않았다. 돌려보니 사슬이 절반에서 멈춰 있었다 -
+        # 학습 결과가 요청 스코프가 아니라 공유 기본 버킷에 쓰여서, 바로 다음
+        # 설명 도구가 모델을 찾지 못했다.
+        #
+        # 이 검사가 보는 것은 "200이 왔다"가 아니라 "사슬이 끝까지 갔다"이다.
+        # 200은 그때도 계속 오고 있었다.
+        run: python scripts/run_agent_mode_smoke.py --base-url http://127.0.0.1:8000
+
       - name: Workspace flow QA leaves nothing behind
         # It uploads a CSV and used to leave it there; three such files had been
         # committed by accident. `git status` is the assertion.
