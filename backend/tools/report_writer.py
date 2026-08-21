@@ -41,6 +41,25 @@ def report_writer_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     task = evidence.get("task_type")
     metric_summary = evidence.get("metric_summary") or {}
     limitations = list(evidence.get("limitations") or [])
+
+    # 검증이 "보고서를 쓰기 전에 이걸 고치라"고 판정한 사유. 그 판정은 계산만
+    # 되고 보고서에는 들어오지 않았다 - 차단된 실행과 정상 실행의 한계 고지가
+    # 글자 하나까지 같았고, 보고서만 받은 사람은 둘을 구분할 수 없었다.
+    #
+    # 데모에서 드러났다. 누출 권고를 무시하면 AUC가 1.000이 되는데(타깃을 베낀
+    # 컬럼에서 나온 점수다) 검증은 "High leakage risk needs review before
+    # reporting"이라 하고, 그 다음 절에서 나온 보고서는 그 말을 하지 않았다.
+    # 장치 둘이 어긋나는데 대조하는 곳이 없는, 이 프로젝트가 반복해서 만나는 모양.
+    #
+    # 보고서를 아예 못 쓰게 막지는 않는다. 막으면 사용자는 이유를 볼 수 없고,
+    # 근거를 보여주는 것이 이 제품의 요지다. 대신 보고서가 스스로 차단 상태를
+    # 말한다.
+    blocking = [str(issue) for issue in (validation.get("blocking_issues") or []) if issue]
+    for issue in blocking:
+        note = f"검증이 보고서 작성 전 해결을 요구한 사항입니다: {issue}"
+        if note not in limitations:
+            limitations.append(note)
+
     if LIMITATION_TEXT not in limitations:
         limitations.append(LIMITATION_TEXT)
     if LIMITATION_TEXT_EN not in limitations:
@@ -48,7 +67,11 @@ def report_writer_tool(arguments: dict[str, Any]) -> dict[str, Any]:
 
     title = f"ModelMate 분석 보고서 - {_text(target, '타깃 미정')}"
     summary = f"{_text(target, '선택된 타깃')} 예측을 위해 {_text(task, '작업 유형 미정')} 모델 결과를 evidence 기반으로 정리했습니다."
-    if tone != "confident":
+    if blocking:
+        # 요약 첫 문장에 둔다. 아래로 밀리면 요약만 읽는 사람에게는 없는 것과 같다.
+        summary = (f"**검증이 이 보고서를 차단 상태로 표시했습니다 ({len(blocking)}건).** "
+                   + summary)
+    elif tone != "confident":
         summary += " 일부 evidence가 부족하므로 신중한 해석이 필요합니다."
 
     model_summary = evidence.get("model_summary") or {}

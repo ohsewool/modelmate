@@ -309,6 +309,24 @@ def _apply_output_to_context(tool_name: str, output: dict[str, Any], context: di
         context["automl_training_result"] = output
         context["task_type"] = output.get("task_type") or context.get("task_type")
         context["target_column"] = output.get("target_column") or context.get("target_column")
+        if output.get("leakage_scope") == "used_features":
+            # 학습이 실제로 쓴 컬럼에 대한 재검사. 이걸 문맥에 반영하지 않으면
+            # 아래 단계들이 계속 **제외 전** 데이터셋 값을 본다.
+            #
+            # 데모에서 드러난 것과 같은 결함이다: 누출 컬럼을 빼라는 권고를 그대로
+            # 따른 실행도 검증에서 `high`로 나와 차단됐고, 권고를 무시한 실행과
+            # 구분되지 않았다. 안전장치가 순응한 사용자를 벌하면 사람들은 그것을
+            # 끄고 만다.
+            #
+            # 위험도와 컬럼 목록을 함께 바꾼다. `_has_high_leakage`가 컬럼 목록을
+            # 먼저 보기 때문에 절반만 바꾸면 아무것도 달라지지 않는다.
+            context["leakage_warnings"] = output.get("suspicious_columns") or []
+            context["leakage_result"] = {
+                **(context.get("leakage_result") or {}),
+                "leakage_risk": output.get("leakage_risk"),
+                "suspicious_columns": output.get("suspicious_columns") or [],
+                "leakage_scope": "used_features",
+            }
     elif tool_name == "evaluation_tool":
         context["evaluation_result"] = output
     elif tool_name == "shap_explainer_tool":

@@ -114,9 +114,29 @@ def main() -> int:
         "training_success": True,
         # The structured findings, not their prose. Flattening these to strings
         # is what let a high-severity column past the validation gate here.
-        "suspicious_columns": leakage["suspicious_columns"],
-        "leakage_risk": leakage["leakage_risk"],
-        "leakage_warnings": [c["reason"] for c in leakage["suspicious_columns"]
+        # 누출 증거는 **한 덩어리로** 학습된 모델을 서술해야 한다. 위험도만 재검사
+        # 값으로 바꾸고 컬럼 목록은 원본을 두면 `_has_high_leakage`가 컬럼 목록을
+        # 먼저 보므로 아무것도 달라지지 않는다 - 실제로 그렇게 고쳤다가 여전히
+        # 차단되는 것을 보고 알았다. 절반만 고친 것은 안 고친 것이다.
+        "suspicious_columns": (trained.get("suspicious_columns")
+                               if trained.get("leakage_scope") == "used_features"
+                               else leakage["suspicious_columns"]),
+        # 학습이 **실제로 쓴** 컬럼에 대한 재검사 결과. 데이터셋 전체 값을 넘기고
+        # 있었고, 그래서 권고를 따라 누출 컬럼을 뺀 실행도 검증에서 `high`로 나와
+        # 차단됐다 - 권고를 무시한 실행과 구분되지 않았다. 증거 묶음은 학습된
+        # 모델을 서술해야지 원본 파일을 서술하면 안 된다.
+        #
+        # `automl_training_tool`이 학습 뒤 `used_features`로 다시 검사해
+        # `leakage_scope`를 붙인다. 그 값이 있으면 그것이 이 모델의 사실이다.
+        # 없으면(재검사 실패) 데이터셋 전체 값으로 떨어지는데, 그게 안전한 방향이다.
+        "leakage_risk": (trained.get("leakage_risk")
+                         if trained.get("leakage_scope") == "used_features"
+                         else leakage["leakage_risk"]),
+        "leakage_scope": trained.get("leakage_scope") or "dataset",
+        "leakage_warnings": [c["reason"] for c in
+                             (trained.get("suspicious_columns")
+                              if trained.get("leakage_scope") == "used_features"
+                              else leakage["suspicious_columns"])
                              if c["severity"] == "high"],
         "data_quality_warnings": [],
         "limitations": [f"학습 데이터는 {path.name} 한 파일뿐입니다."],
