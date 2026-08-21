@@ -135,6 +135,40 @@ Now:
 control: a token signed with the current key must still verify, otherwise the test
 would pass by refusing everything.
 
+## Privilege grants were invisible (2026-08-22)
+
+The monitoring middleware persists a `monitoring_events` row only when a response is
+`400` or worse. Every failed request was recorded. **Every privilege grant returns
+`200`**, so none of them were. Detection was exactly the wrong way round: the events
+most worth investigating were the ones that left no trace.
+
+Measured. A user signed up normally and held `role: user`. Their address was added to
+`ADMIN_EMAILS` and the app was restarted. The database then held `role: admin` for that
+account and the audit table held **zero** matching events. One environment variable and
+a restart turn an account into an administrator, with no way to establish afterwards
+that it happened.
+
+The case-only signup bypass recorded above has the same property: had anyone used it,
+the request would have returned `200` and left nothing behind.
+
+Grants are now recorded at all four places they can happen - boot-time seeding (account
+created, role raised, password login opened), email signup, email login and Google
+login. Each row carries the previous role and what caused the change.
+
+Two details that decide whether the record is usable:
+
+- **Only on change.** Seeding runs on every boot; writing a row each time would make
+  the line background noise, and background noise is not read. Two restarts produce two
+  events, not four.
+- **Retention no longer evicts it.** The table is capped and used to delete oldest
+  first, so a burst of ordinary errors would push out "someone became an admin". Now
+  non-security rows are dropped first. Verified with a cap of 10, one security event and
+  thirty errors: the security events survived.
+
+`init_db()` is assembled before `098_monitoring.part`, so boot-time grants are queued in
+`PENDING_SECURITY_EVENTS` and flushed once the recorder exists. A failure to flush is
+printed rather than swallowed. `tests/test_privilege_grants_are_recorded.py` holds this.
+
 ## Case-only signup as the admin (2026-08-22)
 
 The account lookup and the admin check used **two different notions of the same

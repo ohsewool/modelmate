@@ -25,6 +25,13 @@ async def auth_signup(body: EmailAuthBody):
         (user_id, email, name, "", password_hash, role, datetime.now().isoformat())
     )
     conn.commit(); conn.close()
+    if role == "admin" and "record_security_event" in globals():
+        record_security_event(
+            "auth.admin_account_created",
+            f"가입으로 관리자 계정이 만들어졌다: {email}",
+            user_id=user_id, route="/api/auth/signup", method="POST", status_code=200,
+            safe_details={"email": email, "source": "가입 시 ADMIN_EMAILS 목록 일치"},
+        )
     token = make_token(user_id, email, name, role=role)
     return {"token": token, "user": {"id": user_id, "email": email, "name": name, "picture": "", "role": role}}
 
@@ -49,6 +56,16 @@ async def auth_login(body: EmailAuthBody):
         conn.execute("UPDATE users SET role='admin', plan='admin' WHERE id=?", (row["id"],))
         conn.commit()
         conn.close()
+        # 로그인 한 번으로 역할이 바뀐다. 200으로 끝나므로 미들웨어는 이것을
+        # 남기지 않는다 - 성공한 권한 상승이야말로 남아야 하는 것이다.
+        if "record_security_event" in globals():
+            record_security_event(
+                "auth.admin_granted",
+                f"로그인 중 기존 계정이 관리자가 됐다: {row['email']}",
+                user_id=row["id"], route="/api/auth/login", method="POST", status_code=200,
+                safe_details={"email": row["email"], "previous_role": row["role"] or "user",
+                              "source": "ADMIN_EMAILS 목록 일치"},
+            )
     token = make_token(row["id"], row["email"], row["name"], row["picture"] or "", role=role)
     return {"token": token, "user": {"id": row["id"], "email": row["email"], "name": row["name"], "picture": row["picture"] or "", "role": role}}
 

@@ -40,11 +40,26 @@ async def auth_google(body: GoogleTokenBody):
             (user_id, email, name, picture, role, "admin" if role == "admin" else "free", datetime.now().isoformat())
         )
         conn.commit()
+        if role == "admin" and "record_security_event" in globals():
+            record_security_event(
+                "auth.admin_account_created",
+                f"구글 로그인으로 관리자 계정이 만들어졌다: {email}",
+                user_id=user_id, route="/api/auth/google", method="POST", status_code=200,
+                safe_details={"email": email, "source": "구글 로그인 · ADMIN_EMAILS 목록 일치"},
+            )
     else:
         role = "admin" if trusted_role == "admin" or existing["role"] == "admin" else "user"
         if role == "admin" and existing["role"] != "admin":
             conn.execute("UPDATE users SET role='admin', plan='admin' WHERE id=?", (user_id,))
             conn.commit()
+            if "record_security_event" in globals():
+                record_security_event(
+                    "auth.admin_granted",
+                    f"구글 로그인 중 기존 계정이 관리자가 됐다: {email}",
+                    user_id=user_id, route="/api/auth/google", method="POST", status_code=200,
+                    safe_details={"email": email, "previous_role": existing["role"],
+                                  "source": "ADMIN_EMAILS 목록 일치"},
+                )
     conn.close()
 
     token = make_token(user_id, email, name, picture, role=role)
