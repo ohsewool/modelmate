@@ -1,4 +1,4 @@
-        "feature_names": X.columns.tolist(),
+﻿        "feature_names": X.columns.tolist(),
         "cat_cols": cat_cols,
         "task_type": task_type,
         "target_col": STATE.get("target_col"),
@@ -132,6 +132,20 @@ async def v1_predict(model_id: str, body: dict):
     fp = os.path.join(MODELS_DIR, f"{model_id}.pkl")
     if not os.path.exists(fp):
         raise HTTPException(404, f"모델을 찾을 수 없습니다: {model_id}")
+    # 배포된 모델을 부르는 공개 경로다. **공개 호출인 것과 무제한인 것은 다르다.**
+    # `docs/pricing.md`는 "일일 예측 API 호출"을 요금제 항목으로 팔고 있고,
+    # `enforce_prediction_call_limit`은 토큰 경로(`/api/predict/{project_id}`)에만
+    # 걸려 있었다 — 이 경로는 세지도 막지도 않았다(2026-08-22).
+    #
+    # 소유자의 할당량에 단다. 호출자는 여전히 로그인하지 않아도 되고
+    # (`docs/security-notes.md`가 밝힌 "public prediction invocation"),
+    # 주인 없는 옛 모델은 예전처럼 통과한다 — 다른 `enforce_*`와 같은 규칙이다.
+    #
+    # **410·404 뒤에 둔다.** 앞에 두면 없는 모델을 부른 호출이 할당량을 먹고,
+    # 그건 실패를 벌로 만든다 — 보고서 내보내기에서 세운 규칙 그대로다.
+    if row and "user_id" in row.keys() and row["user_id"]:
+        if "claim_prediction_api_call" in globals():
+            claim_prediction_api_call(row["user_id"])
     bundle = joblib.load(fp)
     model  = bundle["model"]
     enc    = bundle["encoders"]

@@ -30,6 +30,17 @@ New email/password users default to `free`. Admin seed users are normalized to
 | Prediction API calls per day | 100 | 5,000 | 25,000 |
 | Report exports per day | 10 | 100 | 500 |
 
+The public prediction API is metered against the model's owner. Two routes serve a
+deployed model - `/api/v1/{model_id}/predict` and `/api/v2/{model_id}/predict` - and
+neither counted nor refused anything before 2026-08-22, while the plan table sold a
+daily prediction-call limit. `enforce_prediction_call_limit` was wired only to the
+token route `/api/predict/{project_id}`. A public call is not the same as an unmetered
+one: the caller stays anonymous, and the call is charged to the account that deployed
+the model. Measured after the fix on a free plan (limit 100): 103 calls gave 100 × 200
+and 3 × 429, with the counter stopping at 100. Models with no `user_id` - older rows and
+demo deployments - answer as before. The claim sits after the 404 and 410 checks so a
+call for a missing or disabled model consumes nothing.
+
 Report exports are claimed atomically. Counting and deciding happen in one
 `UPDATE ... WHERE COALESCE(report_exports_count, 0) < limit`, so concurrent requests
 cannot all read the same value and all pass. Measured on 2026-08-22: with the older
