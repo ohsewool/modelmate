@@ -69,6 +69,18 @@ Two consequences are worth stating rather than discovering:
   (`/api/training/jobs` with background execution), and moving the model comparison onto
   it is the fix. That work is not done, so nothing here claims those sizes are served.
 
+Daily counters reset at **the server's local midnight**, not UTC and not the user's.
+`_usage_today()` is the single definition of "today" and every daily read goes through
+it; the frontend displays the number the server returns rather than computing a date of
+its own. One source, checked by `tests/test_one_definition_of_today.py`.
+
+Two consequences follow from that being the *server's* day. A user in another timezone
+sees the limit reset at a moment that is not their midnight. And **moving the deployment's
+timezone moves the boundary**: going from UTC to KST shifts it nine hours, and across that
+one change a user gets a fresh day's quota early. Per-user timezones would start with
+asking users for a timezone, which this application does not do, so the behaviour is left
+as it is and written down instead.
+
 Report exports are claimed atomically. Counting and deciding happen in one
 `UPDATE ... WHERE COALESCE(report_exports_count, 0) < limit`, so concurrent requests
 cannot all read the same value and all pass. Measured on 2026-08-22: with the older
