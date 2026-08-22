@@ -1,4 +1,4 @@
-from backend.services.llm_service import get_llm_status
+﻿from backend.services.llm_service import get_llm_status
 
 
 @app.get("/api/llm/status")
