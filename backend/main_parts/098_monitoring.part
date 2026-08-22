@@ -1,4 +1,4 @@
-﻿from fastapi import Request
+from fastapi import Request
 from fastapi.responses import JSONResponse
 import re
 import time

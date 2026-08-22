@@ -1,4 +1,4 @@
-﻿@app.post("/api/auth/signup")
+@app.post("/api/auth/signup")
 async def auth_signup(body: EmailAuthBody, request: Request = None):
     """가입. 이메일은 **정규화한 형태 하나로** 저장하고 찾는다.
 
