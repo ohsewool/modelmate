@@ -122,8 +122,21 @@ def build_registry() -> ToolRegistry:
         ),
         (
             "shap_explainer_tool",
+            # The name is historical (PR-09) and stored traces reference it, so it
+            # stays. The description must not repeat the overclaim: this module has
+            # no `import shap` anywhere. It returns feature importance, a
+            # standardised coefficient, or nothing - never SHAP values.
+            #
+            # This repository already made the same correction once, renaming a
+            # coefficient-based signal away from the SHAP label, and wrote the rule
+            # down: "SHAP이 아닌 것을 SHAP이라 부르지 않는다". The rule had not
+            # reached the tool catalogue, which is what a planner reads to decide
+            # how much weight an explanation deserves.
             "XAI adapter that returns explanation evidence for the trained model",
-            {"summary": "Returns SHAP, feature importance, coefficient, or unavailable evidence.", "risk": "adapter"},
+            {"summary": "Returns feature-importance, standardised-coefficient, or "
+                        "unavailable evidence. Despite the historical name it does "
+                        "not compute SHAP values.",
+             "risk": "adapter"},
             shap_explainer_tool,
         ),
         (

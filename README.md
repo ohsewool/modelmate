@@ -48,6 +48,22 @@ README가 앞세우는 기능인데 **어떤 검사도 이 경로를 치지 않�
 
 **호출 99개가 전부 실재하는 라우트를 가리킨다** — 빈손이다. 그래도 다음에 라우트 이름이 바뀌면 여기서 걸린다.
 
+### SHAP이 아닌 것을 SHAP이라 부르지 않는다 — 도구 카탈로그에서도
+
+의존성을 고정하려고 설치된 버전을 읽다가 **`shap`과 `optuna`가 이 개발 환경에 없다**는 것을 봤다. `SHAP_OK=False`인데 스위트도 스모크도 초록이었다. 그 사슬을 따라갔다.
+
+`backend/tools/shap_explainer.py`에는 **`import shap`이 한 줄도 없다.** feature importance나 표준화 계수를 돌려주고, 페이로드의 `explanation_type`은 그것을 정직하게 말한다. 파일 자신이 주석으로 적어뒀다 — *"Never claim SHAP for something that is not SHAP."*
+
+**그 규칙이 두 곳에 닿지 않았다.**
+
+첫째, 도구 카탈로그. `registry.py`가 이 도구를 *"Returns SHAP, feature importance, coefficient, or unavailable evidence"*라고 소개했다. 그 문장은 `mock_response.summary`에 있고 `describe()`가 그대로 내보내므로 도구 목록을 읽는 쪽이 그대로 본다. **나올 수 없는 것을 나올 수 있다고 적어둔 것**이고, 그 한 단어가 설명에 실릴 무게를 정한다.
+
+둘째, 스모크. `run_agent_mode_smoke.py`가 "설명 단계가 돌았다"를 **단계 이름**으로 판정했다 — `tool_name == "shap_explainer_tool"`. 이름이 곧 주장인 상황에서 이름은 판정 근거가 될 수 없다. 이제 `explanation_type`까지 보고, 출력이 **실제로 무엇이었는지**를 말한다.
+
+이름 자체는 그대로 뒀다. 저장된 실행 기록이 그 이름을 참조하고, 바꾸면 지난 기록이 가리키는 도구가 사라진다. **바꾼 것은 이름이 아니라 이름이 하는 약속**이다.
+
+README는 이미 이 규칙을 적어두고 한 번 적용했다(계수를 `standardized_coefficient`로 개명). **같은 규칙의 두 번째 위반이 같은 저장소 안에 남아 있었다.**
+
 ### 문서가 두 번 적어둔 보안 항목이 두 달간 그대로 있었다
 
 지난 회차의 측정에서 **CI가 한 줄도 실행하지 않는 라우트 마흔 개**가 나왔다. 그중 프런트엔드가 부르지 않는 열여섯을 추렸다 — "아무도 부르지 않고 아무도 시험하지 않는 경로". 그 목록에 `GET /api/debug-env`가 있었다.
@@ -372,7 +388,7 @@ python3 scripts/demo.py --leaky --ignore-leakage   # 권고를 무시하면
 ## 누출 검사가 실제로 모델을 바꾼다
 
 ```bash
-python3 -m pytest tests/ -q          # 756 tests
+python3 -m pytest tests/ -q          # 769 tests
 ```
 
 게이트를 하나씩 검증하는 것과 그 권고가 모델에 도달하는지는 다른 문제다. 무시되는 권고는 안전이 아니라 서류다. 같은 데이터를 두 번 학습해 실측했다.

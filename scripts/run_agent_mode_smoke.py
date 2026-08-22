@@ -143,10 +143,23 @@ def run(base_url):
     add(results, "the chain finishes after the review is resolved",
         len(finished) >= 9 and not failed,
         f"{len(finished)}/{len(steps)} completed, failed={failed}", second["status"])
+    explanation = next((step for step in steps
+                        if step.get("tool_name") == "shap_explainer_tool"), None)
     add(results, "the explanation step actually runs",
-        any(step.get("tool_name") == "shap_explainer_tool"
-            and step.get("status") == "completed" for step in steps),
+        bool(explanation) and explanation.get("status") == "completed",
         "shap_explainer_tool", second["status"])
+
+    # **이름이 아니라 무엇이 나왔는지를 본다.** 단계 이름은 `shap_explainer_tool`이고
+    # 그 이름을 그대로 읽으면 SHAP이 돌았다고 믿게 되는데, 그 모듈에는 `import shap`이
+    # 한 줄도 없다. 실제로 나오는 것은 feature importance 또는 표준화 계수다.
+    # 이 저장소는 같은 정정을 한 번 했고("SHAP이 아닌 것을 SHAP이라 부르지 않는다")
+    # 그 규칙이 스모크 출력까지는 오지 않았다.
+    produced = ((explanation or {}).get("result") or {}).get("explanation_type") \
+        or ((explanation or {}).get("output") or {}).get("explanation_type")
+    add(results, "the smoke names what the explanation actually was",
+        produced in ("feature_importance", "standardized_coefficient",
+                     "model_coefficient", "fallback", "unavailable", None),
+        f"explanation_type={produced!r}", second["status"])
     add(results, "a report is produced",
         any(step.get("tool_name") == "report_writer_tool"
             and step.get("status") == "completed" for step in steps),
