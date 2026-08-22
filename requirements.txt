@@ -1,16 +1,37 @@
-fastapi
-uvicorn[standard]
-pandas
-numpy
-joblib
-pydantic
-scikit-learn
-shap
-optuna
-python-multipart
-python-jose[cryptography]
-xgboost
-lightgbm
-openai
-google-generativeai
-google-auth
+# 이 열여섯은 이름만 적혀 있었다. 갓 설치하면 그날 최신이 잡히고, 이 저장소가
+# 공개하는 숫자는 어느 한 조합 위에서 나온 것인데 어느 조합인지 아무 데도 없었다.
+# `docs/MODEL_MATE_HANDOFF.md` §6.3이 그것을 위험으로 적어뒀다.
+#
+# **버전은 손으로 적지 않았다.** 개발 기계에는 `shap`과 `optuna`가 설치돼 있지 않아
+# 그 둘은 읽을 수가 없고, 기억으로 적은 핀은 **확인된 것처럼 보이는 추측**이 된다.
+# CI의 `tests` 잡에 `pip freeze` 단계를 넣어 갓 설치가 실제로 무엇을 잡는지 찍고,
+# 그 값을 그대로 옮겼다 (Python 3.11.16, 2026-08-22).
+#
+# 개발 기계가 잡고 있던 것과 다르다 — fastapi 0.140.7 대 0.141.1, numpy 2.1.2 대
+# 2.4.6, openai 2.49.0 대 3.3.1. **한쪽에서 통과한 숫자가 다른 쪽에서 같으리라는
+# 보장이 없다는 것**이 고정하는 이유다.
+#
+# 전이 의존은 고정하지 않았다. 전체 잠금은 한 파이썬에서 푼 것이 다른 파이썬에서
+# 풀린다는 보장이 없고, 이 저장소의 CI는 3.11(`tests`)과 3.12(`product`) 둘 다
+# 쓴다. **두 곳에서 설치되는 것을 확인한 범위까지만 고정한다.**
+#
+# 갱신할 때: 값을 여기서 바꾸지 말고 `tests` 잡의 "Record what a fresh install
+# actually resolved" 로그에서 떠온다. `tests/test_dependencies_are_pinned.py`가
+# 모든 줄이 `==`로 고정돼 있는지 지킨다.
+
+fastapi==0.141.1
+uvicorn[standard]==0.52.4
+pandas==3.0.5
+numpy==2.4.6
+joblib==1.5.3
+pydantic==2.13.4
+scikit-learn==1.9.0
+shap==0.51.0
+optuna==4.9.0
+python-multipart==0.0.32
+python-jose[cryptography]==3.5.0
+xgboost==3.2.0
+lightgbm==4.7.0
+openai==3.3.1
+google-generativeai==0.8.6
+google-auth==2.56.3
