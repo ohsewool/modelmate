@@ -6,6 +6,178 @@ ModelMate는 CSV 데이터를 업로드하면 데이터 구조 분석, 예측 �
 
 English summary: ModelMate turns CSV data into explainable predictions, grounded reports, and reusable APIs through a guided AI analyst workflow.
 
+## What It Does
+
+ModelMate는 비전문가도 CSV 기반 예측 분석 흐름을 이해하고 재사용할 수 있도록 만든 졸업 프로젝트이자 포트폴리오 서비스입니다. 단순히 모델을 학습하는 데서 끝나지 않고, 사용자의 분석 목표를 계획으로 바꾸고, tool call, observation, decision, validation, human review, artifact 기록을 남기는 방향으로 확장했습니다.
+
+## Key Features
+
+- CSV 업로드와 데이터 구조 분석
+- schema validation, target recommendation, leakage check
+- classification/regression 모델 비교와 AutoML training adapter
+- Agent Mode: goal -> plan -> tool call -> observation -> decision -> validation -> artifact
+- Agent Run Detail에서 persisted trace 확인
+- human review/recovery foundation
+- grounded report preview/export
+- project/run/report/workspace reuse
+- project-scoped prediction API token/readiness
+- usage limits, monitoring/error ID, feedback/pilot inquiry foundation
+- starter pack/sample dataset demo flow
+
+## Product Workflow
+
+```text
+CSV 업로드 또는 샘플 선택
+-> 분석 목표 입력
+-> Agent Run / Plan 생성
+-> 데이터 점검과 타깃 추천
+-> leakage 검토
+-> AutoML 모델 비교
+-> 성능 평가와 XAI 요약
+-> validation / human review
+-> grounded report
+-> prediction API readiness
+```
+
+## Agentic AutoML Workflow
+
+ModelMate의 Agent Mode는 현재 tabular CSV predictive analysis에 집중합니다.
+
+- PR-27: goal-first Agent Run과 deterministic plan 저장
+- PR-28: tool handler 실행과 trace record 저장
+- PR-29: trace/decision UI
+- PR-30: human review/recovery
+- PR-31: optional planner interface와 deterministic fallback
+- PR-32: portfolio/demo/docs polish
+
+Agent Mode는 “완전 자율 데이터 과학자”를 의미하지 않습니다. 지원하지 않는 목표나 위험한 분석은 제한, 경고, human review 또는 unavailable 상태로 정직하게 표시합니다.
+
+## Demo Scenario
+
+1. Landing page에서 ModelMate의 CSV 예측 분석 흐름을 소개합니다.
+2. starter pack 또는 샘플 CSV로 분석을 시작합니다.
+3. 한국어 분석 목표를 입력합니다.
+4. Agent Run과 Plan이 생성되는 것을 확인합니다.
+5. pipeline 실행 후 Run Detail을 엽니다.
+6. tool calls, observations, decisions, validations, artifacts를 확인합니다.
+7. 모델 비교, report, prediction API readiness를 보여줍니다.
+8. human review/recovery가 필요한 상황은 경고와 다음 행동으로 설명합니다.
+
+## 30초 데모 — 서버 없이
+
+```bash
+python3 scripts/make_demo_data.py
+python3 scripts/demo.py --leaky                    # 검사 적용
+python3 scripts/demo.py --leaky --ignore-leakage   # 권고를 무시하면
+```
+
+프로파일 → 누출 검사 → 학습 → 증거 검증 → 보고서까지 한 파일에 대해 전 과정을 출력한다. 두 번 돌리면 차이가 보인다: 권고를 적용하면 AUC가 1.0에서 0.778로 내려가고 검증은 `grounded`가 되며, 무시하면 검증이 `invalid`로 판정하고 **보고서가 스스로 차단 상태를 밝힌다** — 요약 첫 문장과 한계 고지에 차단 사유가 들어간다.
+
+보고서 작성을 아예 막지는 않는다. 막으면 사용자는 이유를 볼 수 없고, 근거를 보여주는 것이 이 제품의 요지다.
+
+**이 문장은 원래 "검증이 보고서 작성 자체를 막는다"였고, 그런 일은 일어나지 않았다.** 확인해보니 더 나쁜 것이 있었다 — 권고를 **따른** 실행도 똑같이 차단됐다. 증거 묶음에 넘어가는 누출 정보가 학습이 쓴 컬럼이 아니라 원본 데이터셋 전체의 것이었기 때문이다. 학습 뒤 재검사는 `low`/`high`로 정확히 갈리는데 아무도 읽지 않았다. **안전장치가 순응한 사용자를 벌하면 사람들은 그것을 끈다.**
+
+## Tech Stack
+
+- Frontend: React, Vite, JavaScript
+- Backend: FastAPI, Python
+- Data/ML: pandas, scikit-learn 기반 pipeline adapters
+- Deployment: Railway (설정은 유지, 인스턴스는 만료로 종료)
+- QA: Python smoke scripts, Vite build
+
+## Local Setup
+
+Backend:
+
+```bash
+python -m compileall backend
+uvicorn backend.main:app --reload
+python scripts/run_product_smoke.py --base-url http://127.0.0.1:8000   # 16개 검사
+```
+
+`backend/main.py`는 `main_parts/*.part`를 import 시점에 조립한다. 테스트는 모듈을 직접 import하므로 조립이 깨져도 알 수 없다 — **스위트가 통과한다는 것과 앱이 뜬다는 것은 다른 주장이다.** 그래서 [product 워크플로](.github/workflows/product.yml)가 매 push마다 서버를 띄우고 이 스모크를 돌린다. 스모크가 **실패할 줄 아는지** 먼저 확인한 뒤에 신뢰한다 — 아무것도 듣고 있지 않은 포트를 향해 한 번 돌려 실패하는 것을 보고, 그 다음에 진짜 서버를 친다.
+
+Frontend:
+
+```bash
+cd frontend
+npm install
+npm run build
+python3 ../scripts/check_frontend_build_current.py --update   # 빌드 지문 갱신
+npm run dev
+```
+
+Release QA examples:
+
+```bash
+python scripts/run_product_smoke.py --base-url http://localhost:8000
+python scripts/run_release_qa.py --base-url http://localhost:8000
+```
+
+## Environment Variables
+
+실제 secret은 GitHub에 커밋하지 않습니다. Railway 또는 로컬 `.env`에서 관리합니다.
+
+- `MODEL_MATE_LLM_PLANNER_ENABLED`: optional planner interface 사용 여부
+- `MODEL_MATE_LLM_PLANNER_RESPONSE`: 개발/검증용 schema-constrained planner response
+- 기타 배포 변수는 `docs/deployment-notes.md`와 `docs/deployment-checklist.md`를 참고합니다.
+
+## Documentation
+
+- `docs/README.md`: 문서 인덱스
+- `docs/agent-mode-mvp.md`: Agent Mode 범위와 한계
+- `docs/architecture-overview.md`: 시스템 구조 요약
+- `docs/demo-guide.md`: 발표/시연 흐름
+- `docs/final-release-checklist.md`: 최종 릴리스 체크리스트
+- `docs/final-qa-report.md`: 최종 QA 결과
+- `docs/portfolio-summary.md`: 포트폴리오 요약
+- `docs/known-limitations.md`: 알려진 한계
+- `docs/prediction-api.md`: 예측 API 사용 안내
+
+## 데모 데이터
+
+```bash
+python3 scripts/make_demo_data.py
+```
+
+라이선스가 얽히지 않도록 외부 데이터셋을 넣지 않고 합성한다. 그중 하나에는 서로 다른 방식으로 새는 컬럼 셋이 의도적으로 심어져 있어, 누출 검사가 실제로 작동하는 것을 볼 수 있다. 이 데이터를 만드는 과정에서 검사기의 결함 세 가지가 드러났고 그 경위는 [`docs/DEMO_DATA.md`](docs/DEMO_DATA.md)에 있다.
+
+## Current Limitations
+
+- ModelMate는 full enterprise AutoML 또는 full MLOps 플랫폼이 아닙니다.
+- 현재 핵심 범위는 tabular CSV 기반 classification/regression 예측 분석입니다.
+- time-series는 명확한 날짜/예측 기간 정보가 있을 때 제한적으로만 다룹니다.
+- SHAP/feature importance는 feature contribution 설명이며 causality를 의미하지 않습니다.
+- LLM planner는 optional이며, 기본 흐름은 deterministic planner로 동작합니다.
+- prediction API, monitoring, feedback, pilot inquiry는 MVP 수준의 기반 기능입니다.
+- billing, enterprise SSO, full RBAC, feature store, 자동 재학습 루프는 아직 구현 범위 밖입니다.
+
+## Roadmap
+
+Near-term:
+
+- 더 안정적인 run trace persistence
+- report export 품질 개선
+- prediction API 예시 강화
+- starter pack 확장
+- 모바일/반응형 UX 개선
+
+Future possibilities:
+
+- team workspace
+- billing
+- connectors
+- scheduled retraining
+- advanced deployment
+- SSO/RBAC
+- audit logs
+
+이 항목들은 현재 구현 완료 기능이 아니라 향후 상용화 가능성입니다.
+
+## Portfolio Notes
+
+이 프로젝트의 핵심은 단순히 머신러닝 모델을 학습하는 것이 아니라, CSV 데이터가 실제 제품 흐름 안에서 분석, 보고서, API로 재사용되는 과정을 설계하고 구현한 것입니다. 이를 위해 데이터 업로드, 타깃 추천, 모델 비교, 설명 가능한 결과, 프로젝트 저장, 실행 기록, 예측 API, 사용량 제한, 오류 추적, 피드백 수집까지 SaaS MVP 관점의 기능을 단계적으로 확장했습니다.
+
 ## 배포 이력
 
 Railway에 배포해 운영했다. 그 인스턴스는 **무료 플랜 만료로 지금은 내려가 있고**, 링크를 남겨두면 방문자가 `Application not found`를 만나므로 지웠다 — 죽은 링크는 없는 링크보다 나쁘다.
@@ -13,6 +185,24 @@ Railway에 배포해 운영했다. 그 인스턴스는 **무료 플랜 만료로
 배포 설정 자체는 저장소에 남아 있어 다시 띄울 수 있다: [`railway.toml`](railway.toml), [`Procfile`](Procfile), [`nixpacks.toml`](nixpacks.toml).
 
 문서 안 링크도 같이 정리했다. `docs/` 일곱 문서가 그 죽은 주소를 그대로 들고 있었다 — **한 파일에서 원칙을 말하고 일곱 파일에서 어기고 있었다.** 따라 하라고 적힌 QA 명령은 로컬 주소로 바꿔 지금 실제로 동작하고, 과거 실행 보고서는 기록으로 선언했다. `tests/test_no_dead_deployment_links.py`가 다시 들어오는 것을 막는다 — 네트워크를 쓰지 않는다. 인터넷이 끊긴 CI에서 조용히 통과하는 검사는 검사가 아니다.
+
+## 무엇이 잘못됐고 어떻게 알았나
+
+### 이 문서가 제품을 208번째 줄에서 말하고 있었다
+
+회차마다 새 발견을 문서 **위쪽**에 덧붙였다. 각 회차에는 그것이 맞는 자리였고, 아무도 전체를 **처음 온 사람의 자리에서** 보지 않았다. 그래서 `## What It Does`가 208번째 줄에 있었다 — 읽는 사람은 제품을 알기 전에 발견 열넷을 지나야 했다.
+
+형제 저장소 넷은 처음부터 제품을 앞세우고 있었다(각각 12~14절, 133~162줄). 여기만 38절 504줄로 자랐다 — **규모가 문제를 만든 것이지 규칙이 없어서가 아니다.** 이 저장소가 반복해서 찾아온 모양이기도 하다: 개별 변경은 각각 옳고, **합쳐진 결과를 보는 것이 없다.**
+
+순서만 바꿨다. **한 글자도 지우지 않았고**, 낱말 단위로 세어 잃은 것이 없음을 확인했다. `tests/test_the_readme_leads_with_the_product.py`가 다시 뒤집히는 것을 막는다 — 맨 위에 절을 붙이거나, 발견 뒤에 제품 절을 붙이거나, 우산 제목을 바꾸면 실패한다.
+
+아래는 이 저장소가 스스로에게서 찾은 것들이다. 각 절은 **무엇을 재봤고 무엇이 나왔는지**를
+적는다 — 고친 것뿐 아니라 **빈손으로 끝난 확인**과 **뒤집은 판단**도 함께 남긴다.
+
+이 절들이 원래 문서 맨 앞에 쌓여 있었다. 회차마다 새 발견을 위쪽에 덧붙였고, 그래서
+`## What It Does`가 208번째 줄에 있었다 — **읽는 사람은 제품을 알기 전에 발견 열넷을
+지나야 했다.** 2026-08-23에 순서만 바꿨다. 한 글자도 지우지 않았고, 형제 저장소 넷은
+처음부터 제품을 앞세우고 있었다.
 
 ### 테스트 수를 내가 부풀렸다 — 되돌렸다
 
@@ -205,157 +395,7 @@ README는 이미 이 규칙을 적어두고 한 번 적용했다(계수를 `stan
 
 로컬 실행은 아래 **Local Setup** 참조. 저장소는 `github.com/ohsewool/modelmate`이며, 예전 주소 `ohsewool/-`는 이름을 바꾼 것이라 리다이렉트된다.
 
-## What It Does
-
-ModelMate는 비전문가도 CSV 기반 예측 분석 흐름을 이해하고 재사용할 수 있도록 만든 졸업 프로젝트이자 포트폴리오 서비스입니다. 단순히 모델을 학습하는 데서 끝나지 않고, 사용자의 분석 목표를 계획으로 바꾸고, tool call, observation, decision, validation, human review, artifact 기록을 남기는 방향으로 확장했습니다.
-
-## Key Features
-
-- CSV 업로드와 데이터 구조 분석
-- schema validation, target recommendation, leakage check
-- classification/regression 모델 비교와 AutoML training adapter
-- Agent Mode: goal -> plan -> tool call -> observation -> decision -> validation -> artifact
-- Agent Run Detail에서 persisted trace 확인
-- human review/recovery foundation
-- grounded report preview/export
-- project/run/report/workspace reuse
-- project-scoped prediction API token/readiness
-- usage limits, monitoring/error ID, feedback/pilot inquiry foundation
-- starter pack/sample dataset demo flow
-
-## Product Workflow
-
-```text
-CSV 업로드 또는 샘플 선택
--> 분석 목표 입력
--> Agent Run / Plan 생성
--> 데이터 점검과 타깃 추천
--> leakage 검토
--> AutoML 모델 비교
--> 성능 평가와 XAI 요약
--> validation / human review
--> grounded report
--> prediction API readiness
-```
-
-## Agentic AutoML Workflow
-
-ModelMate의 Agent Mode는 현재 tabular CSV predictive analysis에 집중합니다.
-
-- PR-27: goal-first Agent Run과 deterministic plan 저장
-- PR-28: tool handler 실행과 trace record 저장
-- PR-29: trace/decision UI
-- PR-30: human review/recovery
-- PR-31: optional planner interface와 deterministic fallback
-- PR-32: portfolio/demo/docs polish
-
-Agent Mode는 “완전 자율 데이터 과학자”를 의미하지 않습니다. 지원하지 않는 목표나 위험한 분석은 제한, 경고, human review 또는 unavailable 상태로 정직하게 표시합니다.
-
-## Demo Scenario
-
-1. Landing page에서 ModelMate의 CSV 예측 분석 흐름을 소개합니다.
-2. starter pack 또는 샘플 CSV로 분석을 시작합니다.
-3. 한국어 분석 목표를 입력합니다.
-4. Agent Run과 Plan이 생성되는 것을 확인합니다.
-5. pipeline 실행 후 Run Detail을 엽니다.
-6. tool calls, observations, decisions, validations, artifacts를 확인합니다.
-7. 모델 비교, report, prediction API readiness를 보여줍니다.
-8. human review/recovery가 필요한 상황은 경고와 다음 행동으로 설명합니다.
-
-## Tech Stack
-
-- Frontend: React, Vite, JavaScript
-- Backend: FastAPI, Python
-- Data/ML: pandas, scikit-learn 기반 pipeline adapters
-- Deployment: Railway (설정은 유지, 인스턴스는 만료로 종료)
-- QA: Python smoke scripts, Vite build
-
-## Local Setup
-
-Backend:
-
-```bash
-python -m compileall backend
-uvicorn backend.main:app --reload
-python scripts/run_product_smoke.py --base-url http://127.0.0.1:8000   # 16개 검사
-```
-
-`backend/main.py`는 `main_parts/*.part`를 import 시점에 조립한다. 테스트는 모듈을 직접 import하므로 조립이 깨져도 알 수 없다 — **스위트가 통과한다는 것과 앱이 뜬다는 것은 다른 주장이다.** 그래서 [product 워크플로](.github/workflows/product.yml)가 매 push마다 서버를 띄우고 이 스모크를 돌린다. 스모크가 **실패할 줄 아는지** 먼저 확인한 뒤에 신뢰한다 — 아무것도 듣고 있지 않은 포트를 향해 한 번 돌려 실패하는 것을 보고, 그 다음에 진짜 서버를 친다.
-
-Frontend:
-
-```bash
-cd frontend
-npm install
-npm run build
-python3 ../scripts/check_frontend_build_current.py --update   # 빌드 지문 갱신
-npm run dev
-```
-
-Release QA examples:
-
-```bash
-python scripts/run_product_smoke.py --base-url http://localhost:8000
-python scripts/run_release_qa.py --base-url http://localhost:8000
-```
-
-## Environment Variables
-
-실제 secret은 GitHub에 커밋하지 않습니다. Railway 또는 로컬 `.env`에서 관리합니다.
-
-- `MODEL_MATE_LLM_PLANNER_ENABLED`: optional planner interface 사용 여부
-- `MODEL_MATE_LLM_PLANNER_RESPONSE`: 개발/검증용 schema-constrained planner response
-- 기타 배포 변수는 `docs/deployment-notes.md`와 `docs/deployment-checklist.md`를 참고합니다.
-
-## Documentation
-
-- `docs/README.md`: 문서 인덱스
-- `docs/agent-mode-mvp.md`: Agent Mode 범위와 한계
-- `docs/architecture-overview.md`: 시스템 구조 요약
-- `docs/demo-guide.md`: 발표/시연 흐름
-- `docs/final-release-checklist.md`: 최종 릴리스 체크리스트
-- `docs/final-qa-report.md`: 최종 QA 결과
-- `docs/portfolio-summary.md`: 포트폴리오 요약
-- `docs/known-limitations.md`: 알려진 한계
-- `docs/prediction-api.md`: 예측 API 사용 안내
-
-## Current Limitations
-
-- ModelMate는 full enterprise AutoML 또는 full MLOps 플랫폼이 아닙니다.
-- 현재 핵심 범위는 tabular CSV 기반 classification/regression 예측 분석입니다.
-- time-series는 명확한 날짜/예측 기간 정보가 있을 때 제한적으로만 다룹니다.
-- SHAP/feature importance는 feature contribution 설명이며 causality를 의미하지 않습니다.
-- LLM planner는 optional이며, 기본 흐름은 deterministic planner로 동작합니다.
-- prediction API, monitoring, feedback, pilot inquiry는 MVP 수준의 기반 기능입니다.
-- billing, enterprise SSO, full RBAC, feature store, 자동 재학습 루프는 아직 구현 범위 밖입니다.
-
-## Portfolio Notes
-
-이 프로젝트의 핵심은 단순히 머신러닝 모델을 학습하는 것이 아니라, CSV 데이터가 실제 제품 흐름 안에서 분석, 보고서, API로 재사용되는 과정을 설계하고 구현한 것입니다. 이를 위해 데이터 업로드, 타깃 추천, 모델 비교, 설명 가능한 결과, 프로젝트 저장, 실행 기록, 예측 API, 사용량 제한, 오류 추적, 피드백 수집까지 SaaS MVP 관점의 기능을 단계적으로 확장했습니다.
-
-## Roadmap
-
-Near-term:
-
-- 더 안정적인 run trace persistence
-- report export 품질 개선
-- prediction API 예시 강화
-- starter pack 확장
-- 모바일/반응형 UX 개선
-
-Future possibilities:
-
-- team workspace
-- billing
-- connectors
-- scheduled retraining
-- advanced deployment
-- SSO/RBAC
-- audit logs
-
-이 항목들은 현재 구현 완료 기능이 아니라 향후 상용화 가능성입니다.
-
-## 요청 격리
+### 요청 격리
 
 업로드된 데이터프레임·학습된 모델·SHAP 값은 `STATE`에 산다. 그것이 **프로세스 전체가 공유하는 딕셔너리 하나**였다. 로그인이 붙은 배포 환경에서 그 뜻은, A가 올린 데이터셋을 B의 다음 요청이 분석한다는 것이다 — B가 자기 데이터를 함께 보내지 않는 한.
 
@@ -371,7 +411,7 @@ Future possibilities:
   **성립하지 않는 것도 적어둔다**: 같은 세션 id를 보낸 두 게스트는 버킷을 공유하고, 정제 때문에 `a:b:c`와 `abc`가 같은 범위가 된다. 세션 식별자의 본성이고 쿠키와 다르지 않다 — 감추면 같은 과신을 작은 글씨로 반복하는 것이다. `tests/test_scope_is_not_client_choosable.py`가 양쪽을 다 고정한다.
   (docstring은 지난 회차에 고쳤는데 **이 문장을 못 고쳤다.** 같은 주장이 두 곳에 살면 한 곳만 고쳐진다 — 이 프로젝트가 반복해서 만나는 모양이고, 이번엔 내가 만들었다.)
 
-## 사람 검토 관문이 거부 목록으로 만들어져 있었다
+### 사람 검토 관문이 거부 목록으로 만들어져 있었다
 
 검토 큐도 테스트가 0개였고, **잃는 방향이 같은 결함이 둘** 있었다.
 
@@ -381,7 +421,7 @@ Future possibilities:
 
 `review_id`는 실행+단계+사유였다. 그래서 **같은 단계의 서로 다른 문제 둘이 같은 id를 가졌다** — `critical` 관측과 `error` 관측이 같은 식별자를 받았고, id로 저장하는 쪽은 하나를 잃는다. 내용 지문을 붙여 분리하되, 같은 판단을 재처리하면 같은 id가 나오게 유지했다(재시도가 큐를 복제본으로 채우지 않도록).
 
-## 감사 기록이 없는 근거를 가리킬 수 있었다
+### 감사 기록이 없는 근거를 가리킬 수 있었다
 
 에이전트가 무엇을 보고 왜 그렇게 했는지는 `persistence.py`(996줄)에 남는다. **테스트가 하나도 없었다.**
 
@@ -389,7 +429,7 @@ Future possibilities:
 
 일반 데이터베이스보다 여기서 더 나쁘다. 이 행들은 자동화된 판단의 **근거**이고, 참조가 아무 데도 닿지 않는 근거는 근거가 아니다. 제약은 적혀 있었고 켜는 것만 빠져 있었다 — 정의만 되고 배선 안 된 통제와 같은 형태다.
 
-## 설명이 모델보다 틀렸던 곳
+### 설명이 모델보다 틀렸던 곳
 
 설명 도구에는 테스트가 하나도 없었다. `feature_importances_`가 없는 모델(로지스틱 회귀 등)에서는 **계수 크기를 그대로 중요도 순위로** 썼는데, 계수는 "이 컬럼 1단위당 효과"이고 단위는 컬럼끼리 비교되지 않는다. 그렇게 매긴 순위는 중요도가 아니라 **측정 단위**를 매긴다.
 
@@ -405,21 +445,7 @@ Future possibilities:
 
 고치는 과정에서 하나 더 있었다. 처음에 `backend/tools/shap_explainer.py`를 고쳤는데 **그 경로는 돌지 않는다** — `backend.main`에 `global_explanation_items`가 있으면 그쪽이 먼저 반환한다. 진짜 로직은 `main_parts/032`에 있었다.
 
-## 30초 데모 — 서버 없이
-
-```bash
-python3 scripts/make_demo_data.py
-python3 scripts/demo.py --leaky                    # 검사 적용
-python3 scripts/demo.py --leaky --ignore-leakage   # 권고를 무시하면
-```
-
-프로파일 → 누출 검사 → 학습 → 증거 검증 → 보고서까지 한 파일에 대해 전 과정을 출력한다. 두 번 돌리면 차이가 보인다: 권고를 적용하면 AUC가 1.0에서 0.778로 내려가고 검증은 `grounded`가 되며, 무시하면 검증이 `invalid`로 판정하고 **보고서가 스스로 차단 상태를 밝힌다** — 요약 첫 문장과 한계 고지에 차단 사유가 들어간다.
-
-보고서 작성을 아예 막지는 않는다. 막으면 사용자는 이유를 볼 수 없고, 근거를 보여주는 것이 이 제품의 요지다.
-
-**이 문장은 원래 "검증이 보고서 작성 자체를 막는다"였고, 그런 일은 일어나지 않았다.** 확인해보니 더 나쁜 것이 있었다 — 권고를 **따른** 실행도 똑같이 차단됐다. 증거 묶음에 넘어가는 누출 정보가 학습이 쓴 컬럼이 아니라 원본 데이터셋 전체의 것이었기 때문이다. 학습 뒤 재검사는 `low`/`high`로 정확히 갈리는데 아무도 읽지 않았다. **안전장치가 순응한 사용자를 벌하면 사람들은 그것을 끈다.**
-
-## 권고를 따라도 결과가 같았다
+### 권고를 따라도 결과가 같았다
 
 한 층 위에 같은 모순이 하나 더 있었다. 관문들이 읽는 `leakage_risk`는 **데이터셋 전체**에 대한 판정인데, 관문은 그것을 **학습된 모델**에 대한 것으로 읽었다.
 
@@ -435,7 +461,7 @@ python3 scripts/demo.py --leaky --ignore-leakage   # 권고를 무시하면
 
 재검사가 실패하면 필드를 비워 둔다 — 그러면 관문이 데이터셋 전체 판정으로 되돌아가고, 그게 안전한 방향이다. **실패가 "누출 없음"으로 읽히면 안 된다.**
 
-## 두 안전장치가 서로 반대로 말하고 있었다
+### 두 안전장치가 서로 반대로 말하고 있었다
 
 누출 검사기는 타깃을 재현하는 컬럼을 빼라고 한다. 데모 데이터에서 그러면 AUC가 1.000에서 0.778로 내려가고, **평가 관문의 통과선(0.80)을 넘지 못한다.**
 
@@ -445,10 +471,10 @@ python3 scripts/demo.py --leaky --ignore-leakage   # 권고를 무시하면
 
 기본 통과선 0.80/0.65는 표준이 아니라 출발점이라고 명시했다. 0.75 ROC-AUC는 값어치 있는 이탈 예측 모델일 수도, 쓸 수 없는 임상 모델일 수도 있고 이 파일은 어느 쪽인지 모른다. **이 프로젝트의 데모가 통과하도록 0.75로 낮추지 않았다** — 그건 표본에 기준을 맞추는 일이다.
 
-## 누출 검사가 실제로 모델을 바꾼다
+### 누출 검사가 실제로 모델을 바꾼다
 
 ```bash
-python3 -m pytest tests/ -q          # 840 tests
+python3 -m pytest tests/ -q          # 847 tests
 ```
 
 게이트를 하나씩 검증하는 것과 그 권고가 모델에 도달하는지는 다른 문제다. 무시되는 권고는 안전이 아니라 서류다. 같은 데이터를 두 번 학습해 실측했다.
@@ -461,14 +487,6 @@ python3 -m pytest tests/ -q          # 840 tests
 이 격차가 제품이 작동한다는 증거다.
 
 검사는 이름이 아니라 **컬럼이 무엇을 하는지**를 잰다. 이름만 보던 시절에는 `exit_survey_score`가 잡혔지만 이유가 "score"라는 단어였고, `wellbeing_index`로 이름만 바꾸면 같은 값·같은 분리력(8.43 대 2.08)으로 그냥 통과했다. 경위는 [`docs/DEMO_DATA.md`](docs/DEMO_DATA.md).
-
-## 데모 데이터
-
-```bash
-python3 scripts/make_demo_data.py
-```
-
-라이선스가 얽히지 않도록 외부 데이터셋을 넣지 않고 합성한다. 그중 하나에는 서로 다른 방식으로 새는 컬럼 셋이 의도적으로 심어져 있어, 누출 검사가 실제로 작동하는 것을 볼 수 있다. 이 데이터를 만드는 과정에서 검사기의 결함 세 가지가 드러났고 그 경위는 [`docs/DEMO_DATA.md`](docs/DEMO_DATA.md)에 있다.
 
 ## 라이선스
 
