@@ -85,6 +85,8 @@ def _dataset_summary_for_run(conn, run: dict | None) -> dict | None:
                     "quality_summary": quality,
                 }
         except Exception:
+            # **일부러 삼킨다.** 데이터셋 메타데이터를 못 읽으면 그 필드들이 응답에서
+            # 빠진다 — 목록 자체는 나가야 한다. 여기서 올리면 기록 화면 전체가 죽는다.
             pass
     current = STATE.get("current_dataset") if "STATE" in globals() else None
     current_id = str((current or {}).get("id") or (current or {}).get("dataset_id") or "")

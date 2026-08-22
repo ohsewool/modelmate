@@ -231,13 +231,32 @@ def _dataset_payload(row, conn=None):
     return item
 
 
+def _table_not_created_yet(exc):
+    """`sqlite3.OperationalError` 중 **표가 아직 없는 것**만 참.
+
+    바로 위 `add_column_once`가 이미 이렇게 한다 — 예상한 메시지만 넘기고 나머지는
+    올린다. 아래 세 곳은 그러지 않고 `OperationalError`를 통째로 삼켰다. 같은 예외
+    클래스가 이것들도 나른다(직접 재현했다):
+
+        no such table: training_jobs   ← 넘기려던 것
+        no such column: project_id     ← 마이그레이션이 덜 됐다
+        database is locked             ← 다른 연결이 잠금을 쥐고 있다
+
+    뒤의 둘을 삼키면 화면은 **"이 프로젝트에 작업이 없습니다"**라고 말한다. 작업이
+    있는데도. 틀린 데이터를 조용히 보여주는 것이 오류를 보여주는 것보다 나쁘다.
+    """
+    return "no such table" in str(exc).lower()
+
+
 def _project_last_job(conn, project_id, user_id):
     try:
         row = conn.execute(
             "SELECT * FROM training_jobs WHERE project_id=? AND user_id=? ORDER BY created_at DESC LIMIT 1",
             (project_id, user_id),
         ).fetchone()
-    except sqlite3.OperationalError:
+    except sqlite3.OperationalError as exc:
+        if not _table_not_created_yet(exc):
+            raise
         return None
     if not row:
         return None
@@ -260,7 +279,9 @@ def _project_job_rollup(conn, project_id, user_id, last_job=None):
             "SELECT * FROM training_jobs WHERE project_id=? AND user_id=? ORDER BY created_at DESC LIMIT 200",
             (project_id, user_id),
         ).fetchall()
-    except sqlite3.OperationalError:
+    except sqlite3.OperationalError as exc:
+        if not _table_not_created_yet(exc):
+            raise
         return {
             "last_failed_at": None,
             "last_error_type": None,
@@ -306,8 +327,9 @@ def _project_runs(conn, project_id, user_id):
             (user_id, project_id),
         ).fetchall()
         runs.extend(_agent_run_item(row) for row in agent_rows)
-    except sqlite3.OperationalError:
-        pass
+    except sqlite3.OperationalError as exc:
+        if not _table_not_created_yet(exc):
+            raise
     return sorted(runs, key=lambda row: row.get("created_at") or "", reverse=True)
 
 

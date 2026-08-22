@@ -1,4 +1,4 @@
-@app.post("/api/run-agent")
+﻿@app.post("/api/run-agent")
 async def run_agent(demo: bool = False, user=Depends(get_current_user)):
     X, y = STATE.get("X"), STATE.get("y")
     if X is None:
@@ -161,6 +161,9 @@ async def run_agent(demo: bool = False, user=Depends(get_current_user)):
             STATE["shap_values"] = shap_values.tolist()
             STATE["shap_sample_idx"] = sample.index.tolist()
         except Exception:
+            # **일부러 삼킨다.** SHAP 실패는 바로 아래 `feature_importances_`로
+            # 되돌아가고, 그 차이는 `explanation_type`으로 응답에 나간다 —
+            # 조용히 사라지는 것이 아니라 다른 설명 방식으로 보인다.
             pass
     if not shap_global and hasattr(model, "feature_importances_"):
         shap_global = sorted(

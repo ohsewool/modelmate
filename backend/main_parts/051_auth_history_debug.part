@@ -198,6 +198,8 @@ async def profile_summary(user=Depends(get_current_user)):
             score = float(score)
             best_score = score if best_score is None else max(best_score, score)
         except (TypeError, ValueError):
+            # **일부러 삼킨다.** 실패가 아니라 거르개다 — 점수가 없거나 숫자가 아닌
+            # 기록은 최고점 계산에서 빠질 뿐이고, 그것이 이 자리의 정답이다.
             pass
 
     profile = dict(db_user) if db_user else {

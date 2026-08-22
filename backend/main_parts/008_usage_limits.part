@@ -166,7 +166,17 @@ def get_plan_limits(user_or_plan):
             try:
                 limits[key] = int(os.getenv(env_name))
             except ValueError:
-                pass
+                # 조용히 넘기면 운영자는 **자기가 설정한 값이 걸려 있다고 믿는다.**
+                # 실제로는 기본값이 걸린다 — 사용량 제한은 남용을 막는 장치라
+                # 더 헐거워진 쪽으로 틀리는 것이 보통이다. 응답은 그대로(기본값으로
+                # 계속 간다) 두되 **말은 한다.**
+                if "record_security_event" in globals():
+                    record_security_event(
+                        "config.usage_limit_ignored",
+                        f"{env_name}의 값이 정수가 아니라 기본값을 쓴다",
+                        severity="warning",
+                        safe_details={"env_name": env_name, "limit_key": key},
+                    )
     return limits
 
 

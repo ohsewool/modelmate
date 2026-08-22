@@ -74,7 +74,11 @@ def auto_parse(raw):
         df = pd.read_csv(io.StringIO(raw), sep=best)
         if len(df.columns) == 1:
             df = pd.read_csv(io.StringIO(raw), sep=r"\s+", engine="python"); best = "space"
-    except: df = None
+    except Exception:
+        # 예전에는 타입 없는 `except:`였다. 그것은 `KeyboardInterrupt`와
+        # `SystemExit`, `MemoryError`도 잡는다 — 큰 CSV를 파싱하는 중에 Ctrl-C를
+        # 누르면 중단되는 대신 **"읽을 수 없는 파일"이 되어 돌아온다.**
+        df = None
     return df, {",":"쉼표", "\t":"탭", ";":"세미콜론", "|":"파이프", "space":"공백"}.get(best, best)
 
 def encode_features(df, tgt):

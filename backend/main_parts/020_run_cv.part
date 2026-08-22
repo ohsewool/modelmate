@@ -162,7 +162,11 @@ async def run_cv(user=Depends(get_current_user)):
                 bm = MODELS[best_name](); bm.fit(X, y)
                 preds = bm.predict(X).tolist()
                 break
-            except: continue
+            except Exception:
+                # 타입 없는 `except:`였다. 모델을 차례로 학습해 보는 되돌림
+                # 고리라 한 번이 길다 — Ctrl-C가 **다음 모델로 넘어가는 것으로
+                # 읽혔다.** 끊을 수 없는 학습 고리가 된다.
+                continue
         else:
             raise HTTPException(500, failure_detail(
                 "automl_training",
