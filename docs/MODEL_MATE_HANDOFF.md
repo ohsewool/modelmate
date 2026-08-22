@@ -158,13 +158,17 @@ SQLite and local filesystem persistence are process-local deployment choices. Re
 
 ### Verified in source
 
-1. **Unsafe development fallbacks:** `backend/main_parts/001_imports_db.part` contains default JWT, admin email, and admin password values. Production must provide strong environment values; literal fallback values are intentionally not repeated here.
-2. **Public incomplete debug route:** `/api/debug-env` is registered without an authentication dependency, reads environment-key metadata, and has no explicit return in the inspected function body. It should be removed, disabled, or protected before relying on public security.
-3. **Unpinned Python dependencies:** a fresh installation can resolve different package versions.
+1. **Unsafe development fallbacks — RESOLVED.** The default `JWT_SECRET` is gone. The behaviour is not "always raise", and saying so would overstate it: when the process looks like a hosted deployment an unset or blank value **raises at boot**, and locally it generates a random secret and stores it beside the database. That split is deliberate — a developer running the app should not have to configure a secret, and a deployment must not sign with a value written in the repository. The admin account is seeded only for addresses in `ADMIN_EMAILS`, and password login is enabled only when `ADMIN_PASSWORD` is supplied — the second seeding path that read the singular `ADMIN_EMAIL` was removed because `get_admin_emails()` ignored it, which made an address outside the documented list an admin.
+2. **Public incomplete debug route — RESOLVED 2026-08-22 (removed).** `/api/debug-env` was registered without an authentication dependency, collected the names of environment variables containing "GEMINI" or "API", and had no `return` — so it answered `null` while one restored line would have made an unauthenticated path disclose key names.
+
+   It was removed rather than protected: the frontend never called it (all 99 `api.<method>` call sites were scanned), none of the fifteen smoke scripts touched it, and with no return value there was no behaviour to keep. `tests/test_no_environment_disclosure.py` now refuses the path, the handler name, and any part that enumerates `os.environ`.
+
+   **It sat here for two months.** This entry and §8.1 both said to remove it, and so did the 2026-06-22 audit snapshot. Nothing checked. It surfaced only when CI coverage was measured for the first time and the forty routes with no executed line were listed — a written instruction is not an action until something verifies it.
+3. **Unpinned Python dependencies — still open, measured 2026-08-22.** None of the sixteen entries in `requirements.txt` carry a version constraint. A fresh install resolves whatever is current, and the numbers this repository publishes were produced against whatever was current here. Pinning is a separate reviewed change: the wheels that resolve on this machine are not guaranteed to resolve on every runner, so it needs a fresh-install run to prove rather than an edit to assert.
 4. **Startup DDL instead of migrations:** schema evolution can become difficult to audit and reproduce.
 5. **Best-effort in-process jobs:** committed operational documentation states that background work is not backed by a durable distributed queue and may be interrupted by process restart.
 6. **Legacy naming and comments:** old mock/skeleton terminology can mislead maintainers about which execution path is active.
-7. **Generated and cached files in the working tree:** the copied repository includes ignored runtime, model, dataset, cache, and compiled artifacts. They are not canonical source and may be environment-specific.
+7. **Generated and cached files in the working tree — RESOLVED.** Runtime state (`modelmate.db`, uploaded datasets, trained models, caches) is ignored, and the state at the moment tracking stopped was preserved under `docs/archive/qa/` with provenance. What remains tracked under `sample_data/` and `frontend/*/samples/` is deliberate demo content, not runtime output.
 
 ### Repository-recorded, not freshly verified
 
@@ -189,7 +193,7 @@ These statements are historical evidence. Recheck them before making a current r
 
 These are recommendations, not completed work.
 
-1. **Security/configuration gate:** remove or protect `/api/debug-env`; require strong production JWT/admin settings; verify that no client bundle or log contains secrets.
+1. **Security/configuration gate — partly resolved.** `/api/debug-env` was **removed** on 2026-08-22 (see §6.2). Strong production settings are enforced rather than recommended: a hosted deployment without `JWT_SECRET` refuses to boot (locally it generates one), and the admin account is seeded only from `ADMIN_EMAILS` — without `ADMIN_PASSWORD` the account exists with no password login at all, rather than with a default one. **Still open:** proving that no client bundle or log contains secrets — the leak scanner covers the source tree, not the built bundle.
 2. **Persistence gate:** verify the actual Railway volume mount and the effective `DB_PATH`, `MODELS_DIR`, and `DATASETS_DIR`; prove persistence across a redeploy before using real user data.
 3. **Focused release smoke:** in an approved environment, run one bounded upload-to-Agent-Run-to-report-to-prediction-token flow and record concrete IDs, states, and failures without overwriting unrelated QA evidence.
 4. **Documentation alignment:** reconcile historical PR-01/PR-12 mock and skeleton wording with the active planner/executor path, without erasing useful provenance.

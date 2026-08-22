@@ -1,4 +1,4 @@
-@app.post("/api/auth/signup")
+﻿@app.post("/api/auth/signup")
 async def auth_signup(body: EmailAuthBody, request: Request = None):
     """가입. 이메일은 **정규화한 형태 하나로** 저장하고 찾는다.
 
@@ -232,8 +232,15 @@ async def admin_users(user=Depends(get_current_user)):
     return [dict(r) for r in rows]
 
 # ── 상태 ─────────────────────────────────────────────────
-@app.get("/api/debug-env")
-async def debug_env():
-    key = os.getenv("GEMINI_API_KEY", "")
-    all_keys = sorted(os.environ.keys())
-    gemini_keys = [k for k in all_keys if "GEMINI" in k.upper() or "API" in k.upper()]
+# `GET /api/debug-env`가 여기 있었다. 인증 없이 붙어 있었고, 환경 변수 이름 중
+# "GEMINI" 또는 "API"가 들어간 것들을 모았고, **그 결과를 반환하지 않았다** —
+# `return`이 지워진 채 수집만 남은 상태였다. 즉 오늘은 `null`을 주지만, 누가 한 줄만
+# 되돌리면 **인증 없는 경로가 키 이름 목록을 뱉는다.**
+#
+# `docs/MODEL_MATE_HANDOFF.md`가 두 곳(§6.2, §8.1)에서 "제거하거나 보호하라"고 적어
+# 뒀고, 2026-06-22 감사 스냅숏도 같은 말을 했다. **두 달 동안 그대로였다** — 문서에
+# 적힌 조치는 그것을 확인하는 검사가 없으면 조치가 아니다.
+#
+# 지웠다. 프런트엔드가 부르지 않고(호출 99개를 훑었다), 스모크 열다섯 중 어느
+# 것도 치지 않으며, 반환값이 없으므로 지워서 잃는 동작이 없다.
+# `tests/test_no_environment_disclosure.py`가 다시 생기는 것을 막는다.
