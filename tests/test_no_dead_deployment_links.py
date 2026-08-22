@@ -67,6 +67,31 @@ def documents() -> list[Path]:
     )
 
 
+# **무엇이 면제됐는지 이름으로 둔다.**
+#
+# 지금까지 이 검사들의 공허 가드는 **하한선**이었다(`>= 3`, `>= 20`). 하한선은
+# 문서 하나가 조용히 빠지는 것을 잡지 못한다 — `modelmate`에서 README가 산문 한
+# 줄로 면제됐을 때 살아 있는 문서 수는 21에서 20으로 줄었고, 가드는 `>= 20`이었다.
+# **두 회차 동안 초록불이었다.**
+#
+# 면제는 드물고 의도적이다. 그러니 목록으로 적어둘 수 있고, 적어두면 늘어나는
+# 것도 줄어드는 것도 걸린다. 진짜 기록을 새로 선언하면 여기 한 줄 추가하는 것이
+# **그 면제를 의도했다는 증거**다.
+DECLARED_RECORDS = frozenset({
+    ".codex/RUN_LOG.md",
+    "CODEX_HANDOFF.md",
+    "DEMO_DATASET_PLAYBOOK.md",
+    "QA_CHECKLIST.md",
+    "TEAM_SPLIT.md",
+    "docs/final-qa-report.md",
+})
+
+
+def declared_documents() -> set:
+    return {path for path in documents()
+            if declared_historical(path.read_text(encoding="utf-8", errors="replace"))}
+
+
 def living_documents() -> list[Path]:
     return [path for path in documents()
             if not declared_historical(path.read_text(encoding="utf-8", errors="replace"))]
@@ -171,3 +196,19 @@ class TestAMentionIsNotADeclaration:
             path = ROOT / name
             if path.exists():
                 assert declared_historical(path.read_text(encoding="utf-8")), name
+
+
+def test_exactly_these_documents_are_exempt():
+    """면제된 문서 목록이 적어둔 것과 정확히 같은가.
+
+    이 검사가 잡는 것은 두 방향이다. **늘어남**: 어떤 문서가 (산문 언급이든 새 선언
+    이든) 조용히 검사 밖으로 나갔다. **줄어듦**: 기록이 사라졌거나 선언이 지워져
+    거짓 실패를 낼 참이다. 하한선으로는 둘 다 보이지 않는다.
+    """
+    actual = {str(path.relative_to(ROOT)) for path in declared_documents()}
+    assert actual == set(DECLARED_RECORDS), (
+        "면제된 문서가 적어둔 목록과 다르다.\n"
+        f"  새로 면제됨: {sorted(actual - set(DECLARED_RECORDS)) or '없음'}\n"
+        f"  목록에만 있음: {sorted(set(DECLARED_RECORDS) - actual) or '없음'}\n"
+        "의도한 기록이면 DECLARED_RECORDS에 넣고, 아니면 그 문서의 선언을 확인하라."
+    )
