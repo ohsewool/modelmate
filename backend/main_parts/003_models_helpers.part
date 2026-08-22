@@ -1,4 +1,4 @@
-REGRESSION_MODELS = {
+﻿REGRESSION_MODELS = {
     "Random Forest":    lambda: RandomForestRegressor(n_estimators=100, random_state=42),
     "Gradient Boosting":lambda: GradientBoostingRegressor(random_state=42),
     "Ridge Regression": lambda: Ridge(),

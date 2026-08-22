@@ -1,4 +1,4 @@
-@app.post("/api/auth/logout")
+﻿@app.post("/api/auth/logout")
 async def auth_logout(credentials: HTTPAuthorizationCredentials = Depends(security)):
     if not credentials:
         return {"ok": True, "mode": "guest_demo"}
@@ -6,13 +6,31 @@ async def auth_logout(credentials: HTTPAuthorizationCredentials = Depends(securi
         payload = jose_jwt.decode(credentials.credentials, JWT_SECRET, algorithms=[JWT_ALGORITHM])
         session_id = payload.get("jti")
         if session_id:
+            # `finally`로 닫는다. 바깥의 `except Exception: pass`가 예외를 삼키므로
+            # 연결이 새도 아무 신호가 없었다 — 그리고 이 UPDATE는 **쓰기**라
+            # 그 연결이 쥔 잠금이 남으면 이후 모든 쓰기가 죽는다.
             conn = get_db()
-            conn.execute(
-                "UPDATE auth_sessions SET revoked_at=? WHERE id=?",
-                (datetime.now().isoformat(), session_id),
+            try:
+                conn.execute(
+                    "UPDATE auth_sessions SET revoked_at=? WHERE id=?",
+                    (datetime.now().isoformat(), session_id),
+                )
+                conn.commit()
+            finally:
+                conn.close()
+    except Exception as error:
+        # 삼키되 **말은 한다.** 예전에는 `pass`였다: 세션 취소가 실패해도 응답은
+        # `ok: True`였고 어디에도 남지 않았다. 클라이언트가 토큰을 버리는 것은 맞지만,
+        # **서버 쪽 취소가 안 된 것은 다른 사실**이고 그것이 보안 기록이 있는 이유다.
+        #
+        # 응답은 그대로 둔다. 로그아웃을 실패로 돌려주면 사용자는 토큰을 쥔 채
+        # 화면에 남는다 — 더 나쁘다.
+        if "record_security_event" in globals():
+            record_security_event(
+                "auth.logout_revocation_failed",
+                "로그아웃에서 세션 취소가 실패했다",
+                route="/api/auth/logout", method="POST", status_code=200,
+                severity="warning",
+                safe_details={"error_type": type(error).__name__},
             )
-            conn.commit()
-            conn.close()
-    except Exception:
-        pass
     return {"ok": True, "mode": "guest_demo"}

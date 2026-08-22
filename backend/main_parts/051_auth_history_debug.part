@@ -13,20 +13,31 @@ async def auth_signup(body: EmailAuthBody, request: Request = None):
     email = normalize_email(body.email)
     if not email or "@" not in email:
         raise HTTPException(400, "이메일 형식이 올바르지 않습니다")
+    # `try/finally`로 감싼다. 예전에는 성공 경로와 중복 경로에 각각 `conn.close()`가
+    # 있었고, **그 사이에서 예외가 나면 연결이 열린 채 남았다.** sqlite는 그 연결이
+    # 쥔 쓰기 잠금을 놓지 않으므로 이후 이 프로세스의 모든 쓰기가 죽는다.
+    #
+    # 2026-08-23에 `auth_google`에서 같은 것을 재현했고(같은 이메일로 구글 로그인 →
+    # 유니크 인덱스 위반 → 이후 `database is locked`), 훑어보니 `get_db()`를 여는
+    # 함수 87개 중 **28개가 같은 모양**이었다. 그중 쓰기를 하는 21개가 잠금을 쥔다.
+    # 인증 없이 도달하는 쓰기부터 고친다 — 나머지는
+    # `tests/test_connections_close_on_every_path.py`가 이름으로 들고 있다.
     conn = get_db()
-    existing = find_user_by_email(conn, email, "id")
-    if existing:
+    try:
+        existing = find_user_by_email(conn, email, "id")
+        if existing:
+            raise HTTPException(400, "이미 사용 중인 이메일입니다")
+        user_id = str(uuid.uuid4())
+        password_hash = hash_password(body.password)
+        name = body.name or email.split("@")[0]
+        role = "admin" if is_admin_email(email) else "user"
+        conn.execute(
+            "INSERT INTO users (id, email, name, picture, password_hash, role, created_at) VALUES (?,?,?,?,?,?,?)",
+            (user_id, email, name, "", password_hash, role, datetime.now().isoformat())
+        )
+        conn.commit()
+    finally:
         conn.close()
-        raise HTTPException(400, "이미 사용 중인 이메일입니다")
-    user_id = str(uuid.uuid4())
-    password_hash = hash_password(body.password)
-    name = body.name or email.split("@")[0]
-    role = "admin" if is_admin_email(email) else "user"
-    conn.execute(
-        "INSERT INTO users (id, email, name, picture, password_hash, role, created_at) VALUES (?,?,?,?,?,?,?)",
-        (user_id, email, name, "", password_hash, role, datetime.now().isoformat())
-    )
-    conn.commit(); conn.close()
     if role == "admin" and "record_security_event" in globals():
         record_security_event(
             "auth.admin_account_created",
@@ -48,10 +59,12 @@ async def auth_login(body: EmailAuthBody, request: Request = None):
     if request is not None and "enforce_auth_attempt_limit" in globals():
         enforce_auth_attempt_limit(request)
     conn = get_db()
-    # 가입과 같은 동일성으로 찾는다. 대소문자만 다른 이메일이 다른 계정이 되면
-    # 그것이 이 회차에 고친 결함이고, 여기서 다시 갈라지면 원래대로 돌아간다.
-    row = find_user_by_email(conn, body.email)
-    conn.close()
+    try:
+        # 가입과 같은 동일성으로 찾는다. 대소문자만 다른 이메일이 다른 계정이 되면
+        # 그것이 이 회차에 고친 결함이고, 여기서 다시 갈라지면 원래대로 돌아간다.
+        row = find_user_by_email(conn, body.email)
+    finally:
+        conn.close()
     # 두 갈래가 **같은 일을 해야 한다.** 메시지는 원래도 같았지만 시간이 달랐다:
     # 계정이 없으면 즉시 400, 있으면 pbkdf2 26만 회를 돌고 400. 2026-08-22에 쟀다 —
     # 중앙값 10ms 대 280ms, **27배**. 메시지를 같게 해두고 응답 시간이 답을 알려주는
@@ -66,10 +79,13 @@ async def auth_login(body: EmailAuthBody, request: Request = None):
         raise HTTPException(400, "이메일 또는 비밀번호가 올바르지 않습니다")
     role = getUserRole({"email": row["email"], "role": row["role"] or "user"})
     if role == "admin" and row["role"] != "admin":
+        # 여기가 **쓰기**다 — 예외가 나면 잠금이 남는다.
         conn = get_db()
-        conn.execute("UPDATE users SET role='admin', plan='admin' WHERE id=?", (row["id"],))
-        conn.commit()
-        conn.close()
+        try:
+            conn.execute("UPDATE users SET role='admin', plan='admin' WHERE id=?", (row["id"],))
+            conn.commit()
+        finally:
+            conn.close()
         # 로그인 한 번으로 역할이 바뀐다. 200으로 끝나므로 미들웨어는 이것을
         # 남기지 않는다 - 성공한 권한 상승이야말로 남아야 하는 것이다.
         if "record_security_event" in globals():
