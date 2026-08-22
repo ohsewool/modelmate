@@ -1,4 +1,4 @@
-from fastapi import Request
+﻿from fastapi import Request
 import re
 
 
@@ -86,22 +86,29 @@ def _pilot_valid_email(value):
     return email
 
 
+# 허용 목록. 차단 목록(`PILOT_BLOCKED_CONTEXT_KEYS`)과 짝인데 이쪽만 함수 안의
+# 지역 변수였다 — 검사가 읽을 수 없어서 **사본을 만들어 시험하게 되고**, 사본은
+# 소스가 바뀌어도 그대로다. 2026-08-22에 대조가 그것을 잡았다: 허용 목록에 낱말을
+# 추가해도 검사가 조용했다.
+PILOT_ALLOWED_CONTEXT_KEYS = frozenset({
+    "mode",
+    "plan",
+    "plan_status",
+    "limits",
+    "usage",
+    "percent_used",
+    "warnings",
+    "capabilities",
+    "source_route",
+    "current_plan",
+})
+
+
 def _pilot_safe_snapshot(snapshot):
     if not isinstance(snapshot, dict):
         return {}
     safe = {}
-    allowed = {
-        "mode",
-        "plan",
-        "plan_status",
-        "limits",
-        "usage",
-        "percent_used",
-        "warnings",
-        "capabilities",
-        "source_route",
-        "current_plan",
-    }
+    allowed = PILOT_ALLOWED_CONTEXT_KEYS
     for key, value in snapshot.items():
         key_text = str(key)
         lowered = key_text.lower()
