@@ -166,7 +166,7 @@ async def v1_predict(model_id: str, body: dict):
             row[col] = int(enc[col].transform([sv])[0])
         else:
             try:   row[col] = float(val)
-            except: row[col] = 0
+            except Exception: row[col] = 0
 
     X_in = pd.DataFrame([row], columns=feats)
     pred = model.predict(X_in)[0]

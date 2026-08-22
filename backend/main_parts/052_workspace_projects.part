@@ -311,6 +311,42 @@ def _project_job_rollup(conn, project_id, user_id, last_job=None):
     }
 
 
+def _instant(stamp):
+    """정렬용 **순간**값. 이 저장소에는 시계가 둘이다.
+
+        experiments.created_at    datetime.now().isoformat()              → 2026-08-23T19:00:00
+        analysis_runs.created_at  datetime.utcnow().isoformat() + "Z"     → 2026-08-23T10:00:00Z
+
+    같은 순간이고 문자열은 아홉 시간 차이다(KST 기준). `_project_runs`는 두 표를
+    합친 뒤 **문자열로** 정렬했다 — `"2026-08-23T11:00:00" > "2026-08-23T10:00:00Z"`라서
+    **방금 끝난 에이전트 실행이 여덟 시간 전 실험 아래로 내려간다.** 목록에는
+    "최신순"이라고 적혀 있다.
+
+    표시자가 없는 값은 **서버 로컬 시각**으로 읽는다. 그것을 쓴 것이 이 프로세스이므로
+    그 해석이 맞다 — 그리고 서버만이 그것을 안다. 브라우저가 `new Date()`로 읽으면
+    **보는 사람의 시간대**로 읽어 버려서 클라이언트 쪽은 이 값을 바로잡을 수 없다.
+
+    읽을 수 없는 값은 `None`을 준다. 호출자가 맨 뒤로 보낸다 — 파싱 실패를 1970년으로
+    바꿔 놓으면 "가장 오래된 기록"인 척하게 된다.
+    """
+    if not stamp:
+        return None
+    text = str(stamp).strip()
+    if text.endswith(("Z", "z")):
+        text = text[:-1] + "+00:00"
+    try:
+        moment = datetime.fromisoformat(text)
+    except ValueError:
+        return None
+    return moment.astimezone() if moment.tzinfo is None else moment
+
+
+def _newest_first(row):
+    """정렬 열쇠. 읽을 수 없는 값은 뒤로."""
+    moment = _instant(row.get("created_at"))
+    return (moment is not None, moment or datetime.min.replace(tzinfo=timezone.utc))
+
+
 def _project_runs(conn, project_id, user_id):
     runs = []
     rows = conn.execute(
@@ -330,7 +366,7 @@ def _project_runs(conn, project_id, user_id):
     except sqlite3.OperationalError as exc:
         if not _table_not_created_yet(exc):
             raise
-    return sorted(runs, key=lambda row: row.get("created_at") or "", reverse=True)
+    return sorted(runs, key=_newest_first, reverse=True)
 
 
 def _project_reports(conn, project_id, user_id):
@@ -628,7 +664,9 @@ async def list_workspace_reports(user=Depends(get_current_user)):
             })
     finally:
         conn.close()
-    return sorted(reports, key=lambda row: row.get("created_at") or "", reverse=True)
+    # `_project_runs`에서 `created_at`을 그대로 복사해 온다 — 즉 여기도 두 시계가
+    # 섞인 목록이다. 위를 고치고 이 줄을 안 고쳤고, 그 검사가 잡았다.
+    return sorted(reports, key=_newest_first, reverse=True)
 
 
 @app.post("/api/projects")

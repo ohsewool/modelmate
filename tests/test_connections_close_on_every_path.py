@@ -12,6 +12,13 @@
     예외에 연결이 남을 수 있는 것       28개
     그중 **쓰기를 하는 것**            22개   ← 잠금을 쥔다
 
+**이 수가 틀렸다.** 25개다. 조각을 하나씩 `ast.parse`하고 `except SyntaxError:
+continue`로 넘겼는데, 조각 열둘은 단독으로 파싱되지 않는다(앞 조각에서 시작한 함수
+본문이 이어진다). **열두 파일이 조용히 빠졌고 화면에서는 "이상 없음"과 같아 보였다.**
+`tests/part_source.py`에 이유와 함께 적었다. 숨어 있던 셋은 부팅 시 DDL이 아니라
+`deploy_model`·`delete_deployed`·`deploy_model_stable` — **사용자가 닿는 배포
+엔드포인트**다.
+
 읽기만 하는 것도 연결을 새지만 쓰기 잠금은 쥐지 않는다. 위험의 크기가 다르므로
 구분해서 센다.
 
@@ -36,6 +43,8 @@ import sys
 from pathlib import Path
 
 import pytest
+
+from part_source import assembled
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -68,6 +77,11 @@ STILL_UNGUARDED = {
     ("097_beta_feedback.part", "ensure_feedback_table"),
     ("097_pilot_inquiries.part", "ensure_pilot_inquiry_table"),
     ("098_monitoring.part", "ensure_monitoring_tables"),
+    # 아래 셋은 조립 파싱으로 바꾸고 나서야 보였다. **부팅 시 DDL이 아니다** —
+    # 로그인한 사용자가 배포 화면에서 직접 닿는 자리라 위의 열여덟보다 급하다.
+    ("071_batch_deploy_a.part", "deploy_model"),
+    ("072_deploy_static_b.part", "delete_deployed"),
+    ("086_deploy_stable_api.part", "deploy_model_stable"),
 }
 
 # 인증 없이 도달하는 쓰기. **여기는 비어 있어야 한다.**
@@ -75,14 +89,9 @@ UNAUTHENTICATED_WRITES = {"auth_google", "auth_signup", "auth_login", "auth_logo
 
 
 def functions():
-    for path in sorted(PARTS.glob("*.part")):
-        try:
-            tree = ast.parse(path.read_text(encoding="utf-8-sig"))
-        except SyntaxError:  # pragma: no cover - 조각이 단독으로 파싱되지 않으면 건너뛴다
-            continue
-        for node in ast.walk(tree):
-            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                yield path.name, node
+    """조립해서 파싱한다. 조각을 하나씩 읽고 `SyntaxError`를 넘기면 열두 파일이
+    조용히 빠진다 — 그렇게 해서 이 목록이 셋 모자랐다."""
+    yield from assembled().functions()
 
 
 def guarded(node: ast.AST) -> bool:

@@ -8,6 +8,11 @@
     그중 `pass`로 흘려보내는 것                                    8개  ← 전부 modelmate
     타입 없는 `except:`                                            2개  ← 전부 modelmate
 
+**이 수도 틀렸다. 9개다.** 조각을 하나씩 파싱하고 `except SyntaxError: continue`로
+넘겼는데 조각 열둘이 단독 파싱되지 않는다 — **앞 회차에 제품에서 고친 바로 그 모양이
+이 검사기 안에 있었다.** 숨어 있던 일곱은 선택적 import 넷(`SHAP_OK` 등)과 예측 입력
+값 변환 셋이었다. 전부 `except Exception`으로 좁혔다. `tests/part_source.py` 참고.
+
 **형제 저장소 넷은 0개다.** 세어보고 아무것도 없었다는 것도 결과다.
 
 여덟 중 넷은 남겼다. `automl_training.py`의 재검사 실패는 "누출 없음"으로 읽히지
@@ -29,6 +34,8 @@ from pathlib import Path
 
 import pytest
 
+from part_source import assembled
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
@@ -43,24 +50,35 @@ def production_sources():
         yield path
 
 
+def bare_handlers():
+    """조각은 **조립해서** 본다. 하나씩 읽으면 열두 파일이 조용히 빠진다."""
+    parts = assembled()
+    for _, node in parts.nodes(ast.ExceptHandler):
+        if node.type is None:
+            yield parts.where(node)
+    for path in sorted(BACKEND.rglob("*.py")):
+        tree = ast.parse(path.read_text(encoding="utf-8-sig"))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ExceptHandler) and node.type is None:
+                yield f"{path.relative_to(ROOT)}:{node.lineno}"
+
+
 class TestNoHandlerCatchesEverything:
     """타입 없는 `except:`는 `KeyboardInterrupt`·`SystemExit`·`MemoryError`도 잡는다.
 
-    둘 있었다. 하나는 CSV 파싱, 하나는 모델을 차례로 학습해 보는 되돌림 고리 —
-    **둘 다 오래 걸리는 자리다.** 즉 Ctrl-C를 실제로 누르는 자리이고, 거기서
-    Ctrl-C는 중단이 아니라 "읽을 수 없는 파일"이나 "다음 모델"로 읽혔다.
+    **아홉 있었다.** 처음에 둘로 셌는데, 조각을 하나씩 파싱하다 열두 파일을 놓쳤다.
+
+    둘은 CSV 파싱과 모델을 차례로 학습해 보는 되돌림 고리 — **둘 다 오래 걸리는
+    자리다.** 즉 Ctrl-C를 실제로 누르는 자리이고, 거기서 Ctrl-C는 중단이 아니라
+    "읽을 수 없는 파일"이나 "다음 모델"로 읽혔다.
+
+    나머지 일곱은 선택적 import 넷(`SHAP_OK`·`OPTUNA_OK`·`XGB_OK`·`LGBM_OK`)과
+    예측 입력 값 변환 셋이다. 뒤의 셋은 값이 안 읽히면 `0`이나 평균으로 바꿔 넣는다 —
+    **사용자가 보내지 않은 값으로 예측한다.** 타입만 좁혔고 그 판단은 ROADMAP에 적었다.
     """
 
     def test_none_of_them_is_left(self):
-        bare = []
-        for path in production_sources():
-            try:
-                tree = ast.parse(path.read_text(encoding="utf-8-sig"))
-            except SyntaxError:  # pragma: no cover - 조각이 단독 파싱되지 않으면 건너뛴다
-                continue
-            for node in ast.walk(tree):
-                if isinstance(node, ast.ExceptHandler) and node.type is None:
-                    bare.append(f"{path.relative_to(ROOT)}:{node.lineno}")
+        bare = sorted(bare_handlers())
         assert bare == [], (
             "타입 없는 `except:`가 있다. `except Exception`으로 좁혀라 — "
             f"그대로 두면 Ctrl-C가 실패로 읽힌다:\n  " + "\n  ".join(bare)
