@@ -36,6 +36,24 @@ ADMIN = {"sub": "admin-user", "email": "admin@example.test", "role": "admin"}
 STAMP = "2026-08-22T00:00:00"
 
 
+def _has_table(name: str) -> bool:
+    conn = modelmate.get_db()
+    try:
+        return conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (name,)
+        ).fetchone() is not None
+    finally:
+        conn.close()
+
+
+# `analysis_runs`는 **게으르게 만들어진다** — `backend/agents/persistence.py`가 처음
+# 쓸 때 `CREATE TABLE IF NOT EXISTS`로 만든다. 갓 설치한 곳에는 없고, CI가 정확히 그
+# 상태다. 문지기도 그것을 알고 있어서 `sqlite3.OperationalError`를 잡아 "없는 자원"으로
+# 다룬다 — 그 갈래를 아래에서 따로 확인한다.
+needs_runs = pytest.mark.skipif(not _has_table("analysis_runs"),
+                                reason="analysis_runs는 에이전트 경로가 처음 쓸 때 만들어진다")
+
+
 def _insert(table: str, **columns) -> str:
     identifier = columns.setdefault("id", f"test-{uuid.uuid4().hex[:12]}")
     conn = modelmate.get_db()
@@ -87,6 +105,7 @@ class TestAStrangerIsRefused:
             modelmate.assert_dataset_owner(STRANGER, dataset)
         assert raised.value.status_code == 404
 
+    @needs_runs
     def test_an_analysis_run(self, owned):
         run = owned("analysis_runs", user_id=OWNER["sub"], user_goal="g", created_at=STAMP)
         with pytest.raises(HTTPException) as raised:
@@ -115,6 +134,7 @@ class TestTheOwnerAndTheAdminGetThrough:
         dataset = owned("datasets", user_id=OWNER["sub"], filename="d.csv", project_id="p-1")
         assert modelmate.assert_dataset_owner(OWNER, dataset)["id"] == dataset
 
+    @needs_runs
     def test_the_owner_reads_their_run(self, owned):
         run = owned("analysis_runs", user_id=OWNER["sub"], user_goal="g", created_at=STAMP)
         assert modelmate.assert_analysis_run_owner(OWNER, run)["id"] == run
@@ -131,7 +151,6 @@ class TestAbsenceAndRefusalLookTheSame:
     @pytest.mark.parametrize("gate,table,columns", [
         ("assert_project_owner", "projects", {"name": "p"}),
         ("assert_dataset_owner", "datasets", {"filename": "d.csv", "project_id": "p-1"}),
-        ("assert_analysis_run_owner", "analysis_runs", {"user_goal": "g", "created_at": "2026-08-22T00:00:00"}),
         ("assert_deployed_model_owner", "deployed_models", {"name": "m", "task_type": "classification"}),
     ])
     def test_a_missing_resource_answers_exactly_like_a_stranger_s(self, owned, gate, table, columns):
@@ -152,10 +171,12 @@ class TestTheGuestPathsAreDeliberate:
     고정해둔다 — 조용히 닫히면 옛 게스트 실행이 안 열리고, 조용히 넓어지면
     남의 자원이 열린다."""
 
+    @needs_runs
     def test_a_legacy_guest_run_is_readable_without_a_user_when_asked(self, owned):
         run = owned("analysis_runs", user_id=None, user_goal="g", created_at=STAMP)
         assert modelmate.assert_analysis_run_owner(None, run, allow_guest_legacy=True)["id"] == run
 
+    @needs_runs
     def test_a_legacy_guest_run_is_not_readable_when_it_is_not_asked(self, owned):
         run = owned("analysis_runs", user_id=None, user_goal="g", created_at=STAMP)
         with pytest.raises(HTTPException) as raised:
@@ -175,3 +196,28 @@ class TestTheGuestPathsAreDeliberate:
         with pytest.raises(HTTPException) as raised:
             modelmate.assert_deployed_model_owner(None, model)
         assert raised.value.status_code == 401
+
+
+class TestAMissingTableIsAMissingResource:
+    """`analysis_runs`가 아예 없는 설치. 갓 만든 DB가 그 상태이고 **CI가 정확히
+    그렇게 돈다** — 이 표는 에이전트 경로가 처음 쓸 때 만들어진다.
+
+    문지기는 그것을 알고 `sqlite3.OperationalError`를 잡아 "없는 자원"으로 다룬다.
+    그 갈래도 한 번도 발동된 적이 없었고, **여기서 처음 확인한다.** 잡지 않으면
+    갓 설치한 서버에서 어떤 실행을 조회하든 500이 난다 — 그리고 500은 "당신 것이
+    아니다"가 아니라 "우리가 고장났다"이다.
+
+    표가 있는 기계에서도 돌게 하려고 임시 DB를 가리킨다. `DB_PATH`는 모듈이
+    읽어 `DB_PATH` 전역에 담고 `get_db()`가 그것을 쓰므로, 그 전역만 바꾸면 된다.
+    """
+
+    def test_the_guard_reports_it_as_not_found(self, tmp_path, monkeypatch):
+        fresh = tmp_path / "empty.db"
+        monkeypatch.setattr(modelmate, "DB_PATH", str(fresh))
+        conn = modelmate.get_db()          # 빈 파일이 생기고, 표는 하나도 없다
+        conn.close()
+        assert not _has_table("analysis_runs")
+
+        with pytest.raises(HTTPException) as raised:
+            modelmate.assert_analysis_run_owner(OWNER, "any-run")
+        assert raised.value.status_code == 404
