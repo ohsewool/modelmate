@@ -34,10 +34,40 @@ async def auth_google(body: GoogleTokenBody, request: Request = None):
     name    = info.get("name", "")
     picture = info.get("picture", "")
 
+    # `try/finally`로 감싼다. 예전에는 마지막에 `conn.close()` 한 줄이었고, **중간에
+    # 예외가 나면 연결이 열린 채 남았다.** sqlite는 그 연결이 쥔 쓰기 잠금을 놓지
+    # 않으므로 이후 이 프로세스의 모든 쓰기가 `database is locked`로 죽는다.
+    #
+    # 도달 가능한 경로다: 비밀번호로 가입한 이메일과 같은 주소로 구글 로그인을 하면
+    # `users_email_ci` 유니크 인덱스가 INSERT를 거절한다. 2026-08-23에 재현했다 —
+    # 한 번 부딪히면 그 뒤 아무것도 쓰지 못했다.
+    #
+    # 이 파일에만 없던 관행이다. `052_workspace_projects.part`는 아홉 곳,
+    # `097_pilot_inquiries.part`는 세 곳에서 이미 `finally: conn.close()`를 쓴다.
     conn = get_db()
+    try:
+        return _auth_google_with(conn, user_id, email, name, picture)
+    finally:
+        conn.close()
+
+
+def _auth_google_with(conn, user_id, email, name, picture):
     existing = conn.execute("SELECT id, role FROM users WHERE id=?", (user_id,)).fetchone()
     trusted_role = "admin" if is_admin_email(email) else "user"
     if not existing:
+        # 같은 이메일을 이미 다른 계정이 쓰고 있으면 INSERT가 유니크 인덱스에 걸린다.
+        # 전에는 그 예외가 그대로 올라가 500이 되고 연결까지 남았다. **말해준다.**
+        #
+        # 두 계정을 잇는 것은 여기서 결정하지 않는다. 이메일 소유 증명 없이 이으면
+        # 계정 탈취 경로가 되고, 그것은 로그인 핸들러가 조용히 내릴 결정이 아니다.
+        # 무엇을 할지는 `work/ROADMAP.md`에 제품 결정으로 남겼다.
+        clash = find_user_by_email(conn, email, "id")
+        if clash and clash["id"] != user_id:
+            raise HTTPException(409, {
+                "code": "email_already_registered",
+                "message": "이 이메일은 이미 다른 방식으로 가입돼 있습니다.",
+                "recommended_next_action": "기존 방식(이메일·비밀번호)으로 로그인해 주세요.",
+            })
         role = trusted_role
         conn.execute(
             "INSERT INTO users (id, email, name, picture, role, plan, created_at) VALUES (?,?,?,?,?,?,?)",
@@ -64,7 +94,6 @@ async def auth_google(body: GoogleTokenBody, request: Request = None):
                     safe_details={"email": email, "previous_role": existing["role"],
                                   "source": "ADMIN_EMAILS 목록 일치"},
                 )
-    conn.close()
 
     token = make_token(user_id, email, name, picture, role=role)
     return {"token": token, "user": {"id": user_id, "email": email, "name": name, "picture": picture, "role": role}}
