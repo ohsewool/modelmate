@@ -29,6 +29,22 @@ jobs:
           pip install -r requirements.txt
           pip install pytest
 
+      - name: Record what a fresh install actually resolved
+        # `requirements.txt` names sixteen packages and pins none of them, so a
+        # fresh install resolves whatever is current that day. The numbers this
+        # repository publishes were produced against one particular set, and
+        # nothing said which.
+        #
+        # This step does not gate; it makes the resolution readable in the log.
+        # Two of the sixteen (`shap`, `optuna`) are not installed on the
+        # development machine, so their versions cannot be read there - which is
+        # why the lock file below is generated from this job rather than written
+        # by hand. A pinned version guessed from memory looks verified and is not.
+        run: |
+          python -m pip freeze --exclude-editable | sort > /tmp/resolved.txt
+          echo "── resolved on $(python -V 2>&1)"
+          cat /tmp/resolved.txt
+
       - name: Refuse a silently shrinking suite
         run: |
           collected=$(python -m pytest --collect-only -q 2>/dev/null \
