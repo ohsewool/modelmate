@@ -37,7 +37,26 @@ ROOT = Path(__file__).resolve().parents[1]
 LINK = re.compile(r"\[[^\]]*\]\((?!https?:|#|mailto:)([^)\s]+)\)")
 EXTENSIONS = "py|md|toml|yml|yaml|json|jsonl|csv|part|txt|cfg|sh|js|css|pkl|db"
 BACKTICK = re.compile(rf"`([A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)+\.(?:{EXTENSIONS}))`")
-HISTORICAL = re.compile(r"<!--\s*historical:")
+# **선언**과 **언급**은 다르다.
+#
+# 예전 정규식은 `<!--\s*historical:`을 파일 어디에서든 찾았다. 그래서 이 관례를
+# **설명하는 문장**이 있는 문서가 통째로 면제됐다 — 2026-08-22에 `README.md`가
+# 그 상태였다. 349줄에 "…은 각자 `<!-- historical: -->`로 선언돼 있다"고 적었고,
+# 그 한 문장이 **가장 많이 읽히는 문서를 모든 living-document 검사에서 빼버렸다.**
+# 두 회차 전에 아카이브를 정리하며 내가 쓴 문장이다.
+#
+# 이 프로젝트가 자기 테스트에서 여러 번 만난 함정("인용과 사용")이 면제 장치 안에
+# 있었다. 진짜 선언은 **줄 시작에, 문서 앞쪽에** 있다 — 추적되는 17개 중 15개가
+# 2~3줄이었고, 어긋난 둘은 정확히 산문 언급이었다.
+HISTORICAL = re.compile(r"^\s*<!--\s*historical:", re.MULTILINE)
+DECLARATION_WITHIN_LINES = 15
+
+
+def declared_historical(text: str) -> bool:
+    """문서 앞쪽에 줄 시작으로 놓인 선언만 인정한다."""
+    head = "\n".join(text.splitlines()[:DECLARATION_WITHIN_LINES])
+    return bool(HISTORICAL.search(head))
+
 
 # 에이전트 작업 노트. 저장소의 주장이 아니라 그때의 작업 기록이라 검사 대상이 아니다.
 SKIP_DIRECTORIES = (".codex", ".codex-prompts", ".agents", "node_modules", ".git")
@@ -52,7 +71,7 @@ def documents() -> list[Path]:
 
 def broken(path: Path) -> list[str]:
     text = path.read_text(encoding="utf-8", errors="replace")
-    if HISTORICAL.search(text):
+    if declared_historical(text):
         return []
     missing = []
     for pattern in (LINK, BACKTICK):
@@ -124,7 +143,7 @@ def main(argv: list[str] | None = None) -> int:
     failures = 0
     checked = skipped = 0
     for path in found:
-        if HISTORICAL.search(path.read_text(encoding="utf-8", errors="replace")):
+        if declared_historical(path.read_text(encoding="utf-8", errors="replace")):
             skipped += 1
             continue
         checked += 1

@@ -14,8 +14,8 @@
 지우지 않는다. 그때 무엇을 알고 무엇을 정했는지가 여기 있고, 지우면 그 기록이
 사라진다. 읽는 사람의 첫 화면에서 비켜놓을 뿐이다.
 
-이 저장소에는 [2026-08-21 QA 스냅숏](../qa/2026-08-21/README.md)과
-[2026-06-14 스냅숏](../2026-06-14/README.md)이 이미 있다. 같은 관례를 따른다.
+이 저장소에는 [2026-08-21 QA 스냅숏](../qa/2026-08-21/README.md)이 이미 있다.
+같은 관례를 따른다.
 
 ## 어떻게 읽나
 
@@ -23,7 +23,8 @@
 무효로 만드는 것들:
 
 - `backend/main_parts/*.py`가 `*.part`가 됐다
-- 적혀 있는 Railway URL은 무료 플랜 만료로 내려갔다(`work/ROADMAP.md`에 경위)
+- 적혀 있는 Railway URL은 무료 플랜 만료로 내려갔다. 경위는 [SECURITY.md](../../../SECURITY.md)와
+  `docs/deployment-checklist.md`에 있다
 - 저장소 이름 `ohsewool/-`가 `ohsewool/modelmate`가 됐다
 - 인증·사용량 한도·요청 격리·감사 기록이 통째로 다시 쓰였다
   (`docs/security-notes.md`, `docs/usage-limits.md`)
