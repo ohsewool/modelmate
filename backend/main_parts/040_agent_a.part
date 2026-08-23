@@ -6,7 +6,7 @@ async def run_agent(demo: bool = False, user=Depends(get_current_user)):
 
     task_type = STATE.get("task_type", "classification")
     n_unique = STATE.get("n_unique_target", 2)
-    cv = make_cv_for_target(y, task_type)
+    cv = cv_for_target_or_refuse(y, task_type)
 
     results = []
     model_map = REGRESSION_MODELS if task_type == "regression" else MODELS

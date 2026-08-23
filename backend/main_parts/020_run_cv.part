@@ -68,7 +68,7 @@ async def run_cv(user=Depends(get_current_user)):
         ))
     task_type = STATE.get("task_type", "classification")
     if task_type == "regression":
-        kf = make_cv_for_target(y, "regression")
+        kf = cv_for_target_or_refuse(y, "regression")
         results = []
         for name, fn in REGRESSION_MODELS.items():
             m = fn()
@@ -131,7 +131,7 @@ async def run_cv(user=Depends(get_current_user)):
 
     n_unique = STATE.get("n_unique_target", 2)
     is_binary = n_unique == 2
-    cv = make_cv_for_target(y, "classification")
+    cv = cv_for_target_or_refuse(y, "classification")
     scoring = classification_scoring(n_unique)
     results = []
     for name, fn in MODELS.items():

@@ -11,6 +11,44 @@ def make_cv_for_target(y, task_type="classification", desired=3):
     return StratifiedKFold(n_splits=max(2, min(desired, min_class)), shuffle=True, random_state=42)
 
 
+def cv_for_target_or_refuse(y, task_type="classification", desired=3):
+    """`make_cv_for_target`의 거절을 **사용자에게 닿는 400으로** 바꾼다.
+
+    그 함수의 두 `ValueError`는 이미 사용자를 향해 쓰여 있다:
+
+        "학습할 데이터가 너무 적습니다."
+        "일부 정답 값의 데이터가 1개뿐이라 교차검증을 할 수 없습니다."
+
+    그런데 라우트가 안 잡아서 전역 처리기까지 올라갔고, 사용자는
+    **500 "예상하지 못한 내부 오류 — 잠시 후 다시 시도하거나 관리자에게"**를 받았다.
+    정답 클래스 하나에 행이 하나뿐인 CSV는 흔하다. **문장은 이미 쓰여 있는데
+    배관이 그것을 버리고 있었다.**
+
+    `str(error)`를 그대로 싣지 않는다. 지금은 저 둘뿐이지만, 이 함수 안에서
+    sklearn이나 pandas가 던지는 것이 늘면 그 문구가 그대로 나간다 — 이 저장소가
+    `run_shap`에서 겪은 결함이다. **아는 문구만 통과시키고 나머지는 일반 문장으로
+    바꾼다.**
+    """
+    known = {
+        "학습할 데이터가 너무 적습니다.":
+            "행이 더 필요합니다. 최소 두 행 이상인 CSV로 다시 시도하세요.",
+        "일부 정답 값의 데이터가 1개뿐이라 교차검증을 할 수 없습니다.":
+            "각 정답 값이 최소 두 번씩 나오도록 데이터를 보완한 뒤 다시 시도하세요.",
+    }
+    try:
+        return make_cv_for_target(y, task_type, desired)
+    except ValueError as error:
+        message = str(error)
+        raise HTTPException(400, failure_detail(
+            "automl_training",
+            message if message in known else "이 데이터로는 교차검증을 할 수 없습니다.",
+            f"error_type={type(error).__name__}",
+            retry_possible=True,
+            recommended_next_action=known.get(
+                message, "데이터를 확인한 뒤 다시 시도하세요."),
+        )) from error
+
+
 def classification_scoring(n_unique):
     return "roc_auc" if n_unique == 2 else "roc_auc_ovr_weighted"
 
