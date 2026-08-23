@@ -150,14 +150,49 @@ def run(base_url):
     # it then refused with 409. One function answers it now, and this pins that
     # a job which cannot be rerun says so *and* says why, rather than the reason
     # appearing only after someone presses the button.
+    #
+    # These three checked a job this script had not created. `POST
+    # /api/training/jobs` does not always create one: if the project already has
+    # a job in `created`/`queued`/`running`, it returns *that* job with
+    # `duplicate_guard: True`. The reruns above leave exactly such a job behind
+    # for as long as they take to finish - 0.12s on one machine, longer on a
+    # loaded runner - and this script read whichever job came back as though it
+    # were the dataset-less one it asked for.
+    #
+    # That job has a dataset, so once it settled the three checks saw
+    # `can_rerun: true`, `rerun_blocked_reason: None` and a rerun that returns
+    # 200, and reported the can_rerun/409 defect as back. It was not back. The
+    # answer changed with how fast the runner was, which is worse than a wrong
+    # answer: a gate that is red on the same commit that was green trains people
+    # to press the button again instead of reading it.
+    #
+    # Two changes. A fresh project cannot have an active job, so the guard has
+    # nothing to return - that removes the race. And the guard is now *checked*
+    # rather than assumed, because "I got back the object I asked for" was the
+    # unstated premise the whole block rested on. The response said
+    # `duplicate_guard: True` the entire time; nothing looked.
+    solo = request("POST", join(base_url, "/api/projects"),
+                   payload={"name": "Failure Recovery Smoke (dataset-less)",
+                            "description": "A project of its own, so no rerun can be in flight here."},
+                   token=token_a)
+    solo_id = (solo["json"] or {}).get("id")
     dataset_less = request("POST", join(base_url, "/api/training/jobs"),
-                           payload={"project_id": project_id,
+                           payload={"project_id": solo_id,
                                     "run_config": {"smoke_force_failure": True}},
                            token=token_a)
-    dataset_less_id = (dataset_less["json"] or {}).get("job_id")
+    dataset_less_json = dataset_less["json"] or {}
+    dataset_less_id = dataset_less_json.get("job_id")
+    add(results, "the dataset-less job is the one this script asked for",
+        dataset_less_json.get("duplicate_guard") is not True,
+        f"duplicate_guard={dataset_less_json.get('duplicate_guard')}", dataset_less["status"])
     if dataset_less_id:
         state = wait_for_status(base_url, dataset_less_id, token_a, {"failed"})
         state_json = state["json"] or {}
+        # The premise of all three below. Without it they are assertions about
+        # whatever job the API happened to hand back.
+        add(results, "and it really has no dataset attached",
+            not state_json.get("dataset_id"),
+            f"dataset_id={state_json.get('dataset_id')}", state["status"])
         add(results, "a job with no dataset reports can_rerun false",
             state_json.get("can_rerun") is False, "can_rerun", state["status"])
         add(results, "and says why before anyone presses the button",
