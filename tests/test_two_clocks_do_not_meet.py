@@ -28,6 +28,7 @@ from __future__ import annotations
 import ast
 import re
 import sys
+import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -44,6 +45,32 @@ BACKEND = ROOT / "backend"
 FRONTEND = ROOT / "frontend" / "src"
 
 
+@pytest.fixture
+def at_offset(monkeypatch):
+    """이 검사가 도는 동안 프로세스의 시간대를 정한다.
+
+    **기계가 정하게 두면 검사의 뜻이 기계마다 달라진다.** 이 파일은 그 함정을 한 번
+    밟았다: 컨테이너가 UTC라 통과하던 단언이 오프셋 +9에서 빨간불이었고, 틀린 것은
+    제품이 아니라 검사였다.
+
+    POSIX `TZ` 문자열의 부호는 **뒤집혀 있다** — `UTC-9`가 UTC보다 9시간 *빠른*
+    곳이다. 그 혼동을 부르는 쪽에 넘기지 않으려고 여기서 한 번만 뒤집는다.
+    """
+    if not hasattr(time, "tzset"):        # Windows
+        pytest.skip("time.tzset()이 없는 플랫폼")
+
+    def apply(hours: int):
+        monkeypatch.setenv("TZ", f"UTC{-hours:+d}")
+        time.tzset()
+        actual = datetime.now().astimezone().utcoffset()
+        assert actual == timedelta(hours=hours), (
+            f"시간대를 {hours:+d}로 못 맞췄다(실제 {actual}) — 맞추지 못한 채 "
+            "이어가면 이 검사는 아무 오프셋에 대해 답하는지 모르게 된다")
+
+    yield apply
+    time.tzset()          # monkeypatch가 TZ를 되돌린 뒤 프로세스에도 반영한다
+
+
 class TestTheSortComparesInstantsNotStrings:
     def test_the_same_instant_spelled_two_ways_is_equal(self):
         """오프셋에 기대지 않는다. 이 컨테이너는 오프셋이 0이라 KST를 가정한
@@ -55,14 +82,25 @@ class TestTheSortComparesInstantsNotStrings:
             timespec="seconds") + "Z"
         assert modelmate._instant(local_spelling) == modelmate._instant(utc_spelling)
 
-    def test_a_string_sort_inverts_them_at_this_offset_too(self):
-        """오프셋이 0이어도 뒤집힌다 — 두 시계는 **자릿수도 다르다.**
+    def test_a_string_sort_inverts_them_at_offset_zero(self, at_offset):
+        """오프셋이 0이면 뒤집힌다 — 두 시계는 **자릿수도 다르다.**
 
         `experiments`는 `datetime.now().isoformat()`이라 마이크로초까지 쓰고,
         `analysis_runs`는 `timespec="seconds"` + `"Z"`다. 같은 초 안에서
         `'.'`(0x2E)가 `'Z'`(0x5A)보다 앞이라, **나중에 쓰인 실험이 먼저 쓰인
-        에이전트 실행 아래로 내려간다.** 시간대를 고쳐도 이건 안 고쳐진다.
+        에이전트 실행 아래로 내려간다.**
+
+        **이 검사는 오프셋 0을 스스로 만든다.** 예전에는 컨테이너가 마침 UTC라서
+        통과했고, 이름은 "at this offset too"였다 — *이 오프셋*이 무엇인지는
+        기계가 정하고 있었다. 오프셋 +9(이 프로젝트를 만드는 사람이 있는 곳)에서는
+        아래 두 값이 **같은 순간의 두 표기가 아니게 되어** 빨간불이었다. 표시자 없는
+        `10:00:00.5`는 그곳에서 UTC 01:00이고, 그러면 `later`가 이름과 달리 더
+        이르다. 무너진 것은 제품이 아니라 **검사가 고른 리터럴**이다.
+
+        오프셋과 무관하게 참이어야 하는 성질은 아래
+        `test_the_order_follows_the_instant_at_any_offset`에 따로 있다.
         """
+        at_offset(0)
         earlier = {"created_at": "2026-08-23T10:00:00Z"}
         later = {"created_at": "2026-08-23T10:00:00.500000"}
 
@@ -72,6 +110,27 @@ class TestTheSortComparesInstantsNotStrings:
 
         by_instant = sorted([earlier, later], key=modelmate._newest_first, reverse=True)
         assert by_instant[0] is later
+
+    @pytest.mark.parametrize("hours", [-11, -5, 0, 5, 9, 14])
+    def test_the_order_follows_the_instant_at_any_offset(self, hours, at_offset):
+        """**어떤 오프셋에서도** 참이어야 하는 쪽. 리터럴을 고정하는 대신 두 표기를
+        그 오프셋에서 만들어, 나중 순간이 나중으로 정렬되는지만 묻는다.
+
+        위 검사가 기계의 시간대에 기대고 있었다는 것을 알고 나서 추가했다. 하나를
+        오프셋 0에 못 박았으면, **오프셋에 기대지 않는 주장도 하나 있어야 한다** —
+        아니면 남는 것은 "UTC 기계에서는 맞다"뿐이다.
+        """
+        at_offset(hours)
+        first = datetime(2026, 8, 23, 10, 0, 0, tzinfo=timezone.utc)
+        second = first + timedelta(seconds=30)
+
+        older = {"created_at": first.replace(tzinfo=None).isoformat(
+            timespec="seconds") + "Z"}
+        newer = {"created_at": second.astimezone().replace(tzinfo=None).isoformat()}
+
+        order = sorted([older, newer], key=modelmate._newest_first, reverse=True)
+        assert order[0] is newer, (
+            f"오프셋 {hours:+d}에서 나중 순간이 위로 오지 않는다: {order}")
 
     def test_a_nine_hour_offset_inverts_a_whole_afternoon(self):
         """왜 이게 큰지. 시스템 시간대에 기대지 않고 명시적으로 계산한다."""

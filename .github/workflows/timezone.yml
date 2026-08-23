@@ -1,0 +1,69 @@
+name: timezone
+
+# **스위트를 UTC가 아닌 곳에서도 돌린다. 주 1회.**
+#
+# 이 컨테이너와 GitHub 러너는 둘 다 UTC다. 그래서 "기계의 시간대에 기대는 검사"는
+# 여기서 영원히 초록불이고, **이 프로젝트를 만드는 사람의 기계(KST, UTC+9)에서만
+# 빨간불**이 된다. 그런 빨간불은 자기 변경 탓으로 읽히고, 실제로는 아무 관계가 없다.
+#
+# 2026-08-24에 하나 있었다. `test_two_clocks_do_not_meet.py`가 표시자 없는
+# `10:00:00.500000`을 "`10:00:00Z`보다 나중"이라고 못 박아 뒀는데, 그건 오프셋이
+# 0 이하일 때만 참이다. KST에서 그 값은 UTC 01:00이라 더 이르다. **틀린 것은
+# 제품이 아니라 검사가 고른 리터럴이었다.**
+#
+# 그 검사는 이제 자기 오프셋을 스스로 만든다. 이 워크플로가 보는 것은 **아직 모르는
+# 다음 하나**다.
+#
+# 매 push에 두 번 더 돌리지 않는 이유는 coverage.yml에 적은 것과 같다 — 값이
+# 시간이고, 늘 기다리게 하는 관문은 결국 꺼진다. 푸시 검사는 배포처(UTC)와 같은
+# 조건으로 두고, 여기서 나머지를 본다.
+
+on:
+  schedule:
+    - cron: "41 3 * * 3"     # 수요일, 다른 주간 작업과 겹치지 않게
+  workflow_dispatch:
+
+jobs:
+  other-offsets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false        # 한쪽이 깨져도 나머지 오프셋의 결과를 보고 싶다
+      matrix:
+        include:
+          - tz: "UTC-9"       # POSIX 부호는 뒤집혀 있다 — 이것이 KST(UTC+9)다
+            label: "KST (UTC+9) — 만드는 사람이 있는 곳"
+          - tz: "UTC-14"      # 날짜가 하루 앞서는 극단
+            label: "UTC+14 — 날짜가 하루 앞선다"
+          - tz: "UTC+11"      # 날짜가 하루 뒤처지는 극단
+            label: "UTC-11 — 날짜가 하루 뒤처진다"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install
+        run: |
+          python -m pip install -q --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Confirm the offset actually took
+        # **먼저 대조다.** `TZ`가 안 먹으면 이 작업은 UTC로 한 번 더 도는 것이고,
+        # 그 초록불은 "다른 시간대에서도 된다"로 읽힌다. 이 저장소는 아무것도 안
+        # 본 초록불을 여러 번 잡았다.
+        env:
+          TZ: ${{ matrix.tz }}
+        run: |
+          python - <<'PY'
+          import datetime, os
+          offset = datetime.datetime.now().astimezone().utcoffset()
+          print(f"TZ={os.environ['TZ']} · 오프셋 {offset} · 지금 {datetime.datetime.now():%Y-%m-%d %H:%M}")
+          if offset == datetime.timedelta(0):
+              raise SystemExit("::error::TZ가 안 먹었다 — UTC로 도는 중이다. 이 작업은 아무것도 확인하지 않는다.")
+          PY
+
+      - name: Suite at ${{ matrix.label }}
+        env:
+          TZ: ${{ matrix.tz }}
+        run: python -m pytest -q -p no:cacheprovider
