@@ -1,0 +1,11 @@
+{
+  "measured_at": "2026-08-24",
+  "command": "python3 scripts/measure_part_coverage.py --json  (pytest) 그리고 --smoke --json",
+  "statements": 4323,
+  "pytest_percent": 48.4,
+  "smoke_percent": 53.1,
+  "union_percent": 63.8,
+  "functions": 325,
+  "functions_never_run": 12,
+  "note": "합집합이 CI가 실제로 지키는 값이다. pytest와 스모크 열다섯을 모두 돌린 결과."
+}

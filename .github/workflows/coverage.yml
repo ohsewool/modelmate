@@ -1,0 +1,74 @@
+name: coverage
+
+# **주간이다. 매 푸시가 아니다.**
+#
+# `sys.settrace`로 스위트를 두 번 돌리는 일이라 몇십 분 걸린다. 매 푸시마다 하면
+# 아무도 안 기다리고, 안 기다리면 끄게 된다.
+#
+# `tests/test_the_coverage_numbers_are_current.py`가 **문서가 기록에서 떠나는 것**을
+# 매 푸시마다 잡는다. 여기서는 **기록이 현실에서 떠나는 것**을 잡는다. 둘 다 있어야
+# 하는 이유는 그 검사 파일에 적어뒀다 — 하나만 있으면 기록과 문서가 함께 틀린 채로
+# 서로 맞을 수 있다.
+
+on:
+  schedule:
+    - cron: "23 5 * * 2"     # 화요일, 정각을 피해서
+  workflow_dispatch:
+
+jobs:
+  remeasure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install
+        run: |
+          python -m pip install -q --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Measure again and compare with the record
+        run: |
+          python scripts/measure_part_coverage.py --json /tmp/cov-pytest.json > /dev/null
+          python scripts/measure_part_coverage.py --smoke --json /tmp/cov-smoke.json > /dev/null
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          record = json.loads(Path("docs/coverage-record.json").read_text(encoding="utf-8"))
+          a = json.loads(Path("/tmp/cov-pytest.json").read_text(encoding="utf-8"))
+          b = json.loads(Path("/tmp/cov-smoke.json").read_text(encoding="utf-8"))
+
+          total = sum(v["statements"] for v in a.values())
+          def percent(missed):
+              return round((total - missed) / total * 100, 1)
+
+          measured = {
+              "statements": total,
+              "pytest_percent": percent(sum(len(v["missed"]) for v in a.values())),
+              "smoke_percent": percent(sum(len(b.get(o, {"missed": []})["missed"]) for o in a)),
+              "union_percent": percent(sum(
+                  len(set(a[o]["missed"]) & set(b.get(o, {}).get("missed", []))) for o in a)),
+          }
+          print("기록:", {k: record[k] for k in measured})
+          print("측정:", measured)
+
+          # **오차를 허용한다.** 러너가 다르면 선택적 의존이 있고 없고에 따라 한두 줄이
+          # 갈린다. 허용치 없이 두면 이 워크플로는 늘 빨간불이고, 늘 빨간불인 것은
+          # 아무도 안 본다. 다만 **허용치를 넘으면 반드시 실패한다.**
+          problems = []
+          if measured["statements"] != record["statements"]:
+              problems.append(f"문 수가 다르다: 기록 {record['statements']} vs 측정 {measured['statements']}")
+          for key in ("pytest_percent", "smoke_percent", "union_percent"):
+              if abs(measured[key] - record[key]) > 1.5:
+                  problems.append(f"{key}: 기록 {record[key]}% vs 측정 {measured[key]}%")
+          if problems:
+              print("::error::기록이 현실과 어긋난다. docs/coverage-record.json과 README를 함께 고쳐라.")
+              for problem in problems:
+                  print("   ", problem)
+              raise SystemExit(1)
+          print("기록이 아직 참이다.")
+          PY
