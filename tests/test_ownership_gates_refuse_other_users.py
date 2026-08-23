@@ -50,8 +50,34 @@ def _has_table(name: str) -> bool:
 # 쓸 때 `CREATE TABLE IF NOT EXISTS`로 만든다. 갓 설치한 곳에는 없고, CI가 정확히 그
 # 상태다. 문지기도 그것을 알고 있어서 `sqlite3.OperationalError`를 잡아 "없는 자원"으로
 # 다룬다 — 그 갈래를 아래에서 따로 확인한다.
-needs_runs = pytest.mark.skipif(not _has_table("analysis_runs"),
-                                reason="analysis_runs는 에이전트 경로가 처음 쓸 때 만들어진다")
+def _ensure_analysis_runs() -> bool:
+    """`analysis_runs`를 **만든다.** 없다고 건너뛰지 않는다.
+
+    예전에는 `skipif`였다. 이 표는 에이전트 경로가 처음 쓸 때 만들어지므로,
+    **갓 만든 DB에서는 없다** — 즉 CI에서는 늘 없다. 개발 기계에는 예전 실행이
+    남긴 표가 있어서 여기서는 넷이 돌았고, **CI에서는 넷 다 건너뛰었다.**
+
+    건너뛴 것이 무엇인지가 요점이다. 남의 분석 실행에 접근하면 거절하는지를 보는
+    검사 넷 — **소유권 관문이 CI에서 한 번도 확인되지 않았다.** 초록불이었고,
+    로컬에서 통과했고, 정작 지켜야 할 곳에서는 안 돌았다.
+
+    스키마를 만드는 함수가 이미 있다. 없다고 물러설 이유가 없었다.
+    """
+    from backend.agents.persistence import ensure_agent_trace_schema
+
+    conn = modelmate.get_db()
+    try:
+        ensure_agent_trace_schema(conn)
+        conn.commit()
+    finally:
+        conn.close()
+    return _has_table("analysis_runs")
+
+
+# 표를 만들지 **못하면** 그때는 건너뛴다 — 그리고 그 사실이 화면에 남는다.
+needs_runs = pytest.mark.skipif(
+    not _ensure_analysis_runs(),
+    reason="analysis_runs를 만들지 못했다 — 건너뛴 게 아니라 못 만든 것이다")
 
 
 def _insert(table: str, **columns) -> str:
