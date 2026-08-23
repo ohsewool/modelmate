@@ -206,9 +206,16 @@ Railway에 배포해 운영했다. 그 인스턴스는 **무료 플랜 만료로
 
 갈리지 않은 것은 상태다. 재현했다.
 
+<!-- surface-record: start — 이 안의 경로 이름은 **측정 기록**이지 호출이 아니다.
+     이 울타리가 없으면 "B가 /api/columns를 부른다"고 **적는 행위**가 그 라우트를
+     "누가 부르는 라우트"로 만든다. 열 번째로 만난 인용-사용 혼동이고, 이번엔 이
+     절을 쓰자마자 `test_every_route_has_a_caller`가 빨개져서 알았다. -->
+
     A(익명)  POST /api/upload   환자기록.csv → 200
     B(익명)  GET  /api/columns  → 200  ['환자ID', '진단코드', '결과']
     C(게스트) GET  /api/columns  → 400  (자기 버킷은 비어 있다)
+
+<!-- surface-record: end -->
 
 `_scope_state_to_the_caller`가 *"Anything unauthenticated falls into the shared
 default"*라고 **적어둔 결정**이다. 결정은 적혀 있었고 **그것이 무슨 뜻인지는 안 적혀
