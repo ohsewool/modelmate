@@ -148,11 +148,26 @@ class TestHistoryIsScopedExceptForAdmins:
         assert marker in json.dumps(call(modelmate.get_history, user=admin),
                                     ensure_ascii=False)
 
-    def test_an_anonymous_caller_sees_nothing_of_either(self, rows):
+    def test_an_anonymous_caller_is_refused(self, rows):
+        """**이 검사는 통과하고 있었는데, 확인하는 것이 아니었다.**
+
+        예전 이름은 `test_an_anonymous_caller_sees_nothing_of_either`였고, DB에 심은
+        무작위 표식이 응답에 없는지를 봤다. 그런데 익명 갈래는 **DB를 아예 안 읽고**
+        `experiment_history.json`을 돌려주고 있었다 — 그 파일에 DB 표식이 들어갈 리가
+        없으니 단언은 언제나 참이었다.
+
+        2026-08-23에 `TestClient`로 앱을 통과시켜 보고서야 알았다: 그 갈래가 익명
+        호출자에게 **43건**(타깃 컬럼명·데이터 크기·모델 점수)을 주고 있었다.
+        같은 갈래의 `DELETE`는 그 파일을 지웠다.
+
+        *지나가는 것과 확인하는 것은 다르다.* 이제 401을 요구한다.
+        """
         marker = uuid.uuid4().hex[:10]
         self.experiments(rows, marker)
-        assert marker not in json.dumps(call(modelmate.get_history, user=None),
-                                        ensure_ascii=False)
+        with pytest.raises(HTTPException) as refused:
+            call(modelmate.get_history, user=None)
+        assert refused.value.status_code == 401
+        assert marker not in json.dumps(refused.value.detail, ensure_ascii=False)
 
 
 @pytest.fixture
