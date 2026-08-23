@@ -28,6 +28,8 @@ from pathlib import Path
 
 import pytest
 
+from fastapi import HTTPException
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
@@ -124,12 +126,73 @@ class TestTheCheckIsNotVacuous:
         assert limits["free"]["max_report_exports_per_day"] is not None
 
     def test_enforce_limit_raises_when_over(self):
-        """강제 함수가 예외를 낼 줄 아는지. 조용히 통과하면 배선해도 소용없다."""
-        with pytest.raises(Exception):
+        """강제 함수가 **무엇을** 내는지까지 묻는다.
+
+        원래는 `pytest.raises(Exception)`이었다. 그건 `TypeError`도, 오타로 생긴
+        `NameError`도 통과시킨다 — **예외판 `!= `이고, 무엇이 왔는지 묻지 않는다.**
+        도구로 재보니 이 검사가 지나는 `raise`를 599로 바꿔도 초록불이었다:
+        이름은 "raises when over"인데 무엇을 raise하는지는 확인한 적이 없다.
+        """
+        with pytest.raises(HTTPException) as caught:
             modelmate.enforce_limit({"sub": "u1", "role": "user"},
                                     "max_report_exports_per_day", 999,
                                     "테스트")
+        assert caught.value.status_code == 429
+        assert caught.value.detail["code"] == "usage_limit_exceeded"
+        assert caught.value.detail["limit_key"] == "max_report_exports_per_day"
 
     def test_enforce_limit_is_quiet_when_under(self):
         modelmate.enforce_limit({"sub": "u1", "role": "user"},
                                 "max_report_exports_per_day", 0, "테스트")
+
+class TestTheExportItselfRefusesWhenTheDayIsSpent:
+    """`record_report_export`의 429. **도구가 찾아낸 두 번째 자리다.**
+
+    이 줄을 지나는 검사는 하나 있었는데(`test_exactly_the_limit_gets_through`),
+    그 검사가 보는 것은 **정확히 한도만큼 통과하는가**이지 그다음 하나가 어떻게
+    거절되는가가 아니다. 지나가는 것과 확인하는 것은 다르다.
+
+    `enforce_limit`과 이것은 다른 자리다. 앞의 것은 세어보고 미리 막고, 이것은
+    **실제로 하루치를 집어 든 다음** 실패하면 막는다 — 그 순서가
+    `record_report_export`의 독스트링이 설명하는 설계다(미리 세고 되돌리면
+    400으로 끝난 호출이 할당량을 먹는다).
+    """
+
+    @pytest.fixture
+    def spent_user(self):
+        import uuid
+        user = {"sub": f"export-{uuid.uuid4().hex[:8]}",
+                "email": f"{uuid.uuid4().hex[:6]}@export.test", "role": "user"}
+        limit = modelmate.get_plan_limits(user)["max_report_exports_per_day"]
+        assert limit and limit > 0, "한도가 없으면 이 검사는 아무것도 확인하지 않는다"
+        for _ in range(limit):
+            modelmate.record_report_export(user)
+        return user, limit
+
+    def test_the_next_export_is_refused(self, spent_user):
+        user, limit = spent_user
+        with pytest.raises(HTTPException) as refused:
+            modelmate.record_report_export(user)
+        assert refused.value.status_code == 429
+        assert refused.value.detail["limit_key"] == "max_report_exports_per_day"
+        assert refused.value.detail["limit"] == limit
+
+    def test_it_says_what_the_plan_allows(self, spent_user):
+        """거절만 하고 한도를 안 알려주면 사용자가 요금제를 고를 수 없다."""
+        user, limit = spent_user
+        with pytest.raises(HTTPException) as refused:
+            modelmate.record_report_export(user)
+        assert refused.value.detail["current"] >= limit
+        assert refused.value.detail["plan"]
+
+    def test_exactly_the_limit_got_through(self, spent_user):
+        """**되돌림 방향.** 처음부터 막는 구현이면 위 검사는 통과하지만 제품은
+        망가진다. 픽스처가 한도만큼 성공했다는 것 자체가 그 확인이다."""
+        user, limit = spent_user
+        usage = modelmate.get_account_usage(user)
+        assert usage["report_exports_today"] == limit
+
+    def test_an_anonymous_caller_is_not_metered(self, spent_user):
+        """로그인하지 않은 호출은 이 함수가 세지 않는다 — 셀 사람이 없다.
+        조용히 통과하는 것이 여기서는 맞고, 그 사실을 적어둔다."""
+        modelmate.record_report_export(None)

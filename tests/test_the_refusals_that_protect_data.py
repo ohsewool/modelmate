@@ -127,13 +127,31 @@ class TestADisabledPredictionApiIsGone:
         assert refused.value.detail["error_type"] == "prediction_api_disabled"
 
     @pytest.mark.parametrize("handler", ["v1_predict", "v2_predict"])
-    def test_an_enabled_model_is_not_refused_with_410(self, handler, owner):
-        """**되돌림 방향.** 무엇이든 410을 내는 구현도 위 검사는 통과한다."""
+    def test_an_enabled_model_falls_through_to_the_missing_file(self, handler, owner):
+        """**되돌림 방향인데 `!=`로 썼던 자리다.**
+
+        원래는 `assert raised.status_code != 410`이었다. 그러면 **무엇이 왔는지는
+        묻지 않는다** — 404든 500이든 599든 통과한다. 도구로 재보니 이 검사가
+        지나는 `404`(모델 파일 없음)를 아무도 확인하지 않고 있었다.
+
+        켜져 있는 모델은 410을 지나 **디스크의 `.pkl`을 찾으러 가고**, 픽스처는
+        DB 행만 만들었으니 거기서 404가 나온다. 그것이 이 경로의 정답이다.
+        """
         model_id = deployed_model(owner["sub"], disabled=False)
-        try:
+        with pytest.raises(HTTPException) as raised:
             call(getattr(modelmate, handler), model_id=model_id, body={})
-        except HTTPException as raised:
-            assert raised.status_code != 410, "켜져 있는데 Gone이라고 한다"
+        assert raised.value.status_code == 404, "켜진 모델이 410으로 막힌다"
+        assert model_id in str(raised.value.detail)
+
+    def test_the_twins_agree_on_a_missing_file_too(self, owner):
+        """쌍둥이는 **꺼진 경우만이 아니라 파일이 없는 경우에도** 같아야 한다."""
+        model_id = deployed_model(owner["sub"], disabled=False)
+        codes = []
+        for handler in ("v1_predict", "v2_predict"):
+            with pytest.raises(HTTPException) as raised:
+                call(getattr(modelmate, handler), model_id=model_id, body={})
+            codes.append(raised.value.status_code)
+        assert codes[0] == codes[1], f"v1과 v2가 다르게 답한다: {codes}"
 
     def test_the_twins_agree(self, owner):
         """같은 모델에 두 라우트가 **같은 답**을 하는가."""
@@ -348,10 +366,63 @@ class TestAnOversizedUploadIsRefused:
         assert refused.value.detail["limit_key"] == "max_file_size_mb"
         assert refused.value.detail["limit"] == self.limit_mb()
 
-    def test_a_small_file_is_not_refused_for_size(self, owner, clean_state):
-        """**되돌림 방향.** 무엇이든 413을 내는 구현도 위 검사는 통과한다."""
+    def test_a_small_file_is_refused_for_being_no_dataset_not_for_size(
+            self, owner, clean_state):
+        """**여기도 `!=`로 써뒀던 자리다.**
+
+        원래는 `!= 413`이었다. 그러면 무엇이 왔는지 안 묻는다. 두 줄짜리 CSV는
+        크기가 아니라 **데이터셋으로 보기 어렵다는 이유로** 400이 나온다 — 그
+        구분이 이 검사의 값이고, `!=`는 그걸 지운다.
+        """
         small = b"a,b\n1,2\n3,4\n"
-        try:
+        with pytest.raises(HTTPException) as raised:
             call(modelmate.upload, file=self.upload_file(small), user=owner)
-        except HTTPException as raised:
-            assert raised.status_code != 413, "작은 파일에 크기 초과라고 한다"
+        assert raised.value.status_code == 400
+        detail = raised.value.detail
+        assert detail.get("code") != "usage_limit_exceeded", "작은 파일에 크기 초과라고 한다"
+        assert "tips" in detail, "왜 안 되는지 알려주지 않는다"
+
+class TestChoosingATargetThatIsNotThere:
+    """`400`. 없는 컬럼을 타깃으로 고르면 거절한다.
+
+    **도달은 하는데 아무도 확인하지 않던 자리다.** `automl_training_tool`을 지나는
+    검사가 여기를 지나가지만, 그 검사는 도구의 `success is False`만 단언한다 —
+    도구의 계약이지 이 라우트의 거절이 아니다. **한 줄을 지나는 것과 그 줄을
+    확인하는 것은 다르다.**
+
+    거절하지 않으면 무슨 일이 생기는가. 타깃이 없는 채로 학습이 시작되고, 사용자는
+    자기가 고른 컬럼이 무시된 결과를 받는다 — 그 결과가 무엇에 대한 예측인지
+    화면에는 안 적힌다.
+    """
+
+    @pytest.fixture
+    def uploaded(self):
+        import pandas as pd
+        before = dict(modelmate.STATE)
+        modelmate.STATE.clear()
+        modelmate.STATE["df"] = pd.DataFrame({"나이": [1, 2, 3], "결과": [0, 1, 0]})
+        yield
+        modelmate.STATE.clear()
+        modelmate.STATE.update(before)
+
+    def test_an_unknown_column_is_refused(self, uploaded):
+        with pytest.raises(HTTPException) as refused:
+            call(modelmate.set_target, body={"target_col": "그런 컬럼 없음"})
+        assert refused.value.status_code == 400
+        assert "그런 컬럼 없음" in refused.value.detail["user_friendly_message"], (
+            "무엇을 고쳐야 하는지 말하지 않는다")
+
+    def test_a_real_column_is_accepted(self, uploaded):
+        """**되돌림 방향.** 무엇이든 거절하는 구현도 위 검사는 통과한다.
+        그리고 이번에는 `!=`로 쓰지 않는다 — 통과하는지를 직접 본다."""
+        result = call(modelmate.set_target, body={"target_col": "결과"})
+        assert result, "멀쩡한 컬럼을 골랐는데 아무것도 안 준다"
+
+    def test_without_an_upload_it_says_so(self, uploaded):
+        """없는 업로드와 없는 컬럼은 **사용자가 할 일이 다르다** — 하나는 CSV를
+        다시 올리고, 하나는 컬럼을 다시 고른다."""
+        modelmate.STATE.pop("df")
+        with pytest.raises(HTTPException) as refused:
+            call(modelmate.set_target, body={"target_col": "결과"})
+        assert refused.value.status_code == 400
+        assert "업로드" in refused.value.detail["user_friendly_message"]

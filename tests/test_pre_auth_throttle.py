@@ -172,5 +172,8 @@ class TestTheChecksAreNotVacuous:
         anonymous = SimpleNamespace(client=None, headers={})
         for _ in range(modelmate.AUTH_ATTEMPT_LIMIT):
             modelmate.enforce_auth_attempt_limit(anonymous)
-        with pytest.raises(Exception):
+        # 같은 파일의 다른 셋은 `caught.value.status_code`까지 본다. 여기만
+        # **무엇이 왔는지 안 묻고** 있었다 — 한 파일 안에서 규칙이 갈렸다.
+        with pytest.raises(Exception) as caught:
             modelmate.enforce_auth_attempt_limit(anonymous)
+        assert caught.value.status_code == 429

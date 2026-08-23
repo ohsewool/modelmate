@@ -252,8 +252,11 @@ class TestTheChecksAreNotVacuous:
         current = modelmate.resolve_jwt_secret()
         forged = jwt.encode({"sub": "forged", "role": "admin"},
                             PUBLISHED_SECRET, algorithm="HS256")
-        with pytest.raises(Exception):
+        # **무엇으로 거부하는지 묻는다.** `Exception`만 두면 인자를 잘못 넘겨
+        # 생긴 `TypeError`도 "위조 거부"로 읽힌다.
+        with pytest.raises(Exception) as caught:
             jwt.decode(forged, current, algorithms=["HS256"])
+        assert "signature" in str(caught.value).lower(), caught.value
         # 대조: 현재 키로 서명한 것은 통과해야 한다. 안 그러면 위 검사는
         # "무엇이든 거부한다"는 뜻이고 아무것도 확인하지 않는다.
         honest = jwt.encode({"sub": "real", "role": "user"}, current, algorithm="HS256")
