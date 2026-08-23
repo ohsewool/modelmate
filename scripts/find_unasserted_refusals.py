@@ -188,9 +188,25 @@ def sweep(trace_file: Path) -> int:
         print(f"  {'확인 안 됨' if result.returncode == 0 else '확인됨':12} "
               f"{where:34} {function:32} 검사 {len(tests)}개", flush=True)
 
-    print(f"\n도달하는 지점 {checked}개 · **확인되지 않는 것 {len(unasserted)}개**")
+    # **분모를 적는다.** 예전에는 이 줄이 "도달하는 지점 58개 · 확인되지 않는 것
+    # 0개"였고, 그건 *닿은 58개에 대해서만* 참이었다. 소스에는 112개가 있었고
+    # 나머지 54개는 보고에 아예 없었다 — 한 번도 돌지 않은 거부는 확인되지 않은
+    # 거부보다 나쁜데, 화면에서는 그것이 0으로 보였다.
+    #
+    # 이 도구가 잡으려는 결함이 바로 그 모양이다(도달·확인·미확인을 구별하는 것).
+    # 자기 보고에서 그걸 저지르면 앞뒤가 안 맞는다.
+    never = sorted(set(sites) - set(by_site))
+    print(f"\n소스의 거부 지점 {len(sites)}개")
+    print(f"  도달함        {checked}개 · **확인되지 않는 것 {len(unasserted)}개**")
+    print(f"  **한 번도 도달 안 함  {len(never)}개**"
+          + ("  ← 이쪽이 더 나쁘다. 한 줄도 돈 적이 없다." if never else ""))
     for where, function, count in unasserted:
         print(f"    {where:34} {function}  (검사 {count}개가 지나가지만 아무도 안 본다)")
+    if never:
+        from collections import Counter as _Counter
+        print("\n한 번도 도달하지 않는 지점 (조각별):")
+        for owner, count in _Counter(sites[w][0] for w in never).most_common():
+            print(f"    {owner:38} {count}개")
     if skipped:
         # **못 잰 것을 0으로 세지 않는다.** 조용히 빼면 이 도구도 초록불이 된다.
         print(f"\n재지 못한 지점 {len(skipped)}개:")
