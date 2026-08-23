@@ -170,6 +170,9 @@ class TestNoHandlerHandsBackARawException:
         """**반대 방향.** `failure_detail`을 아무도 안 쓰면 위 검사는 '없음'을 두고
         초록불이지만, 그건 관례가 지켜진 게 아니라 사라진 것이다."""
         source = assembled().source
-        assert source.count("failure_detail(") == 12, (
+        # 12 → 13 (2026-08-23). `execute_goal_first_agent_run_api`가 계획 없는
+        # 실행을 409로 바꾸면서 하나 늘었다. **이 못이 그 변경을 잡아냈고**,
+        # 메시지가 시킨 대로 수를 고쳤다 — 늘어난 것은 좋은 방향이다.
+        assert source.count("failure_detail(") == 13, (
             "`failure_detail` 호출 수가 바뀌었다. 늘어난 것은 좋고, 줄었다면 "
             "무엇이 그 자리를 대신하는지 보고 이 수를 고쳐라.")
