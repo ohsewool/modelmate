@@ -36,8 +36,31 @@ async def run_shap():
             STATE["shap_values"] = sv.tolist()
         STATE["shap_sample_idx"] = samp.index.tolist()
         return {"type": shap_type, "global": g}
-    except Exception as e:
-        raise HTTPException(500, str(e))
+    except Exception as error:
+        # **예전에는 `raise HTTPException(500, str(e))`였다.**
+        #
+        # 클라이언트가 예외 문자열을 그대로 받았다. 재현해 보면 이런 것이 나간다:
+        #
+        #     cannot load artifact: /home/jovyan/work/modelmate/models/u-42/best.pkl (uid=1000)
+        #
+        # 절대 경로와 uid가 섞인다. 이 저장소의 나머지 스물넷은 `failure_detail`로
+        # **말할 것과 안 말할 것을 가려서** 내보내는데, 이 한 줄만 그 관례 밖에 있었다.
+        # 안 도는 줄이라 아무도 안 봤다 — 안쪽 되돌림까지 실패해야 여기 닿는다.
+        #
+        # 예외 종류는 남긴다. `type(error).__name__`은 화면에 띄워도 되는 만큼의
+        # 정보이고, 진짜 메시지는 보안 기록으로 간다.
+        if "record_security_event" in globals():
+            record_security_event(
+                "explain.shap_failed", "SHAP 설명 생성이 실패했다",
+                route="/api/run-shap", method="POST", status_code=500,
+                severity="warning",
+                safe_details={"error_type": type(error).__name__})
+        raise HTTPException(500, failure_detail(
+            "explainability",
+            "설명을 만들지 못했습니다.",
+            f"error_type={type(error).__name__}",
+            retry_possible=True,
+            recommended_next_action="분석을 다시 실행한 뒤 설명을 요청해 주세요."))
 
 @app.get("/api/shap-local/{idx}")
 async def shap_local(idx: int):
