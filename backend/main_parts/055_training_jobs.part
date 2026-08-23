@@ -99,12 +99,15 @@ def _update_training_job(job_id, **fields):
     keys = list(fields.keys())
     sql = ", ".join(f"{key}=?" for key in keys)
     conn = get_db()
-    conn.execute(
-        f"UPDATE training_jobs SET {sql} WHERE job_id=?",
-        [fields[key] for key in keys] + [job_id],
-    )
-    conn.commit()
-    conn.close()
+    try:
+        conn.execute(
+            f"UPDATE training_jobs SET {sql} WHERE job_id=?",
+            [fields[key] for key in keys] + [job_id],
+        )
+        conn.commit()
+        conn.close()
+    finally:
+        conn.close()
 
 
 def _get_training_job_owned(user, job_id):
@@ -223,36 +226,39 @@ def record_sync_training_job(user, *, project_id=None, dataset_id=None, analysis
     job_id = str(uuid.uuid4())
     summary = result_summary or {}
     conn = get_db()
-    conn.execute(
-        """
+    try:
+        conn.execute(
+            """
         INSERT INTO training_jobs
         (job_id,user_id,project_id,analysis_run_id,dataset_id,status,current_step,progress_message,progress_percent,created_at,queued_at,started_at,finished_at,recommended_next_action,result_summary,artifact_refs)
         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
         """,
-        (
-            job_id,
-            user["sub"],
-            project_id,
-            analysis_run_id,
-            dataset_id,
-            "succeeded",
-            "analysis_completed",
-            "분석이 완료되어 워크스페이스 기록에 저장되었습니다.",
-            100,
-            now,
-            now,
-            now,
-            now,
-            "프로젝트 상세에서 실행 기록, 보고서, 예측 API 상태를 확인하세요.",
-            json.dumps(summary, ensure_ascii=False),
-            json.dumps({"source": "run_cv", "state_result": True}, ensure_ascii=False),
-        ),
-    )
-    conn.commit()
-    conn.close()
-    if "claim_analysis_job" in globals():
-        claim_analysis_job(user)
-    return _get_training_job_owned(user, job_id)
+            (
+                job_id,
+                user["sub"],
+                project_id,
+                analysis_run_id,
+                dataset_id,
+                "succeeded",
+                "analysis_completed",
+                "분석이 완료되어 워크스페이스 기록에 저장되었습니다.",
+                100,
+                now,
+                now,
+                now,
+                now,
+                "프로젝트 상세에서 실행 기록, 보고서, 예측 API 상태를 확인하세요.",
+                json.dumps(summary, ensure_ascii=False),
+                json.dumps({"source": "run_cv", "state_result": True}, ensure_ascii=False),
+            ),
+        )
+        conn.commit()
+        conn.close()
+        if "claim_analysis_job" in globals():
+            claim_analysis_job(user)
+        return _get_training_job_owned(user, job_id)
+    finally:
+        conn.close()
 
 
 def _execute_training_job(job_id, user_payload):
@@ -364,28 +370,66 @@ def _create_training_job_record(user, background_tasks, body, *, rerun_of=None, 
         now = _job_now()
         job_id = str(uuid.uuid4())
         conn = get_db()
-        conn.execute(
-            """
+        try:
+            conn.execute(
+                """
             INSERT INTO training_jobs
             (job_id,user_id,project_id,analysis_run_id,dataset_id,status,current_step,progress_message,progress_percent,created_at,queued_at,failed_at,error_type,error_message,recommended_next_action,result_summary,artifact_refs,rerun_of,source_run_id)
             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
             """,
+                (
+                    job_id,
+                    user["sub"],
+                    body.project_id,
+                    body.analysis_run_id,
+                    body.dataset_id,
+                    "failed",
+                    "training_failed",
+                    "Smoke failure created for recovery QA.",
+                    100,
+                    now,
+                    now,
+                    now,
+                    "training_failed",
+                    "Smoke failure created for recovery QA.",
+                    recommended_action_for_error("training_failed"),
+                    json.dumps({}, ensure_ascii=False),
+                    json.dumps({}, ensure_ascii=False),
+                    rerun_of,
+                    source_run_id,
+                ),
+            )
+            conn.commit()
+            conn.close()
+            if "claim_analysis_job" in globals():
+                claim_analysis_job(user)
+            return _get_training_job_owned(user, job_id)
+        finally:
+            conn.close()
+    import uuid
+    now = _job_now()
+    job_id = str(uuid.uuid4())
+    conn = get_db()
+    try:
+        conn.execute(
+            """
+        INSERT INTO training_jobs
+        (job_id,user_id,project_id,analysis_run_id,dataset_id,status,current_step,progress_message,progress_percent,created_at,queued_at,recommended_next_action,result_summary,artifact_refs,rerun_of,source_run_id)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        """,
             (
                 job_id,
                 user["sub"],
                 body.project_id,
                 body.analysis_run_id,
                 body.dataset_id,
-                "failed",
-                "training_failed",
-                "Smoke failure created for recovery QA.",
-                100,
+                "queued",
+                "queued",
+                "Training job created.",
+                0,
                 now,
                 now,
-                now,
-                "training_failed",
-                "Smoke failure created for recovery QA.",
-                recommended_action_for_error("training_failed"),
+                "Wait for the job status to update, then open the result or report.",
                 json.dumps({}, ensure_ascii=False),
                 json.dumps({}, ensure_ascii=False),
                 rerun_of,
@@ -396,42 +440,10 @@ def _create_training_job_record(user, background_tasks, body, *, rerun_of=None, 
         conn.close()
         if "claim_analysis_job" in globals():
             claim_analysis_job(user)
+        background_tasks.add_task(_execute_training_job, job_id, dict(user))
         return _get_training_job_owned(user, job_id)
-    import uuid
-    now = _job_now()
-    job_id = str(uuid.uuid4())
-    conn = get_db()
-    conn.execute(
-        """
-        INSERT INTO training_jobs
-        (job_id,user_id,project_id,analysis_run_id,dataset_id,status,current_step,progress_message,progress_percent,created_at,queued_at,recommended_next_action,result_summary,artifact_refs,rerun_of,source_run_id)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-        """,
-        (
-            job_id,
-            user["sub"],
-            body.project_id,
-            body.analysis_run_id,
-            body.dataset_id,
-            "queued",
-            "queued",
-            "Training job created.",
-            0,
-            now,
-            now,
-            "Wait for the job status to update, then open the result or report.",
-            json.dumps({}, ensure_ascii=False),
-            json.dumps({}, ensure_ascii=False),
-            rerun_of,
-            source_run_id,
-        ),
-    )
-    conn.commit()
-    conn.close()
-    if "claim_analysis_job" in globals():
-        claim_analysis_job(user)
-    background_tasks.add_task(_execute_training_job, job_id, dict(user))
-    return _get_training_job_owned(user, job_id)
+    finally:
+        conn.close()
 
 
 @app.post("/api/training/jobs")

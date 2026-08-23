@@ -18,14 +18,17 @@ def load_history():
 def save_history(rec, user_id=None):
     if user_id:
         conn = get_db()
-        cur = conn.execute(
-            "INSERT INTO experiments (user_id, data, created_at) VALUES (?,?,?)",
-            (user_id, json.dumps(rec, ensure_ascii=False), datetime.now().isoformat())
-        )
-        conn.commit()
-        history_id = cur.lastrowid
-        conn.close()
-        return history_id
+        try:
+            cur = conn.execute(
+                "INSERT INTO experiments (user_id, data, created_at) VALUES (?,?,?)",
+                (user_id, json.dumps(rec, ensure_ascii=False), datetime.now().isoformat())
+            )
+            conn.commit()
+            history_id = cur.lastrowid
+            conn.close()
+            return history_id
+        finally:
+            conn.close()
     h = load_history()
     h.append(rec)
     with open(HISTORY_FILE, "w", encoding="utf-8") as f:

@@ -134,13 +134,16 @@ async def get_history(user=Depends(get_current_user)):
 async def clear_history(user=Depends(get_current_user)):
     if user:
         conn = get_db()
-        if user.get("role") == "admin":
-            conn.execute("DELETE FROM experiments")
-        else:
-            conn.execute("DELETE FROM experiments WHERE user_id=?", (user["sub"],))
-        conn.commit()
-        conn.close()
-        return {"ok": True}
+        try:
+            if user.get("role") == "admin":
+                conn.execute("DELETE FROM experiments")
+            else:
+                conn.execute("DELETE FROM experiments WHERE user_id=?", (user["sub"],))
+            conn.commit()
+            conn.close()
+            return {"ok": True}
+        finally:
+            conn.close()
     if os.path.exists(HISTORY_FILE): os.remove(HISTORY_FILE)
     return {"ok": True}
 

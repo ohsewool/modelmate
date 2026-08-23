@@ -10,19 +10,22 @@
     metrics = cv[0] if cv else {}
 
     conn = get_db()
-    conn.execute(
-        "INSERT INTO deployed_models (id,name,task_type,best_model_name,target_col,features,metrics,created_at,user_id,dataset_ref)"
-        " VALUES (?,?,?,?,?,?,?,?,?,?)",
-        (model_id, name, task_type, STATE.get("best_model_name"),
-         STATE.get("target_col"),
-         json.dumps(features_meta, ensure_ascii=False),
-         json.dumps(metrics, ensure_ascii=False),
-         datetime.now().isoformat(),
-         user["sub"] if user else None,
-         json.dumps(STATE.get("current_dataset"), ensure_ascii=False))
-    )
-    conn.commit(); conn.close()
-    return {"model_id": model_id, "name": name}
+    try:
+        conn.execute(
+            "INSERT INTO deployed_models (id,name,task_type,best_model_name,target_col,features,metrics,created_at,user_id,dataset_ref)"
+            " VALUES (?,?,?,?,?,?,?,?,?,?)",
+            (model_id, name, task_type, STATE.get("best_model_name"),
+             STATE.get("target_col"),
+             json.dumps(features_meta, ensure_ascii=False),
+             json.dumps(metrics, ensure_ascii=False),
+             datetime.now().isoformat(),
+             user["sub"] if user else None,
+             json.dumps(STATE.get("current_dataset"), ensure_ascii=False))
+        )
+        conn.commit(); conn.close()
+        return {"model_id": model_id, "name": name}
+    finally:
+        conn.close()
 
 @app.get("/api/deployed")
 async def list_deployed(user=Depends(get_current_user)):
@@ -107,15 +110,18 @@ async def get_deployed_metadata(model_id: str, user=Depends(get_current_user)):
 async def delete_deployed(model_id: str, user=Depends(get_current_user)):
     row = assert_deployed_model_owner(user, model_id, allow_public_metadata=False)
     conn = get_db()
-    if row and row["user_id"] and (not user or (user.get("role") != "admin" and row["user_id"] != user.get("sub"))):
+    try:
+        if row and row["user_id"] and (not user or (user.get("role") != "admin" and row["user_id"] != user.get("sub"))):
+            conn.close()
+            raise HTTPException(403, "이 모델을 삭제할 권한이 없습니다.")
+        conn.execute("DELETE FROM deployed_models WHERE id=?", (model_id,))
+        conn.commit(); conn.close()
+        fp = os.path.join(MODELS_DIR, f"{row['id']}.pkl")
+        if os.path.exists(fp):
+            os.remove(fp)
+        return {"ok": True}
+    finally:
         conn.close()
-        raise HTTPException(403, "이 모델을 삭제할 권한이 없습니다.")
-    conn.execute("DELETE FROM deployed_models WHERE id=?", (model_id,))
-    conn.commit(); conn.close()
-    fp = os.path.join(MODELS_DIR, f"{row['id']}.pkl")
-    if os.path.exists(fp):
-        os.remove(fp)
-    return {"ok": True}
 
 @app.post("/api/v1/{model_id}/predict")
 async def v1_predict(model_id: str, body: dict):

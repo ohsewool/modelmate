@@ -501,29 +501,32 @@ def save_dataset_record(user, filename, df, target_col, quality, domain_info, so
     file_path = _persist_dataset_file(user["sub"], dataset_id, filename, df)
     now = datetime.now().isoformat()
     conn = get_db()
-    conn.execute(
-        """INSERT INTO datasets
+    try:
+        conn.execute(
+            """INSERT INTO datasets
            (id,project_id,user_id,filename,original_filename,rows,columns,target_col,domain,quality,created_at,updated_at,delete_status,retention_status,source_type,is_demo_dataset,file_path)
            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-        (
-            dataset_id, project["id"], user["sub"], filename, filename, int(df.shape[0]), int(df.shape[1]),
-            target_value, domain_info.get("dataset_domain"), json.dumps(quality, ensure_ascii=False), now, now,
-            "active", "active", source_type, int(is_demo_dataset), file_path,
-        ),
-    )
-    conn.execute("UPDATE projects SET updated_at=? WHERE id=?", (now, project["id"]))
-    conn.commit()
-    conn.close()
-    dataset_meta.update({
-        "id": dataset_id,
-        "project_id": project["id"],
-        "project_name": project["name"],
-        "file_path": file_path,
-        "source_type": source_type,
-        "is_demo_dataset": bool(is_demo_dataset),
-    })
-    STATE["current_dataset"] = dataset_meta
-    return dataset_meta
+            (
+                dataset_id, project["id"], user["sub"], filename, filename, int(df.shape[0]), int(df.shape[1]),
+                target_value, domain_info.get("dataset_domain"), json.dumps(quality, ensure_ascii=False), now, now,
+                "active", "active", source_type, int(is_demo_dataset), file_path,
+            ),
+        )
+        conn.execute("UPDATE projects SET updated_at=? WHERE id=?", (now, project["id"]))
+        conn.commit()
+        conn.close()
+        dataset_meta.update({
+            "id": dataset_id,
+            "project_id": project["id"],
+            "project_name": project["name"],
+            "file_path": file_path,
+            "source_type": source_type,
+            "is_demo_dataset": bool(is_demo_dataset),
+        })
+        STATE["current_dataset"] = dataset_meta
+        return dataset_meta
+    finally:
+        conn.close()
 
 
 ensure_dataset_management_columns()
@@ -679,14 +682,17 @@ async def create_project(body: ProjectBody, user=Depends(get_current_user)):
     project_id = str(uuid.uuid4())[:8]
     now = datetime.now().isoformat()
     conn = get_db()
-    conn.execute(
-        "INSERT INTO projects (id,user_id,name,description,created_at,updated_at) VALUES (?,?,?,?,?,?)",
-        (project_id, user["sub"], body.name.strip() or "새 프로젝트", body.description, now, now),
-    )
-    conn.commit()
-    row = conn.execute("SELECT * FROM projects WHERE id=?", (project_id,)).fetchone()
-    conn.close()
-    return dict(row)
+    try:
+        conn.execute(
+            "INSERT INTO projects (id,user_id,name,description,created_at,updated_at) VALUES (?,?,?,?,?,?)",
+            (project_id, user["sub"], body.name.strip() or "새 프로젝트", body.description, now, now),
+        )
+        conn.commit()
+        row = conn.execute("SELECT * FROM projects WHERE id=?", (project_id,)).fetchone()
+        conn.close()
+        return dict(row)
+    finally:
+        conn.close()
 
 
 @app.get("/api/datasets")

@@ -118,12 +118,15 @@ def make_token(user_id, email, name, picture="", role="user"):
     }
     token = jose_jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
     conn = get_db()
-    conn.execute(
-        """INSERT OR REPLACE INTO auth_sessions
+    try:
+        conn.execute(
+            """INSERT OR REPLACE INTO auth_sessions
            (id, user_id, session_token_hash, created_at, expires_at, revoked_at)
            VALUES (?,?,?,?,?,NULL)""",
-        (session_id, user_id, hashlib.sha256(session_id.encode()).hexdigest(), now.isoformat(), expires_at.isoformat()),
-    )
-    conn.commit()
-    conn.close()
-    return token
+            (session_id, user_id, hashlib.sha256(session_id.encode()).hexdigest(), now.isoformat(), expires_at.isoformat()),
+        )
+        conn.commit()
+        conn.close()
+        return token
+    finally:
+        conn.close()

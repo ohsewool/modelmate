@@ -31,12 +31,15 @@
         print(f"[workspace] sync job record skipped: {exc}")
     try:
         conn = get_db()
-        conn.execute(
-            "UPDATE projects SET updated_at=? WHERE id=? AND user_id=?",
-            (datetime.now().isoformat(), project_id, user["sub"]),
-        )
-        conn.commit()
-        conn.close()
+        try:
+            conn.execute(
+                "UPDATE projects SET updated_at=? WHERE id=? AND user_id=?",
+                (datetime.now().isoformat(), project_id, user["sub"]),
+            )
+            conn.commit()
+            conn.close()
+        finally:
+            conn.close()
     except Exception as exc:
         print(f"[workspace] project touch skipped: {exc}")
 
