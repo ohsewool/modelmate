@@ -77,7 +77,9 @@ def _pilot_text(value, limit):
 
 def _pilot_valid_email(value):
     email = _pilot_text(value, 240).lower()
-    if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
+    # 규칙은 `is_email_shaped`(001)에 있다. 여기 정규식을 다시 적으면 사본이
+    # 되고, 사본은 소스가 바뀌어도 그대로다.
+    if not is_email_shaped(email):
         raise HTTPException(400, {
             "code": "validation_failed",
             "message": "올바른 이메일 주소를 입력해 주세요.",

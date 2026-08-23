@@ -11,7 +11,10 @@ async def auth_signup(body: EmailAuthBody, request: Request = None):
         enforce_auth_attempt_limit(request)
     import uuid
     email = normalize_email(body.email)
-    if not email or "@" not in email:
+    if not is_email_shaped(email):
+        # 예전에는 `"@" not in email`이었다. `"@"` 한 글자가 통과해 계정이
+        # 만들어졌다 — 규칙은 `is_email_shaped` 한 곳에 있고 파일럿 문의도
+        # 같은 것을 읽는다.
         raise HTTPException(400, "이메일 형식이 올바르지 않습니다")
     # `try/finally`로 감싼다. 예전에는 성공 경로와 중복 경로에 각각 `conn.close()`가
     # 있었고, **그 사이에서 예외가 나면 연결이 열린 채 남았다.** sqlite는 그 연결이

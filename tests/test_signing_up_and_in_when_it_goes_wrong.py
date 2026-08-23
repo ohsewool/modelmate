@@ -81,6 +81,13 @@ def without_request_ids(body):
     return trimmed
 
 
+def code_only(source):
+    """주석 줄을 걷어낸다. 규칙을 **설명하는** 문장이 규칙을 **쓰는** 코드로
+    읽히면, 옛 규칙을 지운 뒤에도 검사가 남아 있다고 말한다."""
+    return "\n".join(line for line in source.splitlines()
+                     if not line.lstrip().startswith("#"))
+
+
 def clear_attempts():
     """한 검사 안에서 여러 번 실패해야 할 때 중간에 부른다."""
     with modelmate._AUTH_ATTEMPTS_LOCK:
@@ -106,12 +113,39 @@ def registered(client):
 
 
 class TestSigningUpWithSomethingThatIsNotAnEmail:
-    @pytest.mark.parametrize("bad", ["", "   ", "no-at-sign", "@", "이메일"])
+    @pytest.mark.parametrize(
+        "bad", ["", "   ", "no-at-sign", "@", "이메일", "a@b", "@example.test",
+                "a b@c.d"])
     def test_it_is_refused(self, client, bad):
+        """**앞선 실행이 남긴 계정 때문에 통과하면 안 된다.**
+
+        이 검사는 처음에 로컬에서 초록불이고 CI에서 빨간불이었다. `"@"`는 그때
+        실제로 **통과해 계정이 만들어졌고**, 로컬에서는 앞선 실행이 남긴 `"@"`
+        계정 때문에 *중복 검사*에 먼저 걸려 400이 났다. 내가 이름 붙인 이유가
+        아니라 옆의 이유로 통과한 것이다.
+
+        그래서 먼저 지우고 두드린다. 이제 400은 **형식 때문에만** 나올 수 있다.
+        """
+        conn = modelmate.get_db()
+        try:
+            conn.execute("DELETE FROM users WHERE lower(email)=?",
+                         (modelmate.normalize_email(bad),))
+            conn.commit()
+        finally:
+            conn.close()
+
         clear_attempts()
         response = client.post("/api/auth/signup",
                                json={"email": bad, "password": PASSWORD})
         assert response.status_code in (400, 422), response.text
+
+        conn = modelmate.get_db()
+        try:
+            row = conn.execute("SELECT id FROM users WHERE lower(email)=?",
+                               (modelmate.normalize_email(bad),)).fetchone()
+        finally:
+            conn.close()
+        assert row is None, f"{bad!r}로 계정이 만들어졌다"
 
     def test_the_reason_says_it_is_the_format(self, client):
         """400이 왔다는 것과 **왜 왔는지**는 다르다. 화면에 뭘 띄울지가 여기서 갈린다."""
@@ -227,3 +261,50 @@ class TestTheTwoFailuresLookAlike:
             "계정이 없을 때 비밀번호 확인을 아예 건너뛴다 — 응답이 빨라지고, "
             "그 차이가 '이 이메일은 가입돼 있지 않다'를 알려준다")
         assert calls[0] == modelmate.DUMMY_PASSWORD_HASH
+
+
+class TestOneRuleNotTwo:
+    """이메일 모양을 묻는 자리가 둘이었고, 답이 달랐다.
+
+        파일럿 문의   정규식으로 제대로 봤다
+        가입          `"@" not in email`뿐이었다
+
+    느슨한 쪽이 계정을 만드는 자리였다. 이제 규칙은 `is_email_shaped` 한 곳이고
+    양쪽이 그것을 읽는다 — **사본을 만들면 한쪽만 낡는다.**
+    """
+
+    def test_the_shared_rule_exists(self):
+        assert modelmate.is_email_shaped("user@example.com")
+        assert not modelmate.is_email_shaped("@")
+
+    def test_signup_reads_it(self):
+        """**주석은 빼고 본다.** 처음엔 파일 전체에서 옛 규칙 문구를 찾았고
+        빨간불이었다 — 남아 있던 것은 *그 규칙이 왜 바뀌었는지 설명하는 주석*이지
+        규칙이 아니었다. 기록하는 행위가 기록을 뒤집는 모양이고, 이 저장소가 이미
+        여러 번 잡았다."""
+        source = (ROOT / "backend" / "main_parts"
+                  / "051_auth_history_debug.part").read_text(encoding="utf-8-sig")
+        assert "is_email_shaped" in source
+        assert '"@" not in email' not in code_only(source), (
+            "느슨한 옛 규칙이 코드에 남아 있다 — 둘이 되면 다시 갈린다")
+
+    def test_the_pilot_form_reads_the_same_one(self):
+        source = (ROOT / "backend" / "main_parts"
+                  / "097_pilot_inquiries.part").read_text(encoding="utf-8-sig")
+        assert "is_email_shaped" in source
+        assert "[^@\\s]+@" not in code_only(source), (
+            "정규식 사본이 남아 있다. 한 곳만 고치면 두 답이 갈린다 — "
+            "이 저장소가 가장 자주 잡은 모양이다")
+
+    @pytest.mark.parametrize("address", ["@", "a@b", "a b@c.d", "@example.test"])
+    def test_both_doors_agree_on_the_same_address(self, client, address):
+        """**같은 주소, 같은 답.** 한쪽만 받으면 그 문으로 들어온다."""
+        clear_attempts()
+        signup = client.post("/api/auth/signup",
+                             json={"email": address, "password": PASSWORD})
+        pilot = client.post("/api/pilot/inquiries",
+                            json={"email": address, "name": "이름",
+                                  "use_case": "용도",
+                                  "message": "열 글자가 넘는 문의 내용입니다."})
+        assert signup.status_code != 200
+        assert pilot.status_code != 200

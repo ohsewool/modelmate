@@ -13,7 +13,7 @@ from sklearn.model_selection import cross_val_score, StratifiedKFold, KFold
 from sklearn.metrics import accuracy_score, f1_score, roc_auc_score, r2_score, mean_squared_error, mean_absolute_error
 from sklearn.preprocessing import LabelEncoder
 from pydantic import BaseModel
-import json, os, io, asyncio, sqlite3, joblib, threading, time
+import json, os, io, re, asyncio, sqlite3, joblib, threading, time
 from datetime import datetime, timezone
 
 # ── Google OAuth ──────────────────────────────────────────
@@ -58,6 +58,26 @@ def normalize_email(value):
     **모든 곳이 같은 답을 쓰는가**다.
     """
     return str(value or "").strip().lower()
+
+
+# 이메일이 이메일처럼 생겼는가 — **한 곳에 있는 하나의 규칙.**
+#
+# 규칙이 둘이었다. 파일럿 문의는 정규식으로 제대로 봤고(`_pilot_valid_email`),
+# 가입은 `"@" not in email`뿐이었다. 그래서 **`"@"` 한 글자로 계정이 만들어졌다** —
+# 이메일 `"@"`, 이름은 `email.split("@")[0]`이라 빈 문자열.
+#
+# 2026-08-24에 CI가 잡았다. 로컬에서는 초록불이었는데, 앞선 실행이 남긴 `"@"` 계정
+# 때문에 **중복 검사에 먼저 걸려 400이 났기 때문**이다. 즉 그 검사는 내가 의도한
+# 이유가 아니라 옆의 이유로 통과하고 있었다. 새 체크아웃에서만 진실이 보였다.
+#
+# 두 규칙 중 엄격한 쪽이 이미 옳았다. 옮겨오는 대신 **한 곳에 두고 양쪽이 읽는다** —
+# 사본을 만들면 한쪽만 낡는다.
+EMAIL_SHAPE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+def is_email_shaped(value):
+    """계정으로 받을 만한 모양인가. 정규화한 형태로 본다."""
+    return bool(EMAIL_SHAPE.match(normalize_email(value)))
 
 
 def get_admin_emails():
