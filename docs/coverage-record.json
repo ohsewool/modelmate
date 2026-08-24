@@ -1,11 +1,11 @@
 {
-  "measured_at": "2026-08-24",
-  "command": "python3 scripts/measure_part_coverage.py --json  (pytest) 그리고 --smoke --json",
-  "statements": 4323,
-  "pytest_percent": 48.4,
-  "smoke_percent": 53.1,
-  "union_percent": 63.8,
-  "functions": 325,
-  "functions_never_run": 12,
-  "note": "합집합이 CI가 실제로 지키는 값이다. pytest와 스모크 열다섯을 모두 돌린 결과."
+ "measured_at": "2026-08-24",
+ "command": "python3 scripts/measure_part_coverage.py --json A.json  (pytest) · ADMIN_PASSWORD=<값> python3 scripts/measure_part_coverage.py --smoke --json B.json · python3 scripts/combine_coverage.py A.json B.json",
+ "statements": 4310,
+ "pytest_percent": 51.2,
+ "smoke_percent": 56.0,
+ "union_percent": 66.2,
+ "functions": 326,
+ "functions_never_run": 43,
+ "note": "합집합이 CI가 실제로 지키는 값이다. 이전 기록의 functions_never_run=12는 기록된 명령으로 재현되지 않는 값이었다 — 그 명령(--json 둘)은 함수 통계를 내지 않는다. 계산은 combine_coverage.py로 저장소에 있다. 스모크는 ADMIN_PASSWORD 없이는 둘이 빠져 합집합을 낮게 잰다."
 }

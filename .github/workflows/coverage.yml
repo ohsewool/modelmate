@@ -35,6 +35,13 @@ jobs:
           pip install pytest
 
       - name: Measure again and compare with the record
+        # ADMIN_PASSWORD가 없으면 스모크 열다섯 중 둘(pilot_inquiry·usage_limits)이
+        # "인자 부족 — 돌지 않았다"로 빠지고, 합집합이 조용히 낮게 잰다. 2026-08-24
+        # 로컬 측정이 정확히 그랬다 — 안 도는 함수가 12가 아니라 45로 나왔고,
+        # 도구가 안 돈 스크립트를 이름으로 말해줘서 잡았다. product.yml과 같은
+        # 방식으로 일회용 값을 준다.
+        env:
+          ADMIN_PASSWORD: ci-throwaway-${{ github.run_id }}
         run: |
           python scripts/measure_part_coverage.py --json /tmp/cov-pytest.json > /dev/null
           python scripts/measure_part_coverage.py --smoke --json /tmp/cov-smoke.json > /dev/null
