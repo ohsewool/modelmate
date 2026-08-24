@@ -24,145 +24,179 @@ def _column_stats_for_prompt(df, n):
     return col_info
 
 
+"""컬럼명으로 업무 도메인을 짚는다 — **첫 일치가 아니라 근거가 많은 쪽.**
+
+예전에는 규칙을 순서대로 보다가 **처음 걸리는 것에서 멈췄다.** 그래서 우연한
+부분일치 하나가 진짜 신호 넷을 이겼다.
+
+    customer_id, tenure_months, monthly_fee, support_tickets,
+    contract_type, last_login_days, churn
+      → 판정 "보안/이상 탐지" · 신뢰 "높음"
+
+`last_login_days`의 `login`이 보안 규칙에 걸리고 그 규칙이 이탈 규칙보다 앞이었다.
+`last_login_days` 하나만 빼면 "고객 이탈/CRM"으로 바뀐다.
+
+2026-08-24에 저장소가 들고 다니는 샘플 여섯 개로 재봤다. **다섯이 틀렸고 여섯 다
+"신뢰 높음"이었다.** 자전거 신청 데이터는 `avg_temperature` 때문에 "제조/설비 품질"이
+됐다. 첫 화면에서 "샘플로 체험하기"를 누른 사람이 보는 것이 그 판정이다.
+
+### 근거를 센다
+
+이제 규칙 전부에 점수를 매기고 가장 많이 맞은 것을 고른다. 같은 데이터로 다시 재면
+이렇게 갈린다.
+
+    고객 이탈/CRM   4점  churn, contract, customer, tenure
+    보안/이상 탐지   1점  login
+
+**신뢰도도 근거에서 나온다.** 예전에는 규칙 스물둘 중 열아홉이 상수 "높음"을
+반환했다 — 무엇을 근거로 높다는 것인지가 없었다.
+
+    근거 3개 이상  높음
+    근거 2개      중간
+    근거 1개      낮음
+
+화면에 "신뢰 높음"이 붙으면 사용자는 그대로 믿는다. 그러니 그 말은 세어본 결과여야
+한다.
+
+### 규칙 셋은 두 벌씩 있었다
+
+보안·금융·공공시설은 같은 규칙이 두 번 적혀 있었고, 순서대로 보는 구조에서 **뒤엣것은
+닿을 수 없었다.** 지웠다.
+
+### 무엇을 맞은 건지 함께 돌려준다
+
+`dataset_domain_evidence`에 실제로 맞은 낱말을 담는다. 판정이 이상해 보일 때
+**왜 그렇게 봤는지**를 물어볼 수 있어야 한다.
+"""
+
+# (도메인, 이유, 낱말들) — 순서는 동점일 때만 쓰인다.
+DOMAIN_RULES = (
+    ("승객 생존 예측",
+     "survived, alive, pclass, fare처럼 승객 생존 여부와 관련된 컬럼이 있습니다.",
+     ("alive", "embark_town", "embarked", "parch", "passengerid", "pclass", "sibsp", 
+      "survived")),
+    ("수면/건강 라이프로그",
+     "사람 ID와 수면 날짜, 라이프로그 날짜처럼 개인별 건강 기록을 나타내는 컬럼이 있습니다.",
+     ("activity", "calorie", "heart", "hr", "lifelog", "sleep", "step", "wearable", "라이프로그", 
+      "수면", "활동")),
+    ("의료/건강 진단",
+     "혈당, 인슐린, BMI, 진단 결과처럼 건강 상태를 판단하는 컬럼이 있습니다.",
+     ("bmi", "cancer", "cholesterol", "compactness", "concave", "concavity", "diabetes", 
+      "diagnosis", "disease", "fractal", "glucose", "insulin", "medical", "patient", 
+      "perimeter", "plasma", "pregnancy", "pregnant", "radius", "tumor", "당뇨", "암", "진단", 
+      "질병", "혈당", "환자")),
+    ("보안/이상 탐지",
+     "사기, 이상거래, 공격, 로그인처럼 보안 이상 탐지와 관련된 컬럼명이 있습니다.",
+     ("anomaly", "attack", "device_risk", "fraud", "intrusion", "login", "malware", 
+      "security", "공격", "로그인", "보안", "사기", "이상거래", "침입")),
+    ("금융/신용 리스크",
+     "대출, 신용, 연체, 소득처럼 금융 위험 판단과 관련된 컬럼명이 있습니다.",
+     ("balance", "bank", "credit", "debt", "default", "delinquency", "income", "loan", "대출", 
+      "부채", "소득", "신용", "연체", "은행")),
+    ("제조/설비 품질",
+     "고장, 불량, 센서, 설비 상태와 관련된 컬럼명이 있습니다.",
+     ("defect", "failure", "fault", "machine", "quality", "sensor", "temperature", 
+      "tool_wear", "torque", "vibration", "고장", "불량", "설비", "품질")),
+    ("고객 이탈/CRM",
+     "고객, 이탈, 해지, 구독 유지와 관련된 컬럼명이 있습니다.",
+     ("cancel", "churn", "contract", "customer", "monthlycharges", "retention", 
+      "subscription", "tenure", "고객", "이탈", "해지")),
+    ("공공시설/안전 관리",
+     "어린이 놀이시설, 주소, 설치장소, 실내외 구분처럼 공공시설 관리용 컬럼이 있습니다.",
+     ("address", "children", "facility", "playground", "safety", "zipcode", "놀이시설", "설치장소", 
+      "시설", "실내외", "안전", "어린이", "우편번호", "의무시설", "주소")),
+    ("물류/배송",
+     "배송, 물류, 창고, 지연, 거리처럼 배송 운영과 관련된 컬럼명이 있습니다.",
+     ("courier", "delay", "delivery", "distance", "logistics", "shipment", "warehouse", "거리", 
+      "물류", "배송", "지연", "창고", "택배")),
+    ("교육/학습 성과",
+     "학생, 출석, 시험, 성적처럼 학습 성과를 나타내는 컬럼명이 있습니다.",
+     ("attendance", "course", "education", "exam", "gpa", "homework", "school", "student", 
+      "study", "과제", "성적", "수강", "시험", "출석", "학교", "학생", "학습")),
+    ("부동산/가격 예측",
+     "주택, 면적, 방수, 임대료처럼 부동산 가격과 관련된 컬럼명이 있습니다.",
+     ("apartment", "estate", "floor", "house", "housing", "land_area", "living_area", 
+      "property", "real_estate", "rent", "rooms", "면적", "방수", "부동산", "아파트", "임대료", "주택", "층")),
+    ("마케팅/구매 전환",
+     "구매, 전환, 클릭, 캠페인처럼 마케팅 반응을 나타내는 컬럼명이 있습니다.",
+     ("ad", "campaign", "click", "conversion", "impression", "lead", "marketing", "purchase", 
+      "광고", "구매", "전환", "캠페인", "클릭")),
+    ("인사/HR",
+     "직원, 부서, 급여, 성과, 퇴사처럼 인사 관리와 관련된 컬럼명이 있습니다.",
+     ("attrition", "department", "employee", "hire", "hr", "performance", "promotion", 
+      "salary", "급여", "부서", "성과", "인사", "직원", "채용", "퇴사")),
+    ("날씨/환경",
+     "날씨, 강수, 습도, 미세먼지처럼 환경 상태를 나타내는 컬럼명이 있습니다.",
+     ("air_quality", "climate", "humidity", "pm10", "pm2", "rainfall", "weather", "wind", 
+      "강수", "기후", "날씨", "대기", "미세먼지", "습도", "풍속")),
+    ("공공교통/이용자 통계",
+     "공공자전거, 회원, 가입, 연령대처럼 교통 서비스 이용자를 집계한 컬럼이 있습니다.",
+     ("bicycle", "bike", "join", "member", "passenger", "rental", "signup", "station", 
+      "subway", "transport", "가입", "가입건수", "공공자전거", "노선", "대여", "따릉이", "성별", "승객", "승차", 
+      "역명", "연령대", "자전거", "정류장", "지하철", "하차", "회원")),
+    ("금액/매출",
+     "가격, 금액, 매출처럼 수치 규모를 다루는 컬럼명이 있습니다.",
+     ("amount", "cost", "fare", "order", "price", "profit", "quantity", "revenue", "sales", 
+      "가격", "금액", "매출", "수량", "요금", "주문")),
+)
+
+# 아무 도메인도 안 걸렸을 때만 보는 약한 규칙들. 날짜 컬럼은 어느 데이터에나 있어서
+# 도메인 판정으로 쓰면 늘 이긴다 — 그래서 마지막에만 본다.
+GENERIC_TIME_WORDS = ("date", "day", "time")
+PERSON_ID_COLUMNS = ("subject_id", "patient_id", "user_id")
+
+
+def _domain_confidence(evidence_count):
+    """근거 개수를 신뢰도로. **상수가 아니라 세어본 결과다.**"""
+    if evidence_count >= 3:
+        return "높음"
+    if evidence_count == 2:
+        return "중간"
+    return "낮음"
+
+
 def infer_dataset_domain(df):
     columns = [str(c).lower() for c in df.columns]
     joined = " ".join(columns)
 
-    def has_any(words):
-        return any(word in joined for word in words)
+    best = None
+    for domain, reason, words in DOMAIN_RULES:
+        evidence = sorted({word for word in words if word in joined})
+        if not evidence:
+            continue
+        # 동점이면 먼저 적힌 규칙이 이긴다 — 옛 우선순위를 그대로 둔다.
+        if best is None or len(evidence) > len(best[3]):
+            best = (domain, reason, words, evidence)
 
-    if has_any(["survived", "alive", "pclass", "passengerid", "sibsp", "parch", "embarked", "embark_town"]) and has_any(["survived", "alive"]):
+    if best is not None:
+        domain, reason, _words, evidence = best
         return {
-            "dataset_domain": "승객 생존 예측",
-            "dataset_domain_reason": "survived, alive, pclass, fare처럼 승객 생존 여부와 관련된 컬럼이 있습니다.",
-            "dataset_domain_confidence": "높음",
+            "dataset_domain": domain,
+            "dataset_domain_reason": reason,
+            "dataset_domain_confidence": _domain_confidence(len(evidence)),
+            "dataset_domain_evidence": evidence,
         }
-    if has_any(["sleep", "lifelog", "activity", "heart", "hr", "step", "calorie", "wearable", "수면", "라이프로그", "활동"]):
-        return {
-            "dataset_domain": "수면/건강 라이프로그",
-            "dataset_domain_reason": "사람 ID와 수면 날짜, 라이프로그 날짜처럼 개인별 건강 기록을 나타내는 컬럼이 있습니다.",
-            "dataset_domain_confidence": "높음",
-        }
-    if has_any(["diabetes", "glucose", "plasma", "insulin", "bmi", "pregnant", "pregnancy", "patient", "diagnosis", "disease", "medical", "cancer", "tumor", "cholesterol", "radius", "perimeter", "concavity", "concave", "compactness", "fractal", "혈당", "당뇨", "진단", "환자", "질병", "암"]):
-        return {
-            "dataset_domain": "의료/건강 진단",
-            "dataset_domain_reason": "혈당, 인슐린, BMI, 진단 결과처럼 건강 상태를 판단하는 컬럼이 있습니다.",
-            "dataset_domain_confidence": "높음",
-        }
-    if has_any(["fraud", "anomaly", "attack", "login", "security", "malware", "intrusion", "device_risk", "사기", "이상거래", "공격", "로그인", "보안", "침입"]):
-        return {
-            "dataset_domain": "보안/이상 탐지",
-            "dataset_domain_reason": "사기, 이상거래, 공격, 로그인처럼 보안 이상 탐지와 관련된 컬럼명이 있습니다.",
-            "dataset_domain_confidence": "높음",
-        }
-    if has_any(["loan", "credit", "default", "debt", "income", "balance", "bank", "delinquency", "대출", "신용", "연체", "부채", "소득", "은행"]):
-        return {
-            "dataset_domain": "금융/신용 리스크",
-            "dataset_domain_reason": "대출, 신용, 연체, 소득처럼 금융 위험 판단과 관련된 컬럼명이 있습니다.",
-            "dataset_domain_confidence": "높음",
-        }
-    if has_any(["fault", "failure", "defect", "machine", "sensor", "temperature", "vibration", "torque", "tool_wear", "quality", "불량", "고장", "설비", "품질"]):
-        return {
-            "dataset_domain": "제조/설비 품질",
-            "dataset_domain_reason": "고장, 불량, 센서, 설비 상태와 관련된 컬럼명이 있습니다.",
-            "dataset_domain_confidence": "높음",
-        }
-    if has_any(["churn", "customer", "retention", "subscription", "cancel", "tenure", "contract", "monthlycharges", "고객", "이탈", "해지"]):
-        return {
-            "dataset_domain": "고객 이탈/CRM",
-            "dataset_domain_reason": "고객, 이탈, 해지, 구독 유지와 관련된 컬럼명이 있습니다.",
-            "dataset_domain_confidence": "높음",
-        }
-    if has_any(["playground", "facility", "safety", "address", "zipcode", "children", "어린이", "놀이시설", "시설", "안전", "주소", "우편번호", "설치장소", "실내외", "의무시설"]):
-        return {
-            "dataset_domain": "공공시설/안전 관리",
-            "dataset_domain_reason": "어린이 놀이시설, 주소, 설치장소, 실내외 구분처럼 공공시설 관리용 컬럼이 있습니다.",
-            "dataset_domain_confidence": "높음",
-        }
-    if has_any(["fraud", "anomaly", "attack", "login", "security", "malware", "intrusion", "device_risk", "사기", "이상거래", "공격", "로그인", "보안", "침입"]):
-        return {
-            "dataset_domain": "보안/이상 탐지",
-            "dataset_domain_reason": "사기, 이상거래, 공격, 로그인처럼 보안 이상 탐지와 관련된 컬럼명이 있습니다.",
-            "dataset_domain_confidence": "높음",
-        }
-    if has_any(["loan", "credit", "default", "debt", "income", "balance", "bank", "delinquency", "대출", "신용", "연체", "부채", "소득", "은행"]):
-        return {
-            "dataset_domain": "금융/신용 리스크",
-            "dataset_domain_reason": "대출, 신용, 연체, 소득처럼 금융 위험 판단과 관련된 컬럼명이 있습니다.",
-            "dataset_domain_confidence": "높음",
-        }
-    if has_any(["delivery", "shipment", "warehouse", "delay", "distance", "logistics", "courier", "배송", "물류", "창고", "지연", "거리", "택배"]):
-        return {
-            "dataset_domain": "물류/배송",
-            "dataset_domain_reason": "배송, 물류, 창고, 지연, 거리처럼 배송 운영과 관련된 컬럼명이 있습니다.",
-            "dataset_domain_confidence": "높음",
-        }
-    if has_any(["student", "school", "course", "exam", "attendance", "study", "homework", "gpa", "education", "학습", "학생", "학교", "성적", "출석", "시험", "수강", "과제"]):
-        return {
-            "dataset_domain": "교육/학습 성과",
-            "dataset_domain_reason": "학생, 출석, 시험, 성적처럼 학습 성과를 나타내는 컬럼명이 있습니다.",
-            "dataset_domain_confidence": "높음",
-        }
-    if has_any(["house", "housing", "rent", "apartment", "rooms", "floor", "estate", "property", "real_estate", "living_area", "land_area", "부동산", "아파트", "주택", "임대료", "면적", "방수", "층"]):
-        return {
-            "dataset_domain": "부동산/가격 예측",
-            "dataset_domain_reason": "주택, 면적, 방수, 임대료처럼 부동산 가격과 관련된 컬럼명이 있습니다.",
-            "dataset_domain_confidence": "높음",
-        }
-    if has_any(["purchase", "conversion", "click", "campaign", "ad", "marketing", "impression", "lead", "구매", "전환", "클릭", "캠페인", "광고"]):
-        return {
-            "dataset_domain": "마케팅/구매 전환",
-            "dataset_domain_reason": "구매, 전환, 클릭, 캠페인처럼 마케팅 반응을 나타내는 컬럼명이 있습니다.",
-            "dataset_domain_confidence": "높음",
-        }
-    if has_any(["employee", "attrition", "salary", "department", "performance", "hr", "hire", "promotion", "직원", "퇴사", "인사", "급여", "부서", "성과", "채용"]):
-        return {
-            "dataset_domain": "인사/HR",
-            "dataset_domain_reason": "직원, 부서, 급여, 성과, 퇴사처럼 인사 관리와 관련된 컬럼명이 있습니다.",
-            "dataset_domain_confidence": "높음",
-        }
-    if has_any(["weather", "rainfall", "humidity", "pm10", "pm2", "air_quality", "wind", "climate", "날씨", "강수", "습도", "미세먼지", "대기", "기후", "풍속"]):
-        return {
-            "dataset_domain": "날씨/환경",
-            "dataset_domain_reason": "날씨, 강수, 습도, 미세먼지처럼 환경 상태를 나타내는 컬럼명이 있습니다.",
-            "dataset_domain_confidence": "높음",
-        }
-    if has_any(["bike", "bicycle", "rental", "station", "member", "signup", "join", "transport", "subway", "passenger", "공공자전거", "자전거", "따릉이", "대여", "정류장", "지하철", "노선", "역명", "승객", "승차", "하차", "회원", "가입", "연령대", "성별", "가입건수"]):
-        return {
-            "dataset_domain": "공공교통/이용자 통계",
-            "dataset_domain_reason": "공공자전거, 회원, 가입, 연령대처럼 교통 서비스 이용자를 집계한 컬럼이 있습니다.",
-            "dataset_domain_confidence": "높음",
-        }
-    if has_any(["playground", "facility", "safety", "address", "zipcode", "children", "어린이", "놀이시설", "시설", "안전", "주소", "우편번호", "설치장소", "실내외", "의무시설"]):
-        return {
-            "dataset_domain": "공공시설/안전 관리",
-            "dataset_domain_reason": "어린이 놀이시설, 주소, 설치장소, 실내외 구분처럼 공공시설 관리용 컬럼이 있습니다.",
-            "dataset_domain_confidence": "높음",
-        }
-    if has_any(["price", "sales", "revenue", "amount", "fare", "cost", "profit", "quantity", "order", "매출", "가격", "금액", "요금", "수량", "주문"]):
-        return {
-            "dataset_domain": "금액/매출",
-            "dataset_domain_reason": "가격, 금액, 매출처럼 수치 규모를 다루는 컬럼명이 있습니다.",
-            "dataset_domain_confidence": "높음",
-        }
-    if any(c in columns for c in ["subject_id", "patient_id", "user_id"]) and has_any(["date", "day", "time"]):
+
+    if any(c in columns for c in PERSON_ID_COLUMNS) and any(w in joined for w in GENERIC_TIME_WORDS):
         return {
             "dataset_domain": "개인별 시계열 기록",
             "dataset_domain_reason": "개인 ID와 날짜 컬럼이 함께 있어 사람별 시간 흐름 데이터로 보입니다.",
             "dataset_domain_confidence": "중간",
+            "dataset_domain_evidence": sorted(c for c in columns if c in PERSON_ID_COLUMNS),
         }
-    if has_any(["date", "time", "day"]):
+    if any(w in joined for w in GENERIC_TIME_WORDS):
         return {
             "dataset_domain": "시계열 기록",
             "dataset_domain_reason": "날짜나 시간 컬럼이 있어 시간 흐름에 따라 쌓인 기록으로 보입니다.",
             "dataset_domain_confidence": "중간",
+            "dataset_domain_evidence": sorted(w for w in GENERIC_TIME_WORDS if w in joined),
         }
     return {
         "dataset_domain": "도메인 확인 필요",
         "dataset_domain_reason": "컬럼명만으로는 어떤 업무 데이터인지 명확히 구분하기 어렵습니다.",
         "dataset_domain_confidence": "낮음",
+        "dataset_domain_evidence": [],
     }
-
 
 def infer_target_category(df, target_col):
     series = df[target_col].dropna()
