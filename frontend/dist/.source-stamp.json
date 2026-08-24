@@ -1,5 +1,5 @@
 {
-  "digest": "7a37480153cbcba0",
+  "digest": "f38b7e4928eb34cf",
   "files": {
     "index.html": "bdeacf3f8e6f7871",
     "package-lock.json": "d5140ab7ac87dc05",
@@ -66,7 +66,7 @@
     "src/components/upload/UploadJudgmentBrief.jsx": "ad1e3a1385abe025",
     "src/components/upload/UploadReadinessChecklist.jsx": "745452dfb546f21a",
     "src/components/upload/UploadSidePanel.jsx": "d36809675d764dfc",
-    "src/components/workspace-shell/WorkspaceShell.jsx": "f89773b9e832230d",
+    "src/components/workspace-shell/WorkspaceShell.jsx": "664c363daa851141",
     "src/components/workspace-shell/WorkspaceStates.jsx": "a1470ab25be3c1a8",
     "src/components/workspace/DatasetDetail.jsx": "af46014108eb0830",
     "src/components/workspace/DatasetExperimentLinks.jsx": "d790743f19c64afe",
@@ -96,7 +96,7 @@
     "src/pages/XAI.jsx": "a4521dca04b2948b",
     "src/pages/workspace/ProjectDetail.jsx": "219855157c21ed01",
     "src/pages/workspace/RunDetail.jsx": "6a01f2a8ea30df8a",
-    "src/pages/workspace/WorkspaceDashboard.jsx": "8835667b0a592930",
+    "src/pages/workspace/WorkspaceDashboard.jsx": "968eb954d825249b",
     "src/pages/workspace/WorkspaceJobs.jsx": "f9f1046949868277",
     "src/pages/workspace/WorkspacePredictionApis.jsx": "ea55a48b87fb0700",
     "src/pages/workspace/WorkspaceProjects.jsx": "24696ab647d01f72",

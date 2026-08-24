@@ -56,7 +56,10 @@ export default function WorkspaceShell({ children }) {
           </NavLink>
         </div>
         <div style={{ padding: 12, display: 'grid', gap: 8 }}>
-          <button className="btn-primary" style={{ width: '100%' }} onClick={() => { setOpen(false); nav('/new') }}>
+          {/* DESIGN.md §1 — 이 버튼은 전역 지름길이지 화면의 1등이 아니다.
+              1등(파란 단색)은 각 화면의 본문이 정한다. 수리 전에는 사이드바·
+              상단바·본문 세 곳이 같은 파란 버튼이었다. */}
+          <button className="btn-secondary" style={{ width: '100%' }} onClick={() => { setOpen(false); nav('/new') }}>
             <Plus size={15} /> 새 분석 시작하기
           </button>
           <button className="btn-secondary" style={{ width: '100%', justifyContent: 'center' }} onClick={() => { setOpen(false); nav('/agent') }}>
@@ -112,7 +115,7 @@ export default function WorkspaceShell({ children }) {
             style={{ border: '1px solid var(--border)', background: 'var(--surface)', borderRadius: 8, padding: 8 }}
           ><Menu size={18} /></button>
           <div className="workspace-topbar-copy">프로젝트, 작업 기록, 보고서, 예측 API를 한 곳에서 관리합니다.</div>
-          <button className="btn-primary workspace-topbar-primary" onClick={() => nav('/new')}><Plus size={15} /> 새 분석 시작하기</button>
+          
           <button className="btn-secondary workspace-close-mobile" aria-label="사이드바 닫기" onClick={() => setOpen(false)}><X size={16} /></button>
         </header>
         <main style={{ overflowY: 'auto', minWidth: 0 }}>
