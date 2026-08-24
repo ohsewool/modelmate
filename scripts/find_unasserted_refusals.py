@@ -274,7 +274,10 @@ def main(argv: list[str] | None = None) -> int:
         return sweep(arguments.existing)
     print(f"1단계: 스위트를 돌리며 거부 지점을 적는다 -> {arguments.trace}")
     trace(arguments.trace)
-    count = len(json.loads(arguments.trace.read_text(encoding="utf-8")))
+    # 87회차에 추적을 {"parts_digest", "records"}로 포장하면서 이 줄이 딕셔너리의
+    # **키 개수(2)**를 세게 됐다 — 263건짜리 추적이 "거부 2건 기록"으로 보였다.
+    # 포장을 읽는 자리는 load_trace 하나여야 하는데 여기가 날것을 다시 읽고 있었다.
+    count = len(load_trace(arguments.trace))
     print(f"  거부 {count}건 기록")
     if arguments.trace_only:
         return 0
