@@ -164,7 +164,7 @@ export default function WorkspaceJobs() {
                   )}
                 </td>
                 <td><div className="table-actions">
-                  {job.project?.id && job.analysis_run_id && <button className="btn-primary" onClick={() => nav(`/projects/${job.project.id}/runs/${job.analysis_run_id}`)}>결과 보기</button>}
+                  {job.project?.id && job.analysis_run_id && <button className="btn-secondary" onClick={() => nav(`/projects/${job.project.id}/runs/${job.analysis_run_id}`)}>결과 보기</button>}
                   {job.project?.id && job.project?.has_report && <button className="btn-secondary" onClick={() => nav(`/projects/${job.project.id}?tab=report`)}>보고서 보기</button>}
                   {job.project?.id && job.project?.has_prediction_api && <button className="btn-secondary" onClick={() => nav(`/projects/${job.project.id}?tab=api`)}>예측 API 보기</button>}
                   {job.can_rerun && job.dataset && <button className="btn-secondary" onClick={() => rerun(job)}>다시 실행</button>}

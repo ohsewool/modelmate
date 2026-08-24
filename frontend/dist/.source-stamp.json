@@ -1,5 +1,5 @@
 {
-  "digest": "165a107e7215d7d6",
+  "digest": "01e2598f8e2e4f6e",
   "files": {
     "index.html": "bdeacf3f8e6f7871",
     "package-lock.json": "d5140ab7ac87dc05",
@@ -97,7 +97,7 @@
     "src/pages/workspace/ProjectDetail.jsx": "219855157c21ed01",
     "src/pages/workspace/RunDetail.jsx": "6a01f2a8ea30df8a",
     "src/pages/workspace/WorkspaceDashboard.jsx": "968eb954d825249b",
-    "src/pages/workspace/WorkspaceJobs.jsx": "f9f1046949868277",
+    "src/pages/workspace/WorkspaceJobs.jsx": "6a66e8cfd49c96ff",
     "src/pages/workspace/WorkspacePredictionApis.jsx": "ea55a48b87fb0700",
     "src/pages/workspace/WorkspaceProjects.jsx": "000e05bb9c114898",
     "src/pages/workspace/WorkspaceReports.jsx": "f819e155645cae19",

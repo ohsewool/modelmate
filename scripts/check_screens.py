@@ -49,6 +49,48 @@ SCREENS = [
 CONSOLE_ALLOW = ("GSI_LOGGER", "accounts.google.com", "Failed to load resource")
 
 
+def bootstrap_data(base_url: str, email: str, password: str) -> str | None:
+    """계정에 데이터를 채운다: 샘플 업로드 → 타깃 → 분석 실행.
+
+    **스모크의 알려진 한계가 이것 때문이었다** — 새 계정은 모든 화면이 빈
+    상태라, 잡 목록의 행별 버튼·프로젝트 상세 같은 "데이터 있는 화면"은
+    한 번도 검사되지 않았다. 같은 화면도 상태가 다르면 다른 화면이다.
+
+    돌아오는 값: 프로젝트 id (상세 화면 순회용) 또는 None.
+    """
+    import io
+    login = json.dumps({"email": email, "password": password}).encode()
+    request = urllib.request.Request(f"{base_url}/api/auth/login", data=login,
+                                     headers={"Content-Type": "application/json"})
+    with urllib.request.urlopen(request, timeout=30) as response:
+        token = json.loads(response.read())["token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    csv = (ROOT / "frontend" / "dist" / "samples" / "customer_churn_demo.csv").read_bytes()
+    boundary = f"----smoke{int(time.time()*1000)}"
+    body = (f"--{boundary}\r\nContent-Disposition: form-data; name=\"file\"; "
+            f"filename=\"customer_churn_demo.csv\"\r\nContent-Type: text/csv\r\n\r\n"
+            ).encode() + csv + f"\r\n--{boundary}--\r\n".encode()
+    request = urllib.request.Request(f"{base_url}/api/upload", data=body, headers={
+        **headers, "Content-Type": f"multipart/form-data; boundary={boundary}"})
+    with urllib.request.urlopen(request, timeout=120) as response:
+        json.loads(response.read())
+
+    for path, payload in (("/api/set-target", {"target_col": "churn"}),
+                          ("/api/run-cv", {})):
+        request = urllib.request.Request(
+            f"{base_url}{path}", data=json.dumps(payload).encode(),
+            headers={**headers, "Content-Type": "application/json"})
+        with urllib.request.urlopen(request, timeout=300) as response:
+            json.loads(response.read())
+
+    request = urllib.request.Request(f"{base_url}/api/projects", headers=headers)
+    with urllib.request.urlopen(request, timeout=30) as response:
+        projects = json.loads(response.read())
+    rows = projects if isinstance(projects, list) else projects.get("projects", [])
+    return str(rows[0]["id"]) if rows else None
+
+
 def make_account(base_url: str) -> tuple[str, str]:
     stamp = int(time.time() * 1000)
     email = f"screen-smoke-{stamp}@modelmate.test"
@@ -67,6 +109,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--base-url", default="http://127.0.0.1:8100")
     parser.add_argument("--shots", type=Path,
                         default=Path("/home/jovyan/work/screenshots/audit"))
+    parser.add_argument("--with-data", action="store_true",
+                        help="샘플 업로드+분석까지 하고 데이터 있는 화면들도 본다")
     options = parser.parse_args(argv)
     options.shots.mkdir(parents=True, exist_ok=True)
 
@@ -77,6 +121,12 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     email, password = make_account(options.base_url)
+    screens = list(SCREENS)
+    if options.with_data:
+        project_id = bootstrap_data(options.base_url, email, password)
+        screens.append(("/jobs", None))
+        if project_id:
+            screens.append((f"/projects/{project_id}", None))
     problems, checked = [], 0
 
     with sync_playwright() as p:
@@ -94,7 +144,7 @@ def main(argv: list[str] | None = None) -> int:
         page.get_by_role("button", name="이메일로 로그인").click()
         page.wait_for_timeout(3500)
 
-        for route, winner in SCREENS:
+        for route, winner in screens:
             errors.clear()
             page.goto(f"{options.base_url}{route}", wait_until="networkidle",
                       timeout=30000)
