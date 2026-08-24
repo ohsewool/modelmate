@@ -61,7 +61,7 @@ export default function WorkspaceReports() {
 
   return (
     <div className="workspace-page animate-fade-in">
-      <WorkspacePageHeader title="보고서" description="완료된 분석 결과와 AI 요약 보고서를 확인합니다." action={<button className="btn-primary" onClick={() => nav(safeReports.length ? '/report' : '/upload')}>{safeReports.length ? '보고서 보기' : '새 분석 시작하기'}</button>} />
+      <WorkspacePageHeader title="보고서" description="완료된 분석 결과와 AI 요약 보고서를 확인합니다." />
       {!safeReports.length ? (
         <section className="card empty-state">
           <strong className="empty-title">아직 보고서가 준비되지 않았어요.</strong>

@@ -23,7 +23,6 @@ export default function WorkspaceProjects() {
       <WorkspacePageHeader
         title="프로젝트"
         description="저장된 CSV, 분석 실행, 보고서를 프로젝트별로 확인합니다."
-        action={<button className="btn-primary" onClick={() => nav('/new')}>새 분석 시작하기</button>}
       />
       <div className="workspace-grid four-columns" style={{ marginBottom: 18 }}>
         <section className="metric-card"><p className="section-title">프로젝트</p><strong>{projects.length}</strong></section>
@@ -63,7 +62,7 @@ export default function WorkspaceProjects() {
                 <td>{project.run_count || 0}회 실행<br /><span style={{ color: 'var(--text-label)' }}>보고서 {project.report_count || (project.has_report ? 1 : 0)} · API {project.prediction_api_count || (project.has_prediction_api ? 1 : 0)}</span></td>
                 <td>{formatTimestamp(project.updated_at || project.created_at)}</td>
                 <td><div className="table-actions">
-                  <button className="btn-primary" onClick={() => nav(`/projects/${project.id}`)}>프로젝트 열기</button>
+                  <button className="btn-secondary" onClick={() => nav(`/projects/${project.id}`)}>프로젝트 열기</button>
                   <button className="btn-secondary" onClick={() => nav(`/agent-mode?project_id=${encodeURIComponent(project.id)}`)}>새 분석 시작</button>
                   {project.has_report && <button className="btn-secondary" onClick={() => nav(`/projects/${project.id}?tab=report`)}>보고서 보기</button>}
                 </div>
