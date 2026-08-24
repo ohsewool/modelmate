@@ -47,6 +47,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import hashlib
 import json
 import re
 import subprocess
@@ -105,6 +106,45 @@ def pytest_sessionfinish(session, exitstatus):
 '''
 
 
+def parts_digest() -> str:
+    """`main_parts/*.part` 내용 전체의 지문.
+
+    **추적은 `파일:줄`로 적힌다.** 조각을 한 줄이라도 고치면 그 아래 모든 지점의
+    줄 번호가 밀리고, 추적과 소스가 **조용히 어긋난다** — 도달했던 지점이 "한 번도
+    도달 안 함"으로 나타난다.
+
+    2026-08-24에 실제로 그랬다. 앞 회차에 `051_auth_history_debug.part`에 세 줄을
+    더했더니, 그 파일에서 이미 닫아둔 네 지점이 미도달로 다시 세어졌다. 미도달이
+    47에서 60으로 "늘어난" 것처럼 보였고, 그건 측정이 아니라 **지도가 낡은 것**이다.
+    독스트링에 "`--from`은 낡을 수 있다"고 적어는 뒀지만, 적어두는 것과 기계가
+    아는 것은 다르다 — 이 저장소가 여러 번 적은 문장 그대로다.
+    """
+    digest = hashlib.sha256()
+    for path in sorted((ROOT / "backend" / "main_parts").glob("*.part")):
+        digest.update(path.name.encode("utf-8"))
+        digest.update(path.read_bytes())
+    return digest.hexdigest()
+
+
+def load_trace(trace_file: Path) -> list[dict]:
+    """추적을 읽되, **소스가 그때와 같을 때만** 쓴다."""
+    payload = json.loads(trace_file.read_text(encoding="utf-8"))
+    if isinstance(payload, list):
+        raise SystemExit(
+            f"{trace_file}에 지문이 없다(옛 형식). 그때의 소스와 지금이 같은지 "
+            "알 수 없으므로 쓰지 않는다 — 낡은 지도는 틀린 답을 조용히 낸다. "
+            "`--trace-only`로 다시 떠라.")
+    recorded = payload.get("parts_digest")
+    current = parts_digest()
+    if recorded != current:
+        raise SystemExit(
+            "추적이 낡았다. 그 뒤에 `main_parts/*.part`가 바뀌었다.\n"
+            f"    추적을 뜰 때 {recorded}\n"
+            f"    지금       {current}\n"
+            "  줄 번호가 밀렸으므로 도달 여부가 뒤섞인다. `--trace-only`로 다시 떠라.")
+    return payload["records"]
+
+
 def trace(destination: Path) -> None:
     """1단계. 어느 검사가 어느 `raise`를 지나는가."""
     holder = Path(tempfile.mkdtemp())
@@ -117,6 +157,12 @@ def trace(destination: Path) -> None:
         cwd=ROOT, env={**os.environ, **environment}, capture_output=True, text=True)
     if not destination.exists():
         raise SystemExit(f"추적이 남지 않았다. pytest 출력:\n{finished.stdout[-2000:]}")
+    # 플러그인은 기록만 남긴다. 지문은 여기서 덧붙인다 — 플러그인 안에서 조각을
+    # 다시 읽게 하면 같은 일을 두 곳에서 하게 된다.
+    destination.write_text(
+        json.dumps({"parts_digest": parts_digest(),
+                    "records": json.loads(destination.read_text(encoding="utf-8"))}),
+        encoding="utf-8")
 
 
 def raise_sites() -> dict[str, tuple[str, int, str]]:
@@ -147,7 +193,7 @@ def sweep(trace_file: Path) -> int:
     """2단계. 지점마다 상태를 599로 바꾸고 그 지점을 지나는 검사만 돌린다."""
     sites = raise_sites()
     by_site = defaultdict(set)
-    for record in json.loads(trace_file.read_text(encoding="utf-8")):
+    for record in load_trace(trace_file):
         # 사슬에서 **훑는 쪽이 아는 첫 `raise` 자리**를 고른다. 공장 안쪽 프레임은
         # `raise` 자리가 아니므로 자연히 건너뛰고 호출자가 잡힌다.
         for where in record.get("chain") or ([record["where"]] if record["where"] else []):
