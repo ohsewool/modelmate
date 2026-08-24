@@ -20,6 +20,35 @@ on:
   workflow_dispatch:
 
 jobs:
+  # README가 방문자에게 가장 먼저 시키는 세 줄. **CI가 한 번도 돌린 적이 없었다.**
+  #
+  #     python3 scripts/make_demo_data.py
+  #     python3 scripts/demo.py --leaky
+  #     python3 scripts/demo.py --leaky --ignore-leakage
+  #
+  # 포트폴리오에서 이 자리가 깨지는 것은 스위트가 깨지는 것보다 나쁘다 — 읽는
+  # 사람이 여기서 막히면 나머지는 안 본다. 2026-08-24에 재보니 셋 다 동작했고,
+  # README가 적어둔 숫자(AUC 1.0 → 0.778)도 맞았다. **다만 그것을 지키는 것이
+  # 없었다** — 커버리지 숫자가 두 달 낡아 있던 것과 같은 모양이다.
+  #
+  # 보는 것은 `exit 0`이 아니라 **두 실행이 아직 갈리는가**이다. 누출 컬럼을 빼든
+  # 넣든 같은 점수가 나오면 데모는 여전히 종료 코드 0으로 끝나고 보여주는 것은
+  # 없다. 46초.
+  demo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install
+        run: |
+          python -m pip install -q --upgrade pip
+          pip install -r requirements.txt
+      - name: The README's 30-second demo still demonstrates something
+        run: python scripts/check_demo_still_demonstrates.py
+
   smoke:
     runs-on: ubuntu-latest
     timeout-minutes: 20
