@@ -9,7 +9,24 @@ async def set_target(body: dict):
             retry_possible=True,
             recommended_next_action="같은 CSV를 다시 업로드한 뒤 타깃을 선택하세요.",
         ))
-    tgt = body["target_col"]
+    # **대괄호로 꺼내면 없을 때 KeyError가 되고, 잡히지 않으면 500이 된다.**
+    # 2026-08-24에 재봤다: 업로드는 됐는데 이 필드가 빠지면
+    # `500 "예상하지 못한 내부 오류가 발생했습니다."`가 왔다. 바로 위(업로드 원본
+    # 없음)와 바로 아래(없는 컬럼)는 무엇이 잘못됐는지 말해주는 400을 내는데,
+    # **가운데 이 자리만 서버가 진 것처럼 답했다.**
+    #
+    # 필드를 안 보낸 것은 호출자의 실수이고 고칠 수 있는 실수다. 500은 "우리 잘못,
+    # 당신이 할 수 있는 건 없음"으로 읽힌다 — 이 제품의 사용자는 비전문가이고,
+    # 고칠 수 있는 것을 못 고치게 만드는 답이 가장 나쁘다.
+    tgt = body.get("target_col")
+    if not tgt:
+        raise HTTPException(400, failure_detail(
+            "target_recommendation",
+            "맞히려는 값을 고르지 않았습니다.",
+            "body['target_col'] is missing or empty",
+            retry_possible=True,
+            recommended_next_action="업로드 화면에서 맞히려는 컬럼을 고른 뒤 다시 시도하세요.",
+        ))
     if tgt not in df.columns:
         raise HTTPException(400, failure_detail(
             "target_recommendation",
